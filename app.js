@@ -1,14 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabaseClient.auth.getSession();
 
-  if (session) {
+  if (session?.user) {
     showApp(session.user);
   } else {
     showLogin();
   }
 
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (session) {
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
       showApp(session.user);
     } else {
       showLogin();
