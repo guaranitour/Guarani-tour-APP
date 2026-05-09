@@ -1,6 +1,9 @@
 async function loginWithGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google"
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: "https://guaranitour.github.io/Guarani-tour-APP/"
+    }
   });
   if (error) {
     alert("Error al iniciar sesión");
@@ -9,6 +12,6 @@ async function loginWithGoogle() {
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   showLogin();
 }
