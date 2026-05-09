@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guaraní Tour | Staff</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 2rem;
+    }
+    .hidden { display: none; }
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.1);
+      max-width: 400px;
+      margin: 4rem auto;
+      text-align: center;
+    }
+    button {
+      padding: .7rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      background: #4285f4;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="login-view" class="card hidden">
+    <h2>Guaraní Tour</h2>
+    <p>Acceso solo para staff</p>
+    <button onclick="loginWithGoogle()">Iniciar sesión con Google</button>
+  </div>
+
+  <div id="app-view" class="hidden">
+    <h2>Panel interno</h2>
+    <p id="user-email"></p>
+    <hr>
+    <button onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <script src="supabaseClient.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
