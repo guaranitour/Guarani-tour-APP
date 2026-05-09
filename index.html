@@ -6,48 +6,305 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:   #1a6b4a;
+      --brand2:  #0f3d2b;
+      --accent:  #f0c040;
+      --glass-bg: rgba(255,255,255,0.07);
+      --glass-border: rgba(255,255,255,0.15);
+    }
+
     body {
-      font-family: system-ui, sans-serif;
-      background: #f5f7fb;
-      margin: 0;
-      padding: 2rem;
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      background: #071a11;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .hidden { display: none; }
-    .card {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.1);
-      max-width: 400px;
-      margin: 4rem auto;
+
+    /* ── Fondo de burbujas ── */
+    .bubbles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bubble {
+      position: absolute;
+      bottom: -160px;
+      border-radius: 50%;
+      opacity: 0;
+      animation: rise linear infinite;
+    }
+
+    /* Definiciones individuales */
+    .bubble:nth-child(1)  { width:60px;  height:60px;  left:8%;   background: radial-gradient(circle at 35% 35%, rgba(26,107,74,.55), rgba(15,61,43,.2)); animation-duration:14s; animation-delay:0s;   }
+    .bubble:nth-child(2)  { width:30px;  height:30px;  left:18%;  background: radial-gradient(circle at 35% 35%, rgba(240,192,64,.35), rgba(26,107,74,.15)); animation-duration:10s; animation-delay:2s;   }
+    .bubble:nth-child(3)  { width:90px;  height:90px;  left:30%;  background: radial-gradient(circle at 35% 35%, rgba(26,107,74,.4),  rgba(15,61,43,.1));  animation-duration:18s; animation-delay:4s;   }
+    .bubble:nth-child(4)  { width:20px;  height:20px;  left:42%;  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.2), transparent);         animation-duration:9s;  animation-delay:1s;   }
+    .bubble:nth-child(5)  { width:50px;  height:50px;  left:55%;  background: radial-gradient(circle at 35% 35%, rgba(26,107,74,.5),  rgba(15,61,43,.2));  animation-duration:13s; animation-delay:5s;   }
+    .bubble:nth-child(6)  { width:75px;  height:75px;  left:65%;  background: radial-gradient(circle at 35% 35%, rgba(240,192,64,.25), rgba(26,107,74,.1));  animation-duration:16s; animation-delay:3s;   }
+    .bubble:nth-child(7)  { width:35px;  height:35px;  left:75%;  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.15), transparent);         animation-duration:11s; animation-delay:7s;   }
+    .bubble:nth-child(8)  { width:55px;  height:55px;  left:85%;  background: radial-gradient(circle at 35% 35%, rgba(26,107,74,.45), rgba(15,61,43,.15)); animation-duration:15s; animation-delay:0.5s; }
+    .bubble:nth-child(9)  { width:25px;  height:25px;  left:92%;  background: radial-gradient(circle at 35% 35%, rgba(240,192,64,.3),  rgba(26,107,74,.1));  animation-duration:8s;  animation-delay:6s;   }
+    .bubble:nth-child(10) { width:100px; height:100px; left:3%;   background: radial-gradient(circle at 35% 35%, rgba(26,107,74,.3),  rgba(15,61,43,.05)); animation-duration:20s; animation-delay:9s;   }
+    .bubble:nth-child(11) { width:40px;  height:40px;  left:48%;  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.12), transparent);         animation-duration:12s; animation-delay:11s;  }
+    .bubble:nth-child(12) { width:65px;  height:65px;  left:22%;  background: radial-gradient(circle at 35% 35%, rgba(240,192,64,.2),  rgba(26,107,74,.08)); animation-duration:17s; animation-delay:8s;   }
+
+    @keyframes rise {
+      0%   { transform: translateY(0)   scale(1)   rotate(0deg);   opacity: 0;   }
+      10%  { opacity: .6; }
+      80%  { opacity: .35; }
+      100% { transform: translateY(-110vh) scale(1.1) rotate(15deg); opacity: 0;   }
+    }
+
+    /* ── Gradiente de malla en el fondo ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 20% 80%, rgba(26,107,74,.45) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 80% 20%, rgba(15,61,43,.6)   0%, transparent 65%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(240,192,64,.06) 0%, transparent 60%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Card ── */
+    #login-view {
+      position: relative;
+      z-index: 10;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border-radius: 24px;
+      padding: 3rem 2.8rem 2.6rem;
+      width: min(420px, 92vw);
       text-align: center;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.05) inset,
+        0 32px 80px rgba(0,0,0,.55),
+        0 0 120px rgba(26,107,74,.15);
+
+      animation: cardIn .8s cubic-bezier(.22,1,.36,1) both;
     }
-    button {
-      padding: .7rem 1.2rem;
-      border: none;
-      border-radius: 8px;
-      background: #4285f4;
+
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(32px) scale(.97); }
+      to   { opacity:1; transform: translateY(0)    scale(1);   }
+    }
+
+    /* Logo / ícono */
+    .logo-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      border: 2px solid rgba(240,192,64,.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 0 0 8px rgba(26,107,74,.15), 0 8px 24px rgba(0,0,0,.4);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 8px rgba(26,107,74,.15), 0 8px 24px rgba(0,0,0,.4); }
+      50%      { box-shadow: 0 0 0 14px rgba(26,107,74,.08), 0 8px 32px rgba(0,0,0,.5); }
+    }
+
+    .logo-wrap svg { width: 36px; height: 36px; }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.85rem;
+      font-weight: 700;
       color: #fff;
-      font-size: 1rem;
-      cursor: pointer;
+      letter-spacing: -.01em;
+      margin-bottom: .4rem;
     }
+
+    .subtitle {
+      font-size: .88rem;
+      font-weight: 300;
+      color: rgba(255,255,255,.45);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 2.2rem;
+    }
+
+    /* Divisor */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      margin-bottom: 1.8rem;
+    }
+    .divider::before, .divider::after {
+      content:'';
+      flex:1;
+      height:1px;
+      background: rgba(255,255,255,.1);
+    }
+    .divider span {
+      font-size: .75rem;
+      color: rgba(255,255,255,.3);
+      letter-spacing: .06em;
+    }
+
+    /* Botón Google */
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .75rem;
+      width: 100%;
+      padding: .9rem 1.4rem;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .97rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s, box-shadow .2s;
+      letter-spacing: .01em;
+    }
+
+    .btn-google:hover {
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.25);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+
+    .btn-google:active { transform: translateY(0); }
+
+    .btn-google svg { flex-shrink: 0; }
+
+    /* Footer */
+    .card-footer {
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: rgba(255,255,255,.2);
+    }
+
+    .accent { color: var(--accent); }
+
+    /* ── App view ── */
+    #app-view {
+      position: relative;
+      z-index: 10;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border-radius: 24px;
+      padding: 2.5rem 2.5rem;
+      width: min(420px, 92vw);
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,.55);
+      animation: cardIn .6s cubic-bezier(.22,1,.36,1) both;
+      color: #fff;
+    }
+
+    #app-view h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      margin-bottom: .5rem;
+    }
+
+    #user-email {
+      font-size: .9rem;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-logout {
+      padding: .7rem 1.6rem;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.7);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .btn-logout:hover { background: rgba(255,80,80,.15); color:#fff; border-color: rgba(255,80,80,.3); }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <div id="login-view" class="card hidden">
-    <h2>Guaraní Tour</h2>
-    <p>Acceso solo para staff</p>
-    <button onclick="loginWithGoogle()">Iniciar sesión con Google</button>
+  <!-- Burbujas -->
+  <div class="bubbles" aria-hidden="true">
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
   </div>
 
+  <!-- Login -->
+  <div id="login-view" class="hidden">
+    <div class="logo-wrap">
+      <!-- Ícono de bus estilizado -->
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="10" width="28" height="16" rx="4" fill="rgba(255,255,255,.15)" stroke="rgba(240,192,64,.7)" stroke-width="1.5"/>
+        <rect x="7" y="13" width="7" height="5" rx="1.5" fill="rgba(240,192,64,.5)"/>
+        <rect x="16" y="13" width="7" height="5" rx="1.5" fill="rgba(240,192,64,.5)"/>
+        <circle cx="10" cy="28" r="2.5" fill="rgba(255,255,255,.8)" stroke="rgba(240,192,64,.6)" stroke-width="1"/>
+        <circle cx="26" cy="28" r="2.5" fill="rgba(255,255,255,.8)" stroke="rgba(240,192,64,.6)" stroke-width="1"/>
+        <rect x="4" y="14" width="2" height="5" rx="1" fill="rgba(240,192,64,.8)"/>
+        <rect x="30" y="14" width="2" height="5" rx="1" fill="rgba(240,192,64,.8)"/>
+      </svg>
+    </div>
+
+    <h2>Guaraní Tour</h2>
+    <p class="subtitle">Portal de staff</p>
+
+    <div class="divider"><span>acceso restringido</span></div>
+
+    <button class="btn-google" onclick="loginWithGoogle()">
+      <!-- Google logo SVG oficial -->
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.6 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.6 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.5-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C36.4 38.2 44 33 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+      </svg>
+      Iniciar sesión con Google
+    </button>
+
+    <p class="card-footer">Solo personal autorizado de <span class="accent">Guaraní Tour</span></p>
+  </div>
+
+  <!-- App -->
   <div id="app-view" class="hidden">
     <h2>Panel interno</h2>
     <p id="user-email"></p>
-    <hr>
-    <button onclick="logout()">Cerrar sesión</button>
+    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
   </div>
 
   <script src="supabaseClient.js"></script>
