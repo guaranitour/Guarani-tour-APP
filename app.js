@@ -10,8 +10,27 @@ let selectedIdx   = null;
 
 // ── Auth ───────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
+  // Detectar si venimos del callback de OAuth
+  const hasOAuthCallback = location.hash.includes("access_token") ||
+                           location.hash.includes("error_description") ||
+                           location.search.includes("code=");
+
+  if (hasOAuthCallback) {
+    // Supabase procesa el token solo, solo esperamos el evento
+    supabaseClient.auth.onAuthStateChange((_e, session) => {
+      if (session?.user) {
+        history.replaceState(null, "", location.pathname);
+        enterApp(session.user);
+      } else {
+        showLogin();
+      }
+    });
+    return;
+  }
+
   const { data: { session } } = await supabaseClient.auth.getSession();
   session?.user ? enterApp(session.user) : showLogin();
+
   supabaseClient.auth.onAuthStateChange((_e, session) => {
     session?.user ? enterApp(session.user) : showLogin();
   });
@@ -176,17 +195,14 @@ function renderDetalle(idx) {
 
   document.getElementById("detalle-name").textContent = name;
 
-  // Datos personales
   setField("d-nombre-full", p.Pasajero);
   setField("d-ci",          p["Documento de Identidad"]);
   setField("d-fecha",       formatDate(p["Fecha de nacimiento"]));
   setField("d-sexo",        p.Sexo);
   setField("d-email",       p["E-mail"]);
-
-  // Datos empresa
-  setField("d-vendedor", p.Vendedor);
-  setField("d-byc",      p.ByC);
-  setField("d-club",     p["Club destino"]);
+  setField("d-vendedor",    p.Vendedor);
+  setField("d-byc",         p.ByC);
+  setField("d-club",        p["Club destino"]);
 }
 
 // ── Avatar upload ──────────────────────────────────────────
