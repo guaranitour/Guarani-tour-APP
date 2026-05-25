@@ -43,7 +43,6 @@
   <!-- ── APP ── -->
   <div id="app-view" class="hidden">
 
-    <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-brand" onclick="navigateTo('home')" style="cursor:pointer">
         <div class="dot"></div>
@@ -55,22 +54,18 @@
       </div>
     </header>
 
-    <!-- Breadcrumb -->
     <div class="breadcrumb-bar">
       <div id="breadcrumb" class="breadcrumb"></div>
     </div>
 
-    <!-- ── VISTA: INICIO ── -->
+    <!-- INICIO -->
     <div id="view-home" class="hidden">
       <div class="main">
         <div class="page-header">
           <h1>Panel de inicio</h1>
           <p class="page-desc">Seleccioná un módulo para continuar</p>
         </div>
-
         <div class="home-grid">
-
-          <!-- Card activa -->
           <div class="home-card active" onclick="navigateTo('clientes')">
             <div class="card-icon" style="background:#e8f0eb; color:#2d6a4f">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -90,124 +85,92 @@
               </svg>
             </div>
           </div>
-
-          <!-- Cards próximamente -->
           <div class="home-card soon">
             <div class="card-icon" style="background:#f5f5f0; color:#bbb">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <path d="M16 2v4M8 2v4M3 10h18"/>
-              </svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             </div>
-            <div class="card-body">
-              <h3>Viajes activos</h3>
-              <p>Gestión de reservas, pagos y asientos por viaje.</p>
-            </div>
+            <div class="card-body"><h3>Viajes activos</h3><p>Gestión de reservas, pagos y asientos por viaje.</p></div>
             <span class="soon-badge">Próximamente</span>
           </div>
-
           <div class="home-card soon">
             <div class="card-icon" style="background:#f5f5f0; color:#bbb">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
-            <div class="card-body">
-              <h3>Recibos</h3>
-              <p>Creación, consulta y descarga de recibos de pago.</p>
-            </div>
+            <div class="card-body"><h3>Recibos</h3><p>Creación, consulta y descarga de recibos de pago.</p></div>
             <span class="soon-badge">Próximamente</span>
           </div>
-
           <div class="home-card soon">
             <div class="card-icon" style="background:#f5f5f0; color:#bbb">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
-            <div class="card-body">
-              <h3>Movimientos bancarios</h3>
-              <p>Registro y control de ingresos y egresos de caja.</p>
-            </div>
+            <div class="card-body"><h3>Movimientos bancarios</h3><p>Registro y control de ingresos y egresos de caja.</p></div>
             <span class="soon-badge">Próximamente</span>
           </div>
-
           <div class="home-card soon">
             <div class="card-icon" style="background:#f5f5f0; color:#bbb">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-              </svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </div>
-            <div class="card-body">
-              <h3>Estado ByC</h3>
-              <p>Visualización del estado de beneficios y compromisos.</p>
-            </div>
+            <div class="card-body"><h3>Estado ByC</h3><p>Visualización del estado de beneficios y compromisos.</p></div>
             <span class="soon-badge">Próximamente</span>
           </div>
-
           <div class="home-card soon">
             <div class="card-icon" style="background:#f5f5f0; color:#bbb">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <div class="card-body">
-              <h3>Histórico de viajes</h3>
-              <p>Consulta del historial completo de viajes realizados.</p>
-            </div>
+            <div class="card-body"><h3>Histórico de viajes</h3><p>Consulta del historial completo de viajes realizados.</p></div>
             <span class="soon-badge">Próximamente</span>
           </div>
-
         </div>
       </div>
     </div>
 
-    <!-- ── VISTA: LISTA CLIENTES ── -->
+    <!-- LISTA CLIENTES -->
     <div id="view-clientes" class="hidden">
       <div class="main">
         <div class="page-header">
           <h1>Base de clientes</h1>
           <span class="passenger-count" id="passenger-count">—</span>
         </div>
-
         <div class="search-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
-          <input type="text" id="search-input" placeholder="Buscar por nombre, CI, email…" oninput="filterPassengers()" />
+          <input type="text" id="search-input" placeholder="Buscar por nombre o CI…" oninput="filterPassengers()" />
         </div>
-
         <div id="passenger-list"></div>
       </div>
     </div>
 
-    <!-- ── VISTA: DETALLE PASAJERO ── -->
+    <!-- DETALLE PASAJERO -->
     <div id="view-detalle" class="hidden">
       <div class="main detalle-main">
 
-        <div class="detalle-header">
-          <div class="detalle-avatar-wrap">
-            <div class="detalle-avatar" id="detalle-avatar" onclick="triggerAvatarUpload()">
-              <img src="" alt="" class="hidden" />
-              <span class="d-initials"></span>
-              <div class="avatar-upload-hint">Cambiar foto</div>
-            </div>
-            <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarUpload(event)" />
+        <!-- Perfil centrado -->
+        <div class="detalle-profile">
+          <div class="detalle-avatar" id="detalle-avatar" onclick="triggerAvatarUpload()">
+            <img src="" alt="" class="hidden" />
+            <span class="d-initials"></span>
+            <div class="avatar-upload-hint">Cambiar foto</div>
           </div>
-          <div class="detalle-title">
-            <h2 id="detalle-name"></h2>
-            <div class="modal-chips" id="detalle-chips"></div>
-          </div>
+          <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarUpload(event)" />
+          <h2 id="detalle-name"></h2>
+          <div class="detalle-chips" id="detalle-chips"></div>
         </div>
 
-        <div class="detalle-card">
+        <!-- Datos personales -->
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Datos personales
+          </div>
           <div class="detail-grid">
+            <div class="detail-field">
+              <span class="detail-label">Nombre completo</span>
+              <span class="detail-value" id="d-nombre-full"></span>
+            </div>
             <div class="detail-field">
               <span class="detail-label">Documento de Identidad</span>
               <span class="detail-value" id="d-ci"></span>
@@ -220,19 +183,32 @@
               <span class="detail-label">Sexo</span>
               <span class="detail-value" id="d-sexo"></span>
             </div>
-            <div class="detail-field">
-              <span class="detail-label">Vendedor</span>
-              <span class="detail-value" id="d-vendedor"></span>
-            </div>
             <div class="detail-field full">
               <span class="detail-label">E-mail</span>
               <span class="detail-value" id="d-email"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos empresa -->
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/>
+            </svg>
+            Datos de empresa
+          </div>
+          <div class="detail-grid">
+            <div class="detail-field">
+              <span class="detail-label">Vendedor</span>
+              <span class="detail-value" id="d-vendedor"></span>
             </div>
             <div class="detail-field">
               <span class="detail-label">ByC</span>
               <span class="detail-value" id="d-byc"></span>
             </div>
-            <div class="detail-field">
+            <div class="detail-field full">
               <span class="detail-label">Club destino</span>
               <span class="detail-value" id="d-club"></span>
             </div>
@@ -242,7 +218,7 @@
       </div>
     </div>
 
-  </div><!-- /app-view -->
+  </div>
 
   <script src="supabaseClient.js"></script>
   <script src="auth.js"></script>

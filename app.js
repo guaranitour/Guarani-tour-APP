@@ -1,39 +1,33 @@
 // ── Estado global ──────────────────────────────────────────
-let allPassengers  = [];
-let avatarCache    = {};
-let currentView    = "home"; // "home" | "clientes" | "detalle"
-let selectedIdx    = null;
+let allPassengers = [];
+let avatarCache   = {};
+let currentView   = "home";
+let selectedIdx   = null;
 
 // ── Auth ───────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
   session?.user ? enterApp(session.user) : showLogin();
-
   supabaseClient.auth.onAuthStateChange((_e, session) => {
     session?.user ? enterApp(session.user) : showLogin();
   });
 });
 
 function showLogin() {
-  show("login-view");
-  hide("app-view");
+  show("login-view"); hide("app-view");
 }
 
 async function enterApp(user) {
-  hide("login-view");
-  show("app-view");
+  hide("login-view"); show("app-view");
   document.getElementById("user-email").textContent = user.email;
   navigateTo("home");
 }
 
 // ── Navegación ─────────────────────────────────────────────
 function navigateTo(view, idx = null) {
-  currentView  = view;
-  selectedIdx  = idx;
-
-  hide("view-home");
-  hide("view-clientes");
-  hide("view-detalle");
+  currentView = view;
+  selectedIdx = idx;
+  hide("view-home"); hide("view-clientes"); hide("view-detalle");
 
   if (view === "home") {
     show("view-home");
@@ -59,73 +53,54 @@ function navigateTo(view, idx = null) {
 }
 
 function updateBreadcrumb(items) {
-  const el = document.getElementById("breadcrumb");
-  el.innerHTML = items.map((item, i) => {
+  document.getElementById("breadcrumb").innerHTML = items.map((item, i) => {
     const isLast = i === items.length - 1;
     if (isLast) return `<span class="bc-current">${item.label}</span>`;
-    return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span>
-            <span class="bc-sep">›</span>`;
+    return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span><span class="bc-sep">›</span>`;
   }).join("");
 }
 
-// ── Carga de pasajeros ─────────────────────────────────────
+// ── Carga ──────────────────────────────────────────────────
 async function loadPassengers() {
   setListState("loading");
-
   const { data, error } = await supabaseClient
     .from("Pasajeros")
     .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
     .order("Pasajero", { ascending: true });
 
-  if (error) {
-    console.error(error);
-    setListState("error");
-    return;
-  }
-
+  if (error) { console.error(error); setListState("error"); return; }
   allPassengers = data.map((p, i) => ({ ...p, _idx: i }));
   renderList(allPassengers);
 }
 
-// ── Render lista (sin parpadeo) ────────────────────────────
+// ── Render lista ───────────────────────────────────────────
 function renderList(passengers) {
   const listEl  = document.getElementById("passenger-list");
   const countEl = document.getElementById("passenger-count");
   countEl.textContent = `${passengers.length} pasajero${passengers.length !== 1 ? "s" : ""}`;
 
-  if (passengers.length === 0) {
-    setListState("empty");
-    return;
-  }
+  if (passengers.length === 0) { setListState("empty"); return; }
 
-  // Construir mapa de filas existentes por _idx para reutilizarlas
   const existing = {};
   listEl.querySelectorAll(".passenger-row[data-idx]").forEach(el => {
     existing[el.dataset.idx] = el;
   });
 
-  // Construir nuevo orden sin re-crear nodos que ya existen
   const fragment = document.createDocumentFragment();
   passengers.forEach((p, i) => {
     let row = existing[p._idx];
-    if (!row) {
-      row = createRow(p, i);
-    }
+    if (!row) row = createRow(p, i);
     fragment.appendChild(row);
   });
 
-  // Ocultar estado vacío/error si estaba visible
   const stateEl = listEl.querySelector(".list-state");
   if (stateEl) stateEl.remove();
-
-  // Reemplazar contenido solo con los nodos necesarios
   listEl.replaceChildren(fragment);
 }
 
 function createRow(p, i) {
-  const name     = p.Pasajero || "Sin nombre";
-  const ci       = p["Documento de Identidad"] || "—";
-  const initials = getInitials(name);
+  const name = p.Pasajero || "Sin nombre";
+  const ci   = p["Documento de Identidad"] || "—";
 
   const row = document.createElement("div");
   row.className = "passenger-row";
@@ -135,14 +110,11 @@ function createRow(p, i) {
 
   const avatarInner = avatarCache[p._idx]
     ? `<img src="${avatarCache[p._idx]}" alt="${name}" />`
-    : `<span>${initials}</span>`;
+    : `<span>${getInitials(name)}</span>`;
 
   row.innerHTML = `
     <div class="p-avatar">${avatarInner}</div>
-    <div class="p-info">
-      <div class="p-name">${name}</div>
-      <div class="p-sub">${p["E-mail"] || "Sin email"}</div>
-    </div>
+    <div class="p-name">${name}</div>
     <span class="p-pill">CI ${ci}</span>
     <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
          stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>`;
@@ -150,42 +122,41 @@ function createRow(p, i) {
 }
 
 function setListState(type) {
-  const listEl = document.getElementById("passenger-list");
   const states = {
     loading: `<div class="list-state"><div class="icon">⏳</div>Cargando pasajeros…</div>`,
     error:   `<div class="list-state"><div class="icon">⚠️</div>Error al cargar los datos.</div>`,
     empty:   `<div class="list-state"><div class="icon">🔍</div>Sin resultados.</div>`,
   };
-  listEl.innerHTML = states[type] || "";
+  document.getElementById("passenger-list").innerHTML = states[type] || "";
 }
 
-// ── Buscador (debounce para evitar parpadeo) ───────────────
+// ── Buscador con debounce ──────────────────────────────────
 let searchTimer = null;
 function filterPassengers() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     const q = document.getElementById("search-input").value.toLowerCase().trim();
-    const filtered = q
+    renderList(q
       ? allPassengers.filter(p =>
           (p.Pasajero || "").toLowerCase().includes(q) ||
           (p["Documento de Identidad"] || "").toLowerCase().includes(q) ||
           (p["E-mail"] || "").toLowerCase().includes(q))
-      : allPassengers;
-    renderList(filtered);
+      : allPassengers);
   }, 160);
 }
 
-// ── Vista detalle (página completa) ───────────────────────
+// ── Detalle ────────────────────────────────────────────────
 function renderDetalle(idx) {
-  const p    = allPassengers.find(x => x._idx === idx);
+  const p = allPassengers.find(x => x._idx === idx);
   if (!p) return;
   const name = p.Pasajero || "Sin nombre";
 
   // Avatar
-  const avatarEl = document.getElementById("detalle-avatar");
+  const avatarEl  = document.getElementById("detalle-avatar");
+  const imgEl     = avatarEl.querySelector("img");
+  const initEl    = avatarEl.querySelector(".d-initials");
   avatarEl.dataset.idx = idx;
-  const imgEl = avatarEl.querySelector("img");
-  const initEl = avatarEl.querySelector(".d-initials");
+
   if (avatarCache[idx]) {
     imgEl.src = avatarCache[idx];
     imgEl.classList.remove("hidden");
@@ -205,12 +176,15 @@ function renderDetalle(idx) {
   if (p.Sexo)            chips.push(`<span class="chip chip-sexo">${p.Sexo}</span>`);
   document.getElementById("detalle-chips").innerHTML = chips.join("");
 
-  // Campos
-  setField("d-ci",       p["Documento de Identidad"]);
-  setField("d-fecha",    formatDate(p["Fecha de nacimiento"]));
-  setField("d-sexo",     p.Sexo);
+  // Datos personales
+  setField("d-nombre-full", p.Pasajero);
+  setField("d-ci",      p["Documento de Identidad"]);
+  setField("d-fecha",   formatDate(p["Fecha de nacimiento"]));
+  setField("d-sexo",    p.Sexo);
+  setField("d-email",   p["E-mail"]);
+
+  // Datos empresa
   setField("d-vendedor", p.Vendedor);
-  setField("d-email",    p["E-mail"]);
   setField("d-byc",      p.ByC);
   setField("d-club",     p["Club destino"]);
 }
@@ -228,11 +202,9 @@ function handleAvatarUpload(event) {
   reader.onload = e => {
     avatarCache[idx] = e.target.result;
     renderDetalle(idx);
-    // Actualizar lista sin re-renderizar todo
     const row = document.querySelector(`.passenger-row[data-idx="${idx}"]`);
     if (row) {
-      const avatarDiv = row.querySelector(".p-avatar");
-      avatarDiv.innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
+      row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
     }
   };
   reader.readAsDataURL(file);
@@ -254,13 +226,8 @@ function formatDate(val) {
 function setField(id, value) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (value) {
-    el.textContent = value;
-    el.classList.remove("empty");
-  } else {
-    el.textContent = "No registrado";
-    el.classList.add("empty");
-  }
+  if (value) { el.textContent = value; el.classList.remove("empty"); }
+  else       { el.textContent = "No registrado"; el.classList.add("empty"); }
 }
 
 function show(id) { document.getElementById(id)?.classList.remove("hidden"); }
