@@ -1,3 +1,7 @@
+// ── Helpers base ───────────────────────────────────────────
+function show(id) { document.getElementById(id)?.classList.remove("hidden"); }
+function hide(id) { document.getElementById(id)?.classList.add("hidden"); }
+
 // ── Estado global ──────────────────────────────────────────
 let allPassengers = [];
 let avatarCache   = {};
@@ -14,11 +18,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function showLogin() {
-  show("login-view"); hide("app-view");
+  show("login-view");
+  hide("app-view");
 }
 
 async function enterApp(user) {
-  hide("login-view"); show("app-view");
+  hide("login-view");
+  show("app-view");
   document.getElementById("user-email").textContent = user.email;
   navigateTo("home");
 }
@@ -151,12 +157,11 @@ function renderDetalle(idx) {
   if (!p) return;
   const name = p.Pasajero || "Sin nombre";
 
-  // Avatar
-  const avatarEl  = document.getElementById("detalle-avatar");
-  const wrapEl    = avatarEl.closest(".detalle-avatar-wrap") || avatarEl.parentElement;
-  const imgEl     = avatarEl.querySelector("img");
-  const initEl    = avatarEl.querySelector(".d-initials");
-  wrapEl.dataset.idx = idx;
+  const avatarEl = document.getElementById("detalle-avatar");
+  const wrapEl   = avatarEl.closest(".detalle-avatar-wrap") || avatarEl.parentElement;
+  const imgEl    = avatarEl.querySelector("img");
+  const initEl   = avatarEl.querySelector(".d-initials");
+  wrapEl.dataset.idx   = idx;
   avatarEl.dataset.idx = idx;
 
   if (avatarCache[idx]) {
@@ -173,10 +178,10 @@ function renderDetalle(idx) {
 
   // Datos personales
   setField("d-nombre-full", p.Pasajero);
-  setField("d-ci",      p["Documento de Identidad"]);
-  setField("d-fecha",   formatDate(p["Fecha de nacimiento"]));
-  setField("d-sexo",    p.Sexo);
-  setField("d-email",   p["E-mail"]);
+  setField("d-ci",          p["Documento de Identidad"]);
+  setField("d-fecha",       formatDate(p["Fecha de nacimiento"]));
+  setField("d-sexo",        p.Sexo);
+  setField("d-email",       p["E-mail"]);
 
   // Datos empresa
   setField("d-vendedor", p.Vendedor);
@@ -198,9 +203,7 @@ function handleAvatarUpload(event) {
     avatarCache[idx] = e.target.result;
     renderDetalle(idx);
     const row = document.querySelector(`.passenger-row[data-idx="${idx}"]`);
-    if (row) {
-      row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
-    }
+    if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
   };
   reader.readAsDataURL(file);
   event.target.value = "";
@@ -224,6 +227,3 @@ function setField(id, value) {
   if (value) { el.textContent = value; el.classList.remove("empty"); }
   else       { el.textContent = "No registrado"; el.classList.add("empty"); }
 }
-
-function show(id) { document.getElementById(id)?.classList.remove("hidden"); }
-function hide(id) { document.getElementById(id)?.classList.add("hidden"); }
