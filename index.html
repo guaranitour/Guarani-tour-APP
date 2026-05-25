@@ -147,14 +147,17 @@
 
         <!-- Perfil centrado -->
         <div class="detalle-profile">
-          <div class="detalle-avatar" id="detalle-avatar" onclick="triggerAvatarUpload()">
-            <img src="" alt="" class="hidden" />
-            <span class="d-initials"></span>
-            <div class="avatar-upload-hint">Cambiar foto</div>
+          <div class="detalle-avatar-wrap">
+            <div class="detalle-avatar" id="detalle-avatar">
+              <img src="" alt="" class="hidden" />
+              <span class="d-initials"></span>
+            </div>
+            <button class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="Cambiar foto">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
           </div>
           <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarUpload(event)" />
           <h2 id="detalle-name"></h2>
-          <div class="detalle-chips" id="detalle-chips"></div>
         </div>
 
         <!-- Datos personales -->

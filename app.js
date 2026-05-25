@@ -153,8 +153,10 @@ function renderDetalle(idx) {
 
   // Avatar
   const avatarEl  = document.getElementById("detalle-avatar");
+  const wrapEl    = avatarEl.closest(".detalle-avatar-wrap") || avatarEl.parentElement;
   const imgEl     = avatarEl.querySelector("img");
   const initEl    = avatarEl.querySelector(".d-initials");
+  wrapEl.dataset.idx = idx;
   avatarEl.dataset.idx = idx;
 
   if (avatarCache[idx]) {
