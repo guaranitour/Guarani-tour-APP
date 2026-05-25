@@ -1,38 +1,76 @@
 // ── Estado global ──────────────────────────────────────────
-let allPassengers = [];
-let avatarCache   = {};  // { id: dataURL }
+let allPassengers  = [];
+let avatarCache    = {};
+let currentView    = "home"; // "home" | "clientes" | "detalle"
+let selectedIdx    = null;
 
 // ── Auth ───────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session?.user) {
-    enterApp(session.user);
-  } else {
-    showLogin();
-  }
+  session?.user ? enterApp(session.user) : showLogin();
 
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) enterApp(session.user);
-    else showLogin();
+  supabaseClient.auth.onAuthStateChange((_e, session) => {
+    session?.user ? enterApp(session.user) : showLogin();
   });
 });
 
 function showLogin() {
-  document.getElementById("login-view").classList.remove("hidden");
-  document.getElementById("app-view").classList.add("hidden");
+  show("login-view");
+  hide("app-view");
 }
 
 async function enterApp(user) {
-  document.getElementById("login-view").classList.add("hidden");
-  document.getElementById("app-view").classList.remove("hidden");
+  hide("login-view");
+  show("app-view");
   document.getElementById("user-email").textContent = user.email;
-  await loadPassengers();
+  navigateTo("home");
+}
+
+// ── Navegación ─────────────────────────────────────────────
+function navigateTo(view, idx = null) {
+  currentView  = view;
+  selectedIdx  = idx;
+
+  hide("view-home");
+  hide("view-clientes");
+  hide("view-detalle");
+
+  if (view === "home") {
+    show("view-home");
+    updateBreadcrumb([{ label: "Inicio" }]);
+  } else if (view === "clientes") {
+    show("view-clientes");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Base de clientes" }
+    ]);
+    if (allPassengers.length === 0) loadPassengers();
+    else renderList(allPassengers);
+  } else if (view === "detalle") {
+    show("view-detalle");
+    renderDetalle(idx);
+    const p = allPassengers.find(x => x._idx === idx);
+    updateBreadcrumb([
+      { label: "Inicio",           action: () => navigateTo("home") },
+      { label: "Base de clientes", action: () => navigateTo("clientes") },
+      { label: p?.Pasajero || "Detalle" }
+    ]);
+  }
+}
+
+function updateBreadcrumb(items) {
+  const el = document.getElementById("breadcrumb");
+  el.innerHTML = items.map((item, i) => {
+    const isLast = i === items.length - 1;
+    if (isLast) return `<span class="bc-current">${item.label}</span>`;
+    return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span>
+            <span class="bc-sep">›</span>`;
+  }).join("");
 }
 
 // ── Carga de pasajeros ─────────────────────────────────────
 async function loadPassengers() {
-  const listEl = document.getElementById("passenger-list");
-  listEl.innerHTML = `<div class="list-state"><div class="icon">⏳</div>Cargando pasajeros…</div>`;
+  setListState("loading");
 
   const { data, error } = await supabaseClient
     .from("Pasajeros")
@@ -41,98 +79,131 @@ async function loadPassengers() {
 
   if (error) {
     console.error(error);
-    listEl.innerHTML = `<div class="list-state"><div class="icon">⚠️</div>Error al cargar los datos.</div>`;
+    setListState("error");
     return;
   }
 
-  // Guardar una copia con id interno para el modal
   allPassengers = data.map((p, i) => ({ ...p, _idx: i }));
   renderList(allPassengers);
 }
 
-// ── Render lista ───────────────────────────────────────────
+// ── Render lista (sin parpadeo) ────────────────────────────
 function renderList(passengers) {
   const listEl  = document.getElementById("passenger-list");
   const countEl = document.getElementById("passenger-count");
   countEl.textContent = `${passengers.length} pasajero${passengers.length !== 1 ? "s" : ""}`;
 
   if (passengers.length === 0) {
-    listEl.innerHTML = `<div class="list-state"><div class="icon">🔍</div>Sin resultados para esa búsqueda.</div>`;
+    setListState("empty");
     return;
   }
 
-  listEl.innerHTML = passengers.map((p, i) => {
-    const name    = p.Pasajero || "Sin nombre";
-    const ci      = p["Documento de Identidad"] || "—";
-    const initials = getInitials(name);
-    const avatarHTML = avatarCache[p._idx]
-      ? `<img src="${avatarCache[p._idx]}" alt="${name}" />`
-      : initials;
+  // Construir mapa de filas existentes por _idx para reutilizarlas
+  const existing = {};
+  listEl.querySelectorAll(".passenger-row[data-idx]").forEach(el => {
+    existing[el.dataset.idx] = el;
+  });
 
-    return `
-      <div class="passenger-row" style="animation-delay:${i * 0.03}s"
-           onclick="openModal(${p._idx})">
-        <div class="p-avatar">${avatarHTML}</div>
-        <div class="p-info">
-          <div class="p-name">${name}</div>
-          <div class="p-sub">${p["E-mail"] || "Sin email"}</div>
-        </div>
-        <span class="p-pill">CI ${ci}</span>
-        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-          <path d="m9 18 6-6-6-6"/>
-        </svg>
-      </div>`;
-  }).join("");
+  // Construir nuevo orden sin re-crear nodos que ya existen
+  const fragment = document.createDocumentFragment();
+  passengers.forEach((p, i) => {
+    let row = existing[p._idx];
+    if (!row) {
+      row = createRow(p, i);
+    }
+    fragment.appendChild(row);
+  });
+
+  // Ocultar estado vacío/error si estaba visible
+  const stateEl = listEl.querySelector(".list-state");
+  if (stateEl) stateEl.remove();
+
+  // Reemplazar contenido solo con los nodos necesarios
+  listEl.replaceChildren(fragment);
 }
 
-// ── Buscador ───────────────────────────────────────────────
+function createRow(p, i) {
+  const name     = p.Pasajero || "Sin nombre";
+  const ci       = p["Documento de Identidad"] || "—";
+  const initials = getInitials(name);
+
+  const row = document.createElement("div");
+  row.className = "passenger-row";
+  row.dataset.idx = p._idx;
+  row.style.animationDelay = `${i * 0.025}s`;
+  row.onclick = () => navigateTo("detalle", p._idx);
+
+  const avatarInner = avatarCache[p._idx]
+    ? `<img src="${avatarCache[p._idx]}" alt="${name}" />`
+    : `<span>${initials}</span>`;
+
+  row.innerHTML = `
+    <div class="p-avatar">${avatarInner}</div>
+    <div class="p-info">
+      <div class="p-name">${name}</div>
+      <div class="p-sub">${p["E-mail"] || "Sin email"}</div>
+    </div>
+    <span class="p-pill">CI ${ci}</span>
+    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>`;
+  return row;
+}
+
+function setListState(type) {
+  const listEl = document.getElementById("passenger-list");
+  const states = {
+    loading: `<div class="list-state"><div class="icon">⏳</div>Cargando pasajeros…</div>`,
+    error:   `<div class="list-state"><div class="icon">⚠️</div>Error al cargar los datos.</div>`,
+    empty:   `<div class="list-state"><div class="icon">🔍</div>Sin resultados.</div>`,
+  };
+  listEl.innerHTML = states[type] || "";
+}
+
+// ── Buscador (debounce para evitar parpadeo) ───────────────
+let searchTimer = null;
 function filterPassengers() {
-  const q = document.getElementById("search-input").value.toLowerCase().trim();
-  if (!q) { renderList(allPassengers); return; }
-
-  const filtered = allPassengers.filter(p =>
-    (p.Pasajero || "").toLowerCase().includes(q) ||
-    (p["Documento de Identidad"] || "").toLowerCase().includes(q) ||
-    (p["E-mail"] || "").toLowerCase().includes(q)
-  );
-  renderList(filtered);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    const q = document.getElementById("search-input").value.toLowerCase().trim();
+    const filtered = q
+      ? allPassengers.filter(p =>
+          (p.Pasajero || "").toLowerCase().includes(q) ||
+          (p["Documento de Identidad"] || "").toLowerCase().includes(q) ||
+          (p["E-mail"] || "").toLowerCase().includes(q))
+      : allPassengers;
+    renderList(filtered);
+  }, 160);
 }
 
-// ── Modal detalle ──────────────────────────────────────────
-function openModal(idx) {
-  const p = allPassengers.find(x => x._idx === idx);
+// ── Vista detalle (página completa) ───────────────────────
+function renderDetalle(idx) {
+  const p    = allPassengers.find(x => x._idx === idx);
   if (!p) return;
-
   const name = p.Pasajero || "Sin nombre";
 
   // Avatar
-  const avatarEl = document.getElementById("modal-avatar");
-  const initialsEl = document.getElementById("modal-initials");
-  if (avatarCache[idx]) {
-    initialsEl.textContent = "";
-    // Limpiar img anterior si existe
-    const old = avatarEl.querySelector("img");
-    if (old) old.remove();
-    const img = document.createElement("img");
-    img.src = avatarCache[idx];
-    avatarEl.insertBefore(img, initialsEl);
-  } else {
-    const old = avatarEl.querySelector("img");
-    if (old) old.remove();
-    initialsEl.textContent = getInitials(name);
-  }
+  const avatarEl = document.getElementById("detalle-avatar");
   avatarEl.dataset.idx = idx;
+  const imgEl = avatarEl.querySelector("img");
+  const initEl = avatarEl.querySelector(".d-initials");
+  if (avatarCache[idx]) {
+    imgEl.src = avatarCache[idx];
+    imgEl.classList.remove("hidden");
+    initEl.classList.add("hidden");
+  } else {
+    imgEl.classList.add("hidden");
+    initEl.classList.remove("hidden");
+    initEl.textContent = getInitials(name);
+  }
 
-  // Nombre
-  document.getElementById("modal-name").textContent = name;
+  document.getElementById("detalle-name").textContent = name;
 
   // Chips
   const chips = [];
   if (p.ByC)             chips.push(`<span class="chip chip-byc">${p.ByC}</span>`);
   if (p["Club destino"]) chips.push(`<span class="chip chip-club">${p["Club destino"]}</span>`);
   if (p.Sexo)            chips.push(`<span class="chip chip-sexo">${p.Sexo}</span>`);
-  document.getElementById("modal-chips").innerHTML = chips.join("");
+  document.getElementById("detalle-chips").innerHTML = chips.join("");
 
   // Campos
   setField("d-ci",       p["Documento de Identidad"]);
@@ -142,31 +213,9 @@ function openModal(idx) {
   setField("d-email",    p["E-mail"]);
   setField("d-byc",      p.ByC);
   setField("d-club",     p["Club destino"]);
-
-  document.getElementById("detail-modal").classList.remove("hidden");
-  document.body.style.overflow = "hidden";
 }
 
-function closeModal() {
-  const overlay = document.getElementById("detail-modal");
-  overlay.classList.add("closing");
-  setTimeout(() => {
-    overlay.classList.add("hidden");
-    overlay.classList.remove("closing");
-    document.body.style.overflow = "";
-  }, 180);
-}
-
-function handleOverlayClick(e) {
-  if (e.target === document.getElementById("detail-modal")) closeModal();
-}
-
-// Cerrar con Escape
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closeModal();
-});
-
-// ── Avatar upload (local, solo en sesión) ──────────────────
+// ── Avatar upload ──────────────────────────────────────────
 function triggerAvatarUpload() {
   document.getElementById("avatar-file-input").click();
 }
@@ -174,22 +223,17 @@ function triggerAvatarUpload() {
 function handleAvatarUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const idx = parseInt(document.getElementById("modal-avatar").dataset.idx);
+  const idx = parseInt(document.getElementById("detalle-avatar").dataset.idx);
   const reader = new FileReader();
   reader.onload = e => {
-    const dataURL = e.target.result;
-    avatarCache[idx] = dataURL;
-    // Actualizar avatar en modal
-    const avatarEl     = document.getElementById("modal-avatar");
-    const initialsEl   = document.getElementById("modal-initials");
-    const old = avatarEl.querySelector("img");
-    if (old) old.remove();
-    initialsEl.textContent = "";
-    const img = document.createElement("img");
-    img.src = dataURL;
-    avatarEl.insertBefore(img, initialsEl);
-    // Re-render lista para reflejar la foto
-    filterPassengers();
+    avatarCache[idx] = e.target.result;
+    renderDetalle(idx);
+    // Actualizar lista sin re-renderizar todo
+    const row = document.querySelector(`.passenger-row[data-idx="${idx}"]`);
+    if (row) {
+      const avatarDiv = row.querySelector(".p-avatar");
+      avatarDiv.innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
+    }
   };
   reader.readAsDataURL(file);
   event.target.value = "";
@@ -197,7 +241,7 @@ function handleAvatarUpload(event) {
 
 // ── Helpers ────────────────────────────────────────────────
 function getInitials(name) {
-  return name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
+  return name.split(" ").slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
 }
 
 function formatDate(val) {
@@ -209,6 +253,7 @@ function formatDate(val) {
 
 function setField(id, value) {
   const el = document.getElementById(id);
+  if (!el) return;
   if (value) {
     el.textContent = value;
     el.classList.remove("empty");
@@ -217,3 +262,6 @@ function setField(id, value) {
     el.classList.add("empty");
   }
 }
+
+function show(id) { document.getElementById(id)?.classList.remove("hidden"); }
+function hide(id) { document.getElementById(id)?.classList.add("hidden"); }
