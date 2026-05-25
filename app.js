@@ -24,11 +24,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function showLogin() {
+  const lv = document.getElementById('loading-view'); if(lv) lv.style.display='none';
   document.getElementById("login-view").classList.remove("hidden");
   document.getElementById("app-view").classList.add("hidden");
 }
 
 async function enterApp(user) {
+  const lv = document.getElementById('loading-view'); if(lv) lv.style.display='none';
   document.getElementById("login-view").classList.add("hidden");
   document.getElementById("app-view").classList.remove("hidden");
   document.getElementById("user-email").textContent = user.email;
