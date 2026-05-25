@@ -1,7 +1,3 @@
-// ── Helpers base ───────────────────────────────────────────
-function show(id) { document.getElementById(id)?.classList.remove("hidden"); }
-function hide(id) { document.getElementById(id)?.classList.add("hidden"); }
-
 // ── Estado global ──────────────────────────────────────────
 let allPassengers = [];
 let avatarCache   = {};
@@ -10,40 +6,31 @@ let selectedIdx   = null;
 
 // ── Auth ───────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  // Detectar si venimos del callback de OAuth
-  const hasOAuthCallback = location.hash.includes("access_token") ||
-                           location.hash.includes("error_description") ||
-                           location.search.includes("code=");
+  const { data: { session } } = await supabaseClient.auth.getSession();
 
-  if (hasOAuthCallback) {
-    // Supabase procesa el token solo, solo esperamos el evento
-    supabaseClient.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) {
-        history.replaceState(null, "", location.pathname);
-        enterApp(session.user);
-      } else {
-        showLogin();
-      }
-    });
-    return;
+  if (session?.user) {
+    enterApp(session.user);
+  } else {
+    showLogin();
   }
 
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  session?.user ? enterApp(session.user) : showLogin();
-
-  supabaseClient.auth.onAuthStateChange((_e, session) => {
-    session?.user ? enterApp(session.user) : showLogin();
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      enterApp(session.user);
+    } else {
+      showLogin();
+    }
   });
 });
 
 function showLogin() {
-  show("login-view");
-  hide("app-view");
+  document.getElementById("login-view").classList.remove("hidden");
+  document.getElementById("app-view").classList.add("hidden");
 }
 
 async function enterApp(user) {
-  hide("login-view");
-  show("app-view");
+  document.getElementById("login-view").classList.add("hidden");
+  document.getElementById("app-view").classList.remove("hidden");
   document.getElementById("user-email").textContent = user.email;
   navigateTo("home");
 }
@@ -52,21 +39,25 @@ async function enterApp(user) {
 function navigateTo(view, idx = null) {
   currentView = view;
   selectedIdx = idx;
-  hide("view-home"); hide("view-clientes"); hide("view-detalle");
+
+  const views = ["view-home", "view-clientes", "view-detalle"];
+  views.forEach(v => document.getElementById(v).classList.add("hidden"));
 
   if (view === "home") {
-    show("view-home");
+    document.getElementById("view-home").classList.remove("hidden");
     updateBreadcrumb([{ label: "Inicio" }]);
+
   } else if (view === "clientes") {
-    show("view-clientes");
+    document.getElementById("view-clientes").classList.remove("hidden");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes" }
     ]);
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
+
   } else if (view === "detalle") {
-    show("view-detalle");
+    document.getElementById("view-detalle").classList.remove("hidden");
     renderDetalle(idx);
     const p = allPassengers.find(x => x._idx === idx);
     updateBreadcrumb([
