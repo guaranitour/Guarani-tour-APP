@@ -171,13 +171,6 @@ function renderDetalle(idx) {
 
   document.getElementById("detalle-name").textContent = name;
 
-  // Chips
-  const chips = [];
-  if (p.ByC)             chips.push(`<span class="chip chip-byc">${p.ByC}</span>`);
-  if (p["Club destino"]) chips.push(`<span class="chip chip-club">${p["Club destino"]}</span>`);
-  if (p.Sexo)            chips.push(`<span class="chip chip-sexo">${p.Sexo}</span>`);
-  document.getElementById("detalle-chips").innerHTML = chips.join("");
-
   // Datos personales
   setField("d-nombre-full", p.Pasajero);
   setField("d-ci",      p["Documento de Identidad"]);
