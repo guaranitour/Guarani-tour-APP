@@ -4,53 +4,58 @@ let avatarCache   = {};
 let currentView   = "home";
 let selectedIdx   = null;
 
-// ── Auth ───────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", async () => {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-
-  if (session?.user) {
-    enterApp(session.user);
-  } else {
-    showLogin();
-  }
-
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) {
-      enterApp(session.user);
-    } else {
-      showLogin();
-    }
+// ── Visibilidad directa (sin CSS, sin clases) ──────────────
+function showOnly(visibleId) {
+  ["login-view", "app-view"].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.setProperty("display", id === visibleId ? "" : "none", "important");
   });
-});
+}
 
 function showLogin() {
-  document.body.className = "state-login";
-
-
+  showOnly("login-view");
+  ["view-home","view-clientes","view-detalle"].forEach(id =>
+    document.getElementById(id).style.setProperty("display","none","important"));
 }
 
 async function enterApp(user) {
-  document.body.className = "state-app";
-
-
+  showOnly("app-view");
   document.getElementById("user-email").textContent = user.email;
   navigateTo("home");
 }
+
+// ── Auth ───────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  // Ocultar todo hasta saber el estado
+  document.getElementById("login-view").style.setProperty("display","none","important");
+  document.getElementById("app-view").style.setProperty("display","none","important");
+
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) enterApp(session.user);
+    else showLogin();
+  });
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) enterApp(session.user);
+    else showLogin();
+  });
+});
 
 // ── Navegación ─────────────────────────────────────────────
 function navigateTo(view, idx = null) {
   currentView = view;
   selectedIdx = idx;
 
-  const views = ["view-home", "view-clientes", "view-detalle"];
-  views.forEach(v => document.getElementById(v).classList.add("hidden"));
+  ["view-home","view-clientes","view-detalle"].forEach(id =>
+    document.getElementById(id).style.setProperty("display","none","important"));
+
+  const map = { home: "view-home", clientes: "view-clientes", detalle: "view-detalle" };
+  document.getElementById(map[view]).style.removeProperty("display");
 
   if (view === "home") {
-    document.getElementById("view-home").classList.remove("hidden");
     updateBreadcrumb([{ label: "Inicio" }]);
 
   } else if (view === "clientes") {
-    document.getElementById("view-clientes").classList.remove("hidden");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes" }
@@ -59,7 +64,6 @@ function navigateTo(view, idx = null) {
     else renderList(allPassengers);
 
   } else if (view === "detalle") {
-    document.getElementById("view-detalle").classList.remove("hidden");
     renderDetalle(idx);
     const p = allPassengers.find(x => x._idx === idx);
     updateBreadcrumb([
@@ -119,8 +123,7 @@ function renderList(passengers) {
 function createRow(p, i) {
   const name = p.Pasajero || "Sin nombre";
   const ci   = p["Documento de Identidad"] || "—";
-
-  const row = document.createElement("div");
+  const row  = document.createElement("div");
   row.className = "passenger-row";
   row.dataset.idx = p._idx;
   row.style.animationDelay = `${i * 0.025}s`;
@@ -148,7 +151,7 @@ function setListState(type) {
   document.getElementById("passenger-list").innerHTML = states[type] || "";
 }
 
-// ── Buscador con debounce ──────────────────────────────────
+// ── Buscador ───────────────────────────────────────────────
 let searchTimer = null;
 function filterPassengers() {
   clearTimeout(searchTimer);
@@ -178,16 +181,15 @@ function renderDetalle(idx) {
 
   if (avatarCache[idx]) {
     imgEl.src = avatarCache[idx];
-    imgEl.classList.remove("hidden");
-    initEl.classList.add("hidden");
+    imgEl.style.display = "block";
+    initEl.style.display = "none";
   } else {
-    imgEl.classList.add("hidden");
-    initEl.classList.remove("hidden");
+    imgEl.style.display = "none";
+    initEl.style.display = "block";
     initEl.textContent = getInitials(name);
   }
 
   document.getElementById("detalle-name").textContent = name;
-
   setField("d-nombre-full", p.Pasajero);
   setField("d-ci",          p["Documento de Identidad"]);
   setField("d-fecha",       formatDate(p["Fecha de nacimiento"]));
@@ -198,7 +200,7 @@ function renderDetalle(idx) {
   setField("d-club",        p["Club destino"]);
 }
 
-// ── Avatar upload ──────────────────────────────────────────
+// ── Avatar ─────────────────────────────────────────────────
 function triggerAvatarUpload() {
   document.getElementById("avatar-file-input").click();
 }

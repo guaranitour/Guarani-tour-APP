@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="state-loading">
+<body>
 
   <!-- ── LOGIN ── -->
   <div id="login-view">
@@ -59,7 +59,7 @@
     </div>
 
     <!-- INICIO -->
-    <div id="view-home" class="hidden">
+    <div id="view-home">
       <div class="main">
         <div class="page-header">
           <h1>Panel de inicio</h1>
@@ -125,7 +125,7 @@
     </div>
 
     <!-- LISTA CLIENTES -->
-    <div id="view-clientes" class="hidden">
+    <div id="view-clientes">
       <div class="main">
         <div class="page-header">
           <h1>Base de clientes</h1>
@@ -142,12 +142,12 @@
     </div>
 
     <!-- DETALLE PASAJERO -->
-    <div id="view-detalle" class="hidden">
+    <div id="view-detalle">
       <div class="main detalle-main">
         <div class="detalle-profile">
           <div class="detalle-avatar-wrap">
             <div class="detalle-avatar" id="detalle-avatar">
-              <img src="" alt="" class="hidden" />
+              <img src="" alt="" />
               <span class="d-initials"></span>
             </div>
             <button class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="Cambiar foto">
