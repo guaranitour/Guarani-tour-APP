@@ -8,15 +8,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-
-  <!-- ── CARGA INICIAL ── -->
-  <div id="loading-view" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#efefec;">
-    <div style="text-align:center;color:#999994;font-family:DM Sans,sans-serif;font-size:.9rem;">Cargando…</div>
-  </div>
+<body class="state-loading">
 
   <!-- ── LOGIN ── -->
-  <div id="login-view" class="hidden">
+  <div id="login-view">
     <div class="login-card">
       <div class="logo-wrap">
         <svg viewBox="0 0 36 36" fill="none">
@@ -46,7 +41,7 @@
   </div>
 
   <!-- ── APP ── -->
-  <div id="app-view" class="hidden">
+  <div id="app-view">
 
     <header class="topbar">
       <div class="topbar-brand" onclick="navigateTo('home')" style="cursor:pointer">
@@ -149,8 +144,6 @@
     <!-- DETALLE PASAJERO -->
     <div id="view-detalle" class="hidden">
       <div class="main detalle-main">
-
-        <!-- Perfil centrado -->
         <div class="detalle-profile">
           <div class="detalle-avatar-wrap">
             <div class="detalle-avatar" id="detalle-avatar">
@@ -165,13 +158,9 @@
           <h2 id="detalle-name"></h2>
         </div>
 
-        <!-- Datos personales -->
         <div class="detalle-section">
           <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Datos personales
           </div>
           <div class="detail-grid">
@@ -198,13 +187,9 @@
           </div>
         </div>
 
-        <!-- Datos empresa -->
         <div class="detalle-section">
           <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="7" width="20" height="14" rx="2"/>
-              <path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/>
-            </svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg>
             Datos de empresa
           </div>
           <div class="detail-grid">
@@ -222,11 +207,10 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
 
-  </div>
+  </div><!-- /app-view -->
 
   <script src="supabaseClient.js"></script>
   <script src="auth.js"></script>

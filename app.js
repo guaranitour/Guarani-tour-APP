@@ -24,15 +24,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function showLogin() {
-  const lv = document.getElementById('loading-view'); if(lv) lv.style.display='none';
-  document.getElementById("login-view").classList.remove("hidden");
-  document.getElementById("app-view").classList.add("hidden");
+  document.body.className = "state-login";
+
+
 }
 
 async function enterApp(user) {
-  const lv = document.getElementById('loading-view'); if(lv) lv.style.display='none';
-  document.getElementById("login-view").classList.add("hidden");
-  document.getElementById("app-view").classList.remove("hidden");
+  document.body.className = "state-app";
+
+
   document.getElementById("user-email").textContent = user.email;
   navigateTo("home");
 }

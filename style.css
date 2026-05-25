@@ -291,3 +291,28 @@ body {
   border-color: var(--accent);
   transform: scale(1.1);
 }
+
+/* ── CONTROL DE VISTAS POR ESTADO DEL BODY ── */
+
+/* Estado cargando: nada visible */
+body.state-loading #login-view,
+body.state-loading #app-view { display: none !important; }
+
+/* Estado login: solo login visible */
+body.state-login #login-view { display: flex; }
+body.state-login #app-view   { display: none !important; }
+
+/* Estado app: solo app visible */
+body.state-app #login-view { display: none !important; }
+body.state-app #app-view   { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Pantalla de carga */
+body.state-loading::after {
+  content: 'Cargando…';
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .9rem;
+}
