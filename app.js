@@ -58,16 +58,19 @@ function navigateTo(view, idx = null) {
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
 
-  } else if (view === "detalle") {
-    showEl("view-detalle");
-    renderDetalle(idx);
-    const p = allPassengers.find(x => x._idx === idx);
-    updateBreadcrumb([
-      { label: "Inicio",           action: () => navigateTo("home") },
-      { label: "Base de clientes", action: () => navigateTo("clientes") },
-      { label: p?.Pasajero || "Detalle" }
-    ]);
-  }
+
+} else if (view === "detalle") {
+  showEl("view-detalle");
+  renderDetalle(idx);
+
+  const p = allPassengers.find(x => x._idx === idx);
+
+  updateBreadcrumb([
+    { label: "Inicio", action: () => navigateTo("home") },
+    { label: "Base de clientes", action: () => navigateTo("clientes") },
+    { label: p?.Pasajero || "Detalle" }
+  ]);
+}
 
 
 function updateBreadcrumb(items) {
