@@ -69,6 +69,20 @@ function navigateTo(view, idx = null) {
     ]);
   }
 }
+function toggleMenu() {
+  const menu = document.getElementById("dropdown-menu");
+  menu.classList.toggle("hidden");
+}
+
+// cerrar menú al hacer click fuera
+document.addEventListener("click", (e) => {
+  const wrap = document.querySelector(".menu-wrap");
+  const menu = document.getElementById("dropdown-menu");
+
+  if (!wrap.contains(e.target)) {
+    menu.classList.add("hidden");
+  }
+});
 
 function updateBreadcrumb(items) {
   document.getElementById("breadcrumb").innerHTML = items.map((item, i) => {
