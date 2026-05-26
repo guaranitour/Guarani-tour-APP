@@ -68,8 +68,16 @@ function navigateTo(view, idx = null) {
       { label: p?.Pasajero || "Detalle" }
     ]);
   }
+
+
+function updateBreadcrumb(items) {
+  document.getElementById("breadcrumb").innerHTML = items.map((item, i) => {
+    const isLast = i === items.length - 1;
+    if (isLast) return `<span class="bc-current">${item.label}</span>`;
+    return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span><span class="bc-sep">›</span>`;
+  }).join("");
 }
-function toggleMenu() {
+  function toggleMenu() {
   const menu = document.getElementById("dropdown-menu");
   menu.classList.toggle("hidden");
 }
@@ -79,18 +87,12 @@ document.addEventListener("click", (e) => {
   const wrap = document.querySelector(".menu-wrap");
   const menu = document.getElementById("dropdown-menu");
 
+  if (!wrap || !menu) return;
+
   if (!wrap.contains(e.target)) {
     menu.classList.add("hidden");
   }
 });
-
-function updateBreadcrumb(items) {
-  document.getElementById("breadcrumb").innerHTML = items.map((item, i) => {
-    const isLast = i === items.length - 1;
-    if (isLast) return `<span class="bc-current">${item.label}</span>`;
-    return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span><span class="bc-sep">›</span>`;
-  }).join("");
-}
 
 // ── Carga ──────────────────────────────────────────────────
 async function loadPassengers() {
