@@ -49,9 +49,18 @@
         <span>Guaraní Tour</span>
       </div>
       <div class="topbar-right">
-        <span class="topbar-email" id="user-email"></span>
-        <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
-      </div>
+  <span class="topbar-email" id="user-email"></span>
+
+  <div class="menu-wrap">
+    <button class="menu-btn" onclick="toggleMenu()">
+      ☰
+    </button>
+
+    <div id="dropdown-menu" class="dropdown hidden">
+      <button onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
     </header>
 
     <div class="breadcrumb-bar">
