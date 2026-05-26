@@ -4,31 +4,26 @@ let avatarCache   = {};
 let currentView   = "home";
 let selectedIdx   = null;
 
-// ── Visibilidad directa (sin CSS, sin clases) ──────────────
-function showOnly(visibleId) {
-  ["login-view", "app-view"].forEach(id => {
-    const el = document.getElementById(id);
-    el.style.setProperty("display", id === visibleId ? "" : "none", "important");
-  });
-}
+// ── Visibilidad ────────────────────────────────────────────
+function showEl(id)  { document.getElementById(id).style.display = ""; }
+function hideEl(id)  { document.getElementById(id).style.display = "none"; }
 
 function showLogin() {
-  showOnly("login-view");
-  ["view-home","view-clientes","view-detalle"].forEach(id =>
-    document.getElementById(id).style.setProperty("display","none","important"));
+  showEl("login-view");
+  hideEl("app-view");
 }
 
 async function enterApp(user) {
-  showOnly("app-view");
+  hideEl("login-view");
+  showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
   navigateTo("home");
 }
 
 // ── Auth ───────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Ocultar todo hasta saber el estado
-  document.getElementById("login-view").style.setProperty("display","none","important");
-  document.getElementById("app-view").style.setProperty("display","none","important");
+  hideEl("login-view");
+  hideEl("app-view");
 
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
     if (session?.user) enterApp(session.user);
@@ -46,16 +41,16 @@ function navigateTo(view, idx = null) {
   currentView = view;
   selectedIdx = idx;
 
-  ["view-home","view-clientes","view-detalle"].forEach(id =>
-    document.getElementById(id).style.setProperty("display","none","important"));
-
-  const map = { home: "view-home", clientes: "view-clientes", detalle: "view-detalle" };
-  document.getElementById(map[view]).style.removeProperty("display");
+  hideEl("view-home");
+  hideEl("view-clientes");
+  hideEl("view-detalle");
 
   if (view === "home") {
+    showEl("view-home");
     updateBreadcrumb([{ label: "Inicio" }]);
 
   } else if (view === "clientes") {
+    showEl("view-clientes");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes" }
@@ -64,6 +59,7 @@ function navigateTo(view, idx = null) {
     else renderList(allPassengers);
 
   } else if (view === "detalle") {
+    showEl("view-detalle");
     renderDetalle(idx);
     const p = allPassengers.find(x => x._idx === idx);
     updateBreadcrumb([

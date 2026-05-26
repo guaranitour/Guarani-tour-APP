@@ -25,42 +25,13 @@ body {
   min-height: 100vh;
 }
 
-/* ── CONTROL DE VISTAS ─────────────────────────────────────
-   Todo empieza oculto. El body recibe una clase de estado
-   que activa solo lo que corresponde.
-─────────────────────────────────────────────────────────── */
-
-#login-view,
-#app-view { display: none; }
-
-/* Cargando: pantalla en blanco con texto */
-body.state-loading::after {
-  content: 'Cargando…';
-  position: fixed; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg);
-  color: var(--text-muted);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .9rem;
-  z-index: 9999;
-}
-
-/* Login */
-body.state-login #login-view {
-  display: flex;
+/* ── LOGIN ───────────────────────────────────────────────── */
+#login-view {
   min-height: 100vh;
   align-items: center;
   justify-content: center;
 }
 
-/* App */
-body.state-app #app-view {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* ── LOGIN CARD ──────────────────────────────────────────── */
 .login-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -118,6 +89,11 @@ body.state-app #app-view {
 .footer-note span { color: var(--accent); font-weight: 500; }
 
 /* ── APP SHELL ───────────────────────────────────────────── */
+#app-view {
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .topbar {
   position: sticky; top: 0; z-index: 100;
   background: rgba(239,239,236,.92);
@@ -159,9 +135,6 @@ body.state-app #app-view {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: 20px; padding: .3rem .9rem;
 }
-
-/* ── VISTAS INTERNAS (hidden por defecto) ────────────────── */
-.hidden { display: none !important; }
 
 /* ── BUSCADOR ────────────────────────────────────────────── */
 .search-wrap { position: relative; margin-bottom: 1.2rem; }
@@ -292,6 +265,9 @@ body.state-app #app-view {
   border-radius: 8px; padding: .5rem .75rem;
 }
 .detail-value.empty { color: var(--text-muted); font-style: italic; }
+
+/* ── UTILS ───────────────────────────────────────────────── */
+.hidden { display: none !important; }
 
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 520px) {
