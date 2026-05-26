@@ -1,8 +1,8 @@
 // ── Estado global ──────────────────────────────────────────
 let allPassengers = [];
-let avatarCache = {};
-let currentView = "home";
-let selectedIdx = null;
+let avatarCache   = {};
+let currentView   = "home";
+let selectedIdx   = null;
 
 // ── Visibilidad ────────────────────────────────────────────
 function showEl(id)  { document.getElementById(id).style.display = ""; }
@@ -58,20 +58,17 @@ function navigateTo(view, idx = null) {
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
 
-
-} else if (view === "detalle") {
-  showEl("view-detalle");
-  renderDetalle(idx);
-
-  const p = allPassengers.find(x => x._idx === idx);
-
-  updateBreadcrumb([
-    { label: "Inicio", action: () => navigateTo("home") },
-    { label: "Base de clientes", action: () => navigateTo("clientes") },
-    { label: p?.Pasajero || "Detalle" }
-  ]);
+  } else if (view === "detalle") {
+    showEl("view-detalle");
+    renderDetalle(idx);
+    const p = allPassengers.find(x => x._idx === idx);
+    updateBreadcrumb([
+      { label: "Inicio",           action: () => navigateTo("home") },
+      { label: "Base de clientes", action: () => navigateTo("clientes") },
+      { label: p?.Pasajero || "Detalle" }
+    ]);
+  }
 }
-
 
 function updateBreadcrumb(items) {
   document.getElementById("breadcrumb").innerHTML = items.map((item, i) => {
@@ -80,22 +77,6 @@ function updateBreadcrumb(items) {
     return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span><span class="bc-sep">›</span>`;
   }).join("");
 }
-  function toggleMenu() {
-  const menu = document.getElementById("dropdown-menu");
-  menu.classList.toggle("hidden");
-}
-
-// cerrar menú al hacer click fuera
-document.addEventListener("click", (e) => {
-  const wrap = document.querySelector(".menu-wrap");
-  const menu = document.getElementById("dropdown-menu");
-
-  if (!wrap || !menu) return;
-
-  if (!wrap.contains(e.target)) {
-    menu.classList.add("hidden");
-  }
-});
 
 // ── Carga ──────────────────────────────────────────────────
 async function loadPassengers() {
