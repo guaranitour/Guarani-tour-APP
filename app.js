@@ -1,8 +1,8 @@
 // ── Estado global ──────────────────────────────────────────
 let allPassengers = [];
-let avatarCache   = {};
-let currentView   = "home";
-let selectedIdx   = null;
+let avatarCache = {};
+let currentView = "home";
+let selectedIdx = null;
 
 // ── Visibilidad ────────────────────────────────────────────
 function showEl(id)  { document.getElementById(id).style.display = ""; }
