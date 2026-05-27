@@ -16,7 +16,7 @@ function showLogin() {
 async function enterApp(user) {
   hideEl("login-view");
   showEl("app-view");
-  const ueEl = document.getElementById("user-email"); if (ueEl) ueEl.textContent = user.email;
+  document.getElementById("user-email").textContent = user.email;
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
@@ -85,11 +85,18 @@ async function loadPassengers() {
   setListState("loading");
   const { data, error } = await supabaseClient
     .from("Pasajeros")
-    .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
+    .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino", avatar_url`)
     .order("Pasajero", { ascending: true });
 
   if (error) { console.error(error); setListState("error"); return; }
+
   allPassengers = data.map((p, i) => ({ ...p, _idx: i }));
+
+  // Precargar avatars desde Supabase al cache
+  allPassengers.forEach(p => {
+    if (p.avatar_url) avatarCache[p._idx] = p.avatar_url;
+  });
+
   renderList(allPassengers);
 }
 
@@ -198,15 +205,20 @@ function renderDetalle(idx) {
   setField("d-club",        p["Club destino"]);
 }
 
-// ── Avatar ─────────────────────────────────────────────────
+// ── Avatar upload → Supabase Storage ──────────────────────
 function triggerAvatarUpload() {
   document.getElementById("avatar-file-input").click();
 }
 
-function handleAvatarUpload(event) {
+async function handleAvatarUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
+
   const idx = parseInt(document.getElementById("detalle-avatar").dataset.idx);
+  const p   = allPassengers.find(x => x._idx === idx);
+  if (!p) return;
+
+  // Mostrar preview inmediato mientras sube
   const reader = new FileReader();
   reader.onload = e => {
     avatarCache[idx] = e.target.result;
@@ -215,6 +227,43 @@ function handleAvatarUpload(event) {
     if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
   };
   reader.readAsDataURL(file);
+
+  // Subir a Supabase Storage
+  const ext      = file.name.split(".").pop();
+  const filename = `pasajero_${p["Documento de Identidad"] || idx}.${ext}`;
+  const path     = `avatars/${filename}`;
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true });
+
+  if (uploadError) {
+    console.error("Error subiendo foto:", uploadError);
+    return;
+  }
+
+  // Obtener URL pública
+  const { data: urlData } = supabaseClient.storage
+    .from("avatars")
+    .getPublicUrl(path);
+
+  const publicUrl = urlData.publicUrl;
+
+  // Guardar URL en la tabla Pasajeros
+  const { error: updateError } = await supabaseClient
+    .from("Pasajeros")
+    .update({ avatar_url: publicUrl })
+    .eq("Documento de Identidad", p["Documento de Identidad"]);
+
+  if (updateError) {
+    console.error("Error guardando URL:", updateError);
+    return;
+  }
+
+  // Actualizar en memoria
+  avatarCache[idx] = publicUrl;
+  p.avatar_url = publicUrl;
+
   event.target.value = "";
 }
 
@@ -246,8 +295,6 @@ function closeMenu() {
   document.getElementById("hamburger-menu").classList.remove("open");
 }
 
-// Cerrar al hacer click fuera
 document.addEventListener("click", (e) => {
-  const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
 });
