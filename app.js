@@ -16,7 +16,7 @@ function showLogin() {
 async function enterApp(user) {
   hideEl("login-view");
   showEl("app-view");
-  document.getElementById("user-email").textContent = user.email;
+  const ueEl = document.getElementById("user-email"); if (ueEl) ueEl.textContent = user.email;
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
