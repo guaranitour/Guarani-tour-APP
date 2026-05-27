@@ -79,6 +79,7 @@ function navigateTo(view, idx = null) {
   hideEl("view-home");
   hideEl("view-clientes");
   hideEl("view-detalle");
+  updateFab();
 
   if (view === "home") {
     showEl("view-home");
@@ -285,3 +286,99 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
 });
  
+// ── FAB ────────────────────────────────────────────────────
+function updateFab() {
+  const fab = document.getElementById("fab-nuevo");
+  if (!fab) return;
+  const canAdd  = ["admin", "worker"].includes(currentUserRole);
+  const inClientes = currentView === "clientes";
+  fab.style.display = (canAdd && inClientes) ? "" : "none";
+}
+
+// ── Modal nuevo cliente ────────────────────────────────────
+function openNuevoCliente() {
+  limpiarFormulario();
+  document.getElementById("modal-nuevo").classList.add("open");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => document.getElementById("f-nombre").focus(), 100);
+}
+
+function closeNuevoCliente() {
+  document.getElementById("modal-nuevo").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function handleNuevoOverlay(e) {
+  if (e.target === document.getElementById("modal-nuevo")) closeNuevoCliente();
+}
+
+function limpiarFormulario() {
+  ["f-nombre","f-ci","f-sexo","f-email","f-fecha","f-vendedor","f-byc","f-club"].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = "";
+    el.classList.remove("error");
+  });
+  const errEl = document.getElementById("form-error");
+  if (errEl) errEl.textContent = "";
+  const btn = document.querySelector(".btn-save");
+  if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
+}
+
+async function guardarNuevoCliente() {
+  ["f-nombre","f-ci","f-sexo"].forEach(id =>
+    document.getElementById(id)?.classList.remove("error"));
+  document.getElementById("form-error").textContent = "";
+
+  const nombre = document.getElementById("f-nombre").value.trim();
+  const ci     = document.getElementById("f-ci").value.trim();
+  const sexo   = document.getElementById("f-sexo").value;
+
+  let valid = true;
+  if (!nombre) { document.getElementById("f-nombre").classList.add("error"); valid = false; }
+  if (!ci)     { document.getElementById("f-ci").classList.add("error");     valid = false; }
+  if (!sexo)   { document.getElementById("f-sexo").classList.add("error");   valid = false; }
+
+  if (!valid) {
+    document.getElementById("form-error").textContent = "Completá los campos obligatorios.";
+    return;
+  }
+
+  const nuevo = {
+    "Pasajero":               nombre,
+    "Documento de Identidad": ci,
+    "Sexo":                   sexo,
+    "E-mail":                 document.getElementById("f-email").value.trim() || null,
+    "Fecha de nacimiento":    document.getElementById("f-fecha").value || null,
+    "Vendedor":               document.getElementById("f-vendedor").value.trim() || null,
+    "ByC":                    document.getElementById("f-byc").value.trim() || null,
+    "Club destino":           document.getElementById("f-club").value.trim() || null,
+  };
+
+  const btn = document.querySelector(".btn-save");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  const { data, error } = await supabaseClient
+    .from("Pasajeros")
+    .insert([nuevo])
+    .select();
+
+  if (error) {
+    document.getElementById("form-error").textContent =
+      error.code === "23505"
+        ? "Ya existe un cliente con ese CI."
+        : "Error al guardar. Intentá de nuevo.";
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
+    return;
+  }
+
+  const newIdx = allPassengers.length;
+  allPassengers.push({ ...data[0], _idx: newIdx });
+  allPassengers.sort((a, b) => (a.Pasajero || "").localeCompare(b.Pasajero || ""));
+  allPassengers.forEach((p, i) => p._idx = i);
+
+  closeNuevoCliente();
+  renderList(allPassengers);
+}
