@@ -13,13 +13,46 @@ function showLogin() {
   hideEl("app-view");
 }
 
+let currentUserRole = null;
+
 async function enterApp(user) {
+  // Verificar si el usuario está en la tabla staff y habilitado
+  const { data, error } = await supabaseClient
+    .from("staff")
+    .select("role, status")
+    .eq("email", user.email)
+    .single();
+
+  if (error || !data || data.status !== "enabled") {
+    // No está en staff o está deshabilitado
+    await supabaseClient.auth.signOut();
+    showLogin();
+    showAccessDenied(error || data?.status === "disabled");
+    return;
+  }
+
+  currentUserRole = data.role;
+
   hideEl("login-view");
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
+}
+
+function showAccessDenied(isDisabled) {
+  const card = document.querySelector(".login-card");
+  const existing = document.getElementById("access-denied-msg");
+  if (existing) existing.remove();
+
+  const msg = document.createElement("div");
+  msg.id = "access-denied-msg";
+  msg.style.cssText = "margin-top:1rem; padding:.75rem 1rem; background:#fff0f0; border:1px solid rgba(192,57,43,.2); border-radius:10px; font-size:.85rem; color:#c0392b; text-align:center;";
+  msg.textContent = isDisabled
+    ? "Tu acceso está deshabilitado. Contactá al administrador."
+    : "Tu cuenta no tiene acceso a este portal.";
+  card.appendChild(msg);
 }
 
 // ── Auth ───────────────────────────────────────────────────
@@ -85,18 +118,11 @@ async function loadPassengers() {
   setListState("loading");
   const { data, error } = await supabaseClient
     .from("Pasajeros")
-    .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino", avatar_url`)
+    .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
     .order("Pasajero", { ascending: true });
 
   if (error) { console.error(error); setListState("error"); return; }
-
   allPassengers = data.map((p, i) => ({ ...p, _idx: i }));
-
-  // Precargar avatars desde Supabase al cache
-  allPassengers.forEach(p => {
-    if (p.avatar_url) avatarCache[p._idx] = p.avatar_url;
-  });
-
   renderList(allPassengers);
 }
 
@@ -205,20 +231,15 @@ function renderDetalle(idx) {
   setField("d-club",        p["Club destino"]);
 }
 
-// ── Avatar upload → Supabase Storage ──────────────────────
+// ── Avatar ─────────────────────────────────────────────────
 function triggerAvatarUpload() {
   document.getElementById("avatar-file-input").click();
 }
 
-async function handleAvatarUpload(event) {
+function handleAvatarUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   const idx = parseInt(document.getElementById("detalle-avatar").dataset.idx);
-  const p   = allPassengers.find(x => x._idx === idx);
-  if (!p) return;
-
-  // Mostrar preview inmediato mientras sube
   const reader = new FileReader();
   reader.onload = e => {
     avatarCache[idx] = e.target.result;
@@ -227,43 +248,6 @@ async function handleAvatarUpload(event) {
     if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
   };
   reader.readAsDataURL(file);
-
-  // Subir a Supabase Storage
-  const ext      = file.name.split(".").pop();
-  const filename = `pasajero_${p["Documento de Identidad"] || idx}.${ext}`;
-  const path     = `avatars/${filename}`;
-
-  const { error: uploadError } = await supabaseClient.storage
-    .from("avatars")
-    .upload(path, file, { upsert: true });
-
-  if (uploadError) {
-    console.error("Error subiendo foto:", uploadError);
-    return;
-  }
-
-  // Obtener URL pública
-  const { data: urlData } = supabaseClient.storage
-    .from("avatars")
-    .getPublicUrl(path);
-
-  const publicUrl = urlData.publicUrl;
-
-  // Guardar URL en la tabla Pasajeros
-  const { error: updateError } = await supabaseClient
-    .from("Pasajeros")
-    .update({ avatar_url: publicUrl })
-    .eq("Documento de Identidad", p["Documento de Identidad"]);
-
-  if (updateError) {
-    console.error("Error guardando URL:", updateError);
-    return;
-  }
-
-  // Actualizar en memoria
-  avatarCache[idx] = publicUrl;
-  p.avatar_url = publicUrl;
-
   event.target.value = "";
 }
 
@@ -295,6 +279,9 @@ function closeMenu() {
   document.getElementById("hamburger-menu").classList.remove("open");
 }
 
+// Cerrar al hacer click fuera
 document.addEventListener("click", (e) => {
+  const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
 });
+ 
