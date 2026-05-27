@@ -71,7 +71,7 @@
     </div>
 
     <!-- INICIO -->
-    <div id="view-home">
+    <div id="view-home" style="display:none">
       <div class="main">
         <div class="page-header">
           <h1>Panel de inicio</h1>
@@ -137,7 +137,7 @@
     </div>
 
     <!-- LISTA CLIENTES -->
-    <div id="view-clientes">
+    <div id="view-clientes" style="display:none">
       <div class="main">
         <div class="page-header">
           <h1>Base de clientes</h1>
@@ -154,7 +154,7 @@
     </div>
 
     <!-- DETALLE PASAJERO -->
-    <div id="view-detalle">
+    <div id="view-detalle" style="display:none">
       <div class="main detalle-main">
         <div class="detalle-profile">
           <div class="detalle-avatar-wrap">
@@ -222,81 +222,90 @@
       </div>
     </div>
 
-  <!-- Botón + flotante -->
-  <button class="fab" id="fab-nuevo" onclick="openNuevoCliente()" title="Nuevo cliente" style="display:none">
+
+    <!-- VISTA NUEVO CLIENTE -->
+    <div id="view-nuevo" style="display:none">
+      <div class="main detalle-main">
+
+        <div class="form-page-header">
+          <h1>Nuevo cliente</h1>
+          <p class="page-desc">Completá los datos del nuevo pasajero</p>
+        </div>
+
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Datos obligatorios
+          </div>
+          <div class="detail-grid">
+            <div class="form-field full">
+              <label class="form-label">Nombre completo <span class="req">*</span></label>
+              <input type="text" id="f-nombre" class="form-input" placeholder="Ej: Juan Pérez" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Documento de Identidad <span class="req">*</span></label>
+              <input type="text" id="f-ci" class="form-input" placeholder="Ej: 1234567" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Sexo <span class="req">*</span></label>
+              <select id="f-sexo" class="form-input">
+                <option value="">— Seleccionar —</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg>
+            Datos opcionales
+          </div>
+          <div class="detail-grid">
+            <div class="form-field full">
+              <label class="form-label">E-mail</label>
+              <input type="email" id="f-email" class="form-input" placeholder="correo@ejemplo.com" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Fecha de nacimiento</label>
+              <input type="date" id="f-fecha" class="form-input" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Vendedor</label>
+              <input type="text" id="f-vendedor" class="form-input" placeholder="Nombre del vendedor" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">ByC</label>
+              <input type="text" id="f-byc" class="form-input" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Club destino</label>
+              <input type="text" id="f-club" class="form-input" />
+            </div>
+          </div>
+        </div>
+
+        <div id="form-error" class="form-error"></div>
+
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="navigateTo('clientes')">Cancelar</button>
+          <button class="btn-save" id="btn-guardar" onclick="guardarNuevoCliente()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Guardar cliente
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fab-nuevo" onclick="navigateTo('nuevo')" title="Nuevo cliente" style="display:none">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
     </svg>
   </button>
-
-  <!-- Modal nuevo cliente -->
-  <div class="modal-overlay" id="modal-nuevo" onclick="handleNuevoOverlay(event)">
-    <div class="modal-box">
-      <div class="modal-header-bar">
-        <h3>Nuevo cliente</h3>
-        <button class="modal-close-btn" onclick="closeNuevoCliente()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body-form">
-        <div class="form-section-title">Datos obligatorios</div>
-        <div class="form-field">
-          <label class="form-label">Nombre completo <span class="req">*</span></label>
-          <input type="text" id="f-nombre" class="form-input" placeholder="Ej: Juan Pérez" />
-        </div>
-        <div class="form-row">
-          <div class="form-field">
-            <label class="form-label">CI <span class="req">*</span></label>
-            <input type="text" id="f-ci" class="form-input" placeholder="Ej: 1234567" />
-          </div>
-          <div class="form-field">
-            <label class="form-label">Sexo <span class="req">*</span></label>
-            <select id="f-sexo" class="form-input">
-              <option value="">— Seleccionar —</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-section-title" style="margin-top:1.2rem">Datos opcionales</div>
-        <div class="form-field">
-          <label class="form-label">E-mail</label>
-          <input type="email" id="f-email" class="form-input" placeholder="correo@ejemplo.com" />
-        </div>
-        <div class="form-row">
-          <div class="form-field">
-            <label class="form-label">Fecha de nacimiento</label>
-            <input type="date" id="f-fecha" class="form-input" />
-          </div>
-          <div class="form-field">
-            <label class="form-label">Vendedor</label>
-            <input type="text" id="f-vendedor" class="form-input" placeholder="Nombre del vendedor" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-field">
-            <label class="form-label">ByC</label>
-            <input type="text" id="f-byc" class="form-input" />
-          </div>
-          <div class="form-field">
-            <label class="form-label">Club destino</label>
-            <input type="text" id="f-club" class="form-input" />
-          </div>
-        </div>
-        <div id="form-error" class="form-error"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="closeNuevoCliente()">Cancelar</button>
-        <button class="btn-save" onclick="guardarNuevoCliente()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Guardar
-        </button>
-      </div>
-    </div>
-  </div>
 
   </div><!-- /app-view -->
 
