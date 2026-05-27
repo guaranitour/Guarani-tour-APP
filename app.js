@@ -79,7 +79,7 @@ function navigateTo(view, idx = null) {
   hideEl("view-home");
   hideEl("view-clientes");
   hideEl("view-detalle");
-  updateFab();
+  hideEl("view-nuevo");
 
   if (view === "home") {
     showEl("view-home");
@@ -93,6 +93,16 @@ function navigateTo(view, idx = null) {
     ]);
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
+
+  } else if (view === "nuevo") {
+    showEl("view-nuevo");
+    limpiarFormulario();
+    updateBreadcrumb([
+      { label: "Inicio",           action: () => navigateTo("home") },
+      { label: "Base de clientes", action: () => navigateTo("clientes") },
+      { label: "Nuevo cliente" }
+    ]);
+    setTimeout(() => document.getElementById("f-nombre")?.focus(), 100);
 
   } else if (view === "detalle") {
     showEl("view-detalle");
@@ -285,33 +295,8 @@ document.addEventListener("click", (e) => {
   const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
 });
- 
-// ── FAB ────────────────────────────────────────────────────
-function updateFab() {
-  const fab = document.getElementById("fab-nuevo");
-  if (!fab) return;
-  const canAdd  = ["admin", "worker"].includes(currentUserRole);
-  const inClientes = currentView === "clientes";
-  fab.style.display = (canAdd && inClientes) ? "" : "none";
-}
 
-// ── Modal nuevo cliente ────────────────────────────────────
-function openNuevoCliente() {
-  limpiarFormulario();
-  document.getElementById("modal-nuevo").classList.add("open");
-  document.body.style.overflow = "hidden";
-  setTimeout(() => document.getElementById("f-nombre").focus(), 100);
-}
-
-function closeNuevoCliente() {
-  document.getElementById("modal-nuevo").classList.remove("open");
-  document.body.style.overflow = "";
-}
-
-function handleNuevoOverlay(e) {
-  if (e.target === document.getElementById("modal-nuevo")) closeNuevoCliente();
-}
-
+// ── Formulario nuevo cliente ───────────────────────────────
 function limpiarFormulario() {
   ["f-nombre","f-ci","f-sexo","f-email","f-fecha","f-vendedor","f-byc","f-club"].forEach(id => {
     const el = document.getElementById(id);
@@ -321,14 +306,18 @@ function limpiarFormulario() {
   });
   const errEl = document.getElementById("form-error");
   if (errEl) errEl.textContent = "";
-  const btn = document.querySelector(".btn-save");
-  if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
+  const btn = document.getElementById("btn-guardar");
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar cliente`;
+  }
 }
 
 async function guardarNuevoCliente() {
   ["f-nombre","f-ci","f-sexo"].forEach(id =>
     document.getElementById(id)?.classList.remove("error"));
-  document.getElementById("form-error").textContent = "";
+  const errEl = document.getElementById("form-error");
+  if (errEl) errEl.textContent = "";
 
   const nombre = document.getElementById("f-nombre").value.trim();
   const ci     = document.getElementById("f-ci").value.trim();
@@ -340,7 +329,7 @@ async function guardarNuevoCliente() {
   if (!sexo)   { document.getElementById("f-sexo").classList.add("error");   valid = false; }
 
   if (!valid) {
-    document.getElementById("form-error").textContent = "Completá los campos obligatorios.";
+    if (errEl) errEl.textContent = "Completá los campos obligatorios.";
     return;
   }
 
@@ -355,9 +344,8 @@ async function guardarNuevoCliente() {
     "Club destino":           document.getElementById("f-club").value.trim() || null,
   };
 
-  const btn = document.querySelector(".btn-save");
-  btn.disabled = true;
-  btn.textContent = "Guardando…";
+  const btn = document.getElementById("btn-guardar");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
 
   const { data, error } = await supabaseClient
     .from("Pasajeros")
@@ -365,20 +353,21 @@ async function guardarNuevoCliente() {
     .select();
 
   if (error) {
-    document.getElementById("form-error").textContent =
-      error.code === "23505"
-        ? "Ya existe un cliente con ese CI."
-        : "Error al guardar. Intentá de nuevo.";
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
+    if (errEl) errEl.textContent = error.code === "23505"
+      ? "Ya existe un cliente con ese CI."
+      : "Error al guardar. Intentá de nuevo.";
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar cliente`;
+    }
     return;
   }
 
+  // Agregar a memoria y volver a la lista
   const newIdx = allPassengers.length;
   allPassengers.push({ ...data[0], _idx: newIdx });
   allPassengers.sort((a, b) => (a.Pasajero || "").localeCompare(b.Pasajero || ""));
   allPassengers.forEach((p, i) => p._idx = i);
 
-  closeNuevoCliente();
-  renderList(allPassengers);
+  navigateTo("clientes");
 }
