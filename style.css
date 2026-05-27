@@ -245,12 +245,22 @@ h2 {
 
 .hidden { display: none !important; }
 
+/* ── FAB ─────────────────────────────────────────────────── */
+.fab {
+  position: fixed; bottom: 1.8rem; right: 1.8rem; z-index: 150;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(45,106,79,.4);
+  transition: transform .15s, box-shadow .15s;
+}
+.fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(45,106,79,.5); }
+.fab:active { transform: scale(.96); }
+
 /* ── VISTA NUEVO CLIENTE ─────────────────────────────────── */
 .form-page-header { margin-bottom: 1.5rem; }
-.form-page-header h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; font-weight: 700;
-}
+.form-page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; }
 
 .form-field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .2rem; }
 .form-field.full { grid-column: 1 / -1; }
@@ -269,16 +279,11 @@ h2 {
 .form-input.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(192,57,43,.1); }
 select.form-input { cursor: pointer; }
 
-.form-error {
-  font-size: .82rem; color: var(--danger);
-  margin-bottom: 1rem; min-height: 1.2rem;
-}
+.form-error { font-size: .82rem; color: var(--danger); margin-bottom: 1rem; min-height: 1.2rem; }
 
 .form-actions {
-  display: flex; justify-content: flex-end; gap: .7rem;
-  padding-top: .5rem; padding-bottom: 2rem;
+  display: flex; justify-content: flex-end; gap: .7rem; padding-bottom: 2rem;
 }
-
 .btn-cancel {
   padding: .6rem 1.2rem; border: 1px solid var(--border);
   border-radius: 10px; background: #fff; color: var(--text-mid);
@@ -286,7 +291,6 @@ select.form-input { cursor: pointer; }
   transition: background .15s;
 }
 .btn-cancel:hover { background: var(--bg); }
-
 .btn-save {
   display: flex; align-items: center; gap: .5rem;
   padding: .6rem 1.4rem; border: none;
@@ -297,16 +301,3 @@ select.form-input { cursor: pointer; }
 .btn-save:hover { background: #235a3f; }
 .btn-save:active { transform: scale(.97); }
 .btn-save:disabled { background: #aaa; cursor: not-allowed; }
-
-/* ── FAB ─────────────────────────────────────────────────── */
-.fab {
-  position: fixed; bottom: 1.8rem; right: 1.8rem; z-index: 150;
-  width: 52px; height: 52px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 16px rgba(45,106,79,.4);
-  transition: transform .15s, box-shadow .15s;
-}
-.fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(45,106,79,.5); }
-.fab:active { transform: scale(.96); }
