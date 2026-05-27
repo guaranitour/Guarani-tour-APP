@@ -13,13 +13,46 @@ function showLogin() {
   hideEl("app-view");
 }
 
+let currentUserRole = null;
+
 async function enterApp(user) {
+  // Verificar si el usuario está en la tabla staff y habilitado
+  const { data, error } = await supabaseClient
+    .from("staff")
+    .select("role, status")
+    .eq("email", user.email)
+    .single();
+
+  if (error || !data || data.status !== "enabled") {
+    // No está en staff o está deshabilitado
+    await supabaseClient.auth.signOut();
+    showLogin();
+    showAccessDenied(error || data?.status === "disabled");
+    return;
+  }
+
+  currentUserRole = data.role;
+
   hideEl("login-view");
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
+}
+
+function showAccessDenied(isDisabled) {
+  const card = document.querySelector(".login-card");
+  const existing = document.getElementById("access-denied-msg");
+  if (existing) existing.remove();
+
+  const msg = document.createElement("div");
+  msg.id = "access-denied-msg";
+  msg.style.cssText = "margin-top:1rem; padding:.75rem 1rem; background:#fff0f0; border:1px solid rgba(192,57,43,.2); border-radius:10px; font-size:.85rem; color:#c0392b; text-align:center;";
+  msg.textContent = isDisabled
+    ? "Tu acceso está deshabilitado. Contactá al administrador."
+    : "Tu cuenta no tiene acceso a este portal.";
+  card.appendChild(msg);
 }
 
 // ── Auth ───────────────────────────────────────────────────
@@ -46,8 +79,6 @@ function navigateTo(view, idx = null) {
   hideEl("view-home");
   hideEl("view-clientes");
   hideEl("view-detalle");
-
-  updateFab();
 
   if (view === "home") {
     showEl("view-home");
@@ -253,101 +284,4 @@ document.addEventListener("click", (e) => {
   const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
 });
-
-// ── FAB: mostrar solo en vista clientes y roles correctos ──
-function updateFab() {
-  const fab = document.getElementById("fab-nuevo");
-  if (!fab) return;
-  const canAdd = ["admin", "worker"].includes(currentUserRole);
-  const inClientes = currentView === "clientes";
-  fab.style.display = (canAdd && inClientes) ? "" : "none";
-}
-
-// ── Modal nuevo cliente ────────────────────────────────────
-function openNuevoCliente() {
-  limpiarFormulario();
-  document.getElementById("modal-nuevo").classList.add("open");
-  document.body.style.overflow = "hidden";
-  setTimeout(() => document.getElementById("f-nombre").focus(), 100);
-}
-
-function closeNuevoCliente() {
-  document.getElementById("modal-nuevo").classList.remove("open");
-  document.body.style.overflow = "";
-}
-
-function handleNuevoOverlay(e) {
-  if (e.target === document.getElementById("modal-nuevo")) closeNuevoCliente();
-}
-
-function limpiarFormulario() {
-  ["f-nombre","f-ci","f-sexo","f-email","f-fecha","f-vendedor","f-byc","f-club"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-    el?.classList.remove("error");
-  });
-  document.getElementById("form-error").textContent = "";
-  document.querySelector(".btn-save").disabled = false;
-}
-
-async function guardarNuevoCliente() {
-  // Limpiar errores previos
-  ["f-nombre","f-ci","f-sexo"].forEach(id =>
-    document.getElementById(id).classList.remove("error"));
-  document.getElementById("form-error").textContent = "";
-
-  // Validar obligatorios
-  const nombre  = document.getElementById("f-nombre").value.trim();
-  const ci      = document.getElementById("f-ci").value.trim();
-  const sexo    = document.getElementById("f-sexo").value;
-
-  let valid = true;
-  if (!nombre) { document.getElementById("f-nombre").classList.add("error"); valid = false; }
-  if (!ci)     { document.getElementById("f-ci").classList.add("error");     valid = false; }
-  if (!sexo)   { document.getElementById("f-sexo").classList.add("error");   valid = false; }
-
-  if (!valid) {
-    document.getElementById("form-error").textContent = "Completá los campos obligatorios.";
-    return;
-  }
-
-  // Armar objeto
-  const nuevo = {
-    "Pasajero":              nombre,
-    "Documento de Identidad": ci,
-    "Sexo":                  sexo,
-    "E-mail":                document.getElementById("f-email").value.trim() || null,
-    "Fecha de nacimiento":   document.getElementById("f-fecha").value || null,
-    "Vendedor":              document.getElementById("f-vendedor").value.trim() || null,
-    "ByC":                   document.getElementById("f-byc").value.trim() || null,
-    "Club destino":          document.getElementById("f-club").value.trim() || null,
-  };
-
-  const btn = document.querySelector(".btn-save");
-  btn.disabled = true;
-  btn.textContent = "Guardando…";
-
-  const { data, error } = await supabaseClient
-    .from("Pasajeros")
-    .insert([nuevo])
-    .select();
-
-  if (error) {
-    document.getElementById("form-error").textContent =
-      error.code === "23505"
-        ? "Ya existe un cliente con ese CI."
-        : "Error al guardar. Intentá de nuevo.";
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
-    return;
-  }
-
-  // Agregar a la lista en memoria y re-renderizar
-  const newIdx = allPassengers.length;
-  allPassengers.push({ ...data[0], _idx: newIdx });
-  allPassengers.sort((a, b) => (a.Pasajero || "").localeCompare(b.Pasajero || ""));
-  allPassengers.forEach((p, i) => p._idx = i);
-
-  closeNuevoCliente();
-  renderList(allPassengers);
-}
+ 
