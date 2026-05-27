@@ -17,6 +17,8 @@ async function enterApp(user) {
   hideEl("login-view");
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
+  const menuEmail = document.getElementById("menu-user-email");
+  if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
 }
 
@@ -234,3 +236,18 @@ function setField(id, value) {
   if (value) { el.textContent = value; el.classList.remove("empty"); }
   else       { el.textContent = "No registrado"; el.classList.add("empty"); }
 }
+
+// ── Menú hamburguesa ───────────────────────────────────────
+function toggleMenu() {
+  document.getElementById("hamburger-menu").classList.toggle("open");
+}
+
+function closeMenu() {
+  document.getElementById("hamburger-menu").classList.remove("open");
+}
+
+// Cerrar al hacer click fuera
+document.addEventListener("click", (e) => {
+  const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
+  if (!e.target.closest(".hamburger-wrap")) closeMenu();
+});
