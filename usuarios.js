@@ -27,7 +27,7 @@ async function loadUsers() {
       <span class="p-pill">${u.role}</span>
       <span class="p-pill">${u.status}</span>
     </div>
-  ).join("");
+  `).join("");
 }
 
 
@@ -53,4 +53,4 @@ async function createUser() {
 
   document.getElementById("u-email").value = "";
   loadUsers();
-}
+  }
