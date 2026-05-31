@@ -78,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── Navegación ─────────────────────────────────────────────
 function navigateTo(view, idx = null) {
+
   currentView = view;
   selectedIdx = idx;
 
@@ -88,56 +89,71 @@ function navigateTo(view, idx = null) {
   hideEl("view-usuarios");
 
   if (view === "home") {
+
     showEl("view-home");
-    // 👇 MOSTRAR TARJETA USUARIOS SI ES ADMIN
-if (currentUserRole === "admin") {
-  const card = document.getElementById("card-usuarios");
-  if (card) card.style.display = "flex";
-}
+
     updateBreadcrumb([{ label: "Inicio" }]);
 
-  } else if (view === "clientes") {
+  } 
+
+  else if (view === "clientes") {
+
     showEl("view-clientes");
+
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes" }
     ]);
+
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
 
-  } else if (view === "nuevo") {
+  } 
+
+  else if (view === "nuevo") {
+
     showEl("view-nuevo");
+
     limpiarFormulario();
+
     updateBreadcrumb([
-      { label: "Inicio",           action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: "Nuevo cliente" }
     ]);
-    setTimeout(() => document.getElementById("f-nombre")?.focus(), 100);
 
-  } else if (view === "detalle") {
+  } 
+
+  else if (view === "detalle") {
+
     showEl("view-detalle");
+
     renderDetalle(idx);
+
     const p = allPassengers.find(x => x._idx === idx);
+
     updateBreadcrumb([
-      { label: "Inicio",           action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: p?.Pasajero || "Detalle" }
     ]);
-  }
+
+  } 
+
+  ✅ // ESTE ES EL BLOQUE CLAVE
   else if (view === "usuarios") {
 
-  if (currentUserRole !== "admin") return;
+    if (currentUserRole !== "admin") return;
 
-  showEl("view-usuarios");
+    showEl("view-usuarios");
 
-  updateBreadcrumb([
-    { label: "Inicio", action: () => navigateTo("home") },
-    { label: "Usuarios" }
-  ]);
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Usuarios" }
+    ]);
 
-  loadUsers();
-}
+    loadUsers();
+  }
 }
 
 function updateBreadcrumb(items) {
