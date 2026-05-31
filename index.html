@@ -132,6 +132,24 @@
             <div class="card-body"><h3>Histórico de viajes</h3><p>Consulta del historial completo de viajes realizados.</p></div>
             <span class="soon-badge">Próximamente</span>
           </div>
+          <div class="home-card active" id="card-usuarios" onclick="navigateTo('usuarios')" style="display:none">
+  <div class="card-icon" style="background:#edf2ff; color:#3b5bdb">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    </svg>
+  </div>
+  <div class="card-body">
+    <h3>Usuarios</h3>
+    <p>Gestión de accesos del sistema</p>
+  </div>
+  <div class="card-arrow">
+    <svg width="18" height="18" viewBox="0 0 24 24">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </div>
+</div>
         </div>
       </div>
     </div>
@@ -299,6 +317,54 @@
 
       </div>
     </div>
+    <!-- VISTA USUARIOS -->
+<div id="view-usuarios" style="display:none">
+  <div class="main detalle-main">
+
+    <div class="form-page-header">
+      <h1>Usuarios</h1>
+      <p class="page-desc">Administrá accesos del sistema</p>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">Listado</div>
+      <div id="users-list"></div>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">Nuevo usuario</div>
+
+      <div class="detail-grid">
+        <div class="form-field full">
+          <label class="form-label">Correo</label>
+          <input type="email" id="u-email" class="form-input">
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Rol</label>
+          <select id="u-role" class="form-input">
+            <option value="viewer">Viewer</option>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Estado</label>
+          <select id="u-status" class="form-input">
+            <option value="enabled">Activo</option>
+            <option value="disabled">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-save" onclick="createUser()">Agregar usuario</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
   <!-- FAB -->
   <button class="fab" id="fab-nuevo" onclick="navigateTo('nuevo')" title="Nuevo cliente" style="display:none">
@@ -312,5 +378,6 @@
   <script src="supabaseClient.js"></script>
   <script src="auth.js"></script>
   <script src="app.js"></script>
+  <script src="usuarios.js"></script>
 </body>
 </html>
