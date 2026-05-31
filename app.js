@@ -85,6 +85,7 @@ function navigateTo(view, idx = null) {
   hideEl("view-clientes");
   hideEl("view-detalle");
   hideEl("view-nuevo");
+  hideEl("view-usuarios");
 
   if (view === "home") {
     showEl("view-home");
@@ -124,6 +125,19 @@ if (currentUserRole === "admin") {
       { label: p?.Pasajero || "Detalle" }
     ]);
   }
+  else if (view === "usuarios") {
+
+  if (currentUserRole !== "admin") return;
+
+  showEl("view-usuarios");
+
+  updateBreadcrumb([
+    { label: "Inicio", action: () => navigateTo("home") },
+    { label: "Usuarios" }
+  ]);
+
+  loadUsers();
+}
 }
 
 function updateBreadcrumb(items) {
