@@ -90,6 +90,11 @@ function navigateTo(view, idx = null) {
 
   if (view === "home") {
     showEl("view-home");
+    // 👇 MOSTRAR TARJETA USUARIOS SI ES ADMIN
+if (currentUserRole === "admin") {
+  const card = document.getElementById("card-usuarios");
+  if (card) card.style.display = "flex";
+}
     updateBreadcrumb([{ label: "Inicio" }]);
 
   } else if (view === "clientes") {
