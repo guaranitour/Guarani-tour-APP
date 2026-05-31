@@ -1,11 +1,7 @@
-// ── USUARIOS: Cargar lista ──────────────────────────────
 async function loadUsers() {
   const list = document.getElementById("users-list");
 
-  if (!list) {
-    console.error("No existe #users-list");
-    return;
-  }
+  if (!list) return;
 
   list.innerHTML = "Cargando...";
 
@@ -15,7 +11,7 @@ async function loadUsers() {
     .order("email");
 
   if (error) {
-    console.error(error);
+    console.error("Error Supabase:", error);
     list.innerHTML = "Error al cargar usuarios";
     return;
   }
@@ -35,7 +31,6 @@ async function loadUsers() {
 }
 
 
-// ── USUARIOS: Crear usuario ──────────────────────────────
 async function createUser() {
   const email = document.getElementById("u-email").value.trim();
   const role = document.getElementById("u-role").value;
@@ -56,9 +51,6 @@ async function createUser() {
     return;
   }
 
-  // limpiar input
   document.getElementById("u-email").value = "";
-
-  // recargar lista
   loadUsers();
 }
