@@ -140,7 +140,7 @@ function navigateTo(view, idx = null) {
 
   } 
 
-  ✅ // ESTE ES EL BLOQUE CLAVE
+// ESTE ES EL BLOQUE CLAVE
   else if (view === "usuarios") {
 
     if (currentUserRole !== "admin") return;
