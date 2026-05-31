@@ -1,6 +1,12 @@
 // ── USUARIOS: Cargar lista ──────────────────────────────
 async function loadUsers() {
   const list = document.getElementById("users-list");
+
+  if (!list) {
+    console.error("No existe #users-list");
+    return;
+  }
+
   list.innerHTML = "Cargando...";
 
   const { data, error } = await supabaseClient
