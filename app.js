@@ -36,12 +36,10 @@ async function enterApp(user) {
   hideEl("login-view");
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
-  // 👇 MOSTRAR TARJETA USUARIOS SI ES ADMIN
-if (data.role === "admin") {
-  setTimeout(() => {
-    const card = document.getElementById("card-usuarios");
-    if (card) card.style.display = "flex";
-  }, 50);
+ // 👇 OCULTAR USUARIOS SI NO ES ADMIN
+if (data.role !== "admin") {
+  const card = document.getElementById("card-usuarios");
+  if (card) card.style.display = "none";
 }
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
