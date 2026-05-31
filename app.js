@@ -36,6 +36,13 @@ async function enterApp(user) {
   hideEl("login-view");
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
+  // 👇 MOSTRAR TARJETA USUARIOS SI ES ADMIN
+if (data.role === "admin") {
+  setTimeout(() => {
+    const card = document.getElementById("card-usuarios");
+    if (card) card.style.display = "flex";
+  }, 50);
+}
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
