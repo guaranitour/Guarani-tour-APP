@@ -1,0 +1,173 @@
+/* ── usuarios.css — Vista de gestión de usuarios ─────────────────────────── */
+/* Importar después de style.css en index.html                                */
+
+/* ── Tarjeta de usuario ──────────────────────────────────────────────────── */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .9rem 1.1rem;
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 14px;
+  margin-bottom: .55rem;
+  transition: background .15s, box-shadow .15s, transform .12s;
+  animation: rowIn .3s both;
+}
+
+.user-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,.07);
+  transform: translateY(-1px);
+}
+
+/* Avatar de usuario */
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b5bdb, #1c3d99);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: .02em;
+}
+
+/* Info del usuario */
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-email {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: .35rem;
+}
+
+.user-controls {
+  display: flex;
+  gap: .55rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Selects de rol y estado — compactos y con color */
+.user-select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 8px;
+  padding: .3rem .75rem .3rem .6rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .78rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  background-repeat: no-repeat;
+  background-position: right .4rem center;
+  background-size: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  padding-right: 1.6rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.user-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45,106,79,.1);
+}
+
+/* Colores semánticos por rol */
+.user-select.select-role {
+  background-color: #edf2ff;
+  border-color: #c5d0fc;
+  color: #3b5bdb;
+}
+.user-select.select-role:focus {
+  border-color: #748ffc;
+  box-shadow: 0 0 0 3px rgba(59,91,219,.1);
+}
+
+/* Colores semánticos por estado */
+.user-select.select-status[data-status="enabled"] {
+  background-color: #ebfbee;
+  border-color: #8ce99a;
+  color: #2f9e44;
+}
+.user-select.select-status[data-status="disabled"] {
+  background-color: #fff5f5;
+  border-color: #ffc9c9;
+  color: #c92a2a;
+}
+.user-select.select-status:focus {
+  box-shadow: 0 0 0 3px rgba(45,106,79,.1);
+}
+
+/* ── Sección "Nuevo usuario" — header mejorado ───────────────────────────── */
+#view-usuarios .section-title {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+#view-usuarios .section-title.with-count::after {
+  content: attr(data-count);
+  background: var(--bg2);
+  border-radius: 20px;
+  padding: .1rem .55rem;
+  font-size: .7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Botón guardar nuevo usuario — más compacto */
+#view-usuarios .form-actions {
+  padding-top: .4rem;
+  padding-bottom: .5rem;
+}
+
+/* Estado vacío */
+.users-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: .88rem;
+}
+
+.users-empty svg {
+  display: block;
+  margin: 0 auto .8rem;
+  opacity: .35;
+}
+
+/* Feedback de guardado inline (reemplaza alert) */
+.user-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .74rem;
+  font-weight: 500;
+  padding: .25rem .65rem;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+
+.user-feedback.show { opacity: 1; }
+.user-feedback.ok   { background: #ebfbee; color: #2f9e44; }
+.user-feedback.err  { background: #fff5f5; color: #c92a2a; }
