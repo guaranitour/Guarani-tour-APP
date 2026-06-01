@@ -86,6 +86,11 @@ function navigateTo(view, idx = null) {
   hideEl("view-nuevo");
   hideEl("view-usuarios");
 
+  const fab = document.getElementById("fab-nuevo");
+  if (fab) {
+    fab.style.display = (view === "clientes" && ["admin", "worker"].includes(currentUserRole)) ? "" : "none";
+  }
+
   if (view === "home") {
 
     showEl("view-home");
