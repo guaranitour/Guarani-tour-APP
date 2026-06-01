@@ -1,6 +1,5 @@
 async function loadUsers() {
   const list = document.getElementById("users-list");
-
   if (!list) return;
 
   list.innerHTML = "Cargando...";
@@ -17,7 +16,7 @@ async function loadUsers() {
   }
 
   if (!data || data.length === 0) {
-    list.innerHTML = '<div class="list-state">Sin usuarios</div>';
+    list.innerHTML = "<div class='list-state'>Sin usuarios</div>";
     return;
   }
 
@@ -52,5 +51,6 @@ async function createUser() {
   }
 
   document.getElementById("u-email").value = "";
+
   loadUsers();
-  }
+}
