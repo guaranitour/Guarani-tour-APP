@@ -37,10 +37,8 @@ async function enterApp(user) {
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
  // 👇 OCULTAR USUARIOS SI NO ES ADMIN
-if (data.role !== "admin") {
-  const card = document.getElementById("card-usuarios");
-  if (card) card.style.display = "none";
-}
+const card = document.getElementById("card-usuarios");
+if (card) card.style.display = data.role === "admin" ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   navigateTo("home");
