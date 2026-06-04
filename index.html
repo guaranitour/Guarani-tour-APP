@@ -197,31 +197,7 @@
             Datos del viaje
           </div>
           <div class="detail-grid">
-            <div class="form-field full">
-              <label class="form-label">Nombre del viaje <span class="req">*</span></label>
-              <input type="text" id="v-nombre" class="form-input" placeholder="Ej: Viaje a Buenos Aires" />
-            </div>
-            <div class="viaje-fechas-row">
-              <div class="form-field">
-                <label class="form-label">Fecha de salida</label>
-                <input type="date" id="v-salida" class="form-input" />
-              </div>
-              <div class="viaje-fechas-arrow">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </div>
-              <div class="form-field">
-                <label class="form-label">Fecha de regreso</label>
-                <input type="date" id="v-regreso" class="form-input" />
-              </div>
-            </div>
-            <div class="form-field">
-              <label class="form-label">Estado</label>
-              <select id="v-estado" class="form-input">
-                <option value="activo">Activo</option>
-                <option value="completado">Completado</option>
-                <option value="cancelado">Cancelado</option>
-              </select>
-            </div>
+
             <!-- Imagen protagonista -->
             <div class="form-field viaje-imagen-upload">
               <label class="form-label">Imagen del viaje</label>
@@ -237,6 +213,38 @@
               </label>
               <input type="file" id="v-imagen" accept="image/*" onchange="previewViajeImg(event)" />
             </div>
+
+            <!-- Nombre -->
+            <div class="form-field full">
+              <label class="form-label">Nombre del viaje <span class="req">*</span></label>
+              <input type="text" id="v-nombre" class="form-input" placeholder="Ej: Viaje a Buenos Aires" />
+            </div>
+
+            <!-- Fechas en fila -->
+            <div class="viaje-fechas-row">
+              <div class="form-field">
+                <label class="form-label">Fecha de salida</label>
+                <input type="date" id="v-salida" class="form-input" />
+              </div>
+              <div class="viaje-fechas-arrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Fecha de regreso</label>
+                <input type="date" id="v-regreso" class="form-input" />
+              </div>
+            </div>
+
+            <!-- Estado -->
+            <div class="form-field full">
+              <label class="form-label">Estado</label>
+              <select id="v-estado" class="form-input">
+                <option value="activo">Activo</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+
           </div>
         </div>
 
