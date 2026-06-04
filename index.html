@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="usuarios.css" />
+  <link rel="stylesheet" href="viajes_activos.css" />
 </head>
 <body>
 
@@ -196,19 +197,46 @@
             Datos del viaje
           </div>
           <div class="detail-grid">
+
+            <!-- Imagen protagonista -->
+            <div class="form-field viaje-imagen-upload">
+              <label class="form-label">Imagen del viaje</label>
+              <div class="viaje-imagen-preview" onclick="document.getElementById('v-imagen').click()">
+                <div class="viaje-imagen-overlay" id="viaje-img-overlay">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Tocá para subir imagen
+                </div>
+              </div>
+              <input type="file" id="v-imagen" accept="image/*" onchange="previewViajeImg(event)" />
+            </div>
+
+            <!-- Nombre -->
             <div class="form-field full">
               <label class="form-label">Nombre del viaje <span class="req">*</span></label>
               <input type="text" id="v-nombre" class="form-input" placeholder="Ej: Viaje a Buenos Aires" />
             </div>
-            <div class="form-field">
-              <label class="form-label">Fecha de salida</label>
-              <input type="date" id="v-salida" class="form-input" />
+
+            <!-- Fechas en fila -->
+            <div class="viaje-fechas-row">
+              <div class="form-field">
+                <label class="form-label">Fecha de salida</label>
+                <input type="date" id="v-salida" class="form-input" />
+              </div>
+              <div class="viaje-fechas-arrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Fecha de regreso</label>
+                <input type="date" id="v-regreso" class="form-input" />
+              </div>
             </div>
-            <div class="form-field">
-              <label class="form-label">Fecha de regreso</label>
-              <input type="date" id="v-regreso" class="form-input" />
-            </div>
-            <div class="form-field">
+
+            <!-- Estado -->
+            <div class="form-field full">
               <label class="form-label">Estado</label>
               <select id="v-estado" class="form-input">
                 <option value="activo">Activo</option>
@@ -216,10 +244,7 @@
                 <option value="cancelado">Cancelado</option>
               </select>
             </div>
-            <div class="form-field">
-              <label class="form-label">Imagen (opcional)</label>
-              <input type="file" id="v-imagen" class="form-input" accept="image/*" />
-            </div>
+
           </div>
         </div>
 
