@@ -41,7 +41,9 @@ const card = document.getElementById("card-usuarios");
 if (card) card.style.display = data.role === "admin" ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
+  if (!currentView || currentView === "home") {
   navigateTo("home");
+}
 }
 
 function showAccessDenied(isDisabled) {
