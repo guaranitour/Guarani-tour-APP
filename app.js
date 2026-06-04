@@ -90,7 +90,7 @@ function navigateTo(view, idx = null) {
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
-    fab.style.display = (view === "clientes" && ["admin", "worker"].includes(currentUserRole)) ? "" : "none";
+    fabViaje.style.display = (view === "viajes") ? "" : "none";
   }
 
   const fabViaje = document.getElementById("fab-viaje-nuevo");
