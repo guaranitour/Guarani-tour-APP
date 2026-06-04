@@ -90,12 +90,12 @@ function navigateTo(view, idx = null) {
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
-    fabViaje.style.display = (view === "viajes") ? "" : "none";
+    fab.style.display = (view === "clientes" && ["admin", "worker"].includes(currentUserRole)) ? "" : "none";
   }
 
   const fabViaje = document.getElementById("fab-viaje-nuevo");
   if (fabViaje) {
-    fabViaje.style.display = (view === "viajes" && currentUserRole === "admin") ? "" : "none";
+    fabViaje.style.display = (view === "viajes") ? "" : "none";
   }
 
   if (view === "home") {
