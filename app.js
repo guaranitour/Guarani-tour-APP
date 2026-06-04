@@ -171,7 +171,7 @@ function updateBreadcrumb(items) {
 async function loadPassengers() {
   setListState("loading");
   const { data, error } = await supabaseClient
-    .from("Pasajeros")
+    .from("pasajeros")
     .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
     .order("Pasajero", { ascending: true });
 
@@ -391,7 +391,7 @@ async function guardarNuevoCliente() {
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
 
   const { data, error } = await supabaseClient
-    .from("Pasajeros")
+    .from("pasajeros")
     .insert([nuevo])
     .select();
 
