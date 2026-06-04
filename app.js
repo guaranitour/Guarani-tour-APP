@@ -3,12 +3,14 @@ let allPassengers = [];
 let avatarCache = {};
 let currentView = "home";
 let selectedIdx = null;
+let appReady = false;
 
 // ── Visibilidad ────────────────────────────────────────────
 function showEl(id)  { document.getElementById(id).style.display = ""; }
 function hideEl(id)  { document.getElementById(id).style.display = "none"; }
 
 function showLogin() {
+  appReady = false;
   showEl("login-view");
   hideEl("app-view");
 }
@@ -41,7 +43,10 @@ const card = document.getElementById("card-usuarios");
 if (card) card.style.display = data.role === "admin" ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
-  navigateTo("home");
+  if (!appReady) {
+    appReady = true;
+    navigateTo("home");
+  }
 }
 
 function showAccessDenied(isDisabled) {
@@ -176,20 +181,6 @@ function navigateTo(view, idx = null) {
 }
   else if (view === "viaje-nuevo") {
   if (currentUserRole !== "admin") return;
-
-  // Limpiar formulario
-  ["v-nombre", "v-salida", "v-regreso"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
-  const estado = document.getElementById("v-estado");
-  if (estado) estado.value = "activo";
-  const fileInput = document.getElementById("v-imagen");
-  if (fileInput) fileInput.value = "";
-  const prevImg = document.querySelector(".viaje-imagen-preview img");
-  if (prevImg) prevImg.remove();
-  const overlay = document.getElementById("viaje-img-overlay");
-  if (overlay) overlay.style.display = "";
 
   showEl("view-viaje-nuevo");
 
