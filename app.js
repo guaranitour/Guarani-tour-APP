@@ -86,11 +86,16 @@ function navigateTo(view, idx = null) {
   hideEl("view-nuevo");
   hideEl("view-usuarios");
   hideEl("view-viajes");
-  hideEl("view-viaje-nuevo");
+  const _vvn = document.getElementById("view-viaje-nuevo"); if (_vvn) _vvn.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
     fab.style.display = (view === "clientes" && ["admin", "worker"].includes(currentUserRole)) ? "" : "none";
+  }
+
+  const fabViaje = document.getElementById("fab-viaje-nuevo");
+  if (fabViaje) {
+    fabViaje.style.display = (view === "viajes" && currentUserRole === "admin") ? "" : "none";
   }
 
   if (view === "home") {

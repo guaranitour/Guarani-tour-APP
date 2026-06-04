@@ -181,6 +181,59 @@
     <div id="viajes-list"></div>
   </div>
 </div>
+    <!-- VISTA NUEVO VIAJE -->
+    <div id="view-viaje-nuevo" style="display:none">
+      <div class="main">
+
+        <div class="form-page-header">
+          <h1>Nuevo viaje</h1>
+          <p class="page-desc">Completá los datos del viaje</p>
+        </div>
+
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Datos del viaje
+          </div>
+          <div class="detail-grid">
+            <div class="form-field full">
+              <label class="form-label">Nombre del viaje <span class="req">*</span></label>
+              <input type="text" id="v-nombre" class="form-input" placeholder="Ej: Viaje a Buenos Aires" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Fecha de salida</label>
+              <input type="date" id="v-salida" class="form-input" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Fecha de regreso</label>
+              <input type="date" id="v-regreso" class="form-input" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Estado</label>
+              <select id="v-estado" class="form-input">
+                <option value="activo">Activo</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Imagen (opcional)</label>
+              <input type="file" id="v-imagen" class="form-input" accept="image/*" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="navigateTo('viajes')">Cancelar</button>
+          <button class="btn-save" onclick="crearViaje()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Guardar viaje
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- DETALLE PASAJERO -->
     <div id="view-detalle" style="display:none">
       <div class="main detalle-main">
@@ -377,6 +430,11 @@
 </div>
 
   <!-- FAB -->
+  <button class="fab" id="fab-viaje-nuevo" onclick="navigateTo('viaje-nuevo')" title="Nuevo viaje" style="display:none">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
   <button class="fab" id="fab-nuevo" onclick="navigateTo('nuevo')" title="Nuevo cliente" style="display:none">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
