@@ -95,7 +95,7 @@ function navigateTo(view, idx = null) {
 
   const fabViaje = document.getElementById("fab-viaje-nuevo");
   if (fabViaje) {
-    fabViaje.style.display = (view === "viajes") ? "" : "none";
+    fabViaje.style.display = (view === "viajes") ? "flex" : "none";
   }
 
   if (view === "home") {
