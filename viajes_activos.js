@@ -30,17 +30,25 @@ async function loadViajes() {
   }
 
   list.innerHTML = data.map(v => `
-    <div class="user-card">
-      <div class="user-avatar">
-        ${v.nombre ? v.nombre.slice(0,2).toUpperCase() : "VJ"}
-      </div>
-
-      <div class="user-info">
-        <div class="user-email">${v.nombre}</div>
-
-        <div class="user-controls">
-          <span class="p-pill">${v.estado}</span>
-          <span class="p-pill">${formatFecha(v.fecha_salida)}</span>
+    <div class="viaje-card">
+      ${v.imagen_url
+        ? `<img class="viaje-card-img" src="${v.imagen_url}" alt="${v.nombre}" loading="lazy">`
+        : `<div class="viaje-card-img-placeholder">
+             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+               <polyline points="9 22 9 12 15 12 15 22"/>
+             </svg>
+           </div>`
+      }
+      <div class="viaje-card-body">
+        <div class="viaje-card-nombre">${v.nombre}</div>
+        <div class="viaje-card-meta">
+          <span class="viaje-pill ${v.estado || "activo"}">${v.estado || "activo"}</span>
+          ${v.fecha_salida ? `
+          <span class="viaje-card-fecha">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            ${formatFecha(v.fecha_salida)}
+          </span>` : ""}
         </div>
       </div>
     </div>
@@ -119,26 +127,18 @@ async function crearViaje() {
 function previewViajeImg(event) {
   const file = event.target.files[0];
   if (!file) return;
-
   const preview = document.querySelector(".viaje-imagen-preview");
   const overlay = document.getElementById("viaje-img-overlay");
-
   const reader = new FileReader();
   reader.onload = (e) => {
     const prev = preview.querySelector("img");
     if (prev) prev.remove();
-
     const img = document.createElement("img");
     img.src = e.target.result;
     preview.appendChild(img);
     if (overlay) overlay.style.display = "none";
   };
   reader.readAsDataURL(file);
-}
-
-function abrirSelectorImagen(event) {
-  event.stopPropagation();
-  document.getElementById("v-imagen").click();
 }
 
 /* ── FAB HANDLER ──────────────────────────── */
