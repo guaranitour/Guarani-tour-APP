@@ -30,24 +30,17 @@ async function loadViajes() {
   }
 
   list.innerHTML = data.map(v => `
-    <div class="viaje-card">
-      ${v.imagen_url
-        ? `<img class="viaje-card-img" src="${v.imagen_url}" alt="${v.nombre}" loading="lazy">`
-        : `<div class="viaje-card-img-placeholder">
-             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
-               <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-             </svg>
-           </div>`
-      }
-      <div class="viaje-card-body">
-        <div class="viaje-card-nombre">${v.nombre}</div>
-        <div class="viaje-card-meta">
-          <span class="viaje-pill ${v.estado || 'activo'}">${v.estado || 'activo'}</span>
-          ${v.fecha_salida ? `
-          <span class="viaje-card-fecha">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            ${formatFecha(v.fecha_salida)}
-          </span>` : ""}
+    <div class="user-card">
+      <div class="user-avatar">
+        ${v.nombre ? v.nombre.slice(0,2).toUpperCase() : "VJ"}
+      </div>
+
+      <div class="user-info">
+        <div class="user-email">${v.nombre}</div>
+
+        <div class="user-controls">
+          <span class="p-pill">${v.estado}</span>
+          <span class="p-pill">${formatFecha(v.fecha_salida)}</span>
         </div>
       </div>
     </div>
@@ -132,7 +125,6 @@ function previewViajeImg(event) {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    // Remover imagen previa si existe
     const prev = preview.querySelector("img");
     if (prev) prev.remove();
 
@@ -142,6 +134,11 @@ function previewViajeImg(event) {
     if (overlay) overlay.style.display = "none";
   };
   reader.readAsDataURL(file);
+}
+
+function abrirSelectorImagen(event) {
+  event.stopPropagation();
+  document.getElementById("v-imagen").click();
 }
 
 /* ── FAB HANDLER ──────────────────────────── */
