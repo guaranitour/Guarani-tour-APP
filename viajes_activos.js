@@ -6,6 +6,7 @@ let viajeActualData = null;
 ───────────────────────────────────────────── */
 
 let allViajes = [];
+let allVendedores = [];
 
 /* ── CARGAR VIAJES ─────────────────────────── */
 async function loadViajes() {
@@ -318,7 +319,7 @@ function buscarPasajero() {
     cont.innerHTML = `
       <div class="pasajero-crear-wrap">
         <div class="pasajero-crear-msg">Sin resultados para "<strong>${q}</strong>"</div>
-        <div class="pasajero-item pasajero-item-nuevo" onclick="crearPasajeroRapido('${q.trim()}')">
+        <div class="pasajero-item pasajero-item-nuevo" onclick="mostrarFormCrearPasajero('${q.trim()}')">
           <div class="pasajero-item-nuevo-inner">
             <span class="pasajero-crear-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -361,30 +362,106 @@ function seleccionarPasajero(idx) {
     </div>
   `;
 }
-async function crearPasajeroRapido(nombre) {
-  if (!nombre) return;
-
+async function mostrarFormCrearPasajero(nombre) {
   const cont = document.getElementById("resultados-pasajero");
-  cont.innerHTML = `<div class="pasajero-seleccionado" style="opacity:.6">Creando "${nombre}"…</div>`;
+
+  // Cargar vendedores si no están en caché
+  if (allVendedores.length === 0) {
+    const { data } = await supabaseClient
+      .from("vendedores")
+      .select("Nombre del vendedor")
+      .order("Nombre del vendedor", { ascending: true });
+    allVendedores = data || [];
+  }
+
+  const optsVendedor = allVendedores
+    .map(v => `<option value="${v["Nombre del vendedor"]}">${v["Nombre del vendedor"]}</option>`)
+    .join("");
+
+  cont.innerHTML = `
+    <div class="pasajero-crear-form">
+      <div class="pasajero-crear-form-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo cliente
+      </div>
+
+      <div class="pcf-field">
+        <label class="pcf-label">Nombre completo <span class="req">*</span></label>
+        <input id="pcf-nombre" class="form-input" type="text" value="${nombre}" placeholder="Nombre completo" />
+      </div>
+
+      <div class="pcf-row">
+        <div class="pcf-field">
+          <label class="pcf-label">Sexo</label>
+          <select id="pcf-sexo" class="form-input">
+            <option value="">— Seleccionar —</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="pcf-field">
+          <label class="pcf-label">Vendedor</label>
+          <select id="pcf-vendedor" class="form-input">
+            <option value="">— Seleccionar —</option>
+            ${optsVendedor}
+          </select>
+        </div>
+      </div>
+
+      <div class="pcf-actions">
+        <button class="btn-cancel pcf-btn-cancel" onclick="document.getElementById('resultados-pasajero').innerHTML=''">
+          Cancelar
+        </button>
+        <button class="btn-save pcf-btn-save" onclick="confirmarCrearPasajero()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function confirmarCrearPasajero() {
+  const nombre   = document.getElementById("pcf-nombre")?.value.trim();
+  const sexo     = document.getElementById("pcf-sexo")?.value || null;
+  const vendedor = document.getElementById("pcf-vendedor")?.value || null;
+  const cont     = document.getElementById("resultados-pasajero");
+
+  if (!nombre) {
+    document.getElementById("pcf-nombre")?.classList.add("error");
+    return;
+  }
+
+  const saveBtn = cont.querySelector(".pcf-btn-save");
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Guardando…"; }
 
   const { data, error } = await supabaseClient
     .from("pasajeros")
-    .insert([{ Pasajero: nombre }])
+    .insert([{ Pasajero: nombre, Sexo: sexo, Vendedor: vendedor }])
     .select()
     .single();
 
   if (error) {
     console.error("Error creando pasajero:", error);
-    cont.innerHTML = `<div class="pasajero-crear-msg" style="color:var(--danger)">Error al crear el pasajero</div>`;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
+    }
+    let errEl = cont.querySelector(".pcf-error");
+    if (!errEl) {
+      errEl = document.createElement("div");
+      errEl.className = "pcf-error";
+      cont.querySelector(".pasajero-crear-form").appendChild(errEl);
+    }
+    errEl.textContent = "Error al guardar. Intentá de nuevo.";
     return;
   }
 
-  // Agregar al array local para que esté disponible sin recargar
   const nuevoIdx = allPassengers.length;
   const nuevoPasajero = { ...data, _idx: nuevoIdx };
   allPassengers.push(nuevoPasajero);
 
-  // Seleccionarlo automáticamente
   pasajeroSeleccionado = nuevoPasajero;
   document.getElementById("buscar-pasajero").value = nombre;
   cont.innerHTML = `
