@@ -208,3 +208,50 @@ async function loadViajeDetalle(viajeId) {
     </div>
   `).join("");
 }
+async function guardarPasajeroEnViaje() {
+  try {
+    if (!viajeActualId) {
+      alert("Error: no hay viaje seleccionado");
+      return;
+    }
+
+    if (!pasajeroSeleccionado) {
+      alert("Seleccioná un pasajero");
+      return;
+    }
+
+    const total = parseInt(document.getElementById("input-total").value);
+
+    if (!total || total <= 0) {
+      alert("Ingresá un monto válido");
+      return;
+    }
+
+    console.log("Guardando...", {
+      viaje_id: viajeActualId,
+      pasajero_id: pasajeroSeleccionado.id,
+      total
+    });
+
+    const { error } = await supabaseClient
+      .from("viaje_pasajeros")
+      .insert([{
+        viaje_id: viajeActualId,
+        pasajero_id: pasajeroSeleccionado.id,
+        total_a_pagar: total
+      }]);
+
+    if (error) {
+      console.error("ERROR SUPABASE:", error);
+      alert("Error al guardar en base de datos");
+      return;
+    }
+
+    alert("✅ Pasajero agregado correctamente");
+
+    navigateTo("viaje-detalle", viajeActualId);
+  } catch (e) {
+    console.error("ERROR GENERAL:", e);
+    alert("Error inesperado");
+  }
+}
