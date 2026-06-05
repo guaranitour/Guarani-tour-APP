@@ -29,31 +29,18 @@ async function loadViajes() {
     return;
   }
 
-  list.innerHTML = data.map(v => `
-    <div class="viaje-card">
-      ${v.imagen_url
-        ? `<img class="viaje-card-img" src="${v.imagen_url}" alt="${v.nombre}" loading="lazy">`
-        : `<div class="viaje-card-img-placeholder">
-             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
-               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-               <polyline points="9 22 9 12 15 12 15 22"/>
-             </svg>
-           </div>`
-      }
-      <div class="viaje-card-body">
-        <div class="viaje-card-nombre">${v.nombre}</div>
-        <div class="viaje-card-meta">
-          <span class="viaje-pill ${v.estado || "activo"}">${v.estado || "activo"}</span>
-          <span class="viaje-puntos">${v.puntos_destino || 0} pts</span>
-          ${v.fecha_salida ? `
-          <span class="viaje-card-fecha">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            ${formatFecha(v.fecha_salida)}
-          </span>` : ""}
-        </div>
-      </div>
+list.innerHTML = data.map(v => `
+  <div class="viaje-card" onclick="openViajeDetalle(${v.id})">
+    ${v.imagen_url ? `<img class="viaje-card-img" src="${v.imagen_url}" />` : ``}
+    
+    <div class="viaje-card-nombre">${v.nombre}</div>
+    <div class="viaje-card-body">
+      <div>${v.estado || "activo"}</div>
+      <div>${v.puntos_destino || 0} pts</div>
+      ${v.fecha_salida ? `<div>${formatFecha(v.fecha_salida)}</div>` : ""}
     </div>
-  `).join("");
+  </div>
+`).join("");
 }
 
 /* ── FORMATEAR FECHA ───────────────────────── */
@@ -147,4 +134,7 @@ function previewViajeImg(event) {
 /* ── FAB HANDLER ──────────────────────────── */
 function handleFabViajes() {
   navigateTo("viaje-nuevo");
+}
+function openViajeDetalle(viajeId) {
+  navigateTo("viaje-detalle", viajeId);
 }
