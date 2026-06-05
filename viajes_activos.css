@@ -215,3 +215,11 @@
   padding-bottom: .6rem;
   color: var(--text-muted);
 }
+.viaje-puntos {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
