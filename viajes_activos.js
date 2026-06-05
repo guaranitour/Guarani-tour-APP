@@ -241,15 +241,15 @@ async function guardarPasajeroEnViaje() {
       total
     });
 
-    const { error } = await supabaseClient
-      .from("viaje_pasajeros")
-    const { data: { user } } = await supabaseClient.auth.getUser();
-      .insert([{
-        viaje_id: viajeActualId,
-        pasajero_id: pasajeroSeleccionado.id,
-        total_a_pagar: total
-        creado_por: user.email // 🔥 ESTA ES LA CLAVE
-      }]);
+const { error } = await supabaseClient
+  .from("viaje_pasajeros")
+const { data: { user } } = await supabaseClient.auth.getUser();
+  .insert([{
+    viaje_id: viajeActualId,
+    pasajero_id: pasajeroSeleccionado.id,
+    total_a_pagar: total
+    creado_por: user.email
+  }])
 
     if (error) {
       console.error("ERROR SUPABASE:", error);
