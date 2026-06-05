@@ -160,9 +160,6 @@ function initFormPasajero(viajeId) {
   document.getElementById("input-total").value = "";
   document.getElementById("resultados-pasajero").innerHTML = "";
 }
-
-  navigateTo("viaje-pasajero-nuevo", viajeActualId);
-}
 function openViajeDetalle(viajeId) {
   navigateTo("viaje-detalle", viajeId);
 }
