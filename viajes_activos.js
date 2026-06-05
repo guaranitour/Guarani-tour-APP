@@ -371,7 +371,6 @@ async function mostrarFormCrearPasajero(nombre) {
       .from("vendedores")
       .select('Nombre_del_vendedor')
       .order('Nombre_del_vendedor', { ascending: true });
-    console.log('vendedores data:', data, 'error:', error);
     allVendedores = data || [];
   }
 
