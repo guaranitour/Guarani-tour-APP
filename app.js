@@ -272,7 +272,7 @@ function createRow(p, i) {
   const row  = document.createElement("div");
   row.className = "passenger-row";
   row.dataset.idx = p._idx;
-  row.style.animationDelay = `${i * 0.025}s`;
+
   row.onclick = () => navigateTo("detalle", p._idx);
 
   const avatarInner = avatarCache[p._idx]
