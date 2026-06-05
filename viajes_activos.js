@@ -1,3 +1,6 @@
+let viajeActualId = null;
+let pasajeroSeleccionado = null;
+let viajeActualData = null;
 /* ─────────────────────────────────────────────
    viajes_activos.js — Gestión de viajes
 ───────────────────────────────────────────── */
@@ -29,20 +32,20 @@ async function loadViajes() {
     return;
   }
 
+
 list.innerHTML = data.map(v => `
-  <div class="viaje-card" onclick="openViajeDetalle(${v.id})">
-    ${v.imagen_url
-      ? `<img class="viaje-card-img" src="${v.imagen_url}" />`
-      : `<div class="viaje-card-img-placeholder"><svg width="48" height="48" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/></svg></div>`
-    }
+  <div class="viaje-card" onclick="openViajeDetalle('${v.id}')">
+    
+    ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : ``}
+
+    <div class="viaje-card-nombre">${v.nombre}</div>
+
     <div class="viaje-card-body">
-      <div class="viaje-card-nombre">${v.nombre}</div>
-      <div class="viaje-card-meta">
-        <span class="viaje-pill ${v.estado || 'activo'}">${v.estado || "activo"}</span>
-        ${v.puntos_destino ? `<span class="viaje-puntos">⭐ ${v.puntos_destino} pts</span>` : ""}
-        ${v.fecha_salida ? `<span class="viaje-card-fecha"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${formatFecha(v.fecha_salida)}</span>` : ""}
-      </div>
+      <div>${v.estado || "activo"}</div>
+      <div>${v.puntos_destino || 0} pts</div>
+      ${v.fecha_salida ? `<div>${formatFecha(v.fecha_salida)}</div>` : ""}
     </div>
+
   </div>
 `).join("");
 }
@@ -144,7 +147,11 @@ function irAgregarPasajero() {
     alert("Solo lectura");
     return;
   }
-   function initFormPasajero(viajeId) {
+
+  navigateTo("viaje-pasajero-nuevo", viajeActualId);
+}
+
+function initFormPasajero(viajeId) {
   viajeActualId = viajeId;
 
   pasajeroSeleccionado = null;
