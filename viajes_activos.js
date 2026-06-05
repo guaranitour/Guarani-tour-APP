@@ -169,8 +169,8 @@ function openViajeDetalle(viajeId) {
   navigateTo("viaje-detalle", viajeId);
 }
 async function loadViajeDetalle(viajeId) {
-   viajeActualId = viajeId;
-   viajeActualData = viaje;
+  viajeActualId = viajeId;
+
   const nombreEl = document.getElementById("detalle-viaje-nombre");
   const infoEl = document.getElementById("detalle-viaje-info");
   const listEl = document.getElementById("viaje-pasajeros-list");
@@ -184,6 +184,9 @@ async function loadViajeDetalle(viajeId) {
     .single();
 
   if (!viaje) return;
+
+  // ✅ AHORA SÍ existe
+  viajeActualData = viaje;
 
   nombreEl.textContent = viaje.nombre;
   infoEl.textContent = `${viaje.puntos_destino || 0} puntos base`;
