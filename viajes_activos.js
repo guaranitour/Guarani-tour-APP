@@ -44,6 +44,7 @@ async function loadViajes() {
         <div class="viaje-card-nombre">${v.nombre}</div>
         <div class="viaje-card-meta">
           <span class="viaje-pill ${v.estado || "activo"}">${v.estado || "activo"}</span>
+          <span class="viaje-puntos">${v.puntos_destino || 0} pts</span>
           ${v.fecha_salida ? `
           <span class="viaje-card-fecha">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -85,6 +86,7 @@ async function crearViaje() {
   const salida   = document.getElementById("v-salida").value;
   const regreso  = document.getElementById("v-regreso").value;
   const estado   = document.getElementById("v-estado").value;
+  const puntos_destino = parseInt(document.getElementById("v-puntos").value) || 0;
   const file     = document.getElementById("v-imagen").files[0];
 
   if (!nombre) {
@@ -111,7 +113,8 @@ async function crearViaje() {
       fecha_salida: salida,
       fecha_regreso: regreso,
       estado,
-      imagen_url
+      imagen_url,
+      puntos_destino
     }]);
 
   if (error) {
