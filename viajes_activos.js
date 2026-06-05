@@ -209,3 +209,5 @@ async function loadViajeDetalle(viajeId) {
     </div>
   `).join("");
 }
+viajeActualId = viajeId;
+viajeActualData = viaje;
