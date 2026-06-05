@@ -171,19 +171,56 @@
         <div id="passenger-list"></div>
       </div>
     </div>
-    <!-- VISTA VIAJES -->
+    
+<!-- VISTA VIAJES -->
 <div id="view-viajes" style="display:none">
   <div class="main">
-    <div class="page-header">
-      <h1>Viajes activos</h1>
-      <p class="page-desc">Gestión de viajes</p>
-    </div>
-
     <div id="viajes-list"></div>
   </div>
 </div>
-    <div id="view-viaje-detalle" style="display:none">
+
+<!-- VISTA DETALLE -->
+<div id="view-viaje-detalle" style="display:none">
   <div class="main">
+    <!-- tu contenido de detalle -->
+  </div>
+</div>
+
+<!-- ✅ NUEVA VISTA (SEPARADA) -->
+<div id="view-viaje-pasajero-nuevo" style="display:none">
+
+  <div class="main">
+
+    <div class="form-page-header">
+      <h1>Agregar pasajero</h1>
+      <p class="page-desc">Seleccioná o creá un pasajero</p>
+    </div>
+
+    <div class="detalle-section">
+
+      <input type="text" id="buscar-pasajero" class="form-input"
+        placeholder="Buscar pasajero..." oninput="buscarPasajero()" />
+
+      <div id="resultados-pasajero"></div>
+
+      <input type="number" id="input-total" class="form-input"
+        placeholder="Total a pagar" />
+
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="navigateTo('viaje-detalle', viajeActualId)">
+        Cancelar
+      </button>
+
+      <button class="btn-save" onclick="guardarPasajeroEnViaje()">
+        Guardar
+      </button>
+    </div>
+
+  </div>
+
+</div>
     
     <div class="page-header">
       <h1 id="detalle-viaje-nombre">Viaje</h1>
