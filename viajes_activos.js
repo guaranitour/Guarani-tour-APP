@@ -371,6 +371,7 @@ async function mostrarFormCrearPasajero(nombre) {
       .from("vendedores")
       .select('Nombre_del_vendedor')
       .order('Nombre_del_vendedor', { ascending: true });
+    console.log('vendedores data:', data, 'error:', error);
     allVendedores = data || [];
   }
 
@@ -423,7 +424,7 @@ async function mostrarFormCrearPasajero(nombre) {
 }
 
 async function confirmarCrearPasajero() {
-  const nombre   = document.getElementById("pcf-nombre")?.value.trim();
+  const nombre   = capitalizarNombre(document.getElementById("pcf-nombre")?.value.trim());
   const sexo     = document.getElementById("pcf-sexo")?.value || null;
   const vendedor = document.getElementById("pcf-vendedor")?.value || null;
   const cont     = document.getElementById("resultados-pasajero");
@@ -469,4 +470,9 @@ async function confirmarCrearPasajero() {
       ✅ ${nombre} <span style="font-weight:400;opacity:.7">(nuevo cliente agregado)</span>
     </div>
   `;
+}
+
+function capitalizarNombre(str) {
+  if (!str) return str;
+  return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
 }
