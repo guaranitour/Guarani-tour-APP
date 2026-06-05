@@ -203,6 +203,19 @@ function navigateTo(view, idx = null) {
 
   loadViajeDetalle(idx); // 👈 clave
 }
+  else if (view === "viaje-pasajero-nuevo") {
+
+  showEl("view-viaje-pasajero-nuevo");
+
+  updateBreadcrumb([
+    { label: "Inicio", action: () => navigateTo("home") },
+    { label: "Viajes", action: () => navigateTo("viajes") },
+    { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
+    { label: "Agregar pasajero" }
+  ]);
+
+  initFormPasajero(idx);
+}
 }
 
 function updateBreadcrumb(items) {
