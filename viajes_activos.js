@@ -164,6 +164,8 @@ function openViajeDetalle(viajeId) {
   navigateTo("viaje-detalle", viajeId);
 }
 async function loadViajeDetalle(viajeId) {
+   viajeActualId = viajeId;
+   viajeActualData = viaje;
   const nombreEl = document.getElementById("detalle-viaje-nombre");
   const infoEl = document.getElementById("detalle-viaje-info");
   const listEl = document.getElementById("viaje-pasajeros-list");
@@ -206,5 +208,3 @@ async function loadViajeDetalle(viajeId) {
     </div>
   `).join("");
 }
-viajeActualId = viajeId;
-viajeActualData = viaje;
