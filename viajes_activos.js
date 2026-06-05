@@ -153,13 +153,18 @@ function irAgregarPasajero() {
 
 function initFormPasajero(viajeId) {
   viajeActualId = viajeId;
-
   pasajeroSeleccionado = null;
 
   document.getElementById("buscar-pasajero").value = "";
   document.getElementById("input-total").value = "";
   document.getElementById("resultados-pasajero").innerHTML = "";
+
+  // 🔑 ESTA LÍNEA TE FALTABA
+  if (allPassengers.length === 0) {
+    loadPassengers();
+  }
 }
+
 function openViajeDetalle(viajeId) {
   navigateTo("viaje-detalle", viajeId);
 }
@@ -254,4 +259,45 @@ async function guardarPasajeroEnViaje() {
     console.error("ERROR GENERAL:", e);
     alert("Error inesperado");
   }
+}
+function buscarPasajero() {
+  const q = document.getElementById("buscar-pasajero").value.toLowerCase().trim();
+  const cont = document.getElementById("resultados-pasajero");
+
+  if (!q) {
+    cont.innerHTML = "";
+    pasajeroSeleccionado = null;
+    return;
+  }
+
+  const resultados = allPassengers.filter(p =>
+    (p.Pasajero || "").toLowerCase().includes(q) ||
+    (p["Documento de Identidad"] || "").toLowerCase().includes(q)
+  );
+
+  if (resultados.length === 0) {
+    cont.innerHTML = `<div class="users-empty">Sin resultados</div>`;
+    return;
+  }
+
+  cont.innerHTML = resultados.map(p => `
+    <div class="pasajero-item" onclick="seleccionarPasajero(${p._idx})">
+      <div><strong>${p.Pasajero}</strong></div>
+      <div class="ci">CI: ${p["Documento de Identidad"]}</div>
+    </div>
+  `).join("");
+}
+function seleccionarPasajero(idx) {
+  const p = allPassengers.find(x => x._idx === idx);
+  if (!p) return;
+
+  pasajeroSeleccionado = p;
+
+  document.getElementById("buscar-pasajero").value = p.Pasajero;
+
+  document.getElementById("resultados-pasajero").innerHTML = `
+    <div class="pasajero-seleccionado">
+      ✅ ${p.Pasajero} (CI ${p["Documento de Identidad"]})
+    </div>
+  `;
 }
