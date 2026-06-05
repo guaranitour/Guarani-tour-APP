@@ -92,6 +92,8 @@ function navigateTo(view, idx = null) {
   hideEl("view-usuarios");
   hideEl("view-viajes");
   const _vvn = document.getElementById("view-viaje-nuevo"); if (_vvn) _vvn.style.display = "none";
+  const _vvd = document.getElementById("view-viaje-detalle"); if (_vvd) _vvd.style.display = "none";
+
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -189,6 +191,17 @@ function navigateTo(view, idx = null) {
     { label: "Viajes", action: () => navigateTo("viajes") },
     { label: "Nuevo viaje" }
   ]);
+}
+  else if (view === "viaje-detalle") {
+  showEl("view-viaje-detalle");
+
+  updateBreadcrumb([
+    { label: "Inicio", action: () => navigateTo("home") },
+    { label: "Viajes", action: () => navigateTo("viajes") },
+    { label: "Detalle" }
+  ]);
+
+  loadViajeDetalle(idx); // 👈 clave
 }
 }
 
