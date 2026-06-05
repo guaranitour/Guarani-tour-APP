@@ -369,13 +369,13 @@ async function mostrarFormCrearPasajero(nombre) {
   if (allVendedores.length === 0) {
     const { data } = await supabaseClient
       .from("vendedores")
-      .select('"Nombre del vendedor"')
-      .order('"Nombre del vendedor"', { ascending: true });
+      .select('Nombre_del_vendedor')
+      .order('Nombre_del_vendedor', { ascending: true });
     allVendedores = data || [];
   }
 
   const optsVendedor = allVendedores
-    .map(v => `<option value="${v["Nombre del vendedor"]}">${v["Nombre del vendedor"]}</option>`)
+    .map(v => `<option value="${v.Nombre_del_vendedor}">${v.Nombre_del_vendedor}</option>`)
     .join("");
 
   cont.innerHTML = `
