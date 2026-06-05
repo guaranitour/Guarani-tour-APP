@@ -179,25 +179,36 @@
   </div>
 </div>
 
-<!-- VISTA DETALLE -->
+<!-- ✅ DETALLE DE VIAJE (CORRECTO) -->
 <div id="view-viaje-detalle" style="display:none">
   <div class="main">
-    <!-- tu contenido de detalle -->
+
+    <div class="page-header">
+      <h1 id="detalle-viaje-nombre">Viaje</h1>
+      <p class="page-desc" id="detalle-viaje-info"></p>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">Pasajeros</div>
+      <div id="viaje-pasajeros-list"></div>
+
+      <button class="btn-save" onclick="irAgregarPasajero()">
+        + Agregar pasajero
+      </button>
+    </div>
+
   </div>
 </div>
 
-<!-- ✅ NUEVA VISTA (SEPARADA) -->
+<!-- ✅ VISTA NUEVA: AGREGAR PASAJERO (SEPARADA) -->
 <div id="view-viaje-pasajero-nuevo" style="display:none">
-
   <div class="main">
-
     <div class="form-page-header">
       <h1>Agregar pasajero</h1>
       <p class="page-desc">Seleccioná o creá un pasajero</p>
     </div>
 
     <div class="detalle-section">
-
       <input type="text" id="buscar-pasajero" class="form-input"
         placeholder="Buscar pasajero..." oninput="buscarPasajero()" />
 
@@ -205,11 +216,11 @@
 
       <input type="number" id="input-total" class="form-input"
         placeholder="Total a pagar" />
-
     </div>
 
     <div class="form-actions">
-      <button class="btn-cancel" onclick="navigateTo('viaje-detalle', viajeActualId)">
+      <button class="btn-cancel"
+        onclick="navigateTo('viaje-detalle', viajeActualId)">
         Cancelar
       </button>
 
@@ -217,9 +228,7 @@
         Guardar
       </button>
     </div>
-
   </div>
-
 </div>
     
     <div class="page-header">
