@@ -40,12 +40,8 @@ list.innerHTML = data.map(v => `
       <div class="viaje-card-meta">
         <span class="viaje-pill ${v.estado || 'activo'}">${v.estado || "activo"}</span>
         ${v.puntos_destino ? `<span class="viaje-puntos">⭐ ${v.puntos_destino} pts</span>` : ""}
+        ${v.fecha_salida ? `<span class="viaje-card-fecha"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${formatFecha(v.fecha_salida)}</span>` : ""}
       </div>
-      ${v.fecha_salida ? `
-        <div class="viaje-card-fecha">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          ${formatFecha(v.fecha_salida)}
-        </div>` : ""}
     </div>
   </div>
 `).join("");
