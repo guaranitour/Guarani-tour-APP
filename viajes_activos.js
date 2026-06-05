@@ -144,6 +144,15 @@ function irAgregarPasajero() {
     alert("Solo lectura");
     return;
   }
+   function initFormPasajero(viajeId) {
+  viajeActualId = viajeId;
+
+  pasajeroSeleccionado = null;
+
+  document.getElementById("buscar-pasajero").value = "";
+  document.getElementById("input-total").value = "";
+  document.getElementById("resultados-pasajero").innerHTML = "";
+}
 
   navigateTo("viaje-pasajero-nuevo", viajeActualId);
 }
