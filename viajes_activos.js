@@ -369,8 +369,8 @@ async function mostrarFormCrearPasajero(nombre) {
   if (allVendedores.length === 0) {
     const { data } = await supabaseClient
       .from("vendedores")
-      .select("Nombre del vendedor")
-      .order("Nombre del vendedor", { ascending: true });
+      .select('"Nombre del vendedor"')
+      .order('"Nombre del vendedor"', { ascending: true });
     allVendedores = data || [];
   }
 
