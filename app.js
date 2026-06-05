@@ -233,7 +233,7 @@ async function loadPassengers() {
   setListState("loading");
   const { data, error } = await supabaseClient
     .from("pasajeros")
-    .select(`Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
+    .select(`id, Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
     .order("Pasajero", { ascending: true });
 
   if (error) { console.error(error); setListState("error"); return; }
