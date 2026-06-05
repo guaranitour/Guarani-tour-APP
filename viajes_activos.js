@@ -241,15 +241,17 @@ async function guardarPasajeroEnViaje() {
       total
     });
 
+// ✅ CORRECTO
+const { data: { user } } = await supabaseClient.auth.getUser();
+
 const { error } = await supabaseClient
   .from("viaje_pasajeros")
-const { data: { user } } = await supabaseClient.auth.getUser();
   .insert([{
     viaje_id: viajeActualId,
     pasajero_id: pasajeroSeleccionado.id,
-    total_a_pagar: total
+    total_a_pagar: total,       // ← coma agregada
     creado_por: user.email
-  }])
+  }]);
 
     if (error) {
       console.error("ERROR SUPABASE:", error);
