@@ -223,3 +223,221 @@
   font-size: 0.75rem;
   font-weight: 500;
 }
+
+/* ── DETALLE DE VIAJE: HERO ────────────────── */
+
+.detalle-viaje-hero {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 1.2rem;
+  display: block;
+}
+
+/* ── DETALLE DE VIAJE: INFO HEADER ─────────── */
+
+#detalle-viaje-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .3rem;
+}
+
+/* ── FILA DE PASAJERO EN DETALLE ───────────── */
+
+.viaje-pasajero-row {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  padding: .85rem .2rem;
+  border-bottom: 1px solid var(--glass-border);
+  transition: background .12s;
+}
+
+.viaje-pasajero-row:last-child {
+  border-bottom: none;
+}
+
+.viaje-pasajero-row:hover {
+  background: rgba(45,106,79,.04);
+  border-radius: 10px;
+}
+
+.vp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vp-nombre {
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vp-ci {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-top: .1rem;
+}
+
+.vp-pills {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.vp-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .55rem;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vp-pill.monto {
+  background: rgba(201,168,76,.13);
+  color: #7a5c10;
+}
+
+.vp-pill.asiste {
+  background: rgba(45,106,79,.1);
+  color: var(--accent);
+}
+
+.vp-pill.noasiste {
+  background: rgba(192,57,43,.09);
+  color: var(--danger);
+}
+
+.vp-pill.pts {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* ── BOTÓN AGREGAR PASAJERO ────────────────── */
+
+.btn-agregar-pasajero {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: 1rem;
+  padding: .6rem 1.1rem;
+  border-radius: 10px;
+  border: 1.5px dashed rgba(45,106,79,.35);
+  background: rgba(45,106,79,.04);
+  color: var(--accent);
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-agregar-pasajero:hover {
+  background: rgba(45,106,79,.09);
+  border-color: var(--accent);
+}
+
+/* ── FORM AGREGAR PASAJERO ─────────────────── */
+
+.form-buscar-wrap {
+  position: relative;
+  margin-bottom: .75rem;
+}
+
+.form-buscar-wrap svg {
+  position: absolute;
+  left: .85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.form-buscar-wrap input {
+  padding-left: 2.4rem;
+}
+
+.pasajero-item {
+  padding: .75rem .9rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s;
+  border: 1px solid var(--glass-border);
+  margin-bottom: .45rem;
+}
+
+.pasajero-item:hover {
+  background: rgba(45,106,79,.07);
+  border-color: rgba(45,106,79,.3);
+}
+
+.pasajero-item strong {
+  font-size: .88rem;
+  color: var(--text);
+}
+
+.pasajero-item .ci {
+  font-size: .76rem;
+  color: var(--text-muted);
+  margin-top: .15rem;
+}
+
+.pasajero-seleccionado {
+  background: rgba(45,106,79,.08);
+  border: 1.5px solid rgba(45,106,79,.3);
+  border-radius: 10px;
+  padding: .75rem .9rem;
+  color: var(--accent);
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: .75rem;
+}
+
+.form-monto-label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: .3rem;
+  display: block;
+}
+
+/* ── EMPTY STATE PASAJEROS ─────────────────── */
+
+.viaje-pasajeros-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: .88rem;
+}
+
+.viaje-pasajeros-empty svg {
+  display: block;
+  margin: 0 auto .75rem;
+  opacity: .22;
+}

@@ -33,21 +33,32 @@ async function loadViajes() {
   }
 
 
-list.innerHTML = data.map(v => `
+list.innerHTML = data.map(v => {
+  const estado = v.estado || "activo";
+  const placeholder = `
+    <div class="viaje-card-img-placeholder">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <path d="M16 2v4M8 2v4M3 10h18"/>
+      </svg>
+    </div>`;
+  return `
   <div class="viaje-card" onclick="openViajeDetalle('${v.id}')">
-    
-    ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : ``}
-
-    <div class="viaje-card-nombre">${v.nombre}</div>
-
+    ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : placeholder}
     <div class="viaje-card-body">
-      <div>${v.estado || "activo"}</div>
-      <div>${v.puntos_destino || 0} pts</div>
-      ${v.fecha_salida ? `<div>${formatFecha(v.fecha_salida)}</div>` : ""}
+      <div class="viaje-card-nombre">${v.nombre}</div>
+      <div class="viaje-card-meta">
+        <span class="viaje-pill ${estado}">${estado}</span>
+        ${v.puntos_destino ? `<span class="viaje-puntos">⭐ ${v.puntos_destino} pts</span>` : ""}
+        ${v.fecha_salida ? `
+          <span class="viaje-card-fecha">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            ${formatFecha(v.fecha_salida)}
+          </span>` : ""}
+      </div>
     </div>
-
-  </div>
-`).join("");
+  </div>`
+}).join("");
 }
 
 /* ── FORMATEAR FECHA ───────────────────────── */
@@ -189,7 +200,17 @@ async function loadViajeDetalle(viajeId) {
   viajeActualData = viaje;
 
   nombreEl.textContent = viaje.nombre;
-  infoEl.textContent = `${viaje.puntos_destino || 0} puntos base`;
+  const estado = viaje.estado || "activo";
+  infoEl.innerHTML = `
+    <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
+    ${viaje.puntos_destino ? `<span class="viaje-puntos" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
+    ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
+  `;
+  const heroEl = document.getElementById("detalle-viaje-hero");
+  if (heroEl) {
+    heroEl.style.display = viaje.imagen_url ? "block" : "none";
+    if (viaje.imagen_url) heroEl.src = viaje.imagen_url;
+  }
 
   const { data: pasajeros } = await supabaseClient
     .from("viaje_pasajeros")
@@ -203,18 +224,33 @@ async function loadViajeDetalle(viajeId) {
     .eq("viaje_id", viajeId);
 
   if (!pasajeros || pasajeros.length === 0) {
-    listEl.innerHTML = "Sin pasajeros";
+    listEl.innerHTML = `
+      <div class="viaje-pasajeros-empty">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Sin pasajeros aún
+      </div>`;
     return;
   }
 
-  listEl.innerHTML = pasajeros.map(p => `
-    <div class="passenger-row">
-      <div class="p-name">${p.pasajeros?.Pasajero || "Sin nombre"}</div>
-      <span class="p-pill">Gs. ${p.total_a_pagar || 0}</span>
-      <span class="p-pill">${p.asistencia === "No asiste" ? "❌" : "✅"}</span>
-      <span class="p-pill">⭐ ${p.puntos_destino || 0}</span>
-    </div>
-  `).join("");
+  listEl.innerHTML = pasajeros.map(p => {
+    const asiste = p.asistencia !== "No asiste";
+    const nombre = p.pasajeros?.Pasajero || "Sin nombre";
+    const ci = p.pasajeros?.["Documento de Identidad"] || "";
+    const monto = (p.total_a_pagar || 0).toLocaleString("es-PY");
+    return `
+    <div class="viaje-pasajero-row">
+      <div class="vp-avatar">${nombre.charAt(0).toUpperCase()}</div>
+      <div class="vp-info">
+        <div class="vp-nombre">${nombre}</div>
+        ${ci ? `<div class="vp-ci">CI: ${ci}</div>` : ""}
+      </div>
+      <div class="vp-pills">
+        <span class="vp-pill monto">Gs. ${monto}</span>
+        <span class="vp-pill ${asiste ? "asiste" : "noasiste"}">${asiste ? "✅ Asiste" : "❌ No asiste"}</span>
+        ${p.puntos_destino ? `<span class="vp-pill pts">⭐ ${p.puntos_destino}</span>` : ""}
+      </div>
+    </div>`;
+  }).join("");
 }
 async function guardarPasajeroEnViaje() {
   try {
