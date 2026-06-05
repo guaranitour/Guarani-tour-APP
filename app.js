@@ -91,6 +91,8 @@ function navigateTo(view, idx = null) {
   hideEl("view-nuevo");
   hideEl("view-usuarios");
   hideEl("view-viajes");
+  const _vpn = document.getElementById("view-viaje-pasajero-nuevo");
+if (_vpn) _vpn.style.display = "none";
   const _vvn = document.getElementById("view-viaje-nuevo"); if (_vvn) _vvn.style.display = "none";
   const _vvd = document.getElementById("view-viaje-detalle"); if (_vvd) _vvd.style.display = "none";
 
