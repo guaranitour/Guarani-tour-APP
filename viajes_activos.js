@@ -206,11 +206,7 @@ async function loadViajeDetalle(viajeId) {
     ${viaje.puntos_destino ? `<span class="viaje-puntos" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
     ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
   `;
-  const heroEl = document.getElementById("detalle-viaje-hero");
-  if (heroEl) {
-    heroEl.style.display = viaje.imagen_url ? "block" : "none";
-    if (viaje.imagen_url) heroEl.src = viaje.imagen_url;
-  }
+
 
   const { data: pasajeros } = await supabaseClient
     .from("viaje_pasajeros")
@@ -319,14 +315,35 @@ function buscarPasajero() {
   );
 
   if (resultados.length === 0) {
-    cont.innerHTML = `<div class="users-empty">Sin resultados</div>`;
+    cont.innerHTML = `
+      <div class="pasajero-crear-wrap">
+        <div class="pasajero-crear-msg">Sin resultados para "<strong>${q}</strong>"</div>
+        <div class="pasajero-item pasajero-item-nuevo" onclick="crearPasajeroRapido('${q.trim()}')">
+          <div class="pasajero-item-nuevo-inner">
+            <span class="pasajero-crear-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </span>
+            <div>
+              <strong>Crear "${q.trim()}"</strong>
+              <div class="ci">Se agregará a la base de clientes</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
     return;
   }
 
   cont.innerHTML = resultados.map(p => `
     <div class="pasajero-item" onclick="seleccionarPasajero(${p._idx})">
-      <div><strong>${p.Pasajero}</strong></div>
-      <div class="ci">CI: ${p["Documento de Identidad"]}</div>
+      <div class="pasajero-item-inner">
+        <div>
+          <strong>${p.Pasajero}</strong>
+          <div class="ci">CI: ${p["Documento de Identidad"] || "—"}</div>
+        </div>
+        <span class="pasajero-select-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+      </div>
     </div>
   `).join("");
 }
@@ -341,6 +358,38 @@ function seleccionarPasajero(idx) {
   document.getElementById("resultados-pasajero").innerHTML = `
     <div class="pasajero-seleccionado">
       ✅ ${p.Pasajero} (CI ${p["Documento de Identidad"]})
+    </div>
+  `;
+}
+async function crearPasajeroRapido(nombre) {
+  if (!nombre) return;
+
+  const cont = document.getElementById("resultados-pasajero");
+  cont.innerHTML = `<div class="pasajero-seleccionado" style="opacity:.6">Creando "${nombre}"…</div>`;
+
+  const { data, error } = await supabaseClient
+    .from("pasajeros")
+    .insert([{ Pasajero: nombre }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creando pasajero:", error);
+    cont.innerHTML = `<div class="pasajero-crear-msg" style="color:var(--danger)">Error al crear el pasajero</div>`;
+    return;
+  }
+
+  // Agregar al array local para que esté disponible sin recargar
+  const nuevoIdx = allPassengers.length;
+  const nuevoPasajero = { ...data, _idx: nuevoIdx };
+  allPassengers.push(nuevoPasajero);
+
+  // Seleccionarlo automáticamente
+  pasajeroSeleccionado = nuevoPasajero;
+  document.getElementById("buscar-pasajero").value = nombre;
+  cont.innerHTML = `
+    <div class="pasajero-seleccionado">
+      ✅ ${nombre} <span style="font-weight:400;opacity:.7">(nuevo cliente agregado)</span>
     </div>
   `;
 }
