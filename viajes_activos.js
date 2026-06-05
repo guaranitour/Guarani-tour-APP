@@ -138,3 +138,46 @@ function handleFabViajes() {
 function openViajeDetalle(viajeId) {
   navigateTo("viaje-detalle", viajeId);
 }
+async function loadViajeDetalle(viajeId) {
+  const nombreEl = document.getElementById("detalle-viaje-nombre");
+  const infoEl = document.getElementById("detalle-viaje-info");
+  const listEl = document.getElementById("viaje-pasajeros-list");
+
+  listEl.innerHTML = "Cargando...";
+
+  const { data: viaje } = await supabaseClient
+    .from("viajes")
+    .select("*")
+    .eq("id", viajeId)
+    .single();
+
+  if (!viaje) return;
+
+  nombreEl.textContent = viaje.nombre;
+  infoEl.textContent = `${viaje.puntos_destino || 0} puntos base`;
+
+  const { data: pasajeros } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select(`
+      id,
+      total_a_pagar,
+      puntos_destino,
+      asistencia,
+      pasajeros (Pasajero, "Documento de Identidad")
+    `)
+    .eq("viaje_id", viajeId);
+
+  if (!pasajeros || pasajeros.length === 0) {
+    listEl.innerHTML = "Sin pasajeros";
+    return;
+  }
+
+  listEl.innerHTML = pasajeros.map(p => `
+    <div class="passenger-row">
+      <div class="p-name">${p.pasajeros?.Pasajero || "Sin nombre"}</div>
+      <span class="p-pill">Gs. ${p.total_a_pagar || 0}</span>
+      <span class="p-pill">${p.asistencia === "No asiste" ? "❌" : "✅"}</span>
+      <span class="p-pill">⭐ ${p.puntos_destino || 0}</span>
+    </div>
+  `).join("");
+}
