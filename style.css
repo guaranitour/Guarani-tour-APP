@@ -216,23 +216,23 @@ h2 {
 
 .topbar {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(26,58,42,.97);
+  background: rgba(240,237,232,.98);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 2px 16px rgba(0,0,0,.18);
-  padding: 0 1.1rem; height: 66px;
+  border-bottom: 1px solid rgba(45,106,79,.15);
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
+  padding: 0 1.1rem; height: 68px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.topbar-brand { display: flex; align-items: center; gap: .55rem; }
+.topbar-brand { display: flex; align-items: center; gap: .5rem; }
 .topbar-brand .dot {
   width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
 }
 .topbar-brand span {
   font-family: 'Lora', serif;
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
-  color: #fff;
+  color: var(--accent2);
   letter-spacing: .01em;
 }
 
@@ -240,16 +240,17 @@ h2 {
 .hamburger-wrap { position: relative; }
 
 .hamburger-btn {
-  width: 36px; height: 36px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1);
+  width: 38px; height: 38px; border-radius: 10px;
+  border: 1.5px solid rgba(45,106,79,.25);
+  background: rgba(45,106,79,.07);
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 4px;
-  cursor: pointer; color: var(--text-mid);
+  justify-content: center; gap: 5px;
+  cursor: pointer; color: var(--accent2);
   transition: background .15s, border-color .15s;
 }
-.hamburger-btn:hover { background: var(--bg); border-color: #ccc; }
+.hamburger-btn:hover { background: rgba(45,106,79,.14); border-color: var(--accent); }
 .hamburger-btn span {
-  display: block; width: 16px; height: 1.5px;
+  display: block; width: 18px; height: 2px;
   background: currentColor; border-radius: 2px;
 }
 
@@ -562,5 +563,5 @@ select.form-input { cursor: pointer; }
   object-fit: contain;
   border-radius: 0;
   flex-shrink: 0;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,.25));
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
 }
