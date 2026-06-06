@@ -100,6 +100,10 @@ function navigateTo(view, idx = null) {
   if (_vvd) _vvd.style.display = "none";
   const _vpp = document.getElementById("view-viaje-pasajero-pagos");
   if (_vpp) _vpp.style.display = "none";
+  const _vpd = document.getElementById("view-pago-detalle");
+  if (_vpd) _vpd.style.display = "none";
+  const _fotoWrap = document.getElementById("pd-foto-wrap");
+  if (_fotoWrap) _fotoWrap.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {

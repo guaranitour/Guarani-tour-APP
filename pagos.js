@@ -323,9 +323,9 @@ function seleccionarPasajeroDestino(id, nombre) {
 async function subirFotoComprobante(file) {
   const ext = file.name.split(".").pop();
   const fileName = `${Date.now()}.${ext}`;
-  const { error } = await supabaseClient.storage.from("comprobantes").upload(fileName, file);
+  const { error } = await supabaseClient.storage.from("pagos").upload(fileName, file);
   if (error) throw error;
-  const { data } = supabaseClient.storage.from("comprobantes").getPublicUrl(fileName);
+  const { data } = supabaseClient.storage.from("pagos").getPublicUrl(fileName);
   return data.publicUrl;
 }
 
