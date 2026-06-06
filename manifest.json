@@ -10,7 +10,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512.png",
+      "src": "https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
