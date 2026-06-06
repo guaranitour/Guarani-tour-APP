@@ -228,22 +228,20 @@ async function loadPagosPasajero() {
     const banco  = bancosMap[String(p.banco)] || "";
     const cls    = tipoCls[p.tipo] || "";
     const icon   = tipoIcon[p.tipo] || "";
+    const pagoData = encodeURIComponent(JSON.stringify({
+      id: p.id, tipo: p.tipo, monto: p.monto, fecha_pago: p.fecha_pago,
+      metodo, banco, comprobante_nro: p.comprobante_nro,
+      observacion: p.observacion, creado_por: p.creado_por,
+      foto_comprobante: p.foto_comprobante
+    }));
     return `
-    <div class="pago-row">
-      <div class="pago-row-top">
-        <div class="pago-row-left">
-          <span class="pago-tipo-badge ${cls}">${icon} ${p.tipo}</span>
-          <span class="pago-fecha">${fecha}</span>
-          ${p.comprobante_nro ? `<span class="pago-comp">Nº ${p.comprobante_nro}</span>` : ""}
-        </div>
-        <span class="pago-monto ${cls}">Gs. ${(p.monto || 0).toLocaleString("es-PY")}</span>
+    <div class="pago-row" onclick="abrirDetallePago(JSON.parse(decodeURIComponent('${pagoData}')))">
+      <div class="pago-row-izq">
+        <span class="pago-tipo-badge ${cls}">${icon} ${p.tipo}</span>
+        <span class="pago-fecha">${fecha}</span>
       </div>
-      <div class="pago-row-bottom">
-        <span class="pago-metodo">${metodo}${banco ? " · " + banco : ""}</span>
-        ${p.observacion ? `<span class="pago-obs">${p.observacion}</span>` : ""}
-        ${p.creado_por  ? `<span class="pago-by">por ${p.creado_por}</span>` : ""}
-        ${p.foto_comprobante ? `<a class="pago-foto-link" href="${p.foto_comprobante}" target="_blank">📎 Ver comprobante</a>` : ""}
-      </div>
+      <span class="pago-monto ${cls}">Gs. ${(p.monto || 0).toLocaleString("es-PY")}</span>
+      <svg class="pago-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`;
   }).join("");
 }
