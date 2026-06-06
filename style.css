@@ -1,8 +1,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:          #f6f8fa;
-  --bg2:         #eaeef2;
+  --bg:          #f0ede8;
+  --bg2:         #e8e4de;
   --accent:      #2d6a4f;
   --accent2:     #1b4332;
   --gold:        #c9a84c;
@@ -216,23 +216,23 @@ h2 {
 
 .topbar {
   position: sticky; top: 0; z-index: 100;
-  background: #24292f;
-  border-bottom: 1px solid #444c56;
-  box-shadow: 0 1px 0 rgba(0,0,0,.25);
-  padding: 0 1rem; height: 62px;
+  background: rgba(26,58,42,.97);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 2px 16px rgba(0,0,0,.18);
+  padding: 0 1.1rem; height: 66px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.topbar-left { display: flex; align-items: center; gap: .75rem; }
-.topbar-brand { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
+.topbar-brand { display: flex; align-items: center; gap: .55rem; }
 .topbar-brand .dot {
   width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
 }
 .topbar-brand span {
   font-family: 'Lora', serif;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
   line-height: 1;
-  color: #e6edf3;
+  color: #fff;
   letter-spacing: .01em;
 }
 
@@ -240,17 +240,16 @@ h2 {
 .hamburger-wrap { position: relative; }
 
 .hamburger-btn {
-  width: 34px; height: 34px; border-radius: 6px;
-  border: 1px solid #444c56;
-  background: transparent;
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1);
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 5px;
-  cursor: pointer; color: #e6edf3;
+  justify-content: center; gap: 4px;
+  cursor: pointer; color: var(--text-mid);
   transition: background .15s, border-color .15s;
 }
-.hamburger-btn:hover { background: rgba(255,255,255,.1); border-color: #768390; }
+.hamburger-btn:hover { background: var(--bg); border-color: #ccc; }
 .hamburger-btn span {
-  display: block; width: 18px; height: 2px;
+  display: block; width: 16px; height: 1.5px;
   background: currentColor; border-radius: 2px;
 }
 
@@ -558,9 +557,10 @@ select.form-input { cursor: pointer; }
 }
 
 .topbar-logo-img {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   border-radius: 0;
   flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.25));
 }
