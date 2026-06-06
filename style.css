@@ -216,18 +216,24 @@ h2 {
 
 .topbar {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(239,239,236,.95);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 1.2rem; height: 60px;
+  background: rgba(26,58,42,.97);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 2px 16px rgba(0,0,0,.18);
+  padding: 0 1.1rem; height: 66px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.topbar-brand { display: flex; align-items: center; gap: .6rem; }
+.topbar-brand { display: flex; align-items: center; gap: .55rem; }
 .topbar-brand .dot {
   width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
 }
 .topbar-brand span {
-  font-family: 'Lora', serif; font-size: 1.45rem; font-weight: 700; line-height: 1;
+  font-family: 'Lora', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: .01em;
 }
 
 /* ── MENÚ HAMBURGUESA ────────────────────────────────────── */
@@ -235,7 +241,7 @@ h2 {
 
 .hamburger-btn {
   width: 36px; height: 36px; border-radius: 8px;
-  border: 1px solid var(--border); background: #fff;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.1);
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 4px;
   cursor: pointer; color: var(--text-mid);
@@ -551,9 +557,10 @@ select.form-input { cursor: pointer; }
 }
 
 .topbar-logo-img {
-  width: 49px;
-  height: 49px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 0;
   flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.25));
 }
