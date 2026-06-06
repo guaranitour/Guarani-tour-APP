@@ -132,44 +132,38 @@
 /* ── FILA DE PAGO ───────────────────────────── */
 
 .pago-row {
-  padding: .8rem 0;
+  padding: .8rem .4rem;
   border-bottom: 1px solid var(--glass-border);
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: .6rem;
-}
-
-.pago-row .pago-fecha {
-  flex: 1;
-  text-align: center;
-}
-
-.pago-row .pago-monto {
-  margin-left: auto;
-  text-align: right;
+  cursor: pointer;
+  transition: background .12s;
+  border-radius: 8px;
+  margin: 0 -.4rem;
 }
 
 .pago-row:last-child {
   border-bottom: none;
 }
 
-.pago-row:first-child {
-  padding-top: .25rem;
+.pago-row:active {
+  background: rgba(45,106,79,.05);
 }
 
-.pago-row-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
-}
-
-.pago-row-left {
+.pago-row-izq {
   display: flex;
   align-items: center;
   gap: .5rem;
-  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.pago-chevron {
+  color: var(--text-muted);
+  opacity: .4;
+  flex-shrink: 0;
 }
 
 /* ── BADGE DE TIPO ──────────────────────────── */
@@ -214,14 +208,6 @@
 .pago-monto.tipo-devolucion    { color: #c0392b; }
 .pago-monto.tipo-transferencia { color: #1e6fc7; }
 
-/* ── FILA INFERIOR ──────────────────────────── */
-
-.pago-row-bottom {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: .4rem .75rem;
-}
 
 .pago-fecha {
   font-size: .75rem;
@@ -391,4 +377,71 @@
   font-size: .82rem;
   color: var(--text-muted);
   font-style: italic;
+}
+
+/* ══ DETALLE DE PAGO ═════════════════════════ */
+
+.pd-monto-valor {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: .25rem;
+}
+
+.pd-monto-valor.tipo-pago          { color: #2d6a4f; }
+.pd-monto-valor.tipo-devolucion    { color: #c0392b; }
+.pd-monto-valor.tipo-transferencia { color: #1e6fc7; }
+
+.pd-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.pd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: .75rem 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.pd-row:last-child { border-bottom: none; }
+
+.pd-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pd-value {
+  font-size: .88rem;
+  color: var(--text);
+  font-weight: 500;
+  text-align: right;
+}
+
+.pd-foto-img {
+  width: 100%;
+  border-radius: 12px;
+  margin-top: .5rem;
+  display: block;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-back-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--glass-border);
+  background: var(--glass-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+  flex-shrink: 0;
 }

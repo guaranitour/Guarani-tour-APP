@@ -684,6 +684,71 @@
     </svg>
   </button>
 
+
+    <!-- ══ DETALLE DE PAGO ══════════════════════ -->
+    <div id="view-pago-detalle" style="display:none">
+      <div class="main">
+
+        <div class="form-page-header">
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+            <button class="btn-back-inline" onclick="history.back()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span id="pd-badge" class="pago-tipo-badge"></span>
+          </div>
+          <div id="pd-monto" class="pd-monto-valor"></div>
+        </div>
+
+        <div class="detalle-section">
+          <div class="pd-grid">
+
+            <div class="pd-row">
+              <span class="pd-label">Fecha</span>
+              <span class="pd-value" id="pd-fecha">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Método de pago</span>
+              <span class="pd-value" id="pd-metodo">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Banco</span>
+              <span class="pd-value" id="pd-banco">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Nº Comprobante</span>
+              <span class="pd-value" id="pd-comprobante">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Observación</span>
+              <span class="pd-value" id="pd-observacion">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Registrado por</span>
+              <span class="pd-value" id="pd-creado">—</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Foto comprobante -->
+        <div class="detalle-section" id="pd-foto-wrap" style="display:none">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Comprobante
+          </div>
+          <a id="pd-foto-link" href="#" target="_blank">
+            <img id="pd-foto-img" src="" alt="Comprobante" class="pd-foto-img" />
+          </a>
+        </div>
+
+      </div>
+    </div>
+
   <script src="supabaseClient.js"></script>
   <script src="auth.js"></script>
   <script src="app.js"></script>

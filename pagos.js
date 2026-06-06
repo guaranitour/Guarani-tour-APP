@@ -230,9 +230,20 @@ async function loadPagosPasajero() {
     const icon   = tipoIcon[p.tipo] || "";
     return `
     <div class="pago-row">
-      <span class="pago-tipo-badge ${cls}">${icon} ${p.tipo}</span>
-      <span class="pago-fecha">${fecha}</span>
-      <span class="pago-monto ${cls}">Gs. ${(p.monto || 0).toLocaleString("es-PY")}</span>
+      <div class="pago-row-top">
+        <div class="pago-row-left">
+          <span class="pago-tipo-badge ${cls}">${icon} ${p.tipo}</span>
+          <span class="pago-fecha">${fecha}</span>
+          ${p.comprobante_nro ? `<span class="pago-comp">Nº ${p.comprobante_nro}</span>` : ""}
+        </div>
+        <span class="pago-monto ${cls}">Gs. ${(p.monto || 0).toLocaleString("es-PY")}</span>
+      </div>
+      <div class="pago-row-bottom">
+        <span class="pago-metodo">${metodo}${banco ? " · " + banco : ""}</span>
+        ${p.observacion ? `<span class="pago-obs">${p.observacion}</span>` : ""}
+        ${p.creado_por  ? `<span class="pago-by">por ${p.creado_por}</span>` : ""}
+        ${p.foto_comprobante ? `<a class="pago-foto-link" href="${p.foto_comprobante}" target="_blank">📎 Ver comprobante</a>` : ""}
+      </div>
     </div>`;
   }).join("");
 }
@@ -392,5 +403,44 @@ async function guardarPago() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar pago`;
+  }
+}
+
+/* ── DETALLE DE UN PAGO ─────────────────────── */
+function abrirDetallePago(pago) {
+  navigateTo("pago-detalle", pago);
+}
+
+function initPagoDetalleView(p) {
+  const tipoCls = { "Pago": "tipo-pago", "Devolución": "tipo-devolucion", "Transferencia": "tipo-transferencia" };
+  const tipoIcon = {
+    "Pago":          `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
+    "Devolución":    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 18 4 12 10 12"/><path d="M20 12a8 8 0 0 0-8-8 8 8 0 0 0-5.66 2.34L4 12"/></svg>`,
+    "Transferencia": `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>`,
+  };
+  const cls  = tipoCls[p.tipo] || "";
+  const icon = tipoIcon[p.tipo] || "";
+  const fecha = p.fecha_pago
+    ? new Date(p.fecha_pago + "T00:00:00").toLocaleDateString("es-PY", { day:"2-digit", month:"long", year:"numeric" })
+    : "—";
+
+  document.getElementById("pd-badge").className  = `pago-tipo-badge ${cls}`;
+  document.getElementById("pd-badge").innerHTML  = `${icon} ${p.tipo}`;
+  document.getElementById("pd-monto").className  = `pd-monto-valor ${cls}`;
+  document.getElementById("pd-monto").textContent = `Gs. ${(p.monto || 0).toLocaleString("es-PY")}`;
+  document.getElementById("pd-fecha").textContent        = fecha;
+  document.getElementById("pd-metodo").textContent       = p.metodo || "—";
+  document.getElementById("pd-banco").textContent        = p.banco  || "—";
+  document.getElementById("pd-comprobante").textContent  = p.comprobante_nro || "—";
+  document.getElementById("pd-observacion").textContent  = p.observacion || "—";
+  document.getElementById("pd-creado").textContent       = p.creado_por || "—";
+
+  const fotoWrap = document.getElementById("pd-foto-wrap");
+  const fotoImg  = document.getElementById("pd-foto-img");
+  if (p.foto_comprobante) {
+    fotoImg.src = p.foto_comprobante;
+    fotoWrap.style.display = "block";
+  } else {
+    fotoWrap.style.display = "none";
   }
 }

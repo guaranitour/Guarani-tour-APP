@@ -229,6 +229,20 @@ function navigateTo(view, idx = null) {
     initPagosView({ viajePasajeroId, viajeId, pasajeroId, nombrePasajero });
 
   }
+
+  else if (view === "pago-detalle") {
+
+    showEl("view-pago-detalle");
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
+      { label: idx?.nombrePasajero || "Pagos", action: () => navigateTo("viaje-pasajero-pagos", pagosCtx) },
+      { label: "Detalle pago" }
+    ]);
+    initPagoDetalleView(idx);
+
+  }
 }
 
 function updateBreadcrumb(items) {
