@@ -213,10 +213,11 @@ async function loadViajeDetalle(viajeId) {
     .from("viaje_pasajeros")
     .select(`
       id,
+      pasajero_id,
       total_a_pagar,
       puntos_destino,
       asistencia,
-      pasajeros (Pasajero, "Documento de Identidad")
+      pasajeros ( id, Pasajero, "Documento de Identidad" )
     `)
     .eq("viaje_id", viajeId);
 
@@ -230,12 +231,15 @@ async function loadViajeDetalle(viajeId) {
   }
 
   listEl.innerHTML = pasajeros.map(p => {
-    const asiste = p.asistencia !== "No asiste";
-    const nombre = p.pasajeros?.Pasajero || "Sin nombre";
-    const ci = p.pasajeros?.["Documento de Identidad"] || "";
-    const monto = (p.total_a_pagar || 0).toLocaleString("es-PY");
+    const asiste   = p.asistencia !== "No asiste";
+    const nombre   = p.pasajeros?.Pasajero || "Sin nombre";
+    const ci       = p.pasajeros?.["Documento de Identidad"] || "";
+    const monto    = (p.total_a_pagar || 0).toLocaleString("es-PY");
+    const pid      = p.pasajero_id || p.pasajeros?.id || "";
+    const nombreE  = nombre.replace(/'/g, "\\'");
     return `
-    <div class="viaje-pasajero-row">
+    <div class="viaje-pasajero-row" style="cursor:pointer"
+         onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
       <div class="vp-avatar">${nombre.charAt(0).toUpperCase()}</div>
       <div class="vp-info">
         <div class="vp-nombre">${nombre}</div>
@@ -246,6 +250,7 @@ async function loadViajeDetalle(viajeId) {
         <span class="vp-pill ${asiste ? "asiste" : "noasiste"}">${asiste ? "✅ Asiste" : "❌ No asiste"}</span>
         ${p.puntos_destino ? `<span class="vp-pill pts">⭐ ${p.puntos_destino}</span>` : ""}
       </div>
+      <div class="vp-chevron">›</div>
     </div>`;
   }).join("");
 }
