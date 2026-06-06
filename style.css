@@ -219,10 +219,10 @@ h2 {
   background: rgba(239,239,236,.95);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
-  padding: 0 1.2rem; height: 60px;
+  padding: 0 1.2rem; height: 68px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.topbar-brand { display: flex; align-items: center; gap: .6rem; }
+.topbar-brand { display: flex; align-items: center; gap: .4rem; }
 .topbar-brand .dot {
   width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
 }
@@ -551,9 +551,9 @@ select.form-input { cursor: pointer; }
 }
 
 .topbar-logo-img {
-  width: 49px;
-  height: 49px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 0;
   flex-shrink: 0;
 }
