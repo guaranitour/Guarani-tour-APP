@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <title>Guaraní Tour | Staff</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1a3a2a" />
+  <link rel="icon" type="image/png" href="app_imagen_512.png" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="app_imagen_512.png" />
+  <link rel="manifest" href="manifest.json" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
@@ -17,15 +22,7 @@
   <div id="login-view">
     <div class="login-card">
       <div class="logo-wrap">
-        <svg viewBox="0 0 36 36" fill="none">
-          <rect x="4" y="10" width="28" height="16" rx="4" fill="rgba(255,255,255,.15)" stroke="rgba(201,168,76,.8)" stroke-width="1.5"/>
-          <rect x="7" y="13" width="7" height="5" rx="1.5" fill="rgba(201,168,76,.55)"/>
-          <rect x="16" y="13" width="7" height="5" rx="1.5" fill="rgba(201,168,76,.55)"/>
-          <circle cx="10" cy="28" r="2.5" fill="rgba(255,255,255,.9)" stroke="rgba(201,168,76,.7)" stroke-width="1"/>
-          <circle cx="26" cy="28" r="2.5" fill="rgba(255,255,255,.9)" stroke="rgba(201,168,76,.7)" stroke-width="1"/>
-          <rect x="4" y="14" width="2" height="5" rx="1" fill="rgba(201,168,76,.9)"/>
-          <rect x="30" y="14" width="2" height="5" rx="1" fill="rgba(201,168,76,.9)"/>
-        </svg>
+        <img src="app_imagen_512.png" alt="Guaraní Tour" class="login-logo-img" />
       </div>
       <h2>Guaraní Tour</h2>
       <p class="subtitle">Portal de staff</p>
@@ -48,7 +45,7 @@
 
     <header class="topbar">
       <div class="topbar-brand" onclick="navigateTo('home')" style="cursor:pointer">
-        <div class="dot"></div>
+        <img src="app_imagen_512.png" alt="Guaraní Tour" class="topbar-logo-img" />
         <span>Guaraní Tour</span>
       </div>
       <div class="hamburger-wrap">

@@ -1,0 +1,23 @@
+{
+  "name": "Guaraní Tour Staff",
+  "short_name": "Guaraní Tour",
+  "description": "Portal de staff de Guaraní Tour",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#1a3a2a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "app_imagen_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

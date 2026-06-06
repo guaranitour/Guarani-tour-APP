@@ -540,3 +540,21 @@ select.form-input { cursor: pointer; }
   .main { padding: 2rem; }
   .home-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── LOGOS ─────────────────────────────────── */
+
+.login-logo-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 18px;
+  display: block;
+}
+
+.topbar-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
