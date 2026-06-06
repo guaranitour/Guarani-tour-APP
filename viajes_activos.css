@@ -61,7 +61,7 @@
 }
 
 .viaje-card-nombre {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
@@ -271,7 +271,7 @@
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 1rem;
   font-weight: 700;
   display: flex;

@@ -54,7 +54,7 @@
 }
 
 .pr-value {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: .95rem;
   font-weight: 700;
   color: var(--text);
@@ -197,7 +197,7 @@
 /* ── MONTO ──────────────────────────────────── */
 
 .pago-monto {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 1rem;
   font-weight: 700;
   white-space: nowrap;
@@ -383,7 +383,7 @@
 /* ══ DETALLE DE PAGO ═════════════════════════ */
 
 .pd-monto-valor {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Lora', serif;
   font-size: 2rem;
   font-weight: 700;
   margin-top: .25rem;
