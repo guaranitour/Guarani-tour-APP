@@ -101,7 +101,7 @@ async function loadPagosPasajero() {
   const { data: vp } = await supabaseClient
     .from("viaje_pasajeros")
     .select("total_a_pagar")
-    .eq("id", pagosCtx.viajePasajeroId)
+    .eq("id", parseInt(pagosCtx.viajePasajeroId))
     .single();
 
   pagosCtx.totalAPagar = vp?.total_a_pagar || 0;
@@ -110,7 +110,7 @@ async function loadPagosPasajero() {
   const { data: pagos, error } = await supabaseClient
     .from("pagos")
     .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, creado_por, banco, metodo_pago_id")
-    .eq("viaje_pasajero_id", pagosCtx.viajePasajeroId)
+    .eq("viaje_pasajero_id", parseInt(pagosCtx.viajePasajeroId))
     .order("fecha_pago", { ascending: false });
 
   if (error) {
@@ -315,7 +315,7 @@ async function guardarPago() {
     }
 
     const base = {
-      viaje_pasajero_id : pagosCtx.viajePasajeroId,
+      viaje_pasajero_id : parseInt(pagosCtx.viajePasajeroId),
       metodo_pago_id    : metodoid,
       banco           : bancoId,
       monto,
