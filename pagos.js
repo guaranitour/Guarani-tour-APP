@@ -5,13 +5,13 @@
 
 // ── Estado global de pagos ───────────────────
 let pagosCtx = {
-  viajePasajeroId  : null,  // ID en tabla viaje_pasajeros
-  viajeId          : null,  // para volver al detalle
-  pasajeroId       : null,  // ID en tabla pasajeros
+  viajePasajeroId  : null,
+  viajeId          : null,
+  pasajeroId       : null,
   nombrePasajero   : null,
   totalAPagar      : 0,
-  metodos          : [],    // caché de metodos_de_pago
-  pasajeroDestino  : null,  // usado en transferencias
+  metodos          : [],
+  pasajeroDestino  : null,
 };
 
 /* ── ENTRAR A LA VISTA DE PAGOS ─────────────── */
@@ -34,13 +34,14 @@ async function initPagosView(ctx) {
 
   ocultarFormPago();
 
-  // Cargar métodos de pago si no están en caché
+  // ── Métodos de pago: columnas reales → id, metodo_de_pago ──
   if (pagosCtx.metodos.length === 0) {
-    const { data } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from("metodos_de_pago")
-      .select("metodo_de_pago_id, metodo_de_pago")
-      
+      .select("id, metodo_de_pago")
       .order("metodo_de_pago");
+
+    if (error) console.error("Error cargando métodos:", error);
     pagosCtx.metodos = data || [];
   }
 
@@ -48,8 +49,10 @@ async function initPagosView(ctx) {
   const selMetodo = document.getElementById("pago-metodo");
   if (selMetodo) {
     selMetodo.innerHTML = pagosCtx.metodos
-      .map(m => `<option value="${m.metodo_de_pago_id}">${m.metodo_de_pago}</option>`)
+      .map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`)
       .join("");
+    // Remover listener anterior para no duplicar
+    selMetodo.removeEventListener("change", onMetodoChange);
     selMetodo.addEventListener("change", onMetodoChange);
     onMetodoChange();
   }
@@ -60,10 +63,10 @@ async function initPagosView(ctx) {
 
 /* ── CARGAR BANCOS EN SELECT ────────────────── */
 async function cargarSelectBancos() {
+  // Tabla bancos: columnas → id, created_at, banco_id (texto con nombre del banco)
   const { data, error } = await supabaseClient
     .from("bancos")
-    .select("id, banco_id")   // id = PK, banco_id = nombre del banco
-    
+    .select("id, banco_id")
     .order("banco_id");
 
   if (error) console.error("Error cargando bancos:", error);
@@ -100,7 +103,7 @@ async function loadPagosPasajero() {
 
   pagosCtx.totalAPagar = vp?.total_a_pagar || 0;
 
-  // Pagos del pasajero en este viaje
+  // ── Join sin FK: traemos banco por separado para evitar errores de relación ──
   const { data: pagos, error } = await supabaseClient
     .from("pagos")
     .select(`
@@ -113,8 +116,9 @@ async function loadPagosPasajero() {
       referencia_pago_id,
       foto_comprobante,
       creado_por,
-      metodos_de_pago ( metodo_de_pago ),
-      bancos ( id, banco_id )
+      banco,
+      metodo_pago_id,
+      metodos_de_pago ( metodo_de_pago )
     `)
     .eq("viaje_id", pagosCtx.viajeId)
     .eq("pasajero_id", pagosCtx.pasajeroId)
@@ -122,7 +126,7 @@ async function loadPagosPasajero() {
 
   if (error) {
     listEl.innerHTML = `<div class="pagos-empty">Error al cargar pagos</div>`;
-    console.error(error);
+    console.error("Error loadPagosPasajero:", error);
     return;
   }
 
@@ -196,7 +200,7 @@ async function loadPagosPasajero() {
       ? new Date(p.fecha_pago + "T00:00:00").toLocaleDateString("es-PY")
       : "—";
     const metodo = p.metodos_de_pago?.metodo_de_pago || "—";
-    const banco  = p.bancos?.banco_id || "";
+    const banco  = p.banco || "";
     const cls    = tipoCls[p.tipo] || "";
     const icon   = tipoIcon[p.tipo] || "";
 
@@ -224,7 +228,6 @@ async function loadPagosPasajero() {
 
 /* ── MOSTRAR / OCULTAR FORM ─────────────────── */
 function mostrarFormPago() {
-  // Reset campos
   ["pago-monto","pago-comprobante","pago-observacion"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
@@ -253,7 +256,7 @@ function ocultarFormPago() {
 
 /* ── CAMBIO DE TIPO ─────────────────────────── */
 function onTipoChange() {
-  const tipo    = document.getElementById("pago-tipo")?.value;
+  const tipo     = document.getElementById("pago-tipo")?.value;
   const secTrans = document.getElementById("pago-transferencia-wrap");
   if (secTrans) secTrans.style.display = (tipo === "Transferencia") ? "" : "none";
   if (tipo === "Transferencia") {
@@ -320,14 +323,14 @@ async function subirFotoComprobante(file) {
 async function guardarPago() {
   const monto    = parseInt(document.getElementById("pago-monto").value);
   const tipo     = document.getElementById("pago-tipo").value;
-  const metodoid = document.getElementById("pago-metodo").value   || null;
-  const bancoid  = document.getElementById("pago-banco").value    || null;
+  const metodoid = document.getElementById("pago-metodo").value || null;
+  // banco: guardamos el id numérico de bancos (columna "id")
+  const bancoId  = document.getElementById("pago-banco").value || null;
   const fecha    = document.getElementById("pago-fecha").value;
   const compNro  = document.getElementById("pago-comprobante").value.trim() || null;
   const obs      = document.getElementById("pago-observacion").value.trim() || null;
   const fotoFile = document.getElementById("pago-foto").files?.[0];
 
-  // Validar monto
   const montoEl = document.getElementById("pago-monto");
   if (!monto || monto <= 0) {
     montoEl.classList.add("input-error");
@@ -336,7 +339,6 @@ async function guardarPago() {
   }
   montoEl.classList.remove("input-error");
 
-  // Validar destino en transferencia
   if (tipo === "Transferencia" && !pagosCtx.pasajeroDestino) {
     alert("Seleccioná el pasajero destino de la transferencia");
     return;
@@ -349,7 +351,6 @@ async function guardarPago() {
   try {
     const { data: { user } } = await supabaseClient.auth.getUser();
 
-    // Subir foto si la hay
     let foto_url = null;
     if (fotoFile) {
       try { foto_url = await subirFotoComprobante(fotoFile); }
@@ -360,7 +361,7 @@ async function guardarPago() {
       viaje_id        : pagosCtx.viajeId,
       pasajero_id     : pagosCtx.pasajeroId,
       metodo_pago_id  : metodoid,
-      banco_id        : bancoid,
+      banco           : bancoId,          // columna "banco" en tabla pagos
       monto,
       tipo,
       fecha_pago      : fecha || new Date().toISOString().split("T")[0],
@@ -371,13 +372,11 @@ async function guardarPago() {
     };
 
     if (tipo === "Transferencia") {
-      // Registro 1: egreso del pasajero origen
       const { data: reg1, error: e1 } = await supabaseClient
         .from("pagos").insert([{ ...base, tipo: "Transferencia" }])
         .select("id").single();
       if (e1) throw e1;
 
-      // Registro 2: ingreso al pasajero destino, con referencia al origen
       const { error: e2 } = await supabaseClient.from("pagos").insert([{
         ...base,
         pasajero_id        : pagosCtx.pasajeroDestino.id,
