@@ -73,13 +73,20 @@ async function initPagosView(ctx) {
   await loadPagosPasajero();
 }
 
-/* ── MOSTRAR BANCO SOLO SI ES TRANSFERENCIA ── */
+/* ── MOSTRAR BANCO Y COMPROBANTE SOLO PARA UENO ── */
 function onMetodoChange() {
   const sel  = document.getElementById("pago-metodo");
-  const wrap = document.getElementById("pago-banco-wrap");
-  if (!sel || !wrap) return;
-  const texto = sel.options[sel.selectedIndex]?.text?.toLowerCase() || "";
-  wrap.style.display = texto.includes("transferencia") ? "" : "none";
+  if (!sel) return;
+  const texto = sel.options[sel.selectedIndex]?.text?.toUpperCase() || "";
+  const esUeno = texto.includes("UENO");
+
+  const wrapBanco  = document.getElementById("pago-banco-wrap");
+  const wrapComp   = document.getElementById("pago-comprobante-wrap");
+  const wrapFoto   = document.getElementById("pago-foto-wrap");
+
+  if (wrapBanco) wrapBanco.style.display = esUeno ? "" : "none";
+  if (wrapComp)  wrapComp.style.display  = esUeno ? "" : "none";
+  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "" : "none";
 }
 
 /* ── CARGAR PAGOS ───────────────────────────── */
