@@ -124,7 +124,7 @@ body::before {
 .logo-wrap svg { width: 36px; height: 36px; }
 
 h2 {
-  font-family: 'Lora', serif;
+  font-family: 'Playfair Display', serif;
   font-size: 1.85rem;
   font-weight: 700;
   color: var(--text);
@@ -227,7 +227,7 @@ h2 {
   width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
 }
 .topbar-brand span {
-  font-family: 'Lora', serif; font-size: 1.1rem; font-weight: 700;
+  font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700;
 }
 
 /* ── MENÚ HAMBURGUESA ────────────────────────────────────── */
@@ -301,7 +301,7 @@ h2 {
   flex-wrap: wrap; margin-bottom: 1.4rem;
 }
 .page-header h1 {
-  font-family: 'Lora', serif;
+  font-family: 'Playfair Display', serif;
   font-size: 1.6rem; font-weight: 700;
 }
 .page-desc { font-size: .85rem; color: var(--text-muted); margin-top: .3rem; }
@@ -444,7 +444,7 @@ h2 {
 .avatar-edit-btn:hover { background: var(--accent2); }
 
 #detalle-name {
-  font-family: 'Lora', serif;
+  font-family: 'Playfair Display', serif;
   font-size: 1.4rem; font-weight: 700;
 }
 
@@ -491,7 +491,7 @@ h2 {
 /* ── FORMULARIO NUEVO CLIENTE ────────────────────────────── */
 .form-page-header { margin-bottom: 1.5rem; }
 .form-page-header h1 {
-  font-family: 'Lora', serif; font-size: 1.6rem; font-weight: 700;
+  font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700;
 }
 
 .form-field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .2rem; }
@@ -551,9 +551,9 @@ select.form-input { cursor: pointer; }
 }
 
 .topbar-logo-img {
-  width: 28px;
-  height: 28px;
+  width: 49px;
+  height: 49px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 10px;
   flex-shrink: 0;
 }
