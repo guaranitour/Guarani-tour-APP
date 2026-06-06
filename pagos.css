@@ -1,0 +1,337 @@
+/* ─────────────────────────────────────────────
+   pagos.css — Historial y formulario de pagos
+   Estética: refined financial / luxury minimal
+───────────────────────────────────────────── */
+
+/* ══ RESUMEN FINANCIERO ══════════════════════ */
+
+.pagos-resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  margin-bottom: 1.1rem;
+}
+
+.pagos-resumen-item {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: .9rem .85rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.pagos-resumen-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--glass-border);
+  border-radius: 14px 14px 0 0;
+}
+
+.pagos-resumen-item.pagado::before {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.pagos-resumen-item.saldado::before {
+  background: linear-gradient(90deg, #2d6a4f, #52b788);
+}
+
+.pagos-resumen-item.pendiente::before {
+  background: linear-gradient(90deg, #c9a84c, #e9c46a);
+}
+
+.pr-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pr-value {
+  font-family: 'Playfair Display', serif;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.pagos-resumen-item.saldado .pr-value {
+  color: #2d6a4f;
+}
+
+.pagos-resumen-item.pendiente .pr-value {
+  color: #9a6c00;
+}
+
+/* ── BARRA DE PROGRESO ──────────────────────── */
+
+.pagos-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-top: .25rem;
+}
+
+.pagos-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(0,0,0,.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.pagos-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+
+.pagos-progress-fill.completo {
+  background: linear-gradient(90deg, #2d6a4f, #52b788);
+}
+
+.pagos-pct {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* ══ HISTORIAL DE PAGOS ══════════════════════ */
+
+.pagos-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+
+.pagos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: .85rem;
+  text-align: center;
+}
+
+.pagos-empty svg {
+  opacity: .2;
+}
+
+/* ── FILA DE PAGO ───────────────────────────── */
+
+.pago-row {
+  padding: .95rem 0;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  transition: background .12s;
+}
+
+.pago-row:last-child {
+  border-bottom: none;
+}
+
+.pago-row:first-child {
+  padding-top: .25rem;
+}
+
+.pago-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.pago-row-left {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+/* ── BADGE DE TIPO ──────────────────────────── */
+
+.pago-tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .22rem .65rem;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+.pago-tipo-badge.tipo-pago {
+  background: rgba(45,106,79,.1);
+  color: #2d6a4f;
+}
+
+.pago-tipo-badge.tipo-devolucion {
+  background: rgba(192,57,43,.09);
+  color: #c0392b;
+}
+
+.pago-tipo-badge.tipo-transferencia {
+  background: rgba(52,120,246,.1);
+  color: #1e6fc7;
+}
+
+/* ── MONTO ──────────────────────────────────── */
+
+.pago-monto {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.pago-monto.tipo-pago          { color: #2d6a4f; }
+.pago-monto.tipo-devolucion    { color: #c0392b; }
+.pago-monto.tipo-transferencia { color: #1e6fc7; }
+
+/* ── FILA INFERIOR ──────────────────────────── */
+
+.pago-row-bottom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem .75rem;
+}
+
+.pago-fecha {
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.pago-comp {
+  font-size: .72rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,.05);
+  padding: .15rem .45rem;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+}
+
+.pago-metodo {
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.pago-obs {
+  font-size: .74rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.pago-by {
+  font-size: .7rem;
+  color: var(--text-muted);
+  opacity: .65;
+  margin-left: auto;
+}
+
+.pago-foto-link {
+  font-size: .73rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+}
+
+.pago-foto-link:hover {
+  text-decoration: underline;
+}
+
+/* ══ FORMULARIO DE NUEVO PAGO ════════════════ */
+
+.pago-form-inner {
+  margin-top: 1.1rem;
+  padding: 1.25rem;
+  background: rgba(45,106,79,.03);
+  border: 1.5px solid rgba(45,106,79,.18);
+  border-radius: 16px;
+  animation: formSlideIn .2s ease;
+}
+
+@keyframes formSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SEPARADOR TRANSFER ─────────────────────── */
+
+#pago-transferencia-wrap .section-title {
+  margin-top: .5rem;
+  margin-bottom: .65rem;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #1e6fc7;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+/* ── RESULTADO BÚSQUEDA TRANSFERENCIA ───────── */
+
+.trans-vacio {
+  font-size: .8rem;
+  color: var(--text-muted);
+  padding: .5rem .2rem;
+  font-style: italic;
+}
+
+/* ══ CAMPOS OCULTOS POR DEFECTO ══════════════ */
+
+#pago-banco-wrap,
+#pago-comprobante-wrap,
+#pago-foto-wrap {
+  display: none;
+}
+
+/* ══ RESPONSIVE ══════════════════════════════ */
+
+@media (max-width: 420px) {
+  .pagos-resumen-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagos-resumen-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1rem;
+  }
+
+  .pagos-resumen-item::before {
+    top: 0; left: 0; bottom: 0; right: auto;
+    width: 3px;
+    height: 100%;
+    border-radius: 14px 0 0 14px;
+  }
+
+  .pr-value {
+    font-size: .9rem;
+    text-align: right;
+  }
+}
