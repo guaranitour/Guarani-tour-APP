@@ -110,8 +110,7 @@ async function loadPagosPasajero() {
   const { data: pagos, error } = await supabaseClient
     .from("pagos")
     .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, creado_por, banco, metodo_pago_id")
-    .eq("viaje_id", pagosCtx.viajeId)
-    .eq("pasajero_id", pagosCtx.pasajeroId)
+    .eq("viaje_pasajero_id", pagosCtx.viajePasajeroId)
     .order("fecha_pago", { ascending: false });
 
   if (error) {
@@ -316,9 +315,8 @@ async function guardarPago() {
     }
 
     const base = {
-      viaje_id        : pagosCtx.viajeId,
-      pasajero_id     : pagosCtx.pasajeroId,
-      metodo_pago_id  : metodoid,
+      viaje_pasajero_id : pagosCtx.viajePasajeroId,
+      metodo_pago_id    : metodoid,
       banco           : bancoId,
       monto,
       tipo,
