@@ -128,9 +128,9 @@ function onMetodoChange() {
   const wrapComp   = document.getElementById("pago-comprobante-wrap");
   const wrapFoto   = document.getElementById("pago-foto-wrap");
 
-  if (wrapBanco) wrapBanco.style.display = esUeno ? "block" : "none";
-  if (wrapComp)  wrapComp.style.display  = esUeno ? "block" : "none";
-  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "block" : "none";
+  if (wrapBanco) wrapBanco.style.display = esUeno ? "" : "none";
+  if (wrapComp)  wrapComp.style.display  = esUeno ? "" : "none";
+  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "" : "none";
 }
 
 /* ── CARGAR PAGOS ───────────────────────────── */
@@ -230,20 +230,9 @@ async function loadPagosPasajero() {
     const icon   = tipoIcon[p.tipo] || "";
     return `
     <div class="pago-row">
-      <div class="pago-row-top">
-        <div class="pago-row-left">
-          <span class="pago-tipo-badge ${cls}">${icon} ${p.tipo}</span>
-          <span class="pago-fecha">${fecha}</span>
-          ${p.comprobante_nro ? `<span class="pago-comp">Nº ${p.comprobante_nro}</span>` : ""}
-        </div>
-        <span class="pago-monto ${cls}">Gs. ${(p.monto || 0).toLocaleString("es-PY")}</span>
-      </div>
-      <div class="pago-row-bottom">
-        <span class="pago-metodo">${metodo}${banco ? " · " + banco : ""}</span>
-        ${p.observacion ? `<span class="pago-obs">${p.observacion}</span>` : ""}
-        ${p.creado_por  ? `<span class="pago-by">por ${p.creado_por}</span>` : ""}
-        ${p.foto_comprobante ? `<a class="pago-foto-link" href="${p.foto_comprobante}" target="_blank">📎 Ver comprobante</a>` : ""}
-      </div>
+      <span class="pago-tipo-badge ${cls}">${icon} ${p.tipo}</span>
+      <span class="pago-fecha">${fecha}</span>
+      <span class="pago-monto ${cls}">Gs. ${(p.monto || 0).toLocaleString("es-PY")}</span>
     </div>`;
   }).join("");
 }

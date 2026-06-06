@@ -132,12 +132,22 @@
 /* ── FILA DE PAGO ───────────────────────────── */
 
 .pago-row {
-  padding: .95rem 0;
+  padding: .8rem 0;
   border-bottom: 1px solid var(--glass-border);
   display: flex;
-  flex-direction: column;
-  gap: .45rem;
-  transition: background .12s;
+  flex-direction: row;
+  align-items: center;
+  gap: .6rem;
+}
+
+.pago-row .pago-fecha {
+  flex: 1;
+  text-align: center;
+}
+
+.pago-row .pago-monto {
+  margin-left: auto;
+  text-align: right;
 }
 
 .pago-row:last-child {
