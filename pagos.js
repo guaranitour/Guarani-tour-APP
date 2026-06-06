@@ -128,9 +128,9 @@ function onMetodoChange() {
   const wrapComp   = document.getElementById("pago-comprobante-wrap");
   const wrapFoto   = document.getElementById("pago-foto-wrap");
 
-  if (wrapBanco) wrapBanco.style.display = esUeno ? "" : "none";
-  if (wrapComp)  wrapComp.style.display  = esUeno ? "" : "none";
-  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "" : "none";
+  if (wrapBanco) wrapBanco.style.display = esUeno ? "block" : "none";
+  if (wrapComp)  wrapComp.style.display  = esUeno ? "block" : "none";
+  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "block" : "none";
 }
 
 /* ── CARGAR PAGOS ───────────────────────────── */
