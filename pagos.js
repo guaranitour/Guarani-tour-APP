@@ -39,7 +39,7 @@ async function initPagosView(ctx) {
     const { data } = await supabaseClient
       .from("metodos_de_pago")
       .select("metodo_de_pago_id, metodo_de_pago")
-      .eq("activo", true)
+      
       .order("metodo_de_pago");
     pagosCtx.metodos = data || [];
   }
@@ -60,16 +60,18 @@ async function initPagosView(ctx) {
 
 /* ── CARGAR BANCOS EN SELECT ────────────────── */
 async function cargarSelectBancos() {
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("bancos")
-    .select("banco_id, nombre")
-    .eq("activo", true)
-    .order("nombre");
+    .select("id, banco_id")   // id = PK, banco_id = nombre del banco
+    
+    .order("banco_id");
+
+  if (error) console.error("Error cargando bancos:", error);
 
   const sel = document.getElementById("pago-banco");
   if (!sel) return;
   sel.innerHTML = `<option value="">— Sin banco —</option>` +
-    (data || []).map(b => `<option value="${b.banco_id}">${b.nombre}</option>`).join("");
+    (data || []).map(b => `<option value="${b.id}">${b.banco_id}</option>`).join("");
 }
 
 /* ── MOSTRAR BANCO SOLO SI EL MÉTODO ES TRANSFERENCIA ── */
@@ -112,7 +114,7 @@ async function loadPagosPasajero() {
       foto_comprobante,
       creado_por,
       metodos_de_pago ( metodo_de_pago ),
-      bancos ( nombre )
+      bancos ( id, banco_id )
     `)
     .eq("viaje_id", pagosCtx.viajeId)
     .eq("pasajero_id", pagosCtx.pasajeroId)
@@ -194,7 +196,7 @@ async function loadPagosPasajero() {
       ? new Date(p.fecha_pago + "T00:00:00").toLocaleDateString("es-PY")
       : "—";
     const metodo = p.metodos_de_pago?.metodo_de_pago || "—";
-    const banco  = p.bancos?.nombre || "";
+    const banco  = p.bancos?.banco_id || "";
     const cls    = tipoCls[p.tipo] || "";
     const icon   = tipoIcon[p.tipo] || "";
 
