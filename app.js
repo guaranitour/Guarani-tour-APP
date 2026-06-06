@@ -85,6 +85,7 @@ function navigateTo(view, idx = null) {
   currentView = view;
   selectedIdx = idx;
 
+  // Ocultar todas las vistas
   hideEl("view-home");
   hideEl("view-clientes");
   hideEl("view-detalle");
@@ -92,10 +93,13 @@ function navigateTo(view, idx = null) {
   hideEl("view-usuarios");
   hideEl("view-viajes");
   const _vpn = document.getElementById("view-viaje-pasajero-nuevo");
-if (_vpn) _vpn.style.display = "none";
-  const _vvn = document.getElementById("view-viaje-nuevo"); if (_vvn) _vvn.style.display = "none";
-  const _vvd = document.getElementById("view-viaje-detalle"); if (_vvd) _vvd.style.display = "none";
-
+  if (_vpn) _vpn.style.display = "none";
+  const _vvn = document.getElementById("view-viaje-nuevo");
+  if (_vvn) _vvn.style.display = "none";
+  const _vvd = document.getElementById("view-viaje-detalle");
+  if (_vvd) _vvd.style.display = "none";
+  const _vpp = document.getElementById("view-viaje-pasajero-pagos");
+  if (_vpp) _vpp.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -110,114 +114,121 @@ if (_vpn) _vpn.style.display = "none";
   if (view === "home") {
 
     showEl("view-home");
-
     updateBreadcrumb([{ label: "Inicio" }]);
 
-  } 
+  }
 
   else if (view === "clientes") {
 
     showEl("view-clientes");
-
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes" }
     ]);
-
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
 
-  } 
+  }
 
   else if (view === "nuevo") {
 
     showEl("view-nuevo");
-
     limpiarFormulario();
-
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: "Nuevo cliente" }
     ]);
 
-  } 
+  }
 
   else if (view === "detalle") {
 
     showEl("view-detalle");
-
     renderDetalle(idx);
-
     const p = allPassengers.find(x => x._idx === idx);
-
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: p?.Pasajero || "Detalle" }
     ]);
 
-  } 
+  }
 
-// ESTE ES EL BLOQUE CLAVE
+  // ESTE ES EL BLOQUE CLAVE
   else if (view === "usuarios") {
 
     if (currentUserRole !== "admin") return;
-
     showEl("view-usuarios");
-
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Usuarios" }
     ]);
-
     loadUsers();
+
   }
+
   else if (view === "viajes") {
-  showEl("view-viajes");
 
-  updateBreadcrumb([
-    { label: "Inicio", action: () => navigateTo("home") },
-    { label: "Viajes" }
-  ]);
+    showEl("view-viajes");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Viajes" }
+    ]);
+    loadViajes();
 
-  loadViajes(); // ⚠️ ESTA ES LA CLAVE
-}
+  }
+
   else if (view === "viaje-nuevo") {
-  if (currentUserRole !== "admin") return;
 
-  showEl("view-viaje-nuevo");
+    if (currentUserRole !== "admin") return;
+    showEl("view-viaje-nuevo");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Viajes", action: () => navigateTo("viajes") },
+      { label: "Nuevo viaje" }
+    ]);
 
-  updateBreadcrumb([
-    { label: "Inicio", action: () => navigateTo("home") },
-    { label: "Viajes", action: () => navigateTo("viajes") },
-    { label: "Nuevo viaje" }
-  ]);
-}
+  }
+
   else if (view === "viaje-detalle") {
-  showEl("view-viaje-detalle");
 
-  updateBreadcrumb([
-    { label: "Inicio", action: () => navigateTo("home") },
-    { label: "Viajes", action: () => navigateTo("viajes") },
-    { label: "Detalle" }
-  ]);
+    showEl("view-viaje-detalle");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Viajes", action: () => navigateTo("viajes") },
+      { label: "Detalle" }
+    ]);
+    loadViajeDetalle(idx);
 
-  loadViajeDetalle(idx); // 👈 clave
-}
+  }
+
   else if (view === "viaje-pasajero-nuevo") {
 
-  showEl("view-viaje-pasajero-nuevo");
+    showEl("view-viaje-pasajero-nuevo");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Viajes", action: () => navigateTo("viajes") },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
+      { label: "Agregar pasajero" }
+    ]);
+    initFormPasajero(idx);
 
-  updateBreadcrumb([
-    { label: "Inicio", action: () => navigateTo("home") },
-    { label: "Viajes", action: () => navigateTo("viajes") },
-    { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
-    { label: "Agregar pasajero" }
-  ]);
+  }
 
-  initFormPasajero(idx);
-}
+  else if (view === "viaje-pasajero-pagos") {
+
+    const { viajePasajeroId, viajeId, pasajeroId, nombrePasajero } = idx || {};
+    showEl("view-viaje-pasajero-pagos");
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", viajeId) },
+      { label: nombrePasajero || "Pagos" }
+    ]);
+    initPagosView({ viajePasajeroId, viajeId, pasajeroId, nombrePasajero });
+
+  }
 }
 
 function updateBreadcrumb(items) {
