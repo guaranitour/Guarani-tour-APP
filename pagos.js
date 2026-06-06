@@ -435,8 +435,10 @@ function initPagoDetalleView(p) {
 
   const fotoWrap = document.getElementById("pd-foto-wrap");
   const fotoImg  = document.getElementById("pd-foto-img");
+  const fotoLink = document.getElementById("pd-foto-link");
   if (p.foto_comprobante) {
-    fotoImg.src = p.foto_comprobante;
+    fotoImg.src  = p.foto_comprobante;
+    fotoLink.href = p.foto_comprobante;
     fotoWrap.style.display = "block";
   } else {
     fotoWrap.style.display = "none";

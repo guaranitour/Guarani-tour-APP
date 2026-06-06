@@ -301,7 +301,8 @@
 
 #pago-banco-wrap,
 #pago-comprobante-wrap,
-#pago-foto-wrap {
+#pago-foto-wrap,
+#pd-foto-wrap {
   display: none;
 }
 
