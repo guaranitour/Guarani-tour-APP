@@ -1,28 +1,26 @@
 /* ═══════════════════════════════════════════════
    pagos.js — Pagos de un pasajero en un viaje
-   Flujo: viajes → viaje-detalle → viaje-pasajero-pagos
+   Sin joins: todas las queries son planas
 ═══════════════════════════════════════════════ */
 
-// ── Estado global de pagos ───────────────────
 let pagosCtx = {
-  viajePasajeroId  : null,
-  viajeId          : null,
-  pasajeroId       : null,
-  nombrePasajero   : null,
-  totalAPagar      : 0,
-  metodos          : [],
-  pasajeroDestino  : null,
+  viajePasajeroId : null,
+  viajeId         : null,
+  pasajeroId      : null,
+  nombrePasajero  : null,
+  totalAPagar     : 0,
+  metodos         : [],   // { id, metodo_de_pago }
+  bancos          : [],   // { id, banco_id }
+  pasajeroDestino : null,
 };
 
-/* ── ENTRAR A LA VISTA DE PAGOS ─────────────── */
+/* ── ENTRAR A LA VISTA ──────────────────────── */
 function abrirPagosPasajero(viajePasajeroId, viajeId, pasajeroId, nombrePasajero) {
   pagosCtx.viajePasajeroId = viajePasajeroId;
   pagosCtx.viajeId         = viajeId;
   pagosCtx.pasajeroId      = pasajeroId;
   pagosCtx.nombrePasajero  = nombrePasajero;
-  navigateTo("viaje-pasajero-pagos", {
-    viajePasajeroId, viajeId, pasajeroId, nombrePasajero
-  });
+  navigateTo("viaje-pasajero-pagos", { viajePasajeroId, viajeId, pasajeroId, nombrePasajero });
 }
 
 /* ── INICIALIZAR VISTA ──────────────────────── */
@@ -34,50 +32,48 @@ async function initPagosView(ctx) {
 
   ocultarFormPago();
 
-  // ── Métodos de pago: columnas reales → id, metodo_de_pago ──
+  // ── Cargar métodos (tabla: id, metodo_de_pago) ──
   if (pagosCtx.metodos.length === 0) {
     const { data, error } = await supabaseClient
       .from("metodos_de_pago")
       .select("id, metodo_de_pago")
       .order("metodo_de_pago");
-
-    if (error) console.error("Error cargando métodos:", error);
+    if (error) console.error("Error metodos:", error);
     pagosCtx.metodos = data || [];
   }
 
-  // Poblar select de métodos
+  // ── Cargar bancos (tabla: id, banco_id=nombre) ──
+  if (pagosCtx.bancos.length === 0) {
+    const { data, error } = await supabaseClient
+      .from("bancos")
+      .select("id, banco_id")
+      .order("banco_id");
+    if (error) console.error("Error bancos:", error);
+    pagosCtx.bancos = data || [];
+  }
+
+  // Poblar select métodos
   const selMetodo = document.getElementById("pago-metodo");
   if (selMetodo) {
     selMetodo.innerHTML = pagosCtx.metodos
       .map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`)
       .join("");
-    // Remover listener anterior para no duplicar
     selMetodo.removeEventListener("change", onMetodoChange);
     selMetodo.addEventListener("change", onMetodoChange);
     onMetodoChange();
   }
 
-  await cargarSelectBancos();
+  // Poblar select bancos
+  const selBanco = document.getElementById("pago-banco");
+  if (selBanco) {
+    selBanco.innerHTML = `<option value="">— Sin banco —</option>` +
+      pagosCtx.bancos.map(b => `<option value="${b.id}">${b.banco_id}</option>`).join("");
+  }
+
   await loadPagosPasajero();
 }
 
-/* ── CARGAR BANCOS EN SELECT ────────────────── */
-async function cargarSelectBancos() {
-  // Tabla bancos: columnas → id, created_at, banco_id (texto con nombre del banco)
-  const { data, error } = await supabaseClient
-    .from("bancos")
-    .select("id, banco_id")
-    .order("banco_id");
-
-  if (error) console.error("Error cargando bancos:", error);
-
-  const sel = document.getElementById("pago-banco");
-  if (!sel) return;
-  sel.innerHTML = `<option value="">— Sin banco —</option>` +
-    (data || []).map(b => `<option value="${b.id}">${b.banco_id}</option>`).join("");
-}
-
-/* ── MOSTRAR BANCO SOLO SI EL MÉTODO ES TRANSFERENCIA ── */
+/* ── MOSTRAR BANCO SOLO SI ES TRANSFERENCIA ── */
 function onMetodoChange() {
   const sel  = document.getElementById("pago-metodo");
   const wrap = document.getElementById("pago-banco-wrap");
@@ -86,7 +82,7 @@ function onMetodoChange() {
   wrap.style.display = texto.includes("transferencia") ? "" : "none";
 }
 
-/* ── CARGAR PAGOS Y RENDERIZAR RESUMEN + LISTA ── */
+/* ── CARGAR PAGOS ───────────────────────────── */
 async function loadPagosPasajero() {
   const listEl    = document.getElementById("pagos-list");
   const resumenEl = document.getElementById("pagos-resumen");
@@ -94,7 +90,7 @@ async function loadPagosPasajero() {
 
   listEl.innerHTML = `<div class="pagos-loading">Cargando…</div>`;
 
-  // Total a pagar del viaje_pasajero
+  // Total a pagar
   const { data: vp } = await supabaseClient
     .from("viaje_pasajeros")
     .select("total_a_pagar")
@@ -103,38 +99,22 @@ async function loadPagosPasajero() {
 
   pagosCtx.totalAPagar = vp?.total_a_pagar || 0;
 
-  // ── Join sin FK: traemos banco por separado para evitar errores de relación ──
+  // ── Query PLANA sin joins ──
   const { data: pagos, error } = await supabaseClient
     .from("pagos")
-    .select(`
-      id,
-      monto,
-      tipo,
-      fecha_pago,
-      comprobante_nro,
-      observacion,
-      referencia_pago_id,
-      foto_comprobante,
-      creado_por,
-      banco,
-      metodo_pago_id,
-      metodos_de_pago ( metodo_de_pago )
-    `)
+    .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, creado_por, banco, metodo_pago_id")
     .eq("viaje_id", pagosCtx.viajeId)
     .eq("pasajero_id", pagosCtx.pasajeroId)
     .order("fecha_pago", { ascending: false });
 
   if (error) {
     listEl.innerHTML = `<div class="pagos-empty">Error al cargar pagos</div>`;
-    console.error("Error loadPagosPasajero:", error);
+    console.error("Error pagos:", error);
     return;
   }
 
-  // ── Calcular totales ──
-  let totalPagado      = 0;
-  let totalDevuelto    = 0;
-  let totalTransferido = 0;
-
+  // Totales
+  let totalPagado = 0, totalDevuelto = 0, totalTransferido = 0;
   (pagos || []).forEach(p => {
     if (p.tipo === "Pago")          totalPagado      += p.monto || 0;
     if (p.tipo === "Devolución")    totalDevuelto    += p.monto || 0;
@@ -144,10 +124,9 @@ async function loadPagosPasajero() {
   const neto  = totalPagado - totalDevuelto - totalTransferido;
   const saldo = pagosCtx.totalAPagar - neto;
   const pct   = pagosCtx.totalAPagar > 0
-    ? Math.min(100, Math.round((neto / pagosCtx.totalAPagar) * 100))
-    : 0;
+    ? Math.min(100, Math.round((neto / pagosCtx.totalAPagar) * 100)) : 0;
 
-  // ── Resumen ──
+  // Resumen
   resumenEl.innerHTML = `
     <div class="pagos-resumen-grid">
       <div class="pagos-resumen-item">
@@ -170,7 +149,6 @@ async function loadPagosPasajero() {
       <span class="pagos-pct">${pct}%</span>
     </div>`;
 
-  // ── Lista vacía ──
   if (!pagos || pagos.length === 0) {
     listEl.innerHTML = `
       <div class="pagos-empty">
@@ -183,12 +161,11 @@ async function loadPagosPasajero() {
     return;
   }
 
-  // ── Renderizar filas ──
-  const tipoCls = {
-    "Pago":          "tipo-pago",
-    "Devolución":    "tipo-devolucion",
-    "Transferencia": "tipo-transferencia",
-  };
+  // Resolver nombres desde caché local (sin join)
+  const metodosMap = Object.fromEntries(pagosCtx.metodos.map(m => [String(m.id), m.metodo_de_pago]));
+  const bancosMap  = Object.fromEntries(pagosCtx.bancos.map(b => [String(b.id), b.banco_id]));
+
+  const tipoCls  = { "Pago": "tipo-pago", "Devolución": "tipo-devolucion", "Transferencia": "tipo-transferencia" };
   const tipoIcon = {
     "Pago":          `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
     "Devolución":    `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 18 4 12 10 12"/><path d="M20 12a8 8 0 0 0-8-8 8 8 0 0 0-5.66 2.34L4 12"/></svg>`,
@@ -196,14 +173,11 @@ async function loadPagosPasajero() {
   };
 
   listEl.innerHTML = pagos.map(p => {
-    const fecha  = p.fecha_pago
-      ? new Date(p.fecha_pago + "T00:00:00").toLocaleDateString("es-PY")
-      : "—";
-    const metodo = p.metodos_de_pago?.metodo_de_pago || "—";
-    const banco  = p.banco || "";
+    const fecha  = p.fecha_pago ? new Date(p.fecha_pago + "T00:00:00").toLocaleDateString("es-PY") : "—";
+    const metodo = metodosMap[String(p.metodo_pago_id)] || "—";
+    const banco  = bancosMap[String(p.banco)] || "";
     const cls    = tipoCls[p.tipo] || "";
     const icon   = tipoIcon[p.tipo] || "";
-
     return `
     <div class="pago-row">
       <div class="pago-row-top">
@@ -217,10 +191,8 @@ async function loadPagosPasajero() {
       <div class="pago-row-bottom">
         <span class="pago-metodo">${metodo}${banco ? " · " + banco : ""}</span>
         ${p.observacion ? `<span class="pago-obs">${p.observacion}</span>` : ""}
-        ${p.creado_por   ? `<span class="pago-by">por ${p.creado_por}</span>` : ""}
-        ${p.foto_comprobante
-          ? `<a class="pago-foto-link" href="${p.foto_comprobante}" target="_blank">📎 Ver comprobante</a>`
-          : ""}
+        ${p.creado_por  ? `<span class="pago-by">por ${p.creado_por}</span>` : ""}
+        ${p.foto_comprobante ? `<a class="pago-foto-link" href="${p.foto_comprobante}" target="_blank">📎 Ver comprobante</a>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -232,17 +204,13 @@ function mostrarFormPago() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  const fotoEl = document.getElementById("pago-foto");
+  const fotoEl  = document.getElementById("pago-foto");
   if (fotoEl) fotoEl.value = "";
-
   const fechaEl = document.getElementById("pago-fecha");
   if (fechaEl) fechaEl.value = new Date().toISOString().split("T")[0];
-
-  const tipoEl = document.getElementById("pago-tipo");
+  const tipoEl  = document.getElementById("pago-tipo");
   if (tipoEl) { tipoEl.value = "Pago"; onTipoChange(); }
-
   onMetodoChange();
-
   document.getElementById("form-nuevo-pago").style.display = "";
   document.getElementById("btn-nuevo-pago").style.display  = "none";
 }
@@ -268,35 +236,25 @@ function onTipoChange() {
   }
 }
 
-/* ── BUSCAR PASAJERO DESTINO (transferencia) ── */
+/* ── BUSCAR PASAJERO DESTINO ────────────────── */
 function buscarPasajeroDestino() {
   const q    = document.getElementById("trans-buscar").value.toLowerCase().trim();
   const cont = document.getElementById("trans-resultados");
   if (!q) { cont.innerHTML = ""; return; }
-
   const resultados = (allPassengers || []).filter(p =>
     p.id !== pagosCtx.pasajeroId &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
   );
-
   if (resultados.length === 0) {
     cont.innerHTML = `<div class="trans-vacio">Sin resultados para "<strong>${q}</strong>"</div>`;
     return;
   }
-
   cont.innerHTML = resultados.slice(0, 8).map(p => `
     <div class="pasajero-item" onclick="seleccionarPasajeroDestino('${p.id}','${(p.Pasajero||"").replace(/'/g,"\\'")}')">
       <div class="pasajero-item-inner">
-        <div>
-          <strong>${p.Pasajero}</strong>
-          <div class="ci">CI: ${p["Documento de Identidad"] || "—"}</div>
-        </div>
-        <span class="pasajero-select-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </span>
+        <div><strong>${p.Pasajero}</strong><div class="ci">CI: ${p["Documento de Identidad"] || "—"}</div></div>
+        <span class="pasajero-select-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
       </div>
     </div>`).join("");
 }
@@ -304,16 +262,14 @@ function buscarPasajeroDestino() {
 function seleccionarPasajeroDestino(id, nombre) {
   pagosCtx.pasajeroDestino = { id, nombre };
   document.getElementById("trans-buscar").value = nombre;
-  document.getElementById("trans-resultados").innerHTML =
-    `<div class="pasajero-seleccionado">✅ ${nombre}</div>`;
+  document.getElementById("trans-resultados").innerHTML = `<div class="pasajero-seleccionado">✅ ${nombre}</div>`;
 }
 
-/* ── SUBIR FOTO COMPROBANTE ─────────────────── */
+/* ── SUBIR FOTO ─────────────────────────────── */
 async function subirFotoComprobante(file) {
-  const ext      = file.name.split(".").pop();
+  const ext = file.name.split(".").pop();
   const fileName = `${Date.now()}.${ext}`;
-  const { error } = await supabaseClient.storage
-    .from("comprobantes").upload(fileName, file);
+  const { error } = await supabaseClient.storage.from("comprobantes").upload(fileName, file);
   if (error) throw error;
   const { data } = supabaseClient.storage.from("comprobantes").getPublicUrl(fileName);
   return data.publicUrl;
@@ -324,19 +280,14 @@ async function guardarPago() {
   const monto    = parseInt(document.getElementById("pago-monto").value);
   const tipo     = document.getElementById("pago-tipo").value;
   const metodoid = document.getElementById("pago-metodo").value || null;
-  // banco: guardamos el id numérico de bancos (columna "id")
-  const bancoId  = document.getElementById("pago-banco").value || null;
+  const bancoId  = document.getElementById("pago-banco").value  || null;
   const fecha    = document.getElementById("pago-fecha").value;
   const compNro  = document.getElementById("pago-comprobante").value.trim() || null;
   const obs      = document.getElementById("pago-observacion").value.trim() || null;
   const fotoFile = document.getElementById("pago-foto").files?.[0];
 
   const montoEl = document.getElementById("pago-monto");
-  if (!monto || monto <= 0) {
-    montoEl.classList.add("input-error");
-    montoEl.focus();
-    return;
-  }
+  if (!monto || monto <= 0) { montoEl.classList.add("input-error"); montoEl.focus(); return; }
   montoEl.classList.remove("input-error");
 
   if (tipo === "Transferencia" && !pagosCtx.pasajeroDestino) {
@@ -345,7 +296,7 @@ async function guardarPago() {
   }
 
   const btn = document.getElementById("btn-guardar-pago");
-  btn.disabled    = true;
+  btn.disabled = true;
   btn.textContent = "Guardando…";
 
   try {
@@ -361,7 +312,7 @@ async function guardarPago() {
       viaje_id        : pagosCtx.viajeId,
       pasajero_id     : pagosCtx.pasajeroId,
       metodo_pago_id  : metodoid,
-      banco           : bancoId,          // columna "banco" en tabla pagos
+      banco           : bancoId,
       monto,
       tipo,
       fecha_pago      : fecha || new Date().toISOString().split("T")[0],
@@ -373,10 +324,8 @@ async function guardarPago() {
 
     if (tipo === "Transferencia") {
       const { data: reg1, error: e1 } = await supabaseClient
-        .from("pagos").insert([{ ...base, tipo: "Transferencia" }])
-        .select("id").single();
+        .from("pagos").insert([{ ...base, tipo: "Transferencia" }]).select("id").single();
       if (e1) throw e1;
-
       const { error: e2 } = await supabaseClient.from("pagos").insert([{
         ...base,
         pasajero_id        : pagosCtx.pasajeroDestino.id,
@@ -385,7 +334,6 @@ async function guardarPago() {
         observacion        : `Transferencia desde ${pagosCtx.nombrePasajero}${obs ? " — " + obs : ""}`,
       }]);
       if (e2) throw e2;
-
     } else {
       const { error } = await supabaseClient.from("pagos").insert([base]);
       if (error) throw error;
@@ -399,9 +347,6 @@ async function guardarPago() {
     alert("Error al guardar: " + (e.message || "Intentá de nuevo"));
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg> Registrar pago`;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar pago`;
   }
 }
