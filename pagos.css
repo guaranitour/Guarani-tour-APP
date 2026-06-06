@@ -335,3 +335,50 @@
     text-align: right;
   }
 }
+
+/* ══ BUSCADOR DE BANCO ═══════════════════════ */
+
+.banco-search-wrap {
+  position: relative;
+}
+
+.banco-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1.5px solid rgba(45,106,79,.25);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.banco-option {
+  padding: .7rem 1rem;
+  font-size: .85rem;
+  color: var(--text);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+  transition: background .1s;
+}
+
+.banco-option:last-child {
+  border-bottom: none;
+}
+
+.banco-option:hover {
+  background: rgba(45,106,79,.07);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.banco-dropdown-empty {
+  padding: .7rem 1rem;
+  font-size: .82rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

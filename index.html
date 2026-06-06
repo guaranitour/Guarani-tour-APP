@@ -412,7 +412,11 @@
                 <!-- Banco (condicional, solo con transferencia) -->
                 <div class="form-field" id="pago-banco-wrap" style="display:none">
                   <label class="form-label">Banco</label>
-                  <select id="pago-banco" class="form-input"></select>
+                  <div class="banco-search-wrap">
+                    <input type="text" id="pago-banco-input" class="form-input" placeholder="Buscar banco…" autocomplete="off" oninput="filtrarBancos()" />
+                    <input type="hidden" id="pago-banco" />
+                    <div id="banco-dropdown" class="banco-dropdown"></div>
+                  </div>
                 </div>
 
                 <!-- Nº Comprobante -->

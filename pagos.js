@@ -63,15 +63,59 @@ async function initPagosView(ctx) {
     onMetodoChange();
   }
 
-  // Poblar select bancos
-  const selBanco = document.getElementById("pago-banco");
-  if (selBanco) {
-    selBanco.innerHTML = `<option value="">— Sin banco —</option>` +
-      pagosCtx.bancos.map(b => `<option value="${b.id}">${b.banco_id}</option>`).join("");
-  }
+  // Bancos: se manejan via filtrarBancos(), solo limpiar input
+  const bancoInput = document.getElementById("pago-banco-input");
+  if (bancoInput) bancoInput.value = "";
+  const bancoHidden = document.getElementById("pago-banco");
+  if (bancoHidden) bancoHidden.value = "";
 
   await loadPagosPasajero();
 }
+
+/* ── BÚSQUEDA DE BANCO ──────────────────────── */
+function filtrarBancos() {
+  const input    = document.getElementById("pago-banco-input");
+  const hidden   = document.getElementById("pago-banco");
+  const dropdown = document.getElementById("banco-dropdown");
+  if (!input || !dropdown) return;
+
+  const q = input.value.toLowerCase().trim();
+  hidden.value = ""; // limpiar selección al escribir
+
+  if (!q) { dropdown.innerHTML = ""; dropdown.style.display = "none"; return; }
+
+  const matches = pagosCtx.bancos.filter(b =>
+    b.banco_id.toLowerCase().includes(q)
+  ).slice(0, 8);
+
+  if (matches.length === 0) {
+    dropdown.innerHTML = `<div class="banco-dropdown-empty">Sin resultados</div>`;
+    dropdown.style.display = "block";
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(b =>
+    `<div class="banco-option" onclick="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\'")}')">
+      ${b.banco_id}
+    </div>`
+  ).join("");
+  dropdown.style.display = "block";
+}
+
+function seleccionarBanco(id, nombre) {
+  document.getElementById("pago-banco").value       = id;
+  document.getElementById("pago-banco-input").value = nombre;
+  const dropdown = document.getElementById("banco-dropdown");
+  if (dropdown) { dropdown.innerHTML = ""; dropdown.style.display = "none"; }
+}
+
+// Cerrar dropdown al hacer click afuera
+document.addEventListener("click", e => {
+  if (!e.target.closest(".banco-search-wrap")) {
+    const dd = document.getElementById("banco-dropdown");
+    if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
+  }
+});
 
 /* ── MOSTRAR BANCO Y COMPROBANTE SOLO PARA UENO ── */
 function onMetodoChange() {
@@ -84,9 +128,9 @@ function onMetodoChange() {
   const wrapComp   = document.getElementById("pago-comprobante-wrap");
   const wrapFoto   = document.getElementById("pago-foto-wrap");
 
-  if (wrapBanco) wrapBanco.style.display = esUeno ? "block" : "none";
-  if (wrapComp)  wrapComp.style.display  = esUeno ? "block" : "none";
-  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "block" : "none";
+  if (wrapBanco) wrapBanco.style.display = esUeno ? "" : "none";
+  if (wrapComp)  wrapComp.style.display  = esUeno ? "" : "none";
+  if (wrapFoto)  wrapFoto.style.display  = esUeno ? "" : "none";
 }
 
 /* ── CARGAR PAGOS ───────────────────────────── */
@@ -212,6 +256,12 @@ function mostrarFormPago() {
   });
   const fotoEl  = document.getElementById("pago-foto");
   if (fotoEl) fotoEl.value = "";
+  const bancoInput = document.getElementById("pago-banco-input");
+  if (bancoInput) bancoInput.value = "";
+  const bancoHidden = document.getElementById("pago-banco");
+  if (bancoHidden) bancoHidden.value = "";
+  const bancoDd = document.getElementById("banco-dropdown");
+  if (bancoDd) { bancoDd.innerHTML = ""; bancoDd.style.display = "none"; }
   const fechaEl = document.getElementById("pago-fecha");
   if (fechaEl) fechaEl.value = new Date().toISOString().split("T")[0];
   const tipoEl  = document.getElementById("pago-tipo");
