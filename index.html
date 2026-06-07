@@ -749,5 +749,14 @@
   <script src="viajes_activos.js"></script>
   <script src="usuarios.js"></script>
   <script src="pagos.js"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/Guarani-tour-APP/service-worker.js')
+        .then(reg => console.log('SW registrado:', reg.scope))
+        .catch(err => console.error('SW error:', err));
+    });
+  }
+</script>
 </body>
 </html>
