@@ -209,7 +209,7 @@ async function loadViajeDetalle(viajeId) {
   `;
 
 
-  const { data: pasajeros } = await supabaseClient
+  const { data: pasajeros, error: errPasajeros } = await supabaseClient
     .from("viaje_pasajeros")
     .select(`
       id,
@@ -217,10 +217,11 @@ async function loadViajeDetalle(viajeId) {
       total_a_pagar,
       puntos_destino,
       asistencia,
-      pasajeros ( id, Pasajero, "Documento de Identidad" ),
-      pagos!viaje_pasajero_id ( monto, tipo )
+      pasajeros ( id, Pasajero, "Documento de Identidad" )
     `)
     .eq("viaje_id", viajeId);
+
+  if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
 
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
@@ -231,6 +232,19 @@ async function loadViajeDetalle(viajeId) {
     return;
   }
 
+  // Traer pagos por separado para calcular restante
+  const vpIds = pasajeros.map(p => p.id);
+  const { data: todosPagos } = await supabaseClient
+    .from("pagos")
+    .select("viaje_pasajero_id, monto, tipo")
+    .in("viaje_pasajero_id", vpIds);
+
+  const pagosPorVP = {};
+  (todosPagos || []).forEach(pg => {
+    if (!pagosPorVP[pg.viaje_pasajero_id]) pagosPorVP[pg.viaje_pasajero_id] = [];
+    pagosPorVP[pg.viaje_pasajero_id].push(pg);
+  });
+
   const esAdmin = Array.isArray(currentUserRole)
     ? currentUserRole.includes("admin")
     : currentUserRole === "admin";
@@ -240,7 +254,7 @@ async function loadViajeDetalle(viajeId) {
     const nombreE  = nombre.replace(/'/g, "\\'");
     const pid      = p.pasajero_id || p.pasajeros?.id || "";
     const total    = p.total_a_pagar || 0;
-    const pagado   = (p.pagos || [])
+    const pagado   = (pagosPorVP[p.id] || [])
       .filter(pg => pg.tipo === "Pago" || pg.tipo === "Transferencia")
       .reduce((s, pg) => s + (pg.monto || 0), 0);
     const restante = Math.max(0, total - pagado);
