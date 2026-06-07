@@ -565,3 +565,75 @@ select.form-input { cursor: pointer; }
   flex-shrink: 0;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
 }
+
+/* ── STAT CARDS PASAJERO ────────────────────── */
+
+.pasajero-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .65rem;
+  margin-top: .85rem;
+}
+
+.pasajero-stat-card {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: .75rem .9rem;
+}
+
+.psc-full {
+  grid-column: 1 / -1;
+}
+
+.psc-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.psc-icon--club {
+  background: rgba(201,168,76,.15);
+  color: #8a6d1a;
+}
+
+.psc-icon--viajes {
+  background: rgba(45,106,79,.12);
+  color: var(--accent);
+}
+
+.psc-icon--ultimo {
+  background: rgba(99,102,241,.1);
+  color: #4f46e5;
+}
+
+.psc-body {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.psc-label {
+  font-size: .7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.psc-value {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
