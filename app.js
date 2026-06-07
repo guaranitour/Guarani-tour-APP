@@ -202,6 +202,7 @@ function navigateTo(view, idx = null) {
 
   }
 
+  else if (view === "viaje-nuevo") {
 
     if (currentUserRole !== "admin") return;
     showEl("view-viaje-nuevo");
