@@ -262,11 +262,22 @@ async function loadPassengers() {
   setListState("loading");
   const { data, error } = await supabaseClient
     .from("pasajeros")
-    .select(`id, Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail"`)
+    .select(`id, Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", avatar_path`)
     .order("Pasajero", { ascending: true });
 
   if (error) { console.error(error); setListState("error"); return; }
   allPassengers = data.map((p, i) => ({ ...p, _idx: i }));
+
+  // Cargar URLs públicas de avatars que existan
+  allPassengers.forEach(p => {
+    if (p.avatar_path) {
+      const { data: urlData } = supabaseClient.storage
+        .from("avatars")
+        .getPublicUrl(p.avatar_path);
+      if (urlData?.publicUrl) avatarCache[p._idx] = urlData.publicUrl;
+    }
+  });
+
   renderList(allPassengers);
 }
 
@@ -481,10 +492,15 @@ function triggerAvatarUpload() {
   document.getElementById("avatar-file-input").click();
 }
 
-function handleAvatarUpload(event) {
+async function handleAvatarUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   const idx = parseInt(document.getElementById("detalle-avatar").dataset.idx);
+  const p   = allPassengers.find(x => x._idx === idx);
+  if (!p) return;
+  event.target.value = "";
+
+  // Mostrar preview inmediato mientras sube
   const reader = new FileReader();
   reader.onload = e => {
     avatarCache[idx] = e.target.result;
@@ -493,7 +509,35 @@ function handleAvatarUpload(event) {
     if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
   };
   reader.readAsDataURL(file);
-  event.target.value = "";
+
+  // Subir a Supabase Storage
+  const ext      = file.name.split(".").pop();
+  const filePath = `${p.id}.${ext}`;
+
+  const { error: upError } = await supabaseClient.storage
+    .from("avatars")
+    .upload(filePath, file, { upsert: true, contentType: file.type });
+
+  if (upError) {
+    console.error("Error subiendo avatar:", upError);
+    mostrarFeedbackDetalle("Error al subir la foto. Intentá de nuevo.", false);
+    return;
+  }
+
+  // Guardar la ruta en la tabla pasajeros
+  const { error: dbError } = await supabaseClient
+    .from("pasajeros")
+    .update({ avatar_path: filePath })
+    .eq("id", p.id);
+
+  if (dbError) {
+    console.error("Error guardando avatar_path:", dbError);
+    mostrarFeedbackDetalle("Foto subida pero no se pudo registrar en la base de datos.", false);
+    return;
+  }
+
+  p.avatar_path = filePath;
+  mostrarFeedbackDetalle("Foto actualizada correctamente.", true);
 }
 
 // ── Helpers ────────────────────────────────────────────────
