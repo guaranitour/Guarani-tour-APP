@@ -573,3 +573,62 @@
   color: var(--danger);
   margin-top: -.25rem;
 }
+
+/* ── BOTÓN EDITAR PASAJERO EN VIAJE ────────── */
+
+.btn-editar-vp {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.btn-editar-vp:hover,
+.btn-editar-vp.activo {
+  background: #f0faf4;
+  color: var(--accent);
+  border-color: rgba(45,106,79,.3);
+}
+
+/* ── FORM EDICIÓN INLINE ───────────────────── */
+
+.vp-edit-form {
+  background: var(--glass-bg);
+  border: 1px solid rgba(45,106,79,.2);
+  border-radius: 12px;
+  margin: .25rem 0 .5rem;
+  overflow: hidden;
+}
+
+.vp-edit-inner {
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.vp-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+.vp-edit-field:last-of-type {
+  grid-column: 1 / -1;
+}
+
+.vp-edit-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: .5rem;
+  justify-content: flex-end;
+  margin-top: .25rem;
+}

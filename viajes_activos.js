@@ -217,7 +217,8 @@ async function loadViajeDetalle(viajeId) {
       total_a_pagar,
       puntos_destino,
       asistencia,
-      pasajeros ( id, Pasajero, "Documento de Identidad" )
+      pasajeros ( id, Pasajero, "Documento de Identidad" ),
+      pagos ( monto, tipo )
     `)
     .eq("viaje_id", viajeId);
 
@@ -230,29 +231,123 @@ async function loadViajeDetalle(viajeId) {
     return;
   }
 
+  const esAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.includes("admin")
+    : currentUserRole === "admin";
+
   listEl.innerHTML = pasajeros.map(p => {
-    const asiste   = p.asistencia !== "No asiste";
     const nombre   = p.pasajeros?.Pasajero || "Sin nombre";
-    const ci       = p.pasajeros?.["Documento de Identidad"] || "";
-    const monto    = (p.total_a_pagar || 0).toLocaleString("es-PY");
-    const pid      = p.pasajero_id || p.pasajeros?.id || "";
     const nombreE  = nombre.replace(/'/g, "\\'");
+    const pid      = p.pasajero_id || p.pasajeros?.id || "";
+    const total    = p.total_a_pagar || 0;
+    const pagado   = (p.pagos || [])
+      .filter(pg => pg.tipo === "Pago" || pg.tipo === "Transferencia")
+      .reduce((s, pg) => s + (pg.monto || 0), 0);
+    const restante = Math.max(0, total - pagado);
+    const restanteStr = restante.toLocaleString("es-PY");
+    const saldado  = restante === 0 && total > 0;
+
     return `
-    <div class="viaje-pasajero-row" style="cursor:pointer"
-         onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
-      <div class="vp-avatar">${nombre.charAt(0).toUpperCase()}</div>
-      <div class="vp-info">
+    <div class="viaje-pasajero-row">
+      <div class="vp-info" style="cursor:pointer"
+           onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
         <div class="vp-nombre">${nombre}</div>
-        ${ci ? `<div class="vp-ci">CI: ${ci}</div>` : ""}
+        <div class="vp-ci" style="margin-top:.2rem">
+          ${saldado
+            ? `<span class="vp-pill asiste" style="font-size:.7rem">✅ Saldado</span>`
+            : `<span style="font-size:.78rem;color:var(--text-muted)">Restante: <strong style="color:var(--text)">Gs. ${restanteStr}</strong></span>`
+          }
+        </div>
       </div>
-      <div class="vp-pills">
-        <span class="vp-pill monto">Gs. ${monto}</span>
-        <span class="vp-pill ${asiste ? "asiste" : "noasiste"}">${asiste ? "✅ Asiste" : "❌ No asiste"}</span>
-        ${p.puntos_destino ? `<span class="vp-pill pts">⭐ ${p.puntos_destino}</span>` : ""}
-      </div>
-      <div class="vp-chevron">›</div>
+      ${esAdmin ? `
+      <button class="btn-editar-vp" title="Editar"
+        onclick="abrirEdicionVP(event, '${p.id}', ${total}, ${p.puntos_destino || 0}, '${p.asistencia || "Asiste"}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>` : ""}
+      <div class="vp-chevron" style="cursor:pointer"
+           onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">›</div>
     </div>`;
   }).join("");
+}
+
+function abrirEdicionVP(event, vpId, total, puntos, asistencia) {
+  event.stopPropagation();
+
+  // Cerrar cualquier form abierto
+  document.querySelectorAll(".vp-edit-form").forEach(el => el.remove());
+  document.querySelectorAll(".btn-editar-vp.activo").forEach(el => el.classList.remove("activo"));
+
+  const btn = event.currentTarget;
+  btn.classList.add("activo");
+  const row = btn.closest(".viaje-pasajero-row");
+
+  const form = document.createElement("div");
+  form.className = "vp-edit-form";
+  form.innerHTML = `
+    <div class="vp-edit-inner">
+      <div class="vp-edit-field">
+        <label class="pcf-label">Total a pagar (Gs.) <span class="req">*</span></label>
+        <input type="number" id="vpe-total" class="form-input" value="${total}" min="0" />
+      </div>
+      <div class="vp-edit-field">
+        <label class="pcf-label">Puntos destino</label>
+        <input type="number" id="vpe-puntos" class="form-input" value="${puntos}" min="0" />
+      </div>
+      <div class="vp-edit-field">
+        <label class="pcf-label">Asistencia</label>
+        <select id="vpe-asistencia" class="form-input">
+          <option value="Asiste" ${asistencia === "Asiste" ? "selected" : ""}>Asiste</option>
+          <option value="No asiste" ${asistencia === "No asiste" ? "selected" : ""}>No asiste</option>
+        </select>
+      </div>
+      <div class="vp-edit-actions">
+        <button class="btn-cancel" onclick="cerrarEdicionVP()">Cancelar</button>
+        <button class="btn-save" onclick="guardarEdicionVP('${vpId}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar
+        </button>
+      </div>
+    </div>`;
+
+  row.after(form);
+}
+
+function cerrarEdicionVP() {
+  document.querySelectorAll(".vp-edit-form").forEach(el => el.remove());
+  document.querySelectorAll(".btn-editar-vp.activo").forEach(el => el.classList.remove("activo"));
+}
+
+async function guardarEdicionVP(vpId) {
+  const total      = parseInt(document.getElementById("vpe-total").value);
+  const puntos     = parseInt(document.getElementById("vpe-puntos").value) || 0;
+  const asistencia = document.getElementById("vpe-asistencia").value;
+
+  if (!total || total <= 0) {
+    document.getElementById("vpe-total").classList.add("error");
+    return;
+  }
+
+  const btn = document.querySelector(".vp-edit-form .btn-save");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  const { error } = await supabaseClient
+    .from("viaje_pasajeros")
+    .update({ total_a_pagar: total, puntos_destino: puntos, asistencia })
+    .eq("id", vpId);
+
+  if (error) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
+    alert("Error al guardar. Intentá de nuevo.");
+    return;
+  }
+
+  cerrarEdicionVP();
+  loadViajeDetalle(viajeActualId);
 }
 async function guardarPasajeroEnViaje() {
   try {
