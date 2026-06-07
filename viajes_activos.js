@@ -16,9 +16,12 @@ async function loadViajes() {
 
   list.innerHTML = "Cargando…";
 
+  const hoy = new Date().toISOString().split("T")[0];
+
   const { data, error } = await supabaseClient
     .from("viajes")
     .select("*")
+    .gte("fecha_regreso", hoy)
     .order("fecha_salida", { ascending: false });
 
   if (error) {
