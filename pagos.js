@@ -144,11 +144,23 @@ async function loadPagosPasajero() {
   // Total a pagar
   const { data: vp } = await supabaseClient
     .from("viaje_pasajeros")
-    .select("total_a_pagar")
+    .select("total_a_pagar, puntos_destino, asistencia, pasajero_id")
     .eq("id", parseInt(pagosCtx.viajePasajeroId))
     .single();
 
   pagosCtx.totalAPagar = vp?.total_a_pagar || 0;
+
+  // Calcular membresía Club Destino
+  let esMiembro = false;
+  let puntosViaje = vp?.puntos_destino || 0;
+  if (vp?.pasajero_id) {
+    const { data: historial } = await supabaseClient
+      .from("viaje_pasajeros")
+      .select("id")
+      .eq("pasajero_id", vp.pasajero_id)
+      .eq("asistencia", "Asiste");
+    esMiembro = (historial || []).length >= 3;
+  }
 
   // ── Query PLANA sin joins ──
   const { data: pagos, error } = await supabaseClient
@@ -197,6 +209,13 @@ async function loadPagosPasajero() {
         <div class="pagos-progress-fill ${pct >= 100 ? "completo" : ""}" style="width:${pct}%"></div>
       </div>
       <span class="pagos-pct">${pct}%</span>
+    </div>
+    <div class="pagos-club-row">
+      ${esMiembro
+        ? `<span class="pagos-club-badge miembro">⭐ Club Destino</span>
+           <span class="pagos-puntos-badge">+${puntosViaje} pts${vp?.asistencia === "No asiste" ? " (sin puntos — No asiste)" : ""}</span>`
+        : `<span class="pagos-club-badge no-miembro">Sin membresía Club Destino</span>`
+      }
     </div>`;
 
   if (!pagos || pagos.length === 0) {

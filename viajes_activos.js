@@ -359,7 +359,7 @@ function abrirEdicionVP(event, vpId, total, puntos, asistencia) {
   form.className = "vp-edit-form";
   form.innerHTML = `
     <div class="vp-edit-inner">
-      <div class="vp-edit-field">
+      <div class="vp-edit-field" style="grid-column:1/-1">
         <label class="pcf-label">Total a pagar (Gs.) <span class="req">*</span></label>
         <input type="number" id="vpe-total" class="form-input" value="${total}" min="0" />
       </div>
@@ -393,7 +393,7 @@ function cerrarEdicionVP() {
 
 async function guardarEdicionVP(vpId) {
   const total      = parseInt(document.getElementById("vpe-total").value);
-  const puntos     = parseInt(document.getElementById("vpe-puntos").value) || 0;
+  const puntosInput = parseInt(document.getElementById("vpe-puntos").value) || 0;
   const asistencia = document.getElementById("vpe-asistencia").value;
 
   if (!total || total <= 0) {
@@ -405,14 +405,18 @@ async function guardarEdicionVP(vpId) {
   btn.disabled = true;
   btn.textContent = "Guardando…";
 
+  // Si No asiste, puntos siempre 0. Si Asiste, respetar el valor manual del input.
+  const puntosAsignar = asistencia === "No asiste" ? 0 : puntosInput;
+
   const { error } = await supabaseClient
     .from("viaje_pasajeros")
-    .update({ total_a_pagar: total, puntos_destino: puntos, asistencia })
+    .update({ total_a_pagar: total, puntos_destino: puntosAsignar, asistencia })
     .eq("id", vpId);
 
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
+
   if (error) {
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
     alert("Error al guardar. Intentá de nuevo.");
     return;
   }
@@ -448,12 +452,34 @@ async function guardarPasajeroEnViaje() {
 // ✅ CORRECTO
 const { data: { user } } = await supabaseClient.auth.getUser();
 
+// Verificar si el pasajero ya es miembro Club Destino (≥2 viajes previos con Asiste)
+const { data: viajesPrevios } = await supabaseClient
+  .from("viaje_pasajeros")
+  .select("id")
+  .eq("pasajero_id", pasajeroSeleccionado.id)
+  .eq("asistencia", "Asiste");
+
+const viajesCount = (viajesPrevios || []).length; // Este nuevo será el siguiente
+const esMiembro   = viajesCount >= 2; // Con este nuevo viaje llega a 3+
+
+// Obtener puntos base del viaje actual
+const { data: viajeData } = await supabaseClient
+  .from("viajes")
+  .select("puntos_destino")
+  .eq("id", viajeActualId)
+  .single();
+
+const puntosViaje = viajeData?.puntos_destino || 0;
+const puntosAsignar = esMiembro ? puntosViaje : 0;
+
 const { error } = await supabaseClient
   .from("viaje_pasajeros")
   .insert([{
     viaje_id: viajeActualId,
     pasajero_id: pasajeroSeleccionado.id,
-    total_a_pagar: total,       // ← coma agregada
+    total_a_pagar: total,
+    asistencia: "Asiste",
+    puntos_destino: puntosAsignar,
     creado_por: user.email
   }]);
 
