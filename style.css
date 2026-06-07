@@ -475,11 +475,29 @@ h2 {
   gap: .8rem;
 }
 
-.detail-field { display: flex; flex-direction: column; gap: .15rem; }
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  background: rgba(255,255,255,.6);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: .6rem .8rem;
+}
 .detail-field.full { grid-column: 1 / -1; }
 
-.detail-label { font-size: .72rem; color: var(--text-muted); font-weight: 500; }
-.detail-value { font-size: .9rem; font-weight: 400; color: var(--text); }
+.detail-label {
+  font-size: .68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.detail-value {
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--text);
+}
 .detail-value.empty { color: var(--text-muted); font-style: italic; font-size: .82rem; }
 
 /* ── FAB ─────────────────────────────────────────────────── */
