@@ -15,6 +15,19 @@
 <link rel="stylesheet" href="usuarios.css" />
   <link rel="stylesheet" href="viajes_activos.css" />
   <link rel="stylesheet" href="pagos.css" />
+<style>
+  .section-title { display: flex; align-items: center; gap: .45rem; }
+  .btn-editar-detalle {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .3rem .75rem;
+    font-size: .78rem; font-family: inherit;
+    background: #f0faf4; color: #2d6a4f;
+    border: 1px solid rgba(45,106,79,.25); border-radius: 6px;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-editar-detalle:hover { background: #dff2e8; }
+</style>
 </head>
 <body>
 
@@ -493,8 +506,12 @@
           <div class="section-title">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Datos personales
+            <button class="btn-editar-detalle" id="btn-editar-detalle" onclick="activarEdicionDetalle()" style="display:none">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar
+            </button>
           </div>
-          <div class="detail-grid">
+          <div class="detail-grid" id="detalle-fields-view">
             <div class="detail-field">
               <span class="detail-label">Nombre completo</span>
               <span class="detail-value" id="d-nombre-full"></span>
@@ -516,6 +533,34 @@
               <span class="detail-value" id="d-email"></span>
             </div>
           </div>
+          <!-- Formulario de edición (oculto por defecto) -->
+          <div class="detail-grid" id="detalle-fields-edit" style="display:none">
+            <div class="form-field full">
+              <label class="form-label">Nombre completo <span class="req">*</span></label>
+              <input type="text" id="e-nombre" class="form-input" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Documento de Identidad <span class="req">*</span></label>
+              <input type="text" id="e-ci" class="form-input" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Sexo <span class="req">*</span></label>
+              <select id="e-sexo" class="form-input">
+                <option value="">— Seleccionar —</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Fecha de nacimiento</label>
+              <input type="date" id="e-fecha" class="form-input" />
+            </div>
+            <div class="form-field full">
+              <label class="form-label">E-mail</label>
+              <input type="email" id="e-email" class="form-input" />
+            </div>
+          </div>
         </div>
 
         <div class="detalle-section">
@@ -523,14 +568,29 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg>
             Datos de empresa
           </div>
-          <div class="detail-grid">
+          <div class="detail-grid" id="detalle-empresa-view">
             <div class="detail-field">
               <span class="detail-label">Vendedor</span>
               <span class="detail-value" id="d-vendedor"></span>
             </div>
-
+          </div>
+          <div class="detail-grid" id="detalle-empresa-edit" style="display:none">
+            <div class="form-field full">
+              <label class="form-label">Vendedor</label>
+              <input type="text" id="e-vendedor" class="form-input" placeholder="Nombre del vendedor" />
+            </div>
           </div>
         </div>
+
+        <!-- Acciones edición -->
+        <div class="form-actions" id="detalle-edit-actions" style="display:none">
+          <button class="btn-cancel" onclick="cancelarEdicionDetalle()">Cancelar</button>
+          <button class="btn-save" id="btn-guardar-detalle" onclick="guardarEdicionDetalle()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Guardar cambios
+          </button>
+        </div>
+        <div id="detalle-edit-feedback" style="display:none; margin: 0 1rem 1rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
       </div>
     </div>
 

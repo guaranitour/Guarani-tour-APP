@@ -371,6 +371,109 @@ function renderDetalle(idx) {
   setField("d-sexo",        p.Sexo);
   setField("d-email",       p["E-mail"]);
   setField("d-vendedor",    p.Vendedor);
+
+  // Mostrar botón editar solo para admin y worker
+  const btnEditar = document.getElementById("btn-editar-detalle");
+  if (btnEditar) {
+    btnEditar.style.display = ["admin", "worker"].some(r =>
+      Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
+    ) ? "" : "none";
+  }
+
+  // Asegurar modo lectura al renderizar
+  cancelarEdicionDetalle(true);
+}
+
+function activarEdicionDetalle() {
+  const p = allPassengers.find(x => x._idx === selectedIdx);
+  if (!p) return;
+
+  // Poblar inputs con valores actuales
+  document.getElementById("e-nombre").value  = p.Pasajero || "";
+  document.getElementById("e-ci").value      = p["Documento de Identidad"] || "";
+  document.getElementById("e-sexo").value    = p.Sexo || "";
+  document.getElementById("e-fecha").value   = p["Fecha de nacimiento"] || "";
+  document.getElementById("e-email").value   = p["E-mail"] || "";
+  document.getElementById("e-vendedor").value = p.Vendedor || "";
+
+  // Alternar vistas
+  document.getElementById("detalle-fields-view").style.display  = "none";
+  document.getElementById("detalle-fields-edit").style.display  = "";
+  document.getElementById("detalle-empresa-view").style.display = "none";
+  document.getElementById("detalle-empresa-edit").style.display = "";
+  document.getElementById("detalle-edit-actions").style.display = "";
+  document.getElementById("btn-editar-detalle").style.display   = "none";
+  document.getElementById("detalle-edit-feedback").style.display = "none";
+}
+
+function cancelarEdicionDetalle(silencioso = false) {
+  document.getElementById("detalle-fields-view").style.display  = "";
+  document.getElementById("detalle-fields-edit").style.display  = "none";
+  document.getElementById("detalle-empresa-view").style.display = "";
+  document.getElementById("detalle-empresa-edit").style.display = "none";
+  document.getElementById("detalle-edit-actions").style.display = "none";
+  document.getElementById("detalle-edit-feedback").style.display = "none";
+  const btnEditar = document.getElementById("btn-editar-detalle");
+  if (btnEditar && !silencioso) btnEditar.style.display = "";
+}
+
+async function guardarEdicionDetalle() {
+  const p = allPassengers.find(x => x._idx === selectedIdx);
+  if (!p) return;
+
+  const nombre = document.getElementById("e-nombre").value.trim();
+  const ci     = document.getElementById("e-ci").value.trim();
+  const sexo   = document.getElementById("e-sexo").value;
+
+  if (!nombre || !ci || !sexo) {
+    mostrarFeedbackDetalle("Completá los campos obligatorios.", false);
+    return;
+  }
+
+  const btn = document.getElementById("btn-guardar-detalle");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  const updates = {
+    "Pasajero":               nombre,
+    "Documento de Identidad": ci,
+    "Sexo":                   sexo,
+    "Fecha de nacimiento":    document.getElementById("e-fecha").value || null,
+    "E-mail":                 document.getElementById("e-email").value.trim() || null,
+    "Vendedor":               document.getElementById("e-vendedor").value.trim() || null,
+  };
+
+  const { error } = await supabaseClient
+    .from("pasajeros")
+    .update(updates)
+    .eq("id", p.id);
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar cambios`;
+
+  if (error) {
+    mostrarFeedbackDetalle(
+      error.code === "23505" ? "Ya existe un cliente con ese CI." : "Error al guardar. Intentá de nuevo.",
+      false
+    );
+    return;
+  }
+
+  // Actualizar en memoria
+  Object.assign(p, updates);
+  cancelarEdicionDetalle();
+  renderDetalle(selectedIdx);
+  mostrarFeedbackDetalle("Cambios guardados correctamente.", true);
+}
+
+function mostrarFeedbackDetalle(msg, ok) {
+  const el = document.getElementById("detalle-edit-feedback");
+  el.textContent = msg;
+  el.style.display = "";
+  el.style.background = ok ? "#f0faf4" : "#fff0f0";
+  el.style.color      = ok ? "#2d6a4f" : "#c0392b";
+  el.style.border     = ok ? "1px solid rgba(45,106,79,.2)" : "1px solid rgba(192,57,43,.2)";
+  if (ok) setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
 // ── Avatar ─────────────────────────────────────────────────
