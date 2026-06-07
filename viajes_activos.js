@@ -222,6 +222,7 @@ async function loadViajeDetalle(viajeId) {
     .eq("viaje_id", viajeId);
 
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
+  console.log("viaje_pasajeros result:", pasajeros, "error:", errPasajeros);
 
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
