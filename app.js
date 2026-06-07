@@ -448,6 +448,8 @@ async function renderDetalle(idx) {
     ? `<span style="color:var(--accent);font-weight:600">⭐ Miembro</span>`
     : `<span style="color:var(--text-muted)">No miembro</span>`;
   document.getElementById("d-total-viajes").textContent = totalViajes;
+  const cardViajes = document.getElementById("card-total-viajes");
+  if (cardViajes) cardViajes.onclick = () => irAHistorialViajes(idx);
   document.getElementById("d-ultimo-viaje").textContent = ultimoNombre;
 }
 
@@ -705,13 +707,13 @@ async function guardarNuevoCliente() {
 }
 
 // ── Historial de viajes del pasajero ───────────────────────
-function irAHistorialViajes() {
-  const p = allPassengers.find(x => x._idx === selectedIdx);
+function irAHistorialViajes(pasajeroIdx) {
+  const idxToUse = (pasajeroIdx !== undefined) ? pasajeroIdx : selectedIdx;
+  const p = allPassengers.find(x => x._idx === idxToUse);
   if (!p) return;
-  // Solo navegar si tiene viajes
   const total = document.getElementById("d-total-viajes")?.textContent;
-  if (total === "0" || total === "…" || total === "—") return;
-  navigateTo("historial-viajes", selectedIdx);
+  if (total === "0" || total === "u2026" || total === "u2014") return;
+  navigateTo("historial-viajes", idxToUse);
 }
 
 async function loadHistorialViajes(idx) {
