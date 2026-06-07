@@ -655,3 +655,85 @@ select.form-input { cursor: pointer; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Card "Total de viajes" cliqueable ─────────────────── */
+.pasajero-stat-card--clickable {
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .12s;
+  position: relative;
+}
+.pasajero-stat-card--clickable:hover {
+  background: #f0faf4;
+  box-shadow: 0 2px 10px rgba(45,106,79,.12);
+  transform: translateY(-1px);
+}
+.pasajero-stat-card--clickable:active {
+  transform: translateY(0);
+  background: #dff2e8;
+}
+.psc-chevron {
+  margin-left: auto;
+  color: var(--text-muted, #9b9b8a);
+  flex-shrink: 0;
+}
+
+/* ── Historial de viajes ───────────────────────────────── */
+.historial-viaje-row {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  border-bottom: 1px solid var(--border, #e8e8e0);
+  transition: background .12s;
+}
+.historial-viaje-row:last-child { border-bottom: none; }
+.historial-viaje-row:hover { background: #fafaf7; }
+
+.hvr-num {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-light, #e8f0eb);
+  color: var(--accent, #2d6a4f);
+  font-size: .75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: .1rem;
+}
+
+.hvr-body { flex: 1; min-width: 0; }
+
+.hvr-nombre {
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--text, #1a1a16);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: .3rem;
+}
+
+.hvr-meta {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  flex-wrap: wrap;
+}
+
+.hvr-fecha,
+.hvr-puntos {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .78rem;
+  color: var(--text-muted, #9b9b8a);
+}
+
+.hvr-puntos {
+  color: #c9a84c;
+  font-weight: 500;
+}
+.hvr-puntos svg { stroke: #c9a84c; }

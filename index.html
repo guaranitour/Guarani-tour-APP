@@ -591,7 +591,7 @@
                 <span class="psc-value" id="d-club-destino">—</span>
               </div>
             </div>
-            <div class="pasajero-stat-card">
+            <div class="pasajero-stat-card pasajero-stat-card--clickable" id="card-total-viajes" onclick="irAHistorialViajes()">
               <div class="psc-icon psc-icon--viajes">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
@@ -599,6 +599,7 @@
                 <span class="psc-label">Total de viajes</span>
                 <span class="psc-value" id="d-total-viajes">—</span>
               </div>
+              <svg class="psc-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
             </div>
             <div class="pasajero-stat-card psc-full">
               <div class="psc-icon psc-icon--ultimo">
@@ -807,6 +808,23 @@
 
       </div>
     </div>
+
+  <!-- HISTORIAL DE VIAJES DEL PASAJERO -->
+  <div id="view-historial-viajes" style="display:none">
+    <div class="main detalle-main">
+      <div class="form-page-header">
+        <h1 id="historial-titulo">Historial de viajes</h1>
+        <p class="page-desc" id="historial-subtitulo">Viajes como protagonista</p>
+      </div>
+      <div class="detalle-section">
+        <div class="section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Viajes asistidos
+        </div>
+        <div id="historial-list"></div>
+      </div>
+    </div>
+  </div>
 
   </div><!-- /app-view -->
 

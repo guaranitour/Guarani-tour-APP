@@ -92,6 +92,8 @@ function navigateTo(view, idx = null) {
   hideEl("view-nuevo");
   hideEl("view-usuarios");
   hideEl("view-viajes");
+  const _hvp = document.getElementById("view-historial-viajes");
+  if (_hvp) _hvp.style.display = "none";
   const _vpn = document.getElementById("view-viaje-pasajero-nuevo");
   if (_vpn) _vpn.style.display = "none";
   const _vvn = document.getElementById("view-viaje-nuevo");
@@ -183,7 +185,23 @@ function navigateTo(view, idx = null) {
 
   }
 
-  else if (view === "viaje-nuevo") {
+  else if (view === "historial-viajes") {
+
+    showEl("view-historial-viajes");
+    const p = allPassengers.find(x => x._idx === idx);
+    const nombre = p?.Pasajero || "Pasajero";
+    document.getElementById("historial-titulo").textContent = nombre;
+    document.getElementById("historial-subtitulo").textContent = "Viajes asistidos como protagonista";
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Base de clientes", action: () => navigateTo("clientes") },
+      { label: nombre, action: () => navigateTo("detalle", idx) },
+      { label: "Historial de viajes" }
+    ]);
+    loadHistorialViajes(idx);
+
+  }
+
 
     if (currentUserRole !== "admin") return;
     showEl("view-viaje-nuevo");
@@ -683,4 +701,66 @@ async function guardarNuevoCliente() {
   allPassengers.forEach((p, i) => p._idx = i);
 
   navigateTo("clientes");
+}
+
+// ── Historial de viajes del pasajero ───────────────────────
+function irAHistorialViajes() {
+  const p = allPassengers.find(x => x._idx === selectedIdx);
+  if (!p) return;
+  // Solo navegar si tiene viajes
+  const total = document.getElementById("d-total-viajes")?.textContent;
+  if (total === "0" || total === "…" || total === "—") return;
+  navigateTo("historial-viajes", selectedIdx);
+}
+
+async function loadHistorialViajes(idx) {
+  const listEl = document.getElementById("historial-list");
+  listEl.innerHTML = `<div class="list-state"><div class="icon">⏳</div>Cargando viajes…</div>`;
+
+  const p = allPassengers.find(x => x._idx === idx);
+  if (!p) { listEl.innerHTML = `<div class="list-state"><div class="icon">⚠️</div>Pasajero no encontrado.</div>`; return; }
+
+  const { data, error } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select(`
+      viaje_id,
+      viajes ( nombre, fecha_salida, puntos_destino )
+    `)
+    .eq("pasajero_id", p.id)
+    .eq("asistencia", "Asiste");
+
+  if (error || !data || data.length === 0) {
+    listEl.innerHTML = `<div class="list-state"><div class="icon">🔍</div>Sin viajes registrados.</div>`;
+    return;
+  }
+
+  // Ordenar por fecha descendente
+  data.sort((a, b) => {
+    const fa = a.viajes?.fecha_salida || "";
+    const fb = b.viajes?.fecha_salida || "";
+    return fb.localeCompare(fa);
+  });
+
+  listEl.innerHTML = data.map((vp, i) => {
+    const nombre  = vp.viajes?.nombre || "Viaje sin nombre";
+    const fecha   = formatDate(vp.viajes?.fecha_salida) || "Fecha no registrada";
+    const puntos  = vp.viajes?.puntos_destino != null ? vp.viajes.puntos_destino : "—";
+    return `
+      <div class="historial-viaje-row">
+        <div class="hvr-num">${i + 1}</div>
+        <div class="hvr-body">
+          <div class="hvr-nombre">${nombre}</div>
+          <div class="hvr-meta">
+            <span class="hvr-fecha">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              ${fecha}
+            </span>
+            <span class="hvr-puntos">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              ${puntos} pts
+            </span>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
 }
