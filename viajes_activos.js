@@ -218,7 +218,7 @@ async function loadViajeDetalle(viajeId) {
       puntos_destino,
       asistencia,
       pasajeros ( id, Pasajero, "Documento de Identidad" ),
-      pagos ( monto, tipo )
+      pagos!viaje_pasajero_id ( monto, tipo )
     `)
     .eq("viaje_id", viajeId);
 
