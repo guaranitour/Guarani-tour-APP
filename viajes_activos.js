@@ -262,17 +262,21 @@ async function loadViajeDetalle(viajeId) {
     const restanteStr = restante.toLocaleString("es-PY");
     const saldado  = restante === 0 && total > 0;
 
+    const pct = total > 0 ? pagado / total : 0;
+    const pillClass = saldado ? "saldado" : pct >= 0.5 ? "parcial" : "deuda";
+    const pillLabel = saldado
+      ? "✅ Saldado"
+      : `Gs. ${restanteStr}`;
+
     return `
     <div class="viaje-pasajero-row">
-      <div class="vp-info" style="cursor:pointer"
+      <div class="vp-info" style="cursor:pointer;flex:1;min-width:0"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
         <div class="vp-nombre">${nombre}</div>
-        <div class="vp-ci" style="margin-top:.2rem">
-          ${saldado
-            ? `<span class="vp-pill asiste" style="font-size:.7rem">✅ Saldado</span>`
-            : `<span style="font-size:.78rem;color:var(--text-muted)">Restante: <strong style="color:var(--text)">Gs. ${restanteStr}</strong></span>`
-          }
-        </div>
+      </div>
+      <div class="vp-pills" style="cursor:pointer"
+           onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
+        <span class="vp-pill ${pillClass}">${pillLabel}</span>
       </div>
       ${esAdmin ? `
       <button class="btn-editar-vp" title="Editar"

@@ -632,3 +632,20 @@
   justify-content: flex-end;
   margin-top: .25rem;
 }
+
+/* ── PILLS DE DEUDA ─────────────────────────── */
+
+.vp-pill.saldado {
+  background: rgba(45,106,79,.12);
+  color: #2d6a4f;
+}
+
+.vp-pill.parcial {
+  background: rgba(201,168,76,.18);
+  color: #7a5c10;
+}
+
+.vp-pill.deuda {
+  background: rgba(192,57,43,.12);
+  color: #c0392b;
+}
