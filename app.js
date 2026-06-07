@@ -353,7 +353,7 @@ function filterPassengers() {
 }
 
 // ── Detalle ────────────────────────────────────────────────
-function renderDetalle(idx) {
+async function renderDetalle(idx) {
   const p = allPassengers.find(x => x._idx === idx);
   if (!p) return;
   const name = p.Pasajero || "Sin nombre";
@@ -393,7 +393,43 @@ function renderDetalle(idx) {
 
   // Asegurar modo lectura al renderizar
   cancelarEdicionDetalle(true);
-}
+
+  // ── Datos de viajes del pasajero ──────────────────
+  document.getElementById("d-club-destino").textContent  = "…";
+  document.getElementById("d-total-viajes").textContent  = "…";
+  document.getElementById("d-ultimo-viaje").textContent  = "…";
+
+  const { data: vps } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select(`
+      asistencia,
+      viajes ( nombre, fecha_salida )
+    `)
+    .eq("pasajero_id", p.id)
+    .eq("asistencia", "Asiste");
+
+  if (!vps || vps.length === 0) {
+    document.getElementById("d-club-destino").innerHTML = `<span style="color:var(--text-muted)">No miembro</span>`;
+    document.getElementById("d-total-viajes").textContent = "0";
+    document.getElementById("d-ultimo-viaje").textContent = "Sin viajes";
+    return;
+  }
+
+  const totalViajes = vps.length;
+  const esmiembro   = totalViajes >= 3;
+
+  // Último viaje por fecha_salida
+  const conFecha = vps.filter(v => v.viajes?.fecha_salida);
+  conFecha.sort((a, b) => b.viajes.fecha_salida.localeCompare(a.viajes.fecha_salida));
+  const ultimoNombre = conFecha.length > 0
+    ? conFecha[0].viajes.nombre
+    : (vps[0].viajes?.nombre || "—");
+
+  document.getElementById("d-club-destino").innerHTML = esmiembro
+    ? `<span style="color:var(--accent);font-weight:600">⭐ Miembro</span>`
+    : `<span style="color:var(--text-muted)">No miembro</span>`;
+  document.getElementById("d-total-viajes").textContent = totalViajes;
+  document.getElementById("d-ultimo-viaje").textContent = ultimoNombre;
 
 function activarEdicionDetalle() {
   const p = allPassengers.find(x => x._idx === selectedIdx);
