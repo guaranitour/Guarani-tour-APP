@@ -262,7 +262,7 @@ async function loadPassengers() {
   setListState("loading");
   const { data, error } = await supabaseClient
     .from("pasajeros")
-    .select(`id, Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail", ByC, "Club destino"`)
+    .select(`id, Pasajero, "Documento de Identidad", Vendedor, "Fecha de nacimiento", Sexo, "E-mail"`)
     .order("Pasajero", { ascending: true });
 
   if (error) { console.error(error); setListState("error"); return; }
@@ -371,8 +371,6 @@ function renderDetalle(idx) {
   setField("d-sexo",        p.Sexo);
   setField("d-email",       p["E-mail"]);
   setField("d-vendedor",    p.Vendedor);
-  setField("d-byc",         p.ByC);
-  setField("d-club",        p["Club destino"]);
 }
 
 // ── Avatar ─────────────────────────────────────────────────
@@ -431,7 +429,7 @@ document.addEventListener("click", (e) => {
 
 // ── Formulario nuevo cliente ───────────────────────────────
 function limpiarFormulario() {
-  ["f-nombre","f-ci","f-sexo","f-email","f-fecha","f-vendedor","f-byc","f-club"].forEach(id => {
+  ["f-nombre","f-ci","f-sexo","f-email","f-fecha","f-vendedor"].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = "";
@@ -473,8 +471,6 @@ async function guardarNuevoCliente() {
     "E-mail":                 document.getElementById("f-email").value.trim() || null,
     "Fecha de nacimiento":    document.getElementById("f-fecha").value || null,
     "Vendedor":               document.getElementById("f-vendedor").value.trim() || null,
-    "ByC":                    document.getElementById("f-byc").value.trim() || null,
-    "Club destino":           document.getElementById("f-club").value.trim() || null,
   };
 
   const btn = document.getElementById("btn-guardar");
