@@ -228,6 +228,13 @@ async function loadViajeDetalle(viajeId) {
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
   console.log("viaje_pasajeros result:", pasajeros, "error:", errPasajeros);
 
+  // Mostrar/ocultar botón agregar siempre (antes de posible return)
+  const esWorkerOAdminEarly = Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin","worker"].includes(r))
+    : ["admin","worker"].includes(currentUserRole);
+  const btnAgregarEarly = document.getElementById("btn-agregar-vp");
+  if (btnAgregarEarly) btnAgregarEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
       <div class="viaje-pasajeros-empty">

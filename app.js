@@ -712,7 +712,7 @@ function irAHistorialViajes(pasajeroIdx) {
   const p = allPassengers.find(x => x._idx === idxToUse);
   if (!p) return;
   const total = document.getElementById("d-total-viajes")?.textContent;
-  if (total === "0" || total === "u2026" || total === "u2014") return;
+  if (total === "0" || total === "…" || total === "—") return;
   navigateTo("historial-viajes", idxToUse);
 }
 
