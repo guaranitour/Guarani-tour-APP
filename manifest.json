@@ -13,7 +13,13 @@
       "src": "https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "https://guaranitour.github.io/Guarani-tour-APP/favicon.ico",
