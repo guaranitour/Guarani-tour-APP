@@ -1,6 +1,7 @@
 let viajeActualId = null;
 let pasajeroSeleccionado = null;
 let viajeActualData = null;
+let pasajerosDelViaje = [];
 /* ─────────────────────────────────────────────
    viajes_activos.js — Gestión de viajes
 ───────────────────────────────────────────── */
@@ -250,8 +251,56 @@ async function loadViajeDetalle(viajeId) {
     ? currentUserRole.includes("admin")
     : currentUserRole === "admin";
 
+  const esWorkerOAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin","worker"].includes(r))
+    : ["admin","worker"].includes(currentUserRole);
+
+  // Guardar para filtrado
+  pasajerosDelViaje = pasajeros.map(p => ({
+    ...p,
+    _nombre: p.pasajeros?.Pasajero || "Sin nombre",
+    _pagos: pagosPorVP[p.id] || []
+  }));
+
+  // Mostrar/ocultar botón agregar
+  const btnAgregar = document.getElementById("btn-agregar-vp");
+  if (btnAgregar) btnAgregar.style.display = esWorkerOAdmin ? "" : "none";
+
+  // Limpiar buscador al cargar
+  const buscador = document.getElementById("buscador-vp");
+  if (buscador) buscador.value = "";
+
+  renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
+}
+
+function filtrarPasajerosViaje(q) {
+  const esAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.includes("admin")
+    : currentUserRole === "admin";
+  const filtrados = q.trim()
+    ? pasajerosDelViaje.filter(p =>
+        p._nombre.toLowerCase().includes(q.toLowerCase())
+      )
+    : pasajerosDelViaje;
+  const pagosPorVP = {};
+  pasajerosDelViaje.forEach(p => { pagosPorVP[p.id] = p._pagos; });
+  renderPasajerosViaje(filtrados, esAdmin, pagosPorVP);
+}
+
+function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
+  const listEl = document.getElementById("viaje-pasajeros-list");
+
+  if (!pasajeros || pasajeros.length === 0) {
+    listEl.innerHTML = `
+      <div class="viaje-pasajeros-empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Sin resultados
+      </div>`;
+    return;
+  }
+
   listEl.innerHTML = pasajeros.map(p => {
-    const nombre   = p.pasajeros?.Pasajero || "Sin nombre";
+    const nombre   = p._nombre || p.pasajeros?.Pasajero || "Sin nombre";
     const nombreE  = nombre.replace(/'/g, "\\'");
     const pid      = p.pasajero_id || p.pasajeros?.id || "";
     const total    = p.total_a_pagar || 0;
