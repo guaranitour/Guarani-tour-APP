@@ -430,6 +430,7 @@ async function renderDetalle(idx) {
     : `<span style="color:var(--text-muted)">No miembro</span>`;
   document.getElementById("d-total-viajes").textContent = totalViajes;
   document.getElementById("d-ultimo-viaje").textContent = ultimoNombre;
+}
 
 function activarEdicionDetalle() {
   const p = allPassengers.find(x => x._idx === selectedIdx);
