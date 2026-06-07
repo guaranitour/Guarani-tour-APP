@@ -503,9 +503,9 @@ function getInitials(name) {
 
 function formatDate(val) {
   if (!val) return null;
-  const d = new Date(val);
-  if (isNaN(d)) return val;
-  return d.toLocaleDateString("es-PY", { day: "2-digit", month: "long", year: "numeric" });
+  const [year, month, day] = val.split("-");
+  if (!day) return val;
+  return `${day}/${month}/${year}`;
 }
 
 function setField(id, value) {
