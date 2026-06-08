@@ -759,19 +759,15 @@ async function loadEgresos(viajeId) {
       const caja      = metMap[e.caja_saliente] || "—";
       const fecha     = e.fecha ? e.fecha.split("T")[0].split("-").reverse().join("/") : "—";
       return `
-      <div class="egreso-row">
-        <div class="egreso-info">
-          <div class="egreso-concepto">${categoria}</div>
-          ${e.descripcion ? `<div class="egreso-obs">${e.descripcion}</div>` : ""}
-          <div class="egreso-fecha">
-            ${fecha}
-            ${e.ejecutor ? `· <span style="font-style:italic">${e.ejecutor}</span>` : ""}
-            · ${caja}
-          </div>
-        </div>
-        <div class="egreso-monto">Gs. ${(e.monto || 0).toLocaleString("es-PY")}</div>
-      </div>`;
-    }).join("")}
+  <div class="egreso-row">
+    <div class="egreso-info">
+      <div class="egreso-concepto">${categoria}</div>
+    </div>
+    <div class="egreso-monto">
+      Gs. ${(e.monto || 0).toLocaleString("es-PY")}
+    </div>
+  </div>
+`;    }).join("")}
   `;
 }
 
