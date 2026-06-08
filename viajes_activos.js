@@ -1168,6 +1168,25 @@ function confirmarEditarPresupuesto() {
   if (btnEdit) btnEdit.after(warn);
 }
 
+function _renderPresupuestoFields() {
+  const fieldsEl = document.getElementById("presupuesto-form-fields");
+  if (!fieldsEl) return;
+  fieldsEl.innerHTML = `
+    <p class="presupuesto-form-hint">Completá los montos por categoría. Las categorías sin monto serán ignoradas.</p>
+    <div class="detail-grid" id="presupuesto-grid">
+      ${_presupuestoCategorias.map(c => {
+        const valorPrevio = _presupuestoOriginal[c.id] || "";
+        return `
+        <div class="form-field">
+          <label class="form-label">${c.nombre}${c._local ? ' <span style="font-size:.7rem;color:var(--text-muted)">(extra)</span>' : ''}</label>
+          <input type="number" class="form-input presupuesto-input"
+                 data-cat-id="${c.id}" min="0" placeholder="0"
+                 value="${valorPrevio}" />
+        </div>`;
+      }).join("")}
+    </div>`;
+}
+
 async function mostrarFormPresupuesto(esEdicion) {
   _presupuestoModoEdicion = esEdicion;
 
@@ -1177,34 +1196,66 @@ async function mostrarFormPresupuesto(esEdicion) {
   const btnEdit   = document.getElementById("btn-editar-presupuesto");
   if (!formEl || !fieldsEl) return;
 
-  // Cargar categorías si no están en caché
-  if (_presupuestoCategorias.length === 0) {
-    const { data } = await supabaseClient
-      .from("categorias")
-      .select("id, nombre")
-      .is("scope", null)
-      .order("nombre", { ascending: true });
-    _presupuestoCategorias = data || [];
-  }
+  // Cargar categorías globales + locales del viaje en paralelo
+  const [{ data: globales }, { data: locales }] = await Promise.all([
+    supabaseClient.from("categorias").select("id, nombre")
+      .is("scope", null).order("nombre", { ascending: true }),
+    supabaseClient.from("categorias").select("id, nombre")
+      .eq("scope", parseInt(viajeActualId)).order("nombre", { ascending: true })
+  ]);
 
-  fieldsEl.innerHTML = `
-    <p class="presupuesto-form-hint">Completá los montos por categoría. Las categorías sin monto serán ignoradas.</p>
-    <div class="detail-grid">
-      ${_presupuestoCategorias.map(c => {
-        const valorPrevio = _presupuestoOriginal[c.id] || "";
-        return `
-        <div class="form-field">
-          <label class="form-label">${c.nombre}</label>
-          <input type="number" class="form-input presupuesto-input"
-                 data-cat-id="${c.id}" min="0" placeholder="0"
-                 value="${valorPrevio}" />
-        </div>`;
-      }).join("")}
-    </div>`;
+  _presupuestoCategorias = [
+    ...(globales || []),
+    ...(locales || []).map(c => ({ ...c, _local: true }))
+  ];
+
+  _renderPresupuestoFields();
 
   formEl.style.display = "";
   if (btnReg)  btnReg.style.display  = "none";
   if (btnEdit) btnEdit.style.display = "none";
+}
+
+async function agregarCatExtra() {
+  const input = document.getElementById("input-cat-extra");
+  const nombre = input?.value.trim();
+  if (!nombre) {
+    if (input) input.classList.add("error");
+    return;
+  }
+  if (input) input.classList.remove("error");
+
+  // Verificar que no exista ya con ese nombre en la lista actual
+  const yaExiste = _presupuestoCategorias.some(
+    c => c.nombre.toLowerCase() === nombre.toLowerCase()
+  );
+  if (yaExiste) {
+    alert("Ya existe una categoría con ese nombre.");
+    return;
+  }
+
+  const btn = input.nextElementSibling;
+  if (btn) { btn.disabled = true; btn.textContent = "Agregando…"; }
+
+  // Insertar en categorias con scope = viajeActualId
+  const { data, error } = await supabaseClient
+    .from("categorias")
+    .insert([{ nombre, scope: parseInt(viajeActualId) }])
+    .select("id, nombre")
+    .single();
+
+  if (btn) { btn.disabled = false; btn.textContent = "+ Agregar"; }
+
+  if (error) {
+    console.error("Error creando categoría:", error);
+    alert("Error al crear la categoría. Intentá de nuevo.");
+    return;
+  }
+
+  // Agregar al caché y re-renderizar el grid
+  _presupuestoCategorias.push({ ...data, _local: true });
+  _renderPresupuestoFields();
+  if (input) input.value = "";
 }
 
 function cerrarFormPresupuesto() {

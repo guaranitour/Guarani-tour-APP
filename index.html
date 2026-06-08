@@ -445,6 +445,19 @@
         <div id="form-presupuesto" style="display:none">
           <div class="pago-form-inner">
             <div id="presupuesto-form-fields"></div>
+
+            <!-- Categoría extra local -->
+            <div style="margin-top:.85rem;padding-top:.85rem;border-top:1px solid var(--border,#e8ede9)">
+              <p class="presupuesto-form-hint" style="margin-bottom:.5rem">¿Necesitás un gasto que no está en la lista?</p>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <input type="text" id="input-cat-extra" class="form-input"
+                       placeholder="Nombre del gasto extra…" style="flex:1" />
+                <button class="btn-cancel" onclick="agregarCatExtra()" style="white-space:nowrap;flex-shrink:0">
+                  + Agregar
+                </button>
+              </div>
+            </div>
+
             <div class="form-actions" style="margin-top:.75rem">
               <button class="btn-cancel" onclick="cerrarFormPresupuesto()">Cancelar</button>
               <button class="btn-save" id="btn-guardar-presupuesto" onclick="guardarPresupuesto()">
