@@ -82,6 +82,49 @@
     color: #c0392b;
     white-space: nowrap;
   }
+
+  /* ── EGRESO DETALLE ──────────────────────── */
+  .egreso-det-monto-hero {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1.5rem 1rem 1.2rem;
+    background: linear-gradient(135deg, rgba(192,57,43,.07), rgba(192,57,43,.03));
+    border: 1px solid rgba(192,57,43,.15);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .egreso-det-monto-label {
+    font-size: .75rem; font-weight: 600; color: #c0392b;
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem;
+  }
+  .egreso-det-monto-valor {
+    font-size: 1.8rem; font-weight: 800; color: #c0392b; line-height: 1;
+  }
+  .egreso-det-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .85rem;
+    margin-top: .75rem;
+  }
+  .egreso-det-field { display: flex; flex-direction: column; gap: .15rem; }
+  .egreso-det-field.full { grid-column: 1 / -1; }
+  .egreso-det-label {
+    font-size: .72rem; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
+  }
+  .egreso-det-value { font-size: .88rem; color: var(--text); font-weight: 500; }
+  .egreso-det-comprobante {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .55rem 1rem; border-radius: 10px;
+    border: 1px solid rgba(45,106,79,.3);
+    background: rgba(45,106,79,.05);
+    color: var(--accent); font-size: .85rem; font-weight: 600;
+    text-decoration: none; margin-top: .5rem;
+    transition: background .15s;
+  }
+  .egreso-det-comprobante:hover { background: rgba(45,106,79,.1); }
+  .egreso-det-sin-comprobante {
+    font-size: .83rem; color: var(--text-muted);
+    display: block; margin-top: .5rem; font-style: italic;
+  }
 </style>
 </head>
 <body>
@@ -984,6 +1027,17 @@
   <script src="viajes_activos.js"></script>
   <script src="usuarios.js"></script>
   <script src="pagos.js"></script>
+<!-- VISTA: DETALLE EGRESO -->
+<div id="view-egreso-detalle" style="display:none">
+  <div class="main">
+    <div class="form-page-header">
+      <h1>Detalle de egreso</h1>
+      <p class="page-desc">Información completa del egreso registrado</p>
+    </div>
+    <div id="egreso-detalle-cont"></div>
+  </div>
+</div>
+
   <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

@@ -774,12 +774,15 @@ async function loadEgresos(viajeId) {
       const caja      = metMap[e.caja_saliente] || "—";
       const fecha     = e.fecha ? e.fecha.split("T")[0].split("-").reverse().join("/") : "—";
       return `
-  <div class="egreso-row">
+  <div class="egreso-row" style="cursor:pointer"
+       onclick="abrirEgresoDetalle('${e.id}', '${viajeId}')">
     <div class="egreso-info">
       <div class="egreso-concepto">${categoria}</div>
+      <div class="egreso-fecha">${fecha}${e.ejecutor ? " · " + e.ejecutor : ""}</div>
     </div>
-    <div class="egreso-monto">
-      Gs. ${(e.monto || 0).toLocaleString("es-PY")}
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <div class="egreso-monto">Gs. ${(e.monto || 0).toLocaleString("es-PY")}</div>
+      <span style="color:var(--text-muted);font-size:1.1rem">›</span>
     </div>
   </div>
 `;    }).join("")}
@@ -939,4 +942,110 @@ async function guardarEgreso() {
 
   cerrarFormEgreso();
   loadEgresos(viajeActualId);
+}
+
+/* ── EGRESO DETALLE ────────────────────────── */
+
+function abrirEgresoDetalle(egresoId, viajeId) {
+  navigateTo("egreso-detalle", { egresoId, viajeId });
+}
+
+async function initEgresoDetalleView({ egresoId, viajeId }) {
+  const cont = document.getElementById("egreso-detalle-cont");
+  if (!cont) return;
+
+  cont.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
+
+  // Query egreso + categorías + métodos en paralelo
+  const [
+    { data: e, error },
+    { data: catData },
+    { data: metData }
+  ] = await Promise.all([
+    supabaseClient.from("egresos")
+      .select("id, monto, descripcion, fecha, ejecutor, creado_por, categoria_id, caja_saliente, comprobante_nro")
+      .eq("id", egresoId)
+      .single(),
+    supabaseClient.from("categorias").select("id, nombre"),
+    supabaseClient.from("metodos_de_pago").select("id, metodo_de_pago")
+  ]);
+
+  if (error || !e) {
+    cont.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar el egreso.</div>`;
+    return;
+  }
+
+  const catMap = Object.fromEntries((catData || []).map(c => [c.id, c.nombre]));
+  const metMap = Object.fromEntries((metData || []).map(m => [m.id, m.metodo_de_pago]));
+
+  const categoria  = catMap[e.categoria_id] || "Sin categoría";
+  const caja       = metMap[e.caja_saliente] || "—";
+  const fecha      = e.fecha ? e.fecha.split("T")[0].split("-").reverse().join("/") : "—";
+  const monto      = (e.monto || 0).toLocaleString("es-PY");
+  const descripcion = e.descripcion || "—";
+  const ejecutor   = e.ejecutor || "—";
+  const creadoPor  = e.creado_por || "—";
+
+  const comprobanteHtml = e.comprobante_nro
+    ? `<a href="${e.comprobante_nro}" target="_blank" class="egreso-det-comprobante">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Ver comprobante
+      </a>`
+    : `<span class="egreso-det-sin-comprobante">Sin comprobante adjunto</span>`;
+
+  cont.innerHTML = `
+    <div class="egreso-det-monto-hero">
+      <span class="egreso-det-monto-label">Monto</span>
+      <span class="egreso-det-monto-valor">Gs. ${monto}</span>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Información
+      </div>
+      <div class="egreso-det-grid">
+        <div class="egreso-det-field">
+          <span class="egreso-det-label">Categoría</span>
+          <span class="egreso-det-value">${categoria}</span>
+        </div>
+        <div class="egreso-det-field">
+          <span class="egreso-det-label">Fecha</span>
+          <span class="egreso-det-value">${fecha}</span>
+        </div>
+        <div class="egreso-det-field">
+          <span class="egreso-det-label">Caja saliente</span>
+          <span class="egreso-det-value">${caja}</span>
+        </div>
+        <div class="egreso-det-field">
+          <span class="egreso-det-label">Ejecutor</span>
+          <span class="egreso-det-value">${ejecutor}</span>
+        </div>
+        <div class="egreso-det-field full">
+          <span class="egreso-det-label">Descripción</span>
+          <span class="egreso-det-value">${descripcion}</span>
+        </div>
+        <div class="egreso-det-field full">
+          <span class="egreso-det-label">Registrado por</span>
+          <span class="egreso-det-value">${creadoPor}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Comprobante
+      </div>
+      ${comprobanteHtml}
+    </div>
+  `;
 }

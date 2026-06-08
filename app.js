@@ -104,6 +104,8 @@ function navigateTo(view, idx = null) {
   if (_vpp) _vpp.style.display = "none";
   const _vpd = document.getElementById("view-pago-detalle");
   if (_vpd) _vpd.style.display = "none";
+  const _ved = document.getElementById("view-egreso-detalle");
+  if (_ved) _ved.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -264,6 +266,19 @@ function navigateTo(view, idx = null) {
       { label: "Detalle pago" }
     ]);
     initPagoDetalleView(idx);
+
+  }
+
+  else if (view === "egreso-detalle") {
+
+    showEl("view-egreso-detalle");
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
+      { label: "Egreso" }
+    ]);
+    initEgresoDetalleView(idx);
 
   }
 }
