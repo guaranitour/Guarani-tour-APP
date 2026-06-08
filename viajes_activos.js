@@ -733,7 +733,7 @@ async function loadEgresos(viajeId) {
     supabaseClient.from("metodos_de_pago").select("id, nombre")
   ]);
   const catMap = Object.fromEntries((catData || []).map(c => [c.id, c.nombre]));
-  const metMap = Object.fromEntries((metData || []).map(m => [m.id, m.nombre]));
+  const metMap = Object.fromEntries((metData || []).map(m => [m.id, m.metodo_de_pago]));
 
   if (!data || data.length === 0) {
     listEl.innerHTML = `
@@ -782,13 +782,13 @@ async function _cargarOpcionesFormEgreso() {
     const [{ data: globales }, { data: exclusivas }] = await Promise.all([
       supabaseClient
         .from("categorias")
-        .select("id, nombre, viaje_id")
-        .is("viaje_id", null)
+        .select("id, nombre, scope")
+        .is("scope", null)
         .order("nombre", { ascending: true }),
       supabaseClient
         .from("categorias")
-        .select("id, nombre, viaje_id")
-        .eq("viaje_id", viajeActualId)
+        .select("id, nombre, scope")
+        .eq("scope", viajeActualId)
         .order("nombre", { ascending: true })
     ]);
     _egresosCategorias = [...(globales || []), ...(exclusivas || [])];
@@ -798,8 +798,8 @@ async function _cargarOpcionesFormEgreso() {
   if (_egresosMetodos.length === 0) {
     const { data } = await supabaseClient
       .from("metodos_de_pago")
-      .select("id, nombre")
-      .order("nombre", { ascending: true });
+      .select("id, metodo_de_pago")
+      .order("metodo_de_pago", { ascending: true });
     _egresosMetodos = data || [];
   }
 
@@ -809,14 +809,14 @@ async function _cargarOpcionesFormEgreso() {
   if (selCat) {
     selCat.innerHTML = `<option value="">— Seleccionar categoría —</option>` +
       _egresosCategorias.map(c => {
-        const label = c.viaje_id ? `${c.nombre} (exclusiva)` : c.nombre;
+        const label = c.scope ? `${c.nombre} (exclusiva)` : c.nombre;
         return `<option value="${c.id}">${label}</option>`;
       }).join("");
   }
 
   if (selCaja) {
     selCaja.innerHTML = `<option value="">— Seleccionar caja —</option>` +
-      _egresosMetodos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join("");
+      _egresosMetodos.map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`).join("");
   }
 }
 
