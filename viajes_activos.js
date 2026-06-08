@@ -89,6 +89,21 @@ async function uploadViajeImage(file) {
 
   return data.publicUrl;
 }
+async function uploadEgresoFile(file) {
+  const fileName = `${viajeActualId}/${Date.now()}_${file.name}`;
+
+  const { error } = await supabaseClient.storage
+    .from("egresos")
+    .upload(fileName, file);
+
+  if (error) throw error;
+
+  const { data } = supabaseClient.storage
+    .from("egresos")
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
+}
 
 /* ── CREAR VIAJE ──────────────────────────── */
 async function crearViaje() {
@@ -841,8 +856,7 @@ function cerrarFormEgreso() {
   if (form) form.style.display = "none";
   if (btn)  btn.style.display  = "";
 
-  ["egreso-categoria", "egreso-monto", "egreso-fecha",
-   "egreso-descripcion", "egreso-ejecutor", "egreso-caja"].forEach(id => {
+["egreso-categoria", "egreso-monto", "egreso-fecha", "egreso-descripcion", "egreso-ejecutor", "egreso-caja", "egreso-archivo"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
@@ -855,6 +869,7 @@ async function guardarEgreso() {
   const descripcion  = document.getElementById("egreso-descripcion")?.value.trim() || null;
   const ejecutor     = document.getElementById("egreso-ejecutor")?.value.trim();
   const cajaId       = document.getElementById("egreso-caja")?.value;
+  const archivo = document.getElementById("egreso-archivo")?.files[0];
 
   // Validaciones
   let valido = true;
@@ -887,16 +902,28 @@ async function guardarEgreso() {
 
   const { error } = await supabaseClient
     .from("egresos")
-    .insert([{
-      viaje_id:        viajeActualId,
-      categoria_id:    categoriaId,
-      monto,
-      descripcion,
-      fecha,
-      ejecutor,
-      caja_saliente:   cajaId,
-      creado_por:      user?.email || null
-    }]);
+     let comprobante_url = null;
+
+if (archivo) {
+  try {
+    comprobante_url = await uploadEgresoFile(archivo);
+  } catch (e) {
+    console.error(e);
+    alert("Error subiendo comprobante");
+    return;
+  }
+}
+.insert([{
+  viaje_id: viajeActualId,
+  categoria_id: categoriaId,
+  monto,
+  descripcion,
+  fecha,
+  ejecutor,
+  caja_saliente: cajaId,
+  comprobante_nro: comprobante_url,
+  creado_por: user?.email || null
+}]);
 
   if (btn) {
     btn.disabled = false;
