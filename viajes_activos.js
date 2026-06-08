@@ -900,30 +900,31 @@ async function guardarEgreso() {
 
   const { data: { user } } = await supabaseClient.auth.getUser();
 
+  let comprobante_url = null;
+
+  if (archivo) {
+    try {
+      comprobante_url = await uploadEgresoFile(archivo);
+    } catch (e) {
+      console.error(e);
+      alert("Error subiendo comprobante");
+      return;
+    }
+  }
+
   const { error } = await supabaseClient
     .from("egresos")
-     let comprobante_url = null;
-
-if (archivo) {
-  try {
-    comprobante_url = await uploadEgresoFile(archivo);
-  } catch (e) {
-    console.error(e);
-    alert("Error subiendo comprobante");
-    return;
-  }
-}
-.insert([{
-  viaje_id: viajeActualId,
-  categoria_id: categoriaId,
-  monto,
-  descripcion,
-  fecha,
-  ejecutor,
-  caja_saliente: cajaId,
-  comprobante_nro: comprobante_url,
-  creado_por: user?.email || null
-}]);
+    .insert([{
+      viaje_id: viajeActualId,
+      categoria_id: categoriaId,
+      monto,
+      descripcion,
+      fecha,
+      ejecutor,
+      caja_saliente: cajaId,
+      comprobante_nro: comprobante_url,
+      creado_por: user?.email || null
+    }]);
 
   if (btn) {
     btn.disabled = false;
