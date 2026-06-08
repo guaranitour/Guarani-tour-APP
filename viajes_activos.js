@@ -1235,7 +1235,7 @@ async function guardarPresupuesto() {
   // Construir filas a upsert: solo las que tienen monto > 0
   const filas = [];
   inputs.forEach(input => {
-    const catId = input.dataset.catId;
+    const catId = parseInt(input.dataset.catId);
     const monto = parseInt(input.value) || 0;
     if (monto > 0) {
       filas.push({
