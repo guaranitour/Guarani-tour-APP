@@ -27,6 +27,61 @@
     cursor: pointer; transition: background .15s;
   }
   .btn-editar-detalle:hover { background: #dff2e8; }
+
+  /* ── TABS VIAJE ─────────────────────────── */
+  .viaje-tabs {
+    display: flex;
+    gap: .25rem;
+    margin: 0 0 1rem;
+    border-bottom: 2px solid var(--border, #e8ede9);
+  }
+  .viaje-tab {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .55rem 1rem;
+    font-size: .82rem; font-family: inherit; font-weight: 500;
+    color: var(--text-muted, #888);
+    background: transparent;
+    border: none; border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .viaje-tab svg { opacity: .7; }
+  .viaje-tab.active {
+    color: #2d6a4f;
+    border-bottom-color: #2d6a4f;
+  }
+  .viaje-tab.active svg { opacity: 1; }
+  .viaje-tab:hover:not(.active) { color: #444; }
+
+  /* ── EGRESOS ─────────────────────────────── */
+  .egresos-total-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .6rem .75rem;
+    background: #f0faf4;
+    border-radius: 8px;
+    margin-bottom: .75rem;
+    font-size: .85rem;
+  }
+  .egresos-total-label { color: #2d6a4f; font-weight: 500; }
+  .egresos-total-valor { font-weight: 700; color: #1a3a2a; }
+
+  .egreso-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--border, #e8ede9);
+    gap: .75rem;
+  }
+  .egreso-row:last-child { border-bottom: none; }
+  .egreso-info { flex: 1; min-width: 0; }
+  .egreso-concepto { font-size: .88rem; font-weight: 600; color: var(--text, #1a1a1a); }
+  .egreso-obs { font-size: .78rem; color: var(--text-muted, #888); margin-top: .1rem; }
+  .egreso-fecha { font-size: .75rem; color: var(--text-muted, #888); margin-top: .2rem; }
+  .egreso-monto {
+    font-size: .88rem; font-weight: 700;
+    color: #c0392b;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -199,22 +254,85 @@
       <p class="page-desc" id="detalle-viaje-info"></p>
     </div>
 
-    <div class="detalle-section">
-      <div class="section-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+    <!-- TABS -->
+    <div class="viaje-tabs">
+      <button class="viaje-tab active" id="tab-pasajeros" onclick="switchViajeTab('pasajeros')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
         Pasajeros
-      </div>
-      <div class="form-buscar-wrap" style="margin-bottom:.75rem">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="buscador-vp" class="form-input" placeholder="Buscar pasajero en este viaje…"
-               oninput="filtrarPasajerosViaje(this.value)" />
-      </div>
-      <div id="viaje-pasajeros-list"></div>
-
-      <button class="btn-agregar-pasajero" id="btn-agregar-vp" onclick="irAgregarPasajero()" style="display:none">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Agregar pasajero
       </button>
+      <button class="viaje-tab" id="tab-egresos" onclick="switchViajeTab('egresos')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Egresos
+      </button>
+    </div>
+
+    <!-- PANEL: PASAJEROS -->
+    <div id="panel-pasajeros" class="viaje-tab-panel">
+      <div class="detalle-section">
+        <div class="form-buscar-wrap" style="margin-bottom:.75rem">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="buscador-vp" class="form-input" placeholder="Buscar pasajero en este viaje…"
+                 oninput="filtrarPasajerosViaje(this.value)" />
+        </div>
+        <div id="viaje-pasajeros-list"></div>
+
+        <button class="btn-agregar-pasajero" id="btn-agregar-vp" onclick="irAgregarPasajero()" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar pasajero
+        </button>
+      </div>
+    </div>
+
+    <!-- PANEL: EGRESOS -->
+    <div id="panel-egresos" class="viaje-tab-panel" style="display:none">
+      <div class="detalle-section">
+        <div id="egresos-list">
+          <div class="viaje-pasajeros-empty">Cargando…</div>
+        </div>
+
+        <button class="btn-agregar-pasajero" id="btn-agregar-egreso" onclick="mostrarFormEgreso()" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Registrar egreso
+        </button>
+
+        <!-- Formulario nuevo egreso (inline) -->
+        <div id="form-nuevo-egreso" style="display:none">
+          <div class="pago-form-inner">
+            <div class="detail-grid">
+
+              <div class="form-field full">
+                <label class="form-label">Concepto <span class="req">*</span></label>
+                <input type="text" id="egreso-concepto" class="form-input" placeholder="Ej: Almuerzo, Combustible…" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Monto (Gs.) <span class="req">*</span></label>
+                <input type="number" id="egreso-monto" class="form-input" placeholder="Ej: 250000" min="1" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Fecha</label>
+                <input type="date" id="egreso-fecha" class="form-input" />
+              </div>
+
+              <div class="form-field full">
+                <label class="form-label">Observación</label>
+                <input type="text" id="egreso-observacion" class="form-input" placeholder="Opcional" />
+              </div>
+
+            </div>
+
+            <div class="form-actions" style="margin-top:.75rem">
+              <button class="btn-cancel" onclick="cerrarFormEgreso()">Cancelar</button>
+              <button class="btn-save" onclick="guardarEgreso()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
   </div>

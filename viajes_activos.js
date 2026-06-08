@@ -679,3 +679,148 @@ function capitalizarNombre(str) {
   if (!str) return str;
   return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
 }
+
+/* ── TABS VIAJE DETALLE ────────────────────── */
+function switchViajeTab(tab) {
+  // Botones
+  document.getElementById("tab-pasajeros").classList.toggle("active", tab === "pasajeros");
+  document.getElementById("tab-egresos").classList.toggle("active", tab === "egresos");
+
+  // Paneles
+  document.getElementById("panel-pasajeros").style.display = tab === "pasajeros" ? "" : "none";
+  document.getElementById("panel-egresos").style.display   = tab === "egresos"   ? "" : "none";
+
+  if (tab === "egresos") {
+    loadEgresos(viajeActualId);
+  }
+}
+
+/* ── EGRESOS ───────────────────────────────── */
+async function loadEgresos(viajeId) {
+  const listEl = document.getElementById("egresos-list");
+  const btnAdd = document.getElementById("btn-agregar-egreso");
+  if (!listEl) return;
+
+  listEl.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
+
+  const esWorkerOAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
+    : ["admin", "worker"].includes(currentUserRole);
+
+  if (btnAdd) btnAdd.style.display = esWorkerOAdmin ? "" : "none";
+
+  const { data, error } = await supabaseClient
+    .from("egresos")
+    .select("*")
+    .eq("viaje_id", viajeId)
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    console.error("Error cargando egresos:", error);
+    listEl.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar egresos</div>`;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    listEl.innerHTML = `
+      <div class="viaje-pasajeros-empty">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        Sin egresos registrados
+      </div>`;
+    return;
+  }
+
+  const totalEgresos = data.reduce((s, e) => s + (e.monto || 0), 0);
+
+  listEl.innerHTML = `
+    <div class="egresos-total-row">
+      <span class="egresos-total-label">Total egresos</span>
+      <span class="egresos-total-valor">Gs. ${totalEgresos.toLocaleString("es-PY")}</span>
+    </div>
+    ${data.map(e => `
+    <div class="egreso-row">
+      <div class="egreso-info">
+        <div class="egreso-concepto">${e.concepto || "Sin concepto"}</div>
+        ${e.observacion ? `<div class="egreso-obs">${e.observacion}</div>` : ""}
+        <div class="egreso-fecha">${e.fecha ? formatFecha(e.fecha) : "—"}</div>
+      </div>
+      <div class="egreso-monto">Gs. ${(e.monto || 0).toLocaleString("es-PY")}</div>
+    </div>`).join("")}
+  `;
+}
+
+function mostrarFormEgreso() {
+  const form = document.getElementById("form-nuevo-egreso");
+  const btn  = document.getElementById("btn-agregar-egreso");
+  if (!form) return;
+
+  // Setear fecha de hoy por defecto
+  const hoy = new Date().toISOString().split("T")[0];
+  const fechaEl = document.getElementById("egreso-fecha");
+  if (fechaEl && !fechaEl.value) fechaEl.value = hoy;
+
+  form.style.display = "";
+  btn.style.display  = "none";
+}
+
+function cerrarFormEgreso() {
+  const form = document.getElementById("form-nuevo-egreso");
+  const btn  = document.getElementById("btn-agregar-egreso");
+  if (form) form.style.display = "none";
+  if (btn)  btn.style.display  = "";
+
+  // Limpiar campos
+  ["egreso-concepto", "egreso-monto", "egreso-observacion"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+}
+
+async function guardarEgreso() {
+  const concepto    = document.getElementById("egreso-concepto")?.value.trim();
+  const monto       = parseInt(document.getElementById("egreso-monto")?.value);
+  const fecha       = document.getElementById("egreso-fecha")?.value || null;
+  const observacion = document.getElementById("egreso-observacion")?.value.trim() || null;
+
+  if (!concepto) {
+    document.getElementById("egreso-concepto")?.classList.add("error");
+    return;
+  }
+  if (!monto || monto <= 0) {
+    document.getElementById("egreso-monto")?.classList.add("error");
+    return;
+  }
+
+  const btn = document.querySelector("#form-nuevo-egreso .btn-save");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  const { error } = await supabaseClient
+    .from("egresos")
+    .insert([{
+      viaje_id:    viajeActualId,
+      concepto,
+      monto,
+      fecha,
+      observacion,
+      creado_por:  user?.email || null
+    }]);
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
+  }
+
+  if (error) {
+    console.error("Error guardando egreso:", error);
+    alert("Error al guardar el egreso. Revisá los datos e intentá de nuevo.");
+    return;
+  }
+
+  cerrarFormEgreso();
+  loadEgresos(viajeActualId);
+}
