@@ -788,7 +788,7 @@ async function _cargarOpcionesFormEgreso() {
       supabaseClient
         .from("categorias")
         .select("id, nombre, scope")
-        .eq("scope", viajeActualId)
+        .eq("scope", parseInt(viajeActualId))
         .order("nombre", { ascending: true })
     ]);
     _egresosCategorias = [...(globales || []), ...(exclusivas || [])];
