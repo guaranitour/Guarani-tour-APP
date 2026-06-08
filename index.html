@@ -301,8 +301,10 @@
             <div class="detail-grid">
 
               <div class="form-field full">
-                <label class="form-label">Concepto <span class="req">*</span></label>
-                <input type="text" id="egreso-concepto" class="form-input" placeholder="Ej: Almuerzo, Combustible…" />
+                <label class="form-label">Categoría <span class="req">*</span></label>
+                <select id="egreso-categoria" class="form-input">
+                  <option value="">— Cargando… —</option>
+                </select>
               </div>
 
               <div class="form-field">
@@ -311,20 +313,32 @@
               </div>
 
               <div class="form-field">
-                <label class="form-label">Fecha</label>
+                <label class="form-label">Fecha <span class="req">*</span></label>
                 <input type="date" id="egreso-fecha" class="form-input" />
               </div>
 
               <div class="form-field full">
-                <label class="form-label">Observación</label>
-                <input type="text" id="egreso-observacion" class="form-input" placeholder="Opcional" />
+                <label class="form-label">Descripción</label>
+                <input type="text" id="egreso-descripcion" class="form-input" placeholder="Detalle opcional del egreso" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Ejecutor <span class="req">*</span></label>
+                <input type="text" id="egreso-ejecutor" class="form-input" placeholder="Quién realizó el pago" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Caja saliente <span class="req">*</span></label>
+                <select id="egreso-caja" class="form-input">
+                  <option value="">— Cargando… —</option>
+                </select>
               </div>
 
             </div>
 
             <div class="form-actions" style="margin-top:.75rem">
               <button class="btn-cancel" onclick="cerrarFormEgreso()">Cancelar</button>
-              <button class="btn-save" onclick="guardarEgreso()">
+              <button class="btn-save" id="btn-guardar-egreso" onclick="guardarEgreso()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 Guardar
               </button>
