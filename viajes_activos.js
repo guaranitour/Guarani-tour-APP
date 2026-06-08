@@ -714,19 +714,10 @@ async function loadEgresos(viajeId) {
 
   if (btnAdd) btnAdd.style.display = esWorkerOAdmin ? "" : "none";
 
-  // Join con categorias y metodos_de_pago para mostrar nombres
+  // Query principal de egresos
   const { data, error } = await supabaseClient
     .from("egresos")
-    .select(`
-      id,
-      monto,
-      descripcion,
-      fecha,
-      ejecutor,
-      creado_por,
-      categorias ( nombre ),
-      metodos_de_pago ( nombre )
-    `)
+    .select("id, monto, descripcion, fecha, ejecutor, creado_por, categoria_id, caja_saliente")
     .eq("viaje_id", viajeId)
     .order("fecha", { ascending: false });
 
@@ -735,6 +726,14 @@ async function loadEgresos(viajeId) {
     listEl.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar egresos</div>`;
     return;
   }
+
+  // Traer nombres de categorías y métodos de pago por separado (más robusto que el join)
+  const [{ data: catData }, { data: metData }] = await Promise.all([
+    supabaseClient.from("categorias").select("id, nombre"),
+    supabaseClient.from("metodos_de_pago").select("id, nombre")
+  ]);
+  const catMap = Object.fromEntries((catData || []).map(c => [c.id, c.nombre]));
+  const metMap = Object.fromEntries((metData || []).map(m => [m.id, m.nombre]));
 
   if (!data || data.length === 0) {
     listEl.innerHTML = `
@@ -756,8 +755,8 @@ async function loadEgresos(viajeId) {
       <span class="egresos-total-valor">Gs. ${totalEgresos.toLocaleString("es-PY")}</span>
     </div>
     ${data.map(e => {
-      const categoria = e.categorias?.nombre || "Sin categoría";
-      const caja      = e.metodos_de_pago?.nombre || "—";
+      const categoria = catMap[e.categoria_id] || "Sin categoría";
+      const caja      = metMap[e.caja_saliente] || "—";
       const fecha     = e.fecha ? e.fecha.split("T")[0].split("-").reverse().join("/") : "—";
       return `
       <div class="egreso-row">
@@ -777,14 +776,22 @@ async function loadEgresos(viajeId) {
 }
 
 async function _cargarOpcionesFormEgreso() {
-  // Categorías: globales (scope null) + exclusivas del viaje actual
+  // Categorías: globales (viaje_id null) + exclusivas del viaje actual
+  // Dos queries separadas porque .or() con is.null no es confiable en supabase-js v2
   if (_egresosCategorias.length === 0) {
-    const { data } = await supabaseClient
-      .from("categorias")
-      .select("id, nombre, viaje_id")
-      .or(`viaje_id.is.null,viaje_id.eq.${viajeActualId}`)
-      .order("nombre", { ascending: true });
-    _egresosCategorias = data || [];
+    const [{ data: globales }, { data: exclusivas }] = await Promise.all([
+      supabaseClient
+        .from("categorias")
+        .select("id, nombre, viaje_id")
+        .is("viaje_id", null)
+        .order("nombre", { ascending: true }),
+      supabaseClient
+        .from("categorias")
+        .select("id, nombre, viaje_id")
+        .eq("viaje_id", viajeActualId)
+        .order("nombre", { ascending: true })
+    ]);
+    _egresosCategorias = [...(globales || []), ...(exclusivas || [])];
   }
 
   // Métodos de pago (caja saliente)
