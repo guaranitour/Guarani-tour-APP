@@ -291,9 +291,11 @@ async function loadViajeDetalle(viajeId) {
   const btnAgregar = document.getElementById("btn-agregar-vp");
   if (btnAgregar) btnAgregar.style.display = esWorkerOAdmin ? "" : "none";
 
-  // Mostrar tab presupuesto solo para worker y admin
+  // Mostrar tab presupuesto y resumen solo para worker y admin
   const tabPres = document.getElementById("tab-presupuesto");
   if (tabPres) tabPres.style.display = esWorkerOAdmin ? "" : "none";
+  const tabRes = document.getElementById("tab-resumen");
+  if (tabRes) tabRes.style.display = esWorkerOAdmin ? "" : "none";
 
   // Limpiar buscador al cargar
   const buscador = document.getElementById("buscador-vp");
@@ -706,15 +708,20 @@ function switchViajeTab(tab) {
   document.getElementById("tab-egresos").classList.toggle("active", tab === "egresos");
   const tabPres = document.getElementById("tab-presupuesto");
   if (tabPres) tabPres.classList.toggle("active", tab === "presupuesto");
+  const tabRes = document.getElementById("tab-resumen");
+  if (tabRes) tabRes.classList.toggle("active", tab === "resumen");
 
   // Paneles
-  document.getElementById("panel-pasajeros").style.display = tab === "pasajeros" ? "" : "none";
-  document.getElementById("panel-egresos").style.display   = tab === "egresos"   ? "" : "none";
+  document.getElementById("panel-pasajeros").style.display   = tab === "pasajeros"   ? "" : "none";
+  document.getElementById("panel-egresos").style.display     = tab === "egresos"     ? "" : "none";
   const panelPres = document.getElementById("panel-presupuesto");
   if (panelPres) panelPres.style.display = tab === "presupuesto" ? "" : "none";
+  const panelRes = document.getElementById("panel-resumen");
+  if (panelRes) panelRes.style.display = tab === "resumen" ? "" : "none";
 
-  if (tab === "egresos") loadEgresos(viajeActualId);
+  if (tab === "egresos")     loadEgresos(viajeActualId);
   if (tab === "presupuesto") loadPresupuesto(viajeActualId);
+  if (tab === "resumen")     loadResumen(viajeActualId);
 }
 
 /* ── EGRESOS ───────────────────────────────── */

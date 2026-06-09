@@ -1,0 +1,180 @@
+/* ═══════════════════════════════════════════
+   resumen.css — Tab Resumen del viaje
+   Solo para admin y worker
+═══════════════════════════════════════════ */
+
+/* ── Scroll horizontal de tabs ───────────── */
+.viaje-tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;          /* Firefox */
+  margin: 0 -1rem;                /* sangrar hasta el borde del .main */
+  padding: 0 1rem;
+}
+
+.viaje-tabs-scroll::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari */
+}
+
+/* El .viaje-tabs existente solo necesita no hacer wrap */
+.viaje-tabs-scroll .viaje-tabs {
+  white-space: nowrap;
+  display: inline-flex;           /* en línea para que el scroll funcione */
+  min-width: 100%;
+}
+
+/* ── Grilla de stat cards ─────────────────── */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .65rem;
+  margin-bottom: 1.1rem;
+}
+
+.resumen-card {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  padding: .85rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+.resumen-card.full {
+  grid-column: 1 / -1;
+}
+
+.resumen-card-label {
+  font-size: .7rem;
+  font-weight: 500;
+  color: var(--text-muted, #7a8c7e);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.resumen-card-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text, #1a3a2a);
+  line-height: 1.2;
+}
+
+.resumen-card-value.positivo { color: var(--success, #2e7d52); }
+.resumen-card-value.negativo { color: var(--danger,  #c0392b); }
+.resumen-card-value.neutro   { color: var(--accent,  #c8a84b); }
+
+.resumen-card-sub {
+  font-size: .72rem;
+  color: var(--text-muted, #7a8c7e);
+  margin-top: .1rem;
+}
+
+/* ── Barra de progreso recaudación ──────────── */
+.resumen-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  margin-top: .5rem;
+}
+
+.resumen-progress-bar {
+  flex: 1;
+  height: 7px;
+  background: var(--border, #e8ede9);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.resumen-progress-fill {
+  height: 100%;
+  background: var(--primary, #2e7d52);
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+
+.resumen-progress-fill.completo {
+  background: var(--success, #2e7d52);
+}
+
+.resumen-pct {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-muted, #7a8c7e);
+  min-width: 2.2rem;
+  text-align: right;
+}
+
+/* ── Sección con título interno ─────────────── */
+.resumen-section-title {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-muted, #7a8c7e);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin: 1rem 0 .5rem;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+/* ── Fila de desglose (egresos por categoría) ─ */
+.resumen-desglose-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border, #e8ede9);
+  font-size: .82rem;
+}
+
+.resumen-desglose-row:last-child {
+  border-bottom: none;
+}
+
+.resumen-desglose-nombre {
+  color: var(--text, #1a3a2a);
+}
+
+.resumen-desglose-monto {
+  font-weight: 600;
+  color: var(--text, #1a3a2a);
+}
+
+/* ── Fila de saldo neto destacada ───────────── */
+.resumen-saldo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 10px;
+  padding: .75rem .9rem;
+  margin-top: .75rem;
+}
+
+.resumen-saldo-label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text, #1a3a2a);
+}
+
+.resumen-saldo-valor {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.resumen-saldo-valor.positivo { color: var(--success, #2e7d52); }
+.resumen-saldo-valor.negativo { color: var(--danger,  #c0392b); }
+
+/* ── Empty state ─────────────────────────────── */
+.resumen-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted, #7a8c7e);
+  font-size: .85rem;
+  text-align: center;
+}

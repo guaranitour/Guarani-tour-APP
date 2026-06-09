@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="usuarios.css" />
   <link rel="stylesheet" href="viajes_activos.css" />
   <link rel="stylesheet" href="pagos.css" />
+  <link rel="stylesheet" href="resumen.css" />
 
 </head>
 <body>
@@ -188,6 +189,7 @@
     </div>
 
     <!-- TABS -->
+    <div class="viaje-tabs-scroll">
     <div class="viaje-tabs">
       <button class="viaje-tab active" id="tab-pasajeros" onclick="switchViajeTab('pasajeros')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
@@ -201,6 +203,11 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         Presupuesto
       </button>
+      <button class="viaje-tab" id="tab-resumen" onclick="switchViajeTab('resumen')" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Resumen
+      </button>
+    </div>
     </div>
 
     <!-- PANEL: PASAJEROS -->
@@ -337,6 +344,13 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- PANEL: RESUMEN -->
+    <div id="panel-resumen" class="viaje-tab-panel" style="display:none">
+      <div class="detalle-section">
+        <div id="resumen-cont"></div>
       </div>
     </div>
 
@@ -983,6 +997,7 @@
   <script src="viajes_activos.js"></script>
   <script src="usuarios.js"></script>
   <script src="pagos.js"></script>
+  <script src="resumen.js"></script>
   <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
