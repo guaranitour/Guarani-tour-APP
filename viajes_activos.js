@@ -797,23 +797,45 @@ async function loadEgresos(viajeId) {
 }
 
 async function _cargarOpcionesFormEgreso() {
-  // Categorías: globales (viaje_id null) + exclusivas del viaje actual
-  // Dos queries separadas porque .or() con is.null no es confiable en supabase-js v2
-  if (_egresosCategorias.length === 0) {
-    const [{ data: globales }, { data: exclusivas }] = await Promise.all([
-      supabaseClient
-        .from("categorias")
-        .select("id, nombre, scope")
-        .is("scope", null)
-        .order("nombre", { ascending: true }),
-      supabaseClient
-        .from("categorias")
-        .select("id, nombre, scope")
-        .eq("scope", parseInt(viajeActualId))
-        .order("nombre", { ascending: true })
-    ]);
-    _egresosCategorias = [...(globales || []), ...(exclusivas || [])];
-  }
+  // Categorías: solo las presupuestadas para este viaje + exclusivas del viaje
+  // Siempre re-consultamos (el caché se invalida en mostrarFormEgreso)
+  const [
+    { data: presupuestadas },
+    { data: exclusivas }
+  ] = await Promise.all([
+    // Categorías con presupuesto en este viaje (join con presupuesto_viaje)
+    supabaseClient
+      .from("presupuesto_viaje")
+      .select("categoria_id, categorias(id, nombre, scope)")
+      .eq("viaje_id", parseInt(viajeActualId)),
+    // Categorías exclusivas del viaje (scope = viajeActualId), aunque no estén presupuestadas
+    supabaseClient
+      .from("categorias")
+      .select("id, nombre, scope")
+      .eq("scope", parseInt(viajeActualId))
+      .order("nombre", { ascending: true })
+  ]);
+
+  // Armar lista deduplicada
+  const vistos = new Set();
+  _egresosCategorias = [];
+
+  (presupuestadas || []).forEach(row => {
+    const c = row.categorias;
+    if (c && !vistos.has(c.id)) {
+      vistos.add(c.id);
+      _egresosCategorias.push(c);
+    }
+  });
+  (exclusivas || []).forEach(c => {
+    if (c && !vistos.has(c.id)) {
+      vistos.add(c.id);
+      _egresosCategorias.push(c);
+    }
+  });
+
+  // Ordenar alfabéticamente
+  _egresosCategorias.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
   // Métodos de pago (caja saliente)
   if (_egresosMetodos.length === 0) {
@@ -828,16 +850,45 @@ async function _cargarOpcionesFormEgreso() {
   const selCaja = document.getElementById("egreso-caja");
 
   if (selCat) {
-    selCat.innerHTML = `<option value="">— Seleccionar categoría —</option>` +
-      _egresosCategorias.map(c => {
-        const label = c.scope ? `${c.nombre} (exclusiva)` : c.nombre;
-        return `<option value="${c.id}">${label}</option>`;
-      }).join("");
+    const opcionesCats = _egresosCategorias.length > 0
+      ? _egresosCategorias.map(c => {
+          const label = c.scope ? `${c.nombre} (exclusiva)` : c.nombre;
+          return `<option value="${c.id}">${label}</option>`;
+        }).join("")
+      : "";
+
+    selCat.innerHTML =
+      `<option value="">— Seleccionar categoría —</option>` +
+      opcionesCats +
+      `<option value="__nuevo__">+ Otro tipo…</option>`;
+
+    // Mostrar/ocultar input de nueva categoría al cambiar
+    selCat.onchange = () => _toggleNuevaCategoriaInput(selCat.value === "__nuevo__");
   }
 
   if (selCaja) {
     selCaja.innerHTML = `<option value="">— Seleccionar caja —</option>` +
       _egresosMetodos.map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`).join("");
+  }
+}
+
+function _toggleNuevaCategoriaInput(mostrar) {
+  let wrap = document.getElementById("egreso-nueva-cat-wrap");
+  if (mostrar) {
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "egreso-nueva-cat-wrap";
+      wrap.style.cssText = "margin-top:.5rem";
+      wrap.innerHTML = `
+        <input id="egreso-nueva-cat-nombre" class="form-input"
+               type="text" placeholder="Nombre del nuevo tipo de egreso" />
+      `;
+      document.getElementById("egreso-categoria").after(wrap);
+    }
+    wrap.style.display = "";
+    document.getElementById("egreso-nueva-cat-nombre")?.focus();
+  } else if (wrap) {
+    wrap.style.display = "none";
   }
 }
 
@@ -866,25 +917,34 @@ function cerrarFormEgreso() {
   if (form) form.style.display = "none";
   if (btn)  btn.style.display  = "";
 
-["egreso-categoria", "egreso-monto", "egreso-fecha", "egreso-descripcion", "egreso-ejecutor", "egreso-caja", "egreso-archivo"].forEach(id => {
+  ["egreso-categoria", "egreso-monto", "egreso-fecha", "egreso-descripcion", "egreso-ejecutor", "egreso-caja", "egreso-archivo"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+
+  // Limpiar input de nueva categoría si quedó visible
+  const wrap = document.getElementById("egreso-nueva-cat-wrap");
+  if (wrap) wrap.remove();
 }
 
 async function guardarEgreso() {
-  const categoriaId  = document.getElementById("egreso-categoria")?.value;
+  let categoriaSelVal = document.getElementById("egreso-categoria")?.value;
   const monto        = parseInt(document.getElementById("egreso-monto")?.value);
   const fecha        = document.getElementById("egreso-fecha")?.value || null;
   const descripcion  = document.getElementById("egreso-descripcion")?.value.trim() || null;
   const ejecutor     = document.getElementById("egreso-ejecutor")?.value.trim();
   const cajaId       = document.getElementById("egreso-caja")?.value;
-  const archivo = document.getElementById("egreso-archivo")?.files[0];
+  const archivo      = document.getElementById("egreso-archivo")?.files[0];
+  const nuevaCatNombre = document.getElementById("egreso-nueva-cat-nombre")?.value.trim();
 
   // Validaciones
   let valido = true;
-  if (!categoriaId) {
+  if (!categoriaSelVal) {
     document.getElementById("egreso-categoria")?.classList.add("error");
+    valido = false;
+  }
+  if (categoriaSelVal === "__nuevo__" && !nuevaCatNombre) {
+    document.getElementById("egreso-nueva-cat-nombre")?.classList.add("error");
     valido = false;
   }
   if (!monto || monto <= 0) {
@@ -908,6 +968,26 @@ async function guardarEgreso() {
   const btn = document.getElementById("btn-guardar-egreso");
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
 
+  // Si eligió "+ Otro tipo…", crear la categoría exclusiva del viaje primero
+  let categoriaId = categoriaSelVal;
+  if (categoriaSelVal === "__nuevo__") {
+    const { data: nuevaCat, error: errCat } = await supabaseClient
+      .from("categorias")
+      .insert([{ nombre: nuevaCatNombre, scope: parseInt(viajeActualId) }])
+      .select("id")
+      .single();
+
+    if (errCat || !nuevaCat) {
+      console.error("Error creando categoría:", errCat);
+      alert("Error al crear el tipo de egreso. Intentá de nuevo.");
+      if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
+      return;
+    }
+    categoriaId = nuevaCat.id;
+    // Invalidar caché de categorías para que la próxima apertura del form la muestre
+    _egresosCategorias = [];
+  }
+
   const { data: { user } } = await supabaseClient.auth.getUser();
 
   let comprobante_url = null;
@@ -918,6 +998,7 @@ async function guardarEgreso() {
     } catch (e) {
       console.error(e);
       alert("Error subiendo comprobante");
+      if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
       return;
     }
   }
