@@ -147,6 +147,90 @@
 .resumen-saldo-valor.positivo { color: var(--success, #2e7d52); }
 .resumen-saldo-valor.negativo { color: var(--danger,  #c0392b); }
 
+/* ── Tabla por método de pago ────────────────── */
+.resumen-metodo-table {
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: .8rem;
+}
+
+.resumen-metodo-header {
+  display: grid;
+  grid-template-columns: 2fr 2fr 2fr 2fr;
+  gap: .25rem;
+  padding: .5rem .75rem;
+  background: var(--glass-bg, #f8faf8);
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--text-muted, #7a8c7e);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--border, #e8ede9);
+}
+
+.resumen-metodo-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 2fr 2fr;
+  gap: .25rem;
+  padding: .6rem .75rem;
+  border-bottom: 1px solid var(--border, #e8ede9);
+  align-items: center;
+}
+
+.resumen-metodo-row:last-child {
+  border-bottom: none;
+}
+
+.resumen-metodo-nombre {
+  font-weight: 600;
+  color: var(--text, #1a3a2a);
+}
+
+.resumen-metodo-cobrado {
+  color: var(--success, #2e7d52);
+  font-weight: 500;
+}
+
+.resumen-metodo-egreso {
+  color: var(--danger, #c0392b);
+  font-weight: 500;
+}
+
+.resumen-metodo-saldo {
+  font-weight: 700;
+}
+
+.resumen-metodo-saldo.positivo { color: var(--success, #2e7d52); }
+.resumen-metodo-saldo.negativo { color: var(--danger,  #c0392b); }
+
+/* ── Pills vendedor ──────────────────────────── */
+.resumen-vendedor-pills {
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.resumen-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: .18rem .5rem;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 600;
+  background: var(--glass-bg, #f8faf8);
+  border: 1px solid var(--border, #e8ede9);
+  color: var(--text-muted, #7a8c7e);
+}
+
+.resumen-pill.asiste {
+  background: rgba(45,106,79,.1);
+  border-color: rgba(45,106,79,.2);
+  color: #2d6a4f;
+}
+
 /* ── Empty state ─────────────────────────────── */
 .resumen-empty {
   display: flex;
