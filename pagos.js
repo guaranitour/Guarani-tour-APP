@@ -505,7 +505,7 @@ function initPagoDetalleView(p) {
 }
 
 /* ── MODAL: TRANSFERIR PAGO ─────────────────── */
-function abrirModalTransferirPago() {
+async function abrirModalTransferirPago() {
   const p = pagosCtx.pagoActual;
   if (!p) return;
 
@@ -516,7 +516,7 @@ function abrirModalTransferirPago() {
   if (buscarEl) buscarEl.value = "";
 
   const resEl = document.getElementById("modal-trans-resultados");
-  if (resEl) resEl.innerHTML = "";
+  if (resEl) resEl.innerHTML = `<div class="modal-trans-vacio">Cargando pasajeros del viaje…</div>`;
 
   const selEl = document.getElementById("modal-trans-seleccionado");
   if (selEl) selEl.style.display = "none";
@@ -525,6 +525,17 @@ function abrirModalTransferirPago() {
   if (btnEl) btnEl.disabled = true;
 
   pagosCtx.destinatarioTransferencia = null;
+  pagosCtx.pasajerosDelViaje = [];
+
+  // Cargar los pasajero_id inscritos en este viaje
+  const { data: vps } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select("pasajero_id")
+    .eq("viaje_id", pagosCtx.viajeId);
+
+  pagosCtx.pasajerosDelViaje = (vps || []).map(vp => String(vp.pasajero_id));
+
+  if (resEl) resEl.innerHTML = "";
 
   const modal = document.getElementById("modal-transferir-pago");
   if (modal) modal.style.display = "flex";
@@ -561,8 +572,10 @@ function buscarPasajeroParaTransferir() {
     return;
   }
 
+  const idsViaje = pagosCtx.pasajerosDelViaje || [];
   const resultados = (allPassengers || []).filter(p =>
     String(p.id) !== String(pagosCtx.pasajeroId) &&
+    idsViaje.includes(String(p.id)) &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
   );
