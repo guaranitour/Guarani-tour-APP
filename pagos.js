@@ -335,7 +335,7 @@ function buscarPasajeroDestino() {
   const q    = document.getElementById("trans-buscar").value.toLowerCase().trim();
   const cont = document.getElementById("trans-resultados");
   if (!q) { cont.innerHTML = ""; return; }
-  const resultados = (allPasajeros || []).filter(p =>
+  const resultados = (allPassengers || []).filter(p =>
     p.id !== pagosCtx.pasajeroId &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
@@ -548,7 +548,7 @@ function buscarPasajeroParaTransferir() {
 
   if (!q) { cont.innerHTML = ""; return; }
 
-  const resultados = (allPasajeros || []).filter(p =>
+  const resultados = (allPassengers || []).filter(p =>
     p.id !== pagosCtx.pasajeroId &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
