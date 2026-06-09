@@ -623,6 +623,9 @@ async function confirmarTransferirPago() {
   btn.textContent = "Transfiriendo…";
 
   try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const hoy = new Date().toISOString().split("T")[0];
+
     // 1. Buscar viaje_pasajero del destino en este viaje
     const { data: vpDest, error: eVp } = await supabaseClient
       .from("viaje_pasajeros")
@@ -636,16 +639,36 @@ async function confirmarTransferirPago() {
       return;
     }
 
-    // 2. Reasignar el pago al nuevo viaje_pasajero
-    const { error: eUpd } = await supabaseClient
+    // 2. Insertar registro Transferencia en el origen
+    const { data: regOrigen, error: e1 } = await supabaseClient
       .from("pagos")
-      .update({
-        viaje_pasajero_id : vpDest.id,
-        observacion       : `Transferido desde ${pagosCtx.nombrePasajero}${p.observacion ? " — " + p.observacion : ""}`,
-      })
-      .eq("id", p.id);
+      .insert([{
+        viaje_pasajero_id : parseInt(pagosCtx.viajePasajeroId),
+        monto             : p.monto,
+        tipo              : "Transferencia",
+        fecha_pago        : hoy,
+        metodo_pago_id    : p.metodo_pago_id || null,
+        observacion       : `Transferido a ${dest.nombre}`,
+        creado_por        : user.email,
+      }])
+      .select("id")
+      .single();
+    if (e1) throw e1;
 
-    if (eUpd) throw eUpd;
+    // 3. Insertar registro Pago en el destino
+    const { error: e2 } = await supabaseClient
+      .from("pagos")
+      .insert([{
+        viaje_pasajero_id  : vpDest.id,
+        monto              : p.monto,
+        tipo               : "Pago",
+        fecha_pago         : hoy,
+        metodo_pago_id     : p.metodo_pago_id || null,
+        referencia_pago_id : regOrigen.id,
+        observacion        : `Transferencia desde ${pagosCtx.nombrePasajero}`,
+        creado_por         : user.email,
+      }]);
+    if (e2) throw e2;
 
     cerrarModalTransferirPagoDirecto();
     // Volver a la lista de pagos del pasajero original
