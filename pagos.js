@@ -526,7 +526,7 @@ function buscarPasajeroParaTransferir() {
 
   if (!q) { cont.innerHTML = ""; return; }
 
-  const resultados = (allPassengers || []).filter(p =>
+  const resultados = (allPasajeros || []).filter(p =>
     p.id !== pagosCtx.pasajeroId &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
