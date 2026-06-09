@@ -292,7 +292,12 @@ function ocultarFormPago() {
   const form = document.getElementById("form-nuevo-pago");
   const btn  = document.getElementById("btn-nuevo-pago");
   if (form) form.style.display = "none";
-  if (btn)  btn.style.display  = "";
+  if (btn) {
+    const esWorkerOAdmin = Array.isArray(currentUserRole)
+      ? currentUserRole.some(r => ["admin", "worker"].includes(r))
+      : ["admin", "worker"].includes(currentUserRole);
+    btn.style.display = esWorkerOAdmin ? "" : "none";
+  }
 }
 
 /* ── CAMBIO DE TIPO ─────────────────────────── */

@@ -915,7 +915,12 @@ function cerrarFormEgreso() {
   const form = document.getElementById("form-nuevo-egreso");
   const btn  = document.getElementById("btn-agregar-egreso");
   if (form) form.style.display = "none";
-  if (btn)  btn.style.display  = "";
+  if (btn) {
+    const esWorkerOAdmin = Array.isArray(currentUserRole)
+      ? currentUserRole.some(r => ["admin", "worker"].includes(r))
+      : ["admin", "worker"].includes(currentUserRole);
+    btn.style.display = esWorkerOAdmin ? "" : "none";
+  }
 
   ["egreso-categoria", "egreso-monto", "egreso-fecha", "egreso-descripcion", "egreso-ejecutor", "egreso-caja", "egreso-archivo"].forEach(id => {
     const el = document.getElementById(id);
