@@ -45,6 +45,10 @@
   background: linear-gradient(90deg, #c9a84c, #e9c46a);
 }
 
+.pagos-resumen-item.excedente::before {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+}
+
 .pr-label {
   font-size: .68rem;
   font-weight: 700;
@@ -67,6 +71,10 @@
 
 .pagos-resumen-item.pendiente .pr-value {
   color: #9a6c00;
+}
+
+.pagos-resumen-item.excedente .pr-value {
+  color: #c0392b;
 }
 
 /* ── BARRA DE PROGRESO ──────────────────────── */

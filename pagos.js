@@ -188,6 +188,22 @@ async function loadPagosPasajero() {
   const pct   = pagosCtx.totalAPagar > 0
     ? Math.min(100, Math.round((neto / pagosCtx.totalAPagar) * 100)) : 0;
 
+  // Estado del saldo: excedente / saldado / pendiente
+  let saldoClase, saldoLabel, saldoValor;
+  if (saldo < 0) {
+    saldoClase = "excedente";
+    saldoLabel = "⚠️ Excedente";
+    saldoValor = "Gs. " + Math.abs(saldo).toLocaleString("es-PY");
+  } else if (saldo === 0) {
+    saldoClase = "saldado";
+    saldoLabel = "✅ Saldado";
+    saldoValor = "—";
+  } else {
+    saldoClase = "pendiente";
+    saldoLabel = "Saldo pendiente";
+    saldoValor = "Gs. " + saldo.toLocaleString("es-PY");
+  }
+
   // Resumen
   resumenEl.innerHTML = `
     <div class="pagos-resumen-grid">
@@ -199,9 +215,9 @@ async function loadPagosPasajero() {
         <span class="pr-label">Pagado</span>
         <span class="pr-value">Gs. ${neto.toLocaleString("es-PY")}</span>
       </div>
-      <div class="pagos-resumen-item ${saldo <= 0 ? "saldado" : "pendiente"}">
-        <span class="pr-label">${saldo <= 0 ? "✅ Saldado" : "Saldo pendiente"}</span>
-        <span class="pr-value">${saldo <= 0 ? "—" : "Gs. " + saldo.toLocaleString("es-PY")}</span>
+      <div class="pagos-resumen-item ${saldoClase}">
+        <span class="pr-label">${saldoLabel}</span>
+        <span class="pr-value">${saldoValor}</span>
       </div>
     </div>
     <div class="pagos-progress-wrap">
@@ -319,7 +335,7 @@ function buscarPasajeroDestino() {
   const q    = document.getElementById("trans-buscar").value.toLowerCase().trim();
   const cont = document.getElementById("trans-resultados");
   if (!q) { cont.innerHTML = ""; return; }
-  const resultados = (allPassengers || []).filter(p =>
+  const resultados = (allPasajeros || []).filter(p =>
     p.id !== pagosCtx.pasajeroId &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
