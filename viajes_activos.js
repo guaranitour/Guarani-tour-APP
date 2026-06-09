@@ -424,7 +424,7 @@ async function guardarEdicionVP(vpId) {
   const puntosInput = parseInt(document.getElementById("vpe-puntos").value) || 0;
   const asistencia = document.getElementById("vpe-asistencia").value;
 
-  if (!total || total <= 0) {
+  if (total == null || isNaN(total) || total < 0) {
     document.getElementById("vpe-total").classList.add("error");
     return;
   }
@@ -466,7 +466,7 @@ async function guardarPasajeroEnViaje() {
 
     const total = parseInt(document.getElementById("input-total").value);
 
-    if (!total || total <= 0) {
+    if (total == null || isNaN(total) || total < 0) {
       alert("Ingresá un monto válido");
       return;
     }

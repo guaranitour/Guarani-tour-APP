@@ -381,7 +381,7 @@ async function guardarPago() {
   const fotoFile = document.getElementById("pago-foto").files?.[0];
 
   const montoEl = document.getElementById("pago-monto");
-  if (!monto || monto <= 0) { montoEl.classList.add("input-error"); montoEl.focus(); return; }
+  if (monto == null || isNaN(monto) || monto < 0) { montoEl.classList.add("input-error"); montoEl.focus(); return; }
   montoEl.classList.remove("input-error");
 
   if (tipo === "Transferencia" && !pagosCtx.pasajeroDestino) {
@@ -524,7 +524,13 @@ function abrirModalTransferirPago() {
 }
 
 function cerrarModalTransferirPago(event) {
+  // Si se llama con evento (click en backdrop), solo cerrar si el click fue directo al modal
   if (event && event.target !== document.getElementById("modal-transferir-pago")) return;
+  const modal = document.getElementById("modal-transferir-pago");
+  if (modal) modal.style.display = "none";
+}
+
+function cerrarModalTransferirPagoDirecto() {
   const modal = document.getElementById("modal-transferir-pago");
   if (modal) modal.style.display = "none";
 }
@@ -615,7 +621,7 @@ async function confirmarTransferirPago() {
 
     if (eUpd) throw eUpd;
 
-    cerrarModalTransferirPago();
+    cerrarModalTransferirPagoDirecto();
     // Volver a la lista de pagos del pasajero original
     navigateTo("viaje-pasajero-pagos", {
       viajePasajeroId : pagosCtx.viajePasajeroId,
