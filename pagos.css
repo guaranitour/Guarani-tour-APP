@@ -435,4 +435,184 @@
   box-shadow: var(--shadow-md);
 }
 
+/* ══ BOTÓN TRANSFERIR PAGO ═══════════════════ */
 
+.btn-transferir-pago {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: .85rem 1rem;
+  background: rgba(52,120,246,.07);
+  border: 1.5px solid rgba(52,120,246,.25);
+  border-radius: 14px;
+  color: #1e6fc7;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+
+.btn-transferir-pago:hover {
+  background: rgba(52,120,246,.13);
+  border-color: rgba(52,120,246,.45);
+}
+
+.btn-transferir-pago:active {
+  background: rgba(52,120,246,.18);
+}
+
+/* ══ MODAL TRANSFERIR PAGO ═══════════════════ */
+
+.modal-transferir-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: fadeInOverlay .18s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-transferir-card {
+  background: var(--surface, #fff);
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem 1.25rem 2rem;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 -8px 32px rgba(0,0,0,.15);
+  animation: slideUpModal .22s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes slideUpModal {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.modal-transferir-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .75rem;
+}
+
+.modal-transferir-titulo {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e6fc7;
+}
+
+.modal-transferir-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: .25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: background .12s;
+}
+
+.modal-transferir-close:hover {
+  background: rgba(0,0,0,.06);
+}
+
+.modal-transferir-desc {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin-bottom: .5rem;
+  line-height: 1.45;
+}
+
+.modal-transferir-monto {
+  font-family: 'Lora', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #2d6a4f;
+  margin-bottom: .25rem;
+}
+
+/* ── Resultados búsqueda modal ─────────────── */
+
+.modal-trans-resultados {
+  margin-top: .5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 12px;
+}
+
+.modal-trans-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .7rem .85rem;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: background .1s;
+  border-radius: 10px;
+}
+
+.modal-trans-item:hover {
+  background: rgba(45,106,79,.06);
+}
+
+.modal-trans-item:last-child {
+  border-bottom: none;
+}
+
+.modal-trans-vacio {
+  font-size: .8rem;
+  color: var(--text-muted);
+  padding: .5rem .2rem;
+  font-style: italic;
+}
+
+.modal-trans-seleccionado {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-top: .75rem;
+  padding: .65rem .9rem;
+  background: rgba(45,106,79,.08);
+  border: 1.5px solid rgba(45,106,79,.2);
+  border-radius: 10px;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #2d6a4f;
+}
+
+.modal-transferir-actions {
+  display: flex;
+  gap: .75rem;
+  margin-top: 1.25rem;
+}
+
+.modal-transferir-actions .btn-cancel {
+  flex: 0 0 auto;
+}
+
+.modal-transferir-actions .btn-save {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+
+.modal-transferir-actions .btn-save:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}

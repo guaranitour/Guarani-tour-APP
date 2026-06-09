@@ -434,6 +434,9 @@ function abrirDetallePago(pago) {
 }
 
 function initPagoDetalleView(p) {
+  // Guardar pago en contexto para la transferencia
+  pagosCtx.pagoActual = p;
+
   const tipoCls = { "Pago": "tipo-pago", "Devolución": "tipo-devolucion", "Transferencia": "tipo-transferencia" };
   const tipoIcon = {
     "Pago":          `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
@@ -466,5 +469,150 @@ function initPagoDetalleView(p) {
     fotoWrap.style.display = "block";
   } else {
     fotoWrap.style.display = "none";
+  }
+
+  // Mostrar botón de transferencia solo a admin/worker y solo para tipo Pago
+  const accionesEl = document.getElementById("pd-acciones");
+  if (accionesEl) {
+    const esWorkerOAdmin = Array.isArray(currentUserRole)
+      ? currentUserRole.some(r => ["admin", "worker"].includes(r))
+      : ["admin", "worker"].includes(currentUserRole);
+    accionesEl.style.display = (esWorkerOAdmin && p.tipo === "Pago") ? "" : "none";
+  }
+}
+
+/* ── MODAL: TRANSFERIR PAGO ─────────────────── */
+function abrirModalTransferirPago() {
+  const p = pagosCtx.pagoActual;
+  if (!p) return;
+
+  const montoEl = document.getElementById("modal-trans-monto");
+  if (montoEl) montoEl.textContent = `Gs. ${(p.monto || 0).toLocaleString("es-PY")}`;
+
+  const buscarEl = document.getElementById("modal-trans-buscar");
+  if (buscarEl) buscarEl.value = "";
+
+  const resEl = document.getElementById("modal-trans-resultados");
+  if (resEl) resEl.innerHTML = "";
+
+  const selEl = document.getElementById("modal-trans-seleccionado");
+  if (selEl) selEl.style.display = "none";
+
+  const btnEl = document.getElementById("btn-confirmar-transferencia");
+  if (btnEl) btnEl.disabled = true;
+
+  pagosCtx.destinatarioTransferencia = null;
+
+  const modal = document.getElementById("modal-transferir-pago");
+  if (modal) modal.style.display = "flex";
+}
+
+function cerrarModalTransferirPago(event) {
+  if (event && event.target !== document.getElementById("modal-transferir-pago")) return;
+  const modal = document.getElementById("modal-transferir-pago");
+  if (modal) modal.style.display = "none";
+}
+
+function buscarPasajeroParaTransferir() {
+  const q    = document.getElementById("modal-trans-buscar").value.toLowerCase().trim();
+  const cont = document.getElementById("modal-trans-resultados");
+  const selEl = document.getElementById("modal-trans-seleccionado");
+  const btnEl = document.getElementById("btn-confirmar-transferencia");
+
+  // Limpiar selección al escribir de nuevo
+  pagosCtx.destinatarioTransferencia = null;
+  if (selEl) selEl.style.display = "none";
+  if (btnEl) btnEl.disabled = true;
+
+  if (!q) { cont.innerHTML = ""; return; }
+
+  const resultados = (allPassengers || []).filter(p =>
+    p.id !== pagosCtx.pasajeroId &&
+    ((p.Pasajero || "").toLowerCase().includes(q) ||
+     (p["Documento de Identidad"] || "").toLowerCase().includes(q))
+  );
+
+  if (resultados.length === 0) {
+    cont.innerHTML = `<div class="modal-trans-vacio">Sin resultados para "<strong>${q}</strong>"</div>`;
+    return;
+  }
+
+  cont.innerHTML = resultados.slice(0, 8).map(p => `
+    <div class="modal-trans-item" onclick="seleccionarDestinatario('${p.id}','${(p.Pasajero||"").replace(/'/g,"\\'")}')">
+      <div>
+        <strong>${p.Pasajero}</strong>
+        <div class="ci" style="font-size:.75rem;color:var(--text-muted)">CI: ${p["Documento de Identidad"] || "—"}</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>`).join("");
+}
+
+function seleccionarDestinatario(id, nombre) {
+  pagosCtx.destinatarioTransferencia = { id, nombre };
+
+  const buscarEl = document.getElementById("modal-trans-buscar");
+  if (buscarEl) buscarEl.value = nombre;
+
+  const resEl = document.getElementById("modal-trans-resultados");
+  if (resEl) resEl.innerHTML = "";
+
+  const selEl = document.getElementById("modal-trans-seleccionado");
+  const nomEl = document.getElementById("modal-trans-nombre-sel");
+  if (selEl) selEl.style.display = "flex";
+  if (nomEl) nomEl.textContent = nombre;
+
+  const btnEl = document.getElementById("btn-confirmar-transferencia");
+  if (btnEl) btnEl.disabled = false;
+}
+
+async function confirmarTransferirPago() {
+  const p    = pagosCtx.pagoActual;
+  const dest = pagosCtx.destinatarioTransferencia;
+  if (!p || !dest) return;
+
+  const btn = document.getElementById("btn-confirmar-transferencia");
+  btn.disabled = true;
+  btn.textContent = "Transfiriendo…";
+
+  try {
+    // 1. Buscar viaje_pasajero del destino en este viaje
+    const { data: vpDest, error: eVp } = await supabaseClient
+      .from("viaje_pasajeros")
+      .select("id")
+      .eq("viaje_id", pagosCtx.viajeId)
+      .eq("pasajero_id", dest.id)
+      .single();
+
+    if (eVp || !vpDest) {
+      alert("El pasajero seleccionado no está inscripto en este viaje.");
+      return;
+    }
+
+    // 2. Reasignar el pago al nuevo viaje_pasajero
+    const { error: eUpd } = await supabaseClient
+      .from("pagos")
+      .update({
+        viaje_pasajero_id : vpDest.id,
+        observacion       : `Transferido desde ${pagosCtx.nombrePasajero}${p.observacion ? " — " + p.observacion : ""}`,
+      })
+      .eq("id", p.id);
+
+    if (eUpd) throw eUpd;
+
+    cerrarModalTransferirPago();
+    // Volver a la lista de pagos del pasajero original
+    navigateTo("viaje-pasajero-pagos", {
+      viajePasajeroId : pagosCtx.viajePasajeroId,
+      viajeId         : pagosCtx.viajeId,
+      pasajeroId      : pagosCtx.pasajeroId,
+      nombrePasajero  : pagosCtx.nombrePasajero,
+    });
+
+  } catch (e) {
+    console.error("Error al transferir pago:", e);
+    alert("Error al transferir: " + (e.message || "Intentá de nuevo"));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg> Confirmar transferencia`;
   }
 }

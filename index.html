@@ -943,6 +943,60 @@
           </a>
         </div>
 
+        <!-- Acciones -->
+        <div id="pd-acciones" style="display:none">
+          <button class="btn-transferir-pago" onclick="abrirModalTransferirPago()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Transferir a otro pasajero
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MODAL: TRANSFERIR PAGO ─────────────── -->
+    <div id="modal-transferir-pago" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalTransferirPago(event)">
+      <div class="modal-transferir-card">
+        <div class="modal-transferir-header">
+          <div class="modal-transferir-titulo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Transferir pago
+          </div>
+          <button class="modal-transferir-close" onclick="cerrarModalTransferirPago()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <p class="modal-transferir-desc">Este pago será reasignado a otro pasajero del mismo viaje.</p>
+
+        <div class="modal-transferir-monto" id="modal-trans-monto">Gs. —</div>
+
+        <div class="form-field" style="margin-top:1rem">
+          <label class="form-label">Buscar pasajero destino</label>
+          <input
+            type="text"
+            id="modal-trans-buscar"
+            class="form-input"
+            placeholder="Nombre o CI…"
+            oninput="buscarPasajeroParaTransferir()"
+            autocomplete="off"
+          />
+        </div>
+
+        <div id="modal-trans-resultados" class="modal-trans-resultados"></div>
+
+        <div id="modal-trans-seleccionado" class="modal-trans-seleccionado" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="modal-trans-nombre-sel"></span>
+        </div>
+
+        <div class="modal-transferir-actions">
+          <button class="btn-cancel" onclick="cerrarModalTransferirPago()">Cancelar</button>
+          <button class="btn-save" id="btn-confirmar-transferencia" onclick="confirmarTransferirPago()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Confirmar transferencia
+          </button>
+        </div>
       </div>
     </div>
 
