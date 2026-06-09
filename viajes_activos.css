@@ -692,3 +692,139 @@
   background: rgba(45,106,79,.1);
   color: var(--accent);
 }
+
+/* ── BOTÓN EDITAR DETALLE ───────────────────── */
+
+.btn-editar-detalle {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .3rem .75rem;
+  font-size: .78rem; font-family: inherit;
+  background: #f0faf4; color: #2d6a4f;
+  border: 1px solid rgba(45,106,79,.25); border-radius: 6px;
+  cursor: pointer; transition: background .15s;
+}
+.btn-editar-detalle:hover { background: #dff2e8; }
+
+/* ── TABS VIAJE ─────────────────────────────── */
+
+.viaje-tabs {
+  display: flex;
+  gap: .25rem;
+  margin: 0 0 1rem;
+  border-bottom: 2px solid var(--border, #e8ede9);
+}
+.viaje-tab {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .55rem 1rem;
+  font-size: .82rem; font-family: inherit; font-weight: 500;
+  color: var(--text-muted, #888);
+  background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.viaje-tab svg { opacity: .7; }
+.viaje-tab.active {
+  color: #2d6a4f;
+  border-bottom-color: #2d6a4f;
+}
+.viaje-tab.active svg { opacity: 1; }
+.viaje-tab:hover:not(.active) { color: #444; }
+
+/* ── EGRESOS ─────────────────────────────────── */
+
+.egresos-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .6rem .75rem;
+  background: #f0faf4;
+  border-radius: 8px;
+  margin-bottom: .75rem;
+  font-size: .85rem;
+}
+.egresos-total-label { color: #2d6a4f; font-weight: 500; }
+.egresos-total-valor { font-weight: 700; color: #1a3a2a; }
+
+.egreso-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--border, #e8ede9);
+  gap: .75rem;
+}
+.egreso-row:last-child { border-bottom: none; }
+.egreso-info { flex: 1; min-width: 0; }
+.egreso-concepto { font-size: .88rem; font-weight: 600; color: var(--text, #1a1a1a); }
+.egreso-obs { font-size: .78rem; color: var(--text-muted, #888); margin-top: .1rem; }
+.egreso-fecha { font-size: .75rem; color: var(--text-muted, #888); margin-top: .2rem; }
+.egreso-monto {
+  font-size: .88rem; font-weight: 700;
+  color: #c0392b;
+  white-space: nowrap;
+}
+
+/* ── EGRESO DETALLE ──────────────────────────── */
+
+.egreso-det-monto-hero {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 1.5rem 1rem 1.2rem;
+  background: linear-gradient(135deg, rgba(192,57,43,.07), rgba(192,57,43,.03));
+  border: 1px solid rgba(192,57,43,.15);
+  border-radius: 14px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+.egreso-det-monto-label {
+  font-size: .75rem; font-weight: 600; color: #c0392b;
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem;
+}
+.egreso-det-monto-valor {
+  font-size: 1.8rem; font-weight: 800; color: #c0392b; line-height: 1;
+}
+.egreso-det-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .85rem;
+  margin-top: .75rem;
+}
+.egreso-det-field { display: flex; flex-direction: column; gap: .15rem; }
+.egreso-det-field.full { grid-column: 1 / -1; }
+.egreso-det-label {
+  font-size: .72rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
+}
+.egreso-det-value { font-size: .88rem; color: var(--text); font-weight: 500; }
+.egreso-det-comprobante {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .55rem 1rem; border-radius: 10px;
+  border: 1px solid rgba(45,106,79,.3);
+  background: rgba(45,106,79,.05);
+  color: var(--accent); font-size: .85rem; font-weight: 600;
+  text-decoration: none; margin-top: .5rem;
+  transition: background .15s;
+}
+.egreso-det-comprobante:hover { background: rgba(45,106,79,.1); }
+.egreso-det-sin-comprobante {
+  font-size: .83rem; color: var(--text-muted);
+  display: block; margin-top: .5rem; font-style: italic;
+}
+
+/* ── PRESUPUESTO ─────────────────────────────── */
+
+.presupuesto-form-hint {
+  font-size: .8rem; color: var(--text-muted);
+  margin-bottom: .75rem; line-height: 1.5;
+}
+.presupuesto-advertencia {
+  display: flex; flex-direction: column; gap: .6rem;
+  background: #fffbeb;
+  border: 1px solid rgba(201,168,76,.35);
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  font-size: .82rem;
+  color: #7a5c10;
+  margin-top: .75rem;
+  line-height: 1.5;
+}
+.presupuesto-advertencia svg { flex-shrink: 0; margin-top: .1rem; }
+.presupuesto-adv-actions {
+  display: flex; gap: .5rem; justify-content: flex-end; margin-top: .25rem;
+}
