@@ -331,12 +331,19 @@ function onTipoChange() {
 }
 
 /* ── BUSCAR PASAJERO DESTINO ────────────────── */
-function buscarPasajeroDestino() {
+async function buscarPasajeroDestino() {
   const q    = document.getElementById("trans-buscar").value.toLowerCase().trim();
   const cont = document.getElementById("trans-resultados");
   if (!q) { cont.innerHTML = ""; return; }
+
+  // Cargar pasajeros si aún no están en memoria
+  if (!allPassengers || allPassengers.length === 0) {
+    cont.innerHTML = `<div class="trans-vacio">Cargando pasajeros…</div>`;
+    await loadPassengers();
+  }
+
   const resultados = (allPassengers || []).filter(p =>
-    p.id !== pagosCtx.pasajeroId &&
+    String(p.id) !== String(pagosCtx.pasajeroId) &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
   );
@@ -548,8 +555,14 @@ function buscarPasajeroParaTransferir() {
 
   if (!q) { cont.innerHTML = ""; return; }
 
+  if (!allPassengers || allPassengers.length === 0) {
+    cont.innerHTML = `<div class="modal-trans-vacio">Cargando pasajeros… intentá de nuevo en un momento.</div>`;
+    loadPassengers();
+    return;
+  }
+
   const resultados = (allPassengers || []).filter(p =>
-    p.id !== pagosCtx.pasajeroId &&
+    String(p.id) !== String(pagosCtx.pasajeroId) &&
     ((p.Pasajero || "").toLowerCase().includes(q) ||
      (p["Documento de Identidad"] || "").toLowerCase().includes(q))
   );
