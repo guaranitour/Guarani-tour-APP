@@ -3,26 +3,6 @@
    Solo para admin y worker
 ═══════════════════════════════════════════ */
 
-/* ── Scroll horizontal de tabs ───────────── */
-.viaje-tabs-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;          /* Firefox */
-  margin: 0 -1rem;                /* sangrar hasta el borde del .main */
-  padding: 0 1rem;
-}
-
-.viaje-tabs-scroll::-webkit-scrollbar {
-  display: none;                  /* Chrome/Safari */
-}
-
-/* El .viaje-tabs existente solo necesita no hacer wrap */
-.viaje-tabs-scroll .viaje-tabs {
-  white-space: nowrap;
-  display: inline-flex;           /* en línea para que el scroll funcione */
-  min-width: 100%;
-}
-
 /* ── Grilla de stat cards ─────────────────── */
 .resumen-grid {
   display: grid;

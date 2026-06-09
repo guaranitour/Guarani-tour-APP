@@ -708,11 +708,26 @@
 
 /* ── TABS VIAJE ─────────────────────────────── */
 
-.viaje-tabs {
-  display: flex;
-  gap: .25rem;
+.viaje-tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   margin: 0 0 1rem;
+  /* sangrar al borde del .main para que el borde inferior llegue al margen */
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.viaje-tabs-scroll::-webkit-scrollbar { display: none; }
+
+.viaje-tabs {
+  display: inline-flex;   /* en línea para que el scroll funcione */
+  flex-wrap: nowrap;      /* nunca saltar de línea */
+  gap: .25rem;
+  min-width: 100%;        /* ocupa al menos el ancho del scroll */
   border-bottom: 2px solid var(--border, #e8ede9);
+  margin: 0;
 }
 .viaje-tab {
   display: inline-flex; align-items: center; gap: .4rem;
@@ -723,6 +738,8 @@
   border: none; border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: color .15s, border-color .15s;
 }
 .viaje-tab svg { opacity: .7; }
