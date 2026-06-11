@@ -426,14 +426,18 @@ async function guardarPago() {
       const { data: reg1, error: e1 } = await supabaseClient
         .from("pagos").insert([{ ...base, tipo: "Transferencia" }]).select("id").single();
       if (e1) throw e1;
-      const { error: e2 } = await supabaseClient.from("pagos").insert([{
+      const { data: reg2, error: e2 } = await supabaseClient.from("pagos").insert([{
         ...base,
         pasajero_id        : pagosCtx.pasajeroDestino.id,
         tipo               : "Pago",
         referencia_pago_id : reg1.id,
         observacion        : `Transferencia desde ${pagosCtx.nombrePasajero}${obs ? " — " + obs : ""}`,
-      }]);
+      }]).select("id").single();
       if (e2) throw e2;
+      // Vínculo bidireccional: origen también apunta al destino
+      const { error: e3 } = await supabaseClient
+        .from("pagos").update({ referencia_pago_id: reg2.id }).eq("id", reg1.id);
+      if (e3) throw e3;
     } else {
       const { error } = await supabaseClient.from("pagos").insert([base]);
       if (error) throw error;
@@ -456,7 +460,7 @@ function abrirDetallePago(pago) {
   navigateTo("pago-detalle", pago);
 }
 
-function initPagoDetalleView(p) {
+async function initPagoDetalleView(p) {
   // Guardar pago en contexto para la transferencia
   pagosCtx.pagoActual = p;
 
@@ -494,13 +498,36 @@ function initPagoDetalleView(p) {
     fotoWrap.style.display = "none";
   }
 
-  // Mostrar botón de transferencia solo a admin/worker y solo para tipo Pago
+  // Mostrar botón de transferencia solo a admin/worker, solo para tipo Pago,
+  // y solo si este pago aún no fue transferido (no existe Transferencia con referencia_pago_id = p.id)
   const accionesEl = document.getElementById("pd-acciones");
   if (accionesEl) {
     const esWorkerOAdmin = Array.isArray(currentUserRole)
       ? currentUserRole.some(r => ["admin", "worker"].includes(r))
       : ["admin", "worker"].includes(currentUserRole);
-    accionesEl.style.display = (esWorkerOAdmin && p.tipo === "Pago") ? "" : "none";
+
+    if (esWorkerOAdmin && p.tipo === "Pago") {
+      // Verificar si ya existe un registro que referencie este pago (ya fue transferido)
+      const { data: transExistente } = await supabaseClient
+        .from("pagos")
+        .select("id")
+        .eq("referencia_pago_id", p.id)
+        .maybeSingle();
+
+      if (transExistente) {
+        // Ya fue transferido: ocultar botón y mostrar indicador
+        accionesEl.innerHTML = `
+          <div class="pd-transferido-aviso">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Pago ya transferido
+          </div>`;
+        accionesEl.style.display = "";
+      } else {
+        accionesEl.style.display = "";
+      }
+    } else {
+      accionesEl.style.display = "none";
+    }
   }
 }
 
@@ -639,7 +666,7 @@ async function confirmarTransferirPago() {
       return;
     }
 
-    // 2. Insertar registro Transferencia en el origen
+    // 2. Insertar registro Transferencia en el origen (sin referencia aún)
     const { data: regOrigen, error: e1 } = await supabaseClient
       .from("pagos")
       .insert([{
@@ -655,8 +682,8 @@ async function confirmarTransferirPago() {
       .single();
     if (e1) throw e1;
 
-    // 3. Insertar registro Pago en el destino
-    const { error: e2 } = await supabaseClient
+    // 3. Insertar registro Pago en el destino (con referencia al origen)
+    const { data: regDest, error: e2 } = await supabaseClient
       .from("pagos")
       .insert([{
         viaje_pasajero_id  : vpDest.id,
@@ -667,8 +694,17 @@ async function confirmarTransferirPago() {
         referencia_pago_id : regOrigen.id,
         observacion        : `Transferencia desde ${pagosCtx.nombrePasajero}`,
         creado_por         : user.email,
-      }]);
+      }])
+      .select("id")
+      .single();
     if (e2) throw e2;
+
+    // 4. Actualizar el origen con referencia al destino (vínculo bidireccional)
+    const { error: e3 } = await supabaseClient
+      .from("pagos")
+      .update({ referencia_pago_id: regDest.id })
+      .eq("id", regOrigen.id);
+    if (e3) throw e3;
 
     cerrarModalTransferirPagoDirecto();
     // Volver a la lista de pagos del pasajero original
