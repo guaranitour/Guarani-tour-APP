@@ -45,7 +45,17 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (menuEmail) menuEmail.textContent = user.email;
   if (!appReady) {
     appReady = true;
-    navigateTo("home");
+    // Si hay un hash en la URL al cargar, intentar restaurar esa vista
+    const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
+    const restorableViews = [
+      "home","clientes","nuevo","usuarios","viajes","viaje-nuevo",
+      "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo"
+    ];
+    if (hashView && hashView !== "home" && restorableViews.includes(hashView)) {
+      navigateTo(hashView, hashIdx);
+    } else {
+      navigateTo("home");
+    }
   }
 }
 
@@ -79,11 +89,57 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// ── Navegación por hash ────────────────────────────────────
+// Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
+// Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
+const _hashSimpleViews = ["home","clientes","nuevo","usuarios","viajes","viaje-nuevo"];
+const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo"];
+
+function _buildHash(view, idx) {
+  if (_hashNumericViews.includes(view) && idx !== null && typeof idx === "number") {
+    return `#${view}/${idx}`;
+  }
+  return `#${view}`;
+}
+
+function _setHash(view, idx) {
+  const hash = _buildHash(view, idx);
+  if (location.hash !== hash) {
+    history.pushState(null, "", hash);
+  }
+}
+
+function _parseHash(hash) {
+  const raw = (hash || "").replace(/^#/, "");
+  if (!raw) return { view: "home", idx: null };
+  const slashIdx = raw.indexOf("/");
+  if (slashIdx === -1) return { view: raw, idx: null };
+  const view = raw.slice(0, slashIdx);
+  const idxStr = raw.slice(slashIdx + 1);
+  const idx = isNaN(idxStr) ? idxStr : parseInt(idxStr, 10);
+  return { view, idx };
+}
+
+window.addEventListener("popstate", () => {
+  if (!appReady) return;
+  const { view, idx } = _parseHash(location.hash);
+  // Vistas con idx objeto no se pueden restaurar desde hash → ir al padre
+  const objectIdxViews = ["viaje-pasajero-pagos","pago-detalle","egreso-detalle"];
+  if (objectIdxViews.includes(view)) {
+    navigateTo("viajes");
+    return;
+  }
+  navigateTo(view, idx, true); // true = viniendo del hash, no volver a setear
+});
+
 // ── Navegación ─────────────────────────────────────────────
-function navigateTo(view, idx = null) {
+function navigateTo(view, idx = null, _fromHash = false) {
 
   currentView = view;
   selectedIdx = idx;
+
+  // Actualizar hash (salvo que ya venga del popstate)
+  if (!_fromHash) _setHash(view, idx);
 
   // Ocultar todas las vistas
   hideEl("view-home");
