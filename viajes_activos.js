@@ -28,7 +28,7 @@ async function loadViajes(modo = "activos") {
 
   const { data, error } = await (
     modo === "historico"
-      ? query.lt("fecha_regreso", hoy)
+      ? query.or(`fecha_regreso.lt.${hoy},fecha_regreso.is.null`)
       : query.gte("fecha_regreso", hoy)
   );
 
