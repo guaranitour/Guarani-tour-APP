@@ -49,7 +49,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
     const restorableViews = [
       "home","clientes","nuevo","usuarios","viajes","viaje-nuevo",
-      "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo"
+      "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
     ];
     if (hashView && hashView !== "home" && restorableViews.includes(hashView)) {
       navigateTo(hashView, hashIdx);
@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Navegación por hash ────────────────────────────────────
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
-const _hashSimpleViews = ["home","clientes","nuevo","usuarios","viajes","viaje-nuevo"];
+const _hashSimpleViews = ["home","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo"];
 
 function _buildHash(view, idx) {
@@ -169,6 +169,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vvn) _vvn.style.display = "none";
   const _vvd = document.getElementById("view-viaje-detalle");
   if (_vvd) _vvd.style.display = "none";
+  const _vhi = document.getElementById("view-historico");
+  if (_vhi) _vhi.style.display = "none";
   const _vpp = document.getElementById("view-viaje-pasajero-pagos");
   if (_vpp) _vpp.style.display = "none";
   const _vpd = document.getElementById("view-pago-detalle");
@@ -250,9 +252,20 @@ function navigateTo(view, idx = null, _fromHash = false) {
     showEl("view-viajes");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
-      { label: "Viajes" }
+      { label: "Viajes activos" }
     ]);
-    loadViajes();
+    loadViajes("activos");
+
+  }
+
+  else if (view === "historico") {
+
+    showEl("view-historico");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Histórico de viajes" }
+    ]);
+    loadViajes("historico");
 
   }
 

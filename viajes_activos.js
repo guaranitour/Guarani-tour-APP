@@ -10,19 +10,27 @@ let allViajes = [];
 let allVendedores = [];
 
 /* ── CARGAR VIAJES ─────────────────────────── */
-async function loadViajes() {
-  const list = document.getElementById("viajes-list");
+// modo: "activos" (default) → fecha_regreso >= hoy
+//       "historico"         → fecha_regreso < hoy
+async function loadViajes(modo = "activos") {
+  const listId = modo === "historico" ? "historico-list" : "viajes-list";
+  const list = document.getElementById(listId);
   if (!list) return;
 
   list.innerHTML = "Cargando…";
 
   const hoy = new Date().toISOString().split("T")[0];
 
-  const { data, error } = await supabaseClient
+  const query = supabaseClient
     .from("viajes")
     .select("*")
-    .gte("fecha_regreso", hoy)
     .order("fecha_salida", { ascending: false });
+
+  const { data, error } = await (
+    modo === "historico"
+      ? query.lt("fecha_regreso", hoy)
+      : query.gte("fecha_regreso", hoy)
+  );
 
   if (error) {
     console.error(error);
