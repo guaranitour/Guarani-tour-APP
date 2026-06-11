@@ -124,9 +124,22 @@ window.addEventListener("popstate", () => {
   if (!appReady) return;
   const { view, idx } = _parseHash(location.hash);
   // Vistas con idx objeto no se pueden restaurar desde hash → ir al padre
-  const objectIdxViews = ["viaje-pasajero-pagos","pago-detalle","egreso-detalle"];
+  const objectIdxViews = ["viaje-pasajero-pagos","egreso-detalle"];
   if (objectIdxViews.includes(view)) {
     navigateTo("viajes");
+    return;
+  }
+  if (view === "pago-detalle") {
+    if (pagosCtx?.viajePasajeroId) {
+      navigateTo("viaje-pasajero-pagos", {
+        viajePasajeroId : pagosCtx.viajePasajeroId,
+        viajeId         : pagosCtx.viajeId,
+        pasajeroId      : pagosCtx.pasajeroId,
+        nombrePasajero  : pagosCtx.nombrePasajero,
+      });
+    } else {
+      navigateTo("viajes");
+    }
     return;
   }
   navigateTo(view, idx, true); // true = viniendo del hash, no volver a setear

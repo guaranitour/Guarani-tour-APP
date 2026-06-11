@@ -507,11 +507,12 @@ async function initPagoDetalleView(p) {
       : ["admin", "worker"].includes(currentUserRole);
 
     if (esWorkerOAdmin && p.tipo === "Pago") {
-      // Verificar si ya existe un registro que referencie este pago (ya fue transferido)
+      // Verificar si ya existe un registro Transferencia que apunte a este pago como origen
       const { data: transExistente } = await supabaseClient
         .from("pagos")
         .select("id")
-        .eq("referencia_pago_id", p.id)
+        .eq("ref_origen", parseInt(p.id))
+        .eq("tipo", "Transferencia")
         .maybeSingle();
 
       if (transExistente) {
@@ -675,6 +676,7 @@ async function confirmarTransferirPago() {
         tipo              : "Transferencia",
         fecha_pago        : hoy,
         metodo_pago_id    : p.metodo_pago_id || null,
+        ref_origen        : parseInt(p.id),
         observacion       : `Transferido a ${dest.nombre}`,
         creado_por        : user.email,
       }])
