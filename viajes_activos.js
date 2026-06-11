@@ -183,7 +183,7 @@ function irAgregarPasajero() {
 }
 
 function initFormPasajero(viajeId) {
-  viajeActualId = viajeId;
+  viajeActualId = parseInt(viajeId, 10);
   pasajeroSeleccionado = null;
 
   document.getElementById("buscar-pasajero").value = "";
@@ -197,10 +197,10 @@ function initFormPasajero(viajeId) {
 }
 
 function openViajeDetalle(viajeId) {
-  navigateTo("viaje-detalle", viajeId);
+  navigateTo("viaje-detalle", parseInt(viajeId, 10));
 }
 async function loadViajeDetalle(viajeId) {
-  viajeActualId = viajeId;
+  viajeActualId = parseInt(viajeId, 10);
 
   const nombreEl = document.getElementById("detalle-viaje-nombre");
   const infoEl = document.getElementById("detalle-viaje-info");
