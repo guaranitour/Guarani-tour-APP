@@ -336,17 +336,19 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     const pid      = p.pasajero_id || p.pasajeros?.id || "";
     const total    = p.total_a_pagar || 0;
     const esCanje  = total === 0;
-    const pagado   = (pagosPorVP[p.id] || [])
-      .filter(pg => pg.tipo === "Pago" || pg.tipo === "Transferencia")
-      .reduce((s, pg) => s + (pg.monto || 0), 0);
-    const excedente = total === 0 ? pagado : Math.max(0, pagado - total);
-    const restante  = esCanje ? 0 : Math.max(0, total - pagado);
-    const saldado   = !esCanje && restante === 0 && total > 0;
-    const hayExcedente = !esCanje && pagado > total;
+    const _pgs         = pagosPorVP[p.id] || [];
+    const _pagado      = _pgs.filter(pg => pg.tipo === "Pago").reduce((s, pg) => s + (pg.monto || 0), 0);
+    const _devuelto    = _pgs.filter(pg => pg.tipo === "Devolución").reduce((s, pg) => s + (pg.monto || 0), 0);
+    const _transferido = _pgs.filter(pg => pg.tipo === "Transferencia").reduce((s, pg) => s + (pg.monto || 0), 0);
+    const neto         = _pagado - _devuelto - _transferido;
+    const excedente    = esCanje ? neto : Math.max(0, neto - total);
+    const restante     = esCanje ? 0 : Math.max(0, total - neto);
+    const saldado      = !esCanje && restante === 0 && total > 0;
+    const hayExcedente = !esCanje && neto > total;
 
-    const pct = total > 0 ? pagado / total : 0;
+    const pct = total > 0 ? neto / total : 0;
     let pillClass, pillLabel;
-    if (esCanje && pagado > 0) {
+    if (esCanje && neto > 0) {
       pillClass = "excedente";
       pillLabel = `⚠️ Exc. Gs. ${excedente.toLocaleString("es-PY")}`;
     } else if (esCanje) {
