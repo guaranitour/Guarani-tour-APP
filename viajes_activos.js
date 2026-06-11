@@ -335,18 +335,33 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     const nombreE  = nombre.replace(/'/g, "\\'");
     const pid      = p.pasajero_id || p.pasajeros?.id || "";
     const total    = p.total_a_pagar || 0;
+    const esCanje  = total === 0;
     const pagado   = (pagosPorVP[p.id] || [])
       .filter(pg => pg.tipo === "Pago" || pg.tipo === "Transferencia")
       .reduce((s, pg) => s + (pg.monto || 0), 0);
-    const restante = Math.max(0, total - pagado);
-    const restanteStr = restante.toLocaleString("es-PY");
-    const saldado  = restante === 0 && total > 0;
+    const excedente = total === 0 ? pagado : Math.max(0, pagado - total);
+    const restante  = esCanje ? 0 : Math.max(0, total - pagado);
+    const saldado   = !esCanje && restante === 0 && total > 0;
+    const hayExcedente = !esCanje && pagado > total;
 
     const pct = total > 0 ? pagado / total : 0;
-    const pillClass = saldado ? "saldado" : pct >= 0.5 ? "parcial" : "deuda";
-    const pillLabel = saldado
-      ? "✅ Saldado"
-      : `Gs. ${restanteStr}`;
+    let pillClass, pillLabel;
+    if (esCanje && pagado > 0) {
+      pillClass = "excedente";
+      pillLabel = `⚠️ Exc. Gs. ${excedente.toLocaleString("es-PY")}`;
+    } else if (esCanje) {
+      pillClass = "saldado";
+      pillLabel = "🔄 Canje";
+    } else if (hayExcedente) {
+      pillClass = "excedente";
+      pillLabel = `⚠️ Exc. Gs. ${excedente.toLocaleString("es-PY")}`;
+    } else if (saldado) {
+      pillClass = "saldado";
+      pillLabel = "✅ Saldado";
+    } else {
+      pillClass = pct >= 0.5 ? "parcial" : "deuda";
+      pillLabel = `Gs. ${restante.toLocaleString("es-PY")}`;
+    }
 
     return `
     <div class="viaje-pasajero-row">

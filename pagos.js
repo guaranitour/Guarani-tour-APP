@@ -184,13 +184,23 @@ async function loadPagosPasajero() {
   });
 
   const neto  = totalPagado - totalDevuelto - totalTransferido;
-  const saldo = pagosCtx.totalAPagar - neto;
-  const pct   = pagosCtx.totalAPagar > 0
+  const esCanje = pagosCtx.totalAPagar === 0;
+  const saldo = esCanje ? -neto : pagosCtx.totalAPagar - neto;
+  const pct   = (!esCanje && pagosCtx.totalAPagar > 0)
     ? Math.min(100, Math.round((neto / pagosCtx.totalAPagar) * 100)) : 0;
 
-  // Estado del saldo: excedente / saldado / pendiente
+  // Estado del saldo: excedente / saldado / canje / pendiente
   let saldoClase, saldoLabel, saldoValor;
-  if (saldo < 0) {
+  if (esCanje && neto > 0) {
+    // Canje con pagos registrados (excedente)
+    saldoClase = "excedente";
+    saldoLabel = "⚠️ Excedente";
+    saldoValor = "Gs. " + neto.toLocaleString("es-PY");
+  } else if (esCanje) {
+    saldoClase = "saldado";
+    saldoLabel = "🔄 Canje";
+    saldoValor = "—";
+  } else if (saldo < 0) {
     saldoClase = "excedente";
     saldoLabel = "⚠️ Excedente";
     saldoValor = "Gs. " + Math.abs(saldo).toLocaleString("es-PY");
@@ -209,7 +219,7 @@ async function loadPagosPasajero() {
     <div class="pagos-resumen-grid">
       <div class="pagos-resumen-item">
         <span class="pr-label">Total a pagar</span>
-        <span class="pr-value">Gs. ${pagosCtx.totalAPagar.toLocaleString("es-PY")}</span>
+        <span class="pr-value">${esCanje ? "Canje" : "Gs. " + pagosCtx.totalAPagar.toLocaleString("es-PY")}</span>
       </div>
       <div class="pagos-resumen-item pagado">
         <span class="pr-label">Pagado</span>
