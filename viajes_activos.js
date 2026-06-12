@@ -1030,6 +1030,16 @@ async function loadEgresos(viajeId) {
   </div>
 `;    }).join("")}
   `;
+
+  // Mover botón "Registrar egreso" justo después del total-row
+  if (btnAdd) {
+    const totalRow = listEl.querySelector(".egresos-total-row");
+    if (totalRow) {
+      btnAdd.style.marginTop = ".5rem";
+      btnAdd.style.marginBottom = ".5rem";
+      totalRow.after(btnAdd);
+    }
+  }
 }
 
 async function _cargarOpcionesFormEgreso() {
