@@ -91,10 +91,11 @@ async function loadResumen(viajeId) {
     ? Math.round(totalPuntos / totalMiembros)
     : 0;
 
-  // Pasajeros por vendedor
+  // Pasajeros por vendedor — normalizar espacios para evitar duplicados
   const porVendedor = {};
   (vpRows || []).forEach(p => {
-    const v = p.pasajeros?.Vendedor || "Sin vendedor";
+    const raw = p.pasajeros?.Vendedor || "";
+    const v = raw.trim().replace(/\s+/g, " ") || "Sin vendedor";
     if (!porVendedor[v]) porVendedor[v] = { total: 0, asisten: 0 };
     porVendedor[v].total++;
     if (p.asistencia === "Asiste") porVendedor[v].asisten++;
