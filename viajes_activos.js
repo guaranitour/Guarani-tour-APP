@@ -159,6 +159,112 @@ async function crearViaje() {
   navigateTo("viajes");
 }
 
+/* ── EDITAR VIAJE ─────────────────────────── */
+function irEditarViaje(viajeId) {
+  navigateTo("viaje-editar", parseInt(viajeId, 10));
+}
+
+async function initFormEditarViaje(viajeId) {
+  viajeActualId = parseInt(viajeId, 10);
+
+  // Usar caché si ya tenemos el viaje cargado
+  let viaje = viajeActualData && viajeActualData.id === viajeActualId
+    ? viajeActualData
+    : null;
+
+  if (!viaje) {
+    const { data } = await supabaseClient
+      .from("viajes")
+      .select("*")
+      .eq("id", viajeActualId)
+      .single();
+    viaje = data;
+  }
+
+  if (!viaje) { alert("No se pudo cargar el viaje"); return; }
+
+  viajeActualData = viaje;
+
+  document.getElementById("ve-nombre").value  = viaje.nombre || "";
+  document.getElementById("ve-salida").value  = viaje.fecha_salida || "";
+  document.getElementById("ve-regreso").value = viaje.fecha_regreso || "";
+  document.getElementById("ve-estado").value  = viaje.estado || "activo";
+  document.getElementById("ve-puntos").value  = viaje.puntos_destino || 0;
+
+  // Mostrar imagen actual si existe
+  const preview = document.querySelector("#view-viaje-editar .viaje-imagen-preview");
+  const overlay = document.getElementById("ve-img-overlay");
+  if (preview && viaje.imagen_url) {
+    const existing = preview.querySelector("img");
+    if (existing) existing.remove();
+    const img = document.createElement("img");
+    img.src = viaje.imagen_url;
+    preview.appendChild(img);
+    if (overlay) overlay.style.display = "none";
+  }
+}
+
+async function guardarEditarViaje() {
+  const nombre  = document.getElementById("ve-nombre").value.trim();
+  const salida  = document.getElementById("ve-salida").value;
+  const regreso = document.getElementById("ve-regreso").value;
+  const estado  = document.getElementById("ve-estado").value;
+  const puntos_destino = parseInt(document.getElementById("ve-puntos").value) || 0;
+  const file    = document.getElementById("ve-imagen").files[0];
+
+  if (!nombre) { alert("El nombre es obligatorio"); return; }
+
+  const btn = document.getElementById("btn-guardar-editar-viaje");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+
+  let imagen_url = viajeActualData?.imagen_url || null;
+
+  if (file) {
+    try {
+      imagen_url = await uploadViajeImage(file);
+    } catch (e) {
+      console.error(e);
+      alert("Error subiendo imagen");
+      if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
+      return;
+    }
+  }
+
+  const { error } = await supabaseClient
+    .from("viajes")
+    .update({ nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino })
+    .eq("id", viajeActualId);
+
+  if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
+
+  if (error) {
+    console.error(error);
+    alert("Error al guardar cambios");
+    return;
+  }
+
+  // Actualizar caché y volver al detalle
+  viajeActualData = { ...viajeActualData, nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino };
+  navigateTo("viaje-detalle", viajeActualId);
+}
+
+function previewViajeImgEditar(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const preview = document.querySelector("#view-viaje-editar .viaje-imagen-preview");
+  const overlay = document.getElementById("ve-img-overlay");
+  const reader  = new FileReader();
+  reader.onload = (e) => {
+    const prev = preview.querySelector("img");
+    if (prev) prev.remove();
+    const img = document.createElement("img");
+    img.src = e.target.result;
+    preview.appendChild(img);
+    if (overlay) overlay.style.display = "none";
+  };
+  reader.readAsDataURL(file);
+}
+
 /* ── PREVIEW IMAGEN FORMULARIO ─────────────── */
 function previewViajeImg(event) {
   const file = event.target.files[0];
@@ -229,10 +335,23 @@ async function loadViajeDetalle(viajeId) {
 
   nombreEl.textContent = viaje.nombre;
   const estado = viaje.estado || "activo";
+
+  const esAdminDetalle = Array.isArray(currentUserRole)
+    ? currentUserRole.includes("admin")
+    : currentUserRole === "admin";
+
   infoEl.innerHTML = `
     <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
     ${viaje.puntos_destino ? `<span class="viaje-puntos" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
     ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
+    ${esAdminDetalle ? `
+    <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Editar
+    </button>` : ""}
   `;
 
 

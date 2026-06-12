@@ -976,3 +976,29 @@
 }
 
 .btn-filtro-aplicar:hover { background: #245c41; }
+
+/* ── BOTÓN EDITAR VIAJE ─────────────────────── */
+.btn-editar-viaje {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-left: .6rem;
+  padding: .3rem .7rem;
+  background: transparent;
+  border: 1px solid var(--border, #d0d7de);
+  border-radius: 6px;
+  color: var(--text-muted, #57606a);
+  font-size: .75rem;
+  font-weight: 500;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.btn-editar-viaje:hover {
+  background: var(--accent, #2d6a4f);
+  border-color: var(--accent, #2d6a4f);
+  color: #fff;
+}
+.btn-editar-viaje svg {
+  flex-shrink: 0;
+}

@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
 const _hashSimpleViews = ["home","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico"];
-const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo"];
+const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
 
 function _buildHash(view, idx) {
   if (_hashNumericViews.includes(view) && idx !== null && typeof idx === "number") {
@@ -178,6 +178,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vpd) _vpd.style.display = "none";
   const _ved = document.getElementById("view-egreso-detalle");
   if (_ved) _ved.style.display = "none";
+  const _vve = document.getElementById("view-viaje-editar");
+  if (_vve) _vve.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -297,6 +299,20 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Viajes", action: () => navigateTo("viajes") },
       { label: "Nuevo viaje" }
     ]);
+
+  }
+
+  else if (view === "viaje-editar") {
+
+    if (currentUserRole !== "admin") return;
+    showEl("view-viaje-editar");
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
+      { label: "Editar viaje" }
+    ]);
+    initFormEditarViaje(idx);
 
   }
 
