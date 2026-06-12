@@ -1,4 +1,4 @@
-const CACHE_NAME = 'guarani-tour-v2';
+const CACHE_NAME = 'guarani-tour-v3';
 
 const STATIC_ASSETS = [
   '/Guarani-tour-APP/',
@@ -7,12 +7,14 @@ const STATIC_ASSETS = [
   '/Guarani-tour-APP/usuarios.css',
   '/Guarani-tour-APP/viajes_activos.css',
   '/Guarani-tour-APP/pagos.css',
+  '/Guarani-tour-APP/resumen.css',
   '/Guarani-tour-APP/app.js',
   '/Guarani-tour-APP/auth.js',
   '/Guarani-tour-APP/supabaseClient.js',
   '/Guarani-tour-APP/viajes_activos.js',
   '/Guarani-tour-APP/usuarios.js',
   '/Guarani-tour-APP/pagos.js',
+  '/Guarani-tour-APP/resumen.js',
   '/Guarani-tour-APP/app_imagen_512px.png',
   '/Guarani-tour-APP/manifest.json',
 ];
