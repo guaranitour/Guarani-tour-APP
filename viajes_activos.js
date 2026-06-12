@@ -1447,8 +1447,8 @@ async function agregarCatExtra() {
   if (btn) { btn.disabled = false; btn.textContent = "+ Agregar"; }
 
   if (error) {
-    console.error("Error al crear categoría extra:", error);
-    alert("No se pudo agregar la categoría. Intentá de nuevo.");
+    console.error("Error al crear categoría extra:", JSON.stringify(error));
+    alert("Error: " + (error.message || error.details || JSON.stringify(error)));
     return;
   }
 
