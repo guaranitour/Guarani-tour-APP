@@ -308,7 +308,7 @@ async function loadViajeDetalle(viajeId) {
     return {
       ...p,
       _nombre    : p.pasajeros?.Pasajero || "Sin nombre",
-      _vendedor  : p.pasajeros?.Vendedor || "",
+      _vendedor  : (p.pasajeros?.Vendedor || "").trim().replace(/\s+/g, " "),
       _esMiembro : (p.puntos_destino || 0) > 0,
       _pillClass,
       _pagos     : _pgs,
@@ -330,7 +330,7 @@ async function loadViajeDetalle(viajeId) {
   // Limpiar buscador y filtros al cargar
   const buscador = document.getElementById("buscador-vp");
   if (buscador) buscador.value = "";
-  _filtrosVP = { vendedor: "", miembro: "", pago: "" };
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
   const panelF = document.getElementById("filtro-panel-vp");
   if (panelF) panelF.style.display = "none";
 
@@ -341,7 +341,7 @@ async function loadViajeDetalle(viajeId) {
 }
 
 // Estado de filtros activos
-let _filtrosVP = { vendedor: "", miembro: "", pago: "" };
+let _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
 
 function filtrarPasajerosViaje(q) {
   _aplicarFiltrosVP(q);
@@ -375,6 +375,11 @@ function _aplicarFiltrosVP(qOverride) {
     filtrados = filtrados.filter(p => p._esMiembro);
   } else if (_filtrosVP.miembro === "no") {
     filtrados = filtrados.filter(p => !p._esMiembro);
+  }
+
+  // Filtro asistencia
+  if (_filtrosVP.asistencia) {
+    filtrados = filtrados.filter(p => (p.asistencia || "Asiste") === _filtrosVP.asistencia);
   }
 
   // Filtro estado de pago
@@ -456,11 +461,14 @@ function _inyectarUIFiltros() {
         <label class="form-label">Estado de pago</label>
         <select id="filtro-sel-pago" class="form-input">
           <option value="">Todos</option>
-          <option value="saldado">✅ Saldado</option>
-          <option value="parcial">🟡 Parcial</option>
-          <option value="deuda">🔴 Deuda</option>
-          <option value="canje">🔄 Canje</option>
-          <option value="excedente">⚠️ Excedente</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Asistencia</label>
+        <select id="filtro-sel-asistencia" class="form-input">
+          <option value="">Todos</option>
+          <option value="Asiste">✅ Asiste</option>
+          <option value="No asiste">❌ No asiste</option>
         </select>
       </div>
     </div>
@@ -482,42 +490,61 @@ function toggleFiltroPanel()  {
 }
 
 function _renderFiltroPanel() {
-  // Opciones de vendedor únicas
+  // Vendedores únicos ya normalizados
   const vendedores = [...new Set(
     pasajerosDelViaje.map(p => p._vendedor).filter(Boolean)
   )].sort();
 
+  // Estados de pago que realmente existen en este viaje
+  const pillLabels = {
+    saldado: "✅ Saldado", parcial: "🟡 Parcial", deuda: "🔴 Deuda",
+    canje: "🔄 Canje", excedente: "⚠️ Excedente"
+  };
+  const pagosPresentes = [...new Set(pasajerosDelViaje.map(p => p._pillClass))];
+
   const selVend  = document.getElementById("filtro-sel-vendedor");
   const selMiem  = document.getElementById("filtro-sel-miembro");
   const selPago  = document.getElementById("filtro-sel-pago");
+  const selAsist = document.getElementById("filtro-sel-asistencia");
 
   if (selVend) {
     selVend.innerHTML = `<option value="">Todos</option>` +
       vendedores.map(v => `<option value="${v}" ${_filtrosVP.vendedor === v ? "selected" : ""}>${v}</option>`).join("");
   }
   if (selMiem) selMiem.value = _filtrosVP.miembro;
-  if (selPago) selPago.value = _filtrosVP.pago;
+  if (selPago) {
+    selPago.innerHTML = `<option value="">Todos</option>` +
+      Object.entries(pillLabels)
+        .filter(([k]) => pagosPresentes.includes(k))
+        .map(([k, label]) => `<option value="${k}" ${_filtrosVP.pago === k ? "selected" : ""}>${label}</option>`)
+        .join("");
+  }
+  if (selAsist) selAsist.value = _filtrosVP.asistencia;
 }
 
 function aplicarFiltros() {
-  const selVend = document.getElementById("filtro-sel-vendedor");
-  const selMiem = document.getElementById("filtro-sel-miembro");
-  const selPago = document.getElementById("filtro-sel-pago");
-  _filtrosVP.vendedor = selVend?.value || "";
-  _filtrosVP.miembro  = selMiem?.value || "";
-  _filtrosVP.pago     = selPago?.value || "";
+  const selVend  = document.getElementById("filtro-sel-vendedor");
+  const selMiem  = document.getElementById("filtro-sel-miembro");
+  const selPago  = document.getElementById("filtro-sel-pago");
+  const selAsist = document.getElementById("filtro-sel-asistencia");
+  _filtrosVP.vendedor   = selVend?.value  || "";
+  _filtrosVP.miembro    = selMiem?.value  || "";
+  _filtrosVP.pago       = selPago?.value  || "";
+  _filtrosVP.asistencia = selAsist?.value || "";
   document.getElementById("filtro-panel-vp").style.display = "none";
   _aplicarFiltrosVP();
 }
 
 function limpiarFiltros() {
-  _filtrosVP = { vendedor: "", miembro: "", pago: "" };
-  const selVend = document.getElementById("filtro-sel-vendedor");
-  const selMiem = document.getElementById("filtro-sel-miembro");
-  const selPago = document.getElementById("filtro-sel-pago");
-  if (selVend) selVend.value = "";
-  if (selMiem) selMiem.value = "";
-  if (selPago) selPago.value = "";
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
+  const selVend  = document.getElementById("filtro-sel-vendedor");
+  const selMiem  = document.getElementById("filtro-sel-miembro");
+  const selPago  = document.getElementById("filtro-sel-pago");
+  const selAsist = document.getElementById("filtro-sel-asistencia");
+  if (selVend)  selVend.value  = "";
+  if (selMiem)  selMiem.value  = "";
+  if (selPago)  selPago.value  = "";
+  if (selAsist) selAsist.value = "";
   document.getElementById("filtro-panel-vp").style.display = "none";
   _aplicarFiltrosVP();
 }
