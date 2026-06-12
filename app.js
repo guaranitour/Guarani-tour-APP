@@ -4,6 +4,7 @@ let avatarCache = {};
 let currentView = "home";
 let selectedIdx = null;
 let appReady = false;
+let _vendedoresCache = [];
 
 // ── Visibilidad ────────────────────────────────────────────
 function showEl(id)  { document.getElementById(id).style.display = ""; }
@@ -213,6 +214,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
 
     showEl("view-nuevo");
     limpiarFormulario();
+    cargarVendedores("f-vendedor");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
@@ -554,13 +556,26 @@ function activarEdicionDetalle() {
   const p = allPassengers.find(x => x._idx === selectedIdx);
   if (!p) return;
 
+  const esAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.includes("admin")
+    : currentUserRole === "admin";
+
   // Poblar inputs con valores actuales
   document.getElementById("e-nombre").value  = p.Pasajero || "";
   document.getElementById("e-ci").value      = p["Documento de Identidad"] || "";
   document.getElementById("e-sexo").value    = p.Sexo || "";
   document.getElementById("e-fecha").value   = p["Fecha de nacimiento"] || "";
   document.getElementById("e-email").value   = p["E-mail"] || "";
-  document.getElementById("e-vendedor").value = p.Vendedor || "";
+
+  // Cargar select vendedores y marcar el actual
+  cargarVendedores("e-vendedor", p.Vendedor || "").then(() => {
+    const selVend = document.getElementById("e-vendedor");
+    if (selVend) {
+      selVend.disabled = !esAdmin;
+      selVend.style.opacity = esAdmin ? "" : "0.5";
+      selVend.title = esAdmin ? "" : "Solo admin puede cambiar el vendedor";
+    }
+  });
 
   // Alternar vistas
   document.getElementById("detalle-fields-view").style.display  = "none";
@@ -600,13 +615,18 @@ async function guardarEdicionDetalle() {
   btn.disabled = true;
   btn.textContent = "Guardando…";
 
+  const selVend = document.getElementById("e-vendedor");
+  const vendedor = (selVend && !selVend.disabled)
+    ? (selVend.value || null)
+    : (p.Vendedor || null);
+
   const updates = {
     "Pasajero":               nombre,
     "Documento de Identidad": ci,
     "Sexo":                   sexo,
     "Fecha de nacimiento":    document.getElementById("e-fecha").value || null,
     "E-mail":                 document.getElementById("e-email").value.trim() || null,
-    "Vendedor":               document.getElementById("e-vendedor").value.trim() || null,
+    "Vendedor":               vendedor,
   };
 
   const { error } = await supabaseClient
@@ -729,14 +749,37 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
 });
 
+// ── Vendedores ─────────────────────────────────────────────
+async function cargarVendedores(selectId, valorActual = "") {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+
+  // Traer de Supabase solo si el caché está vacío
+  if (_vendedoresCache.length === 0) {
+    const { data, error } = await supabaseClient
+      .from("vendedores")
+      .select("nombre")
+      .order("nombre", { ascending: true });
+    if (!error && data) _vendedoresCache = data.map(v => v.nombre);
+  }
+
+  sel.innerHTML = `<option value="">— Sin vendedor —</option>` +
+    _vendedoresCache.map(n =>
+      `<option value="${n}" ${n === valorActual ? "selected" : ""}>${n}</option>`
+    ).join("");
+}
+
 // ── Formulario nuevo cliente ───────────────────────────────
 function limpiarFormulario() {
-  ["f-nombre","f-ci","f-sexo","f-email","f-fecha","f-vendedor"].forEach(id => {
+  ["f-nombre","f-ci","f-sexo","f-email","f-fecha"].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = "";
     el.classList.remove("error");
   });
+  // El select de vendedor se resetea por separado
+  const selVend = document.getElementById("f-vendedor");
+  if (selVend) { selVend.value = ""; selVend.classList.remove("error"); }
   const errEl = document.getElementById("form-error");
   if (errEl) errEl.textContent = "";
   const btn = document.getElementById("btn-guardar");
