@@ -10,7 +10,7 @@ async function cargarRecibos() {
   const cont = document.getElementById('recibos-cont');
   cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('recibos')
     .select('*')
     .order('fecha', { ascending: false });
