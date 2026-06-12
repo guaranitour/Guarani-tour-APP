@@ -1420,3 +1420,55 @@ async function guardarPresupuesto() {
   cerrarFormPresupuesto();
   loadPresupuesto(viajeActualId);
 }
+
+async function agregarCatExtra() {
+  const input = document.getElementById("input-cat-extra");
+  if (!input) return;
+
+  const nombre = input.value.trim();
+  if (!nombre) {
+    input.classList.add("error");
+    input.focus();
+    return;
+  }
+  input.classList.remove("error");
+
+  // Deshabilitar el botón mientras se guarda
+  const btn = input.nextElementSibling;
+  if (btn) { btn.disabled = true; btn.textContent = "Agregando…"; }
+
+  // Insertar categoría local (scope = viajeActualId)
+  const { data: nueva, error } = await supabaseClient
+    .from("categorias")
+    .insert([{ nombre, scope: viajeActualId }])
+    .select("id, nombre")
+    .single();
+
+  if (btn) { btn.disabled = false; btn.textContent = "+ Agregar"; }
+
+  if (error) {
+    console.error("Error al crear categoría extra:", error);
+    alert("No se pudo agregar la categoría. Intentá de nuevo.");
+    return;
+  }
+
+  // Agregar al caché local
+  _presupuestoCategorias.push(nueva);
+
+  // Agregar el campo al grid del formulario
+  const grid = document.querySelector("#presupuesto-form-fields .detail-grid");
+  if (grid) {
+    const div = document.createElement("div");
+    div.className = "form-field";
+    div.innerHTML = `
+      <label class="form-label">${nueva.nombre}</label>
+      <input type="number" class="form-input presupuesto-input"
+             data-cat-id="${nueva.id}" min="0" placeholder="0" value="" />`;
+    grid.appendChild(div);
+  }
+
+  // Limpiar el input y enfocar el nuevo campo
+  input.value = "";
+  const nuevoInput = document.querySelector(`.presupuesto-input[data-cat-id="${nueva.id}"]`);
+  if (nuevoInput) nuevoInput.focus();
+}
