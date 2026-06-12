@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="viajes_activos.css" />
   <link rel="stylesheet" href="pagos.css" />
   <link rel="stylesheet" href="resumen.css" />
+  <link rel="stylesheet" href="recibos.css" />
 
 </head>
 <body>
@@ -105,12 +106,14 @@
             </div>
             <div class="card-body"><h3>Viajes activos</h3><p>Gestión de reservas, pagos y detalles por viaje.</p></div>
           </div>
-          <div class="home-card soon">
-            <div class="card-icon" style="background:#f5f5f0; color:#bbb">
+          <div class="home-card active" onclick="navigateTo('recibos')">
+            <div class="card-icon" style="background:#e8f0eb; color:#2d6a4f">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <div class="card-body"><h3>Recibos</h3><p>Creación, consulta y descarga de recibos de pago.</p></div>
-            <span class="soon-badge">Próximamente</span>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
           </div>
           <div class="home-card soon">
             <div class="card-icon" style="background:#f5f5f0; color:#bbb">
@@ -1134,6 +1137,39 @@
   </div>
 </div>
 
+<!-- VISTA RECIBOS -->
+<div id="view-recibos" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Recibos</h1>
+      <span class="passenger-count" id="recibos-count">—</span>
+    </div>
+    <div class="search-wrap" style="margin-bottom:1rem">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="recibos-search" placeholder="Buscar por cliente, CI, vendedor…" oninput="filtrarRecibos()" />
+    </div>
+    <div id="recibos-cont"></div>
+  </div>
+</div>
+
+<!-- MODAL: DETALLE RECIBO -->
+<div id="modal-recibo-detalle" class="modal-recibo-overlay" style="display:none" onclick="cerrarModalRecibo(event)">
+  <div class="modal-recibo-card">
+    <div class="modal-recibo-header">
+      <div class="modal-recibo-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Detalle del recibo
+      </div>
+      <button class="modal-recibo-close" onclick="cerrarModalRecibo(event)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="modal-recibo-body"></div>
+  </div>
+</div>
+
   </div><!-- /app-view -->
 
     <!-- FAB -->
@@ -1158,6 +1194,7 @@
   <script src="usuarios.js"></script>
   <script src="pagos.js"></script>
   <script src="resumen.js"></script>
+  <script src="recibos.js"></script>
   <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

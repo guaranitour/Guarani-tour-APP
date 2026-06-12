@@ -180,6 +180,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_ved) _ved.style.display = "none";
   const _vve = document.getElementById("view-viaje-editar");
   if (_vve) _vve.style.display = "none";
+  const _vrec = document.getElementById("view-recibos");
+  if (_vrec) _vrec.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -381,6 +383,17 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Egreso" }
     ]);
     initEgresoDetalleView(idx);
+
+  }
+
+  else if (view === "recibos") {
+
+    showEl("view-recibos");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Recibos" }
+    ]);
+    cargarRecibos();
 
   }
 }

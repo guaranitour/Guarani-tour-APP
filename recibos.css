@@ -1,0 +1,342 @@
+/* ══════════════════════════════════════════════
+   MÓDULO RECIBOS
+   ══════════════════════════════════════════════ */
+
+/* ── Loading / Error / Empty ─────────────────── */
+.recibos-loading,
+.recibos-error {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-light, #888);
+  font-size: .9rem;
+}
+.recibos-error { color: #c0392b; }
+
+.recibos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 3rem 1rem;
+  color: var(--text-light, #aaa);
+}
+.recibos-empty svg { opacity: .35; }
+.recibos-empty p { font-size: .9rem; margin: 0; }
+
+/* ── Grupo (accordion) ───────────────────────── */
+.recibos-grupo {
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: .75rem;
+  background: var(--surface, #fff);
+}
+
+.recibos-grupo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .9rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+}
+.recibos-grupo-header:hover {
+  background: var(--bg, #f7faf8);
+}
+
+.recibos-grupo-info {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+}
+
+.recibos-grupo-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--primary, #2d6a4f);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .95rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-family: 'Lora', serif;
+}
+
+.recibos-grupo-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recibos-grupo-nombre {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text, #1a2e1e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recibos-grupo-sub {
+  font-size: .78rem;
+  color: var(--text-light, #888);
+  margin-top: .1rem;
+}
+
+.recibos-chevron {
+  color: var(--text-light, #aaa);
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+
+.recibos-grupo--abierto .recibos-chevron {
+  transform: rotate(90deg);
+}
+
+/* ── Cuerpo del grupo ────────────────────────── */
+.recibos-grupo-body {
+  display: none;
+  border-top: 1px solid var(--border, #e8ede9);
+  padding: .5rem .75rem .75rem;
+  gap: .5rem;
+  flex-direction: column;
+}
+
+.recibos-grupo--abierto .recibos-grupo-body {
+  display: flex;
+}
+
+/* ── Tarjeta de recibo ───────────────────────── */
+.recibo-card {
+  background: var(--bg, #f7faf8);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 9px;
+  padding: .75rem .9rem;
+  cursor: pointer;
+  transition: box-shadow .15s, border-color .15s;
+}
+.recibo-card:hover {
+  border-color: var(--primary-light, #a8d5be);
+  box-shadow: 0 2px 8px rgba(45,106,79,.08);
+}
+
+.recibo-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .5rem;
+}
+
+.recibo-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.recibo-nro {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--primary, #2d6a4f);
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.recibo-cliente {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text, #1a2e1e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recibo-concepto {
+  font-size: .78rem;
+  color: var(--text-light, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recibo-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .15rem;
+  flex-shrink: 0;
+}
+
+.recibo-monto {
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--text, #1a2e1e);
+  white-space: nowrap;
+}
+
+.recibo-fecha {
+  font-size: .75rem;
+  color: var(--text-light, #aaa);
+}
+
+.recibo-card-bottom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .5rem;
+}
+
+/* ── Badges de método de pago ────────────────── */
+.recibo-metodo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .55rem;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.recibo-metodo-efectivo       { background: #e6f4ec; color: #2d6a4f; }
+.recibo-metodo-transferencia  { background: #edf2ff; color: #3b5bdb; }
+.recibo-metodo-tarjeta        { background: #fff3e0; color: #e65100; }
+.recibo-metodo-cheque         { background: #fce4ec; color: #c62828; }
+.recibo-metodo-deposito       { background: #e3f2fd; color: #1565c0; }
+
+/* fallback */
+.recibo-metodo-badge:not([class*="recibo-metodo-"]) {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.recibo-banco,
+.recibo-comprobante-nro {
+  font-size: .75rem;
+  color: var(--text-light, #999);
+}
+
+/* ── Modal detalle ───────────────────────────── */
+.modal-recibo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 520px) {
+  .modal-recibo-overlay {
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+.modal-recibo-card {
+  background: var(--surface, #fff);
+  border-radius: 18px 18px 0 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.25rem 1.25rem 2rem;
+}
+
+@media (min-width: 520px) {
+  .modal-recibo-card {
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+}
+
+.modal-recibo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+
+.modal-recibo-titulo {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text, #1a2e1e);
+  font-family: 'Lora', serif;
+}
+
+.modal-recibo-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light, #aaa);
+  padding: .3rem;
+  border-radius: 50%;
+  transition: background .15s;
+  display: flex;
+}
+.modal-recibo-close:hover { background: var(--border, #e8ede9); color: var(--text, #333); }
+
+/* ── Grilla de datos detalle ─────────────────── */
+.recibo-detalle-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.recibo-detalle-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+}
+.recibo-detalle-row:last-child { border-bottom: none; }
+
+.recibo-detalle-label {
+  font-size: .8rem;
+  color: var(--text-light, #888);
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+.recibo-detalle-valor {
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--text, #1a2e1e);
+  text-align: right;
+  word-break: break-word;
+}
+
+/* ── Botón link comprobante ──────────────────── */
+.recibo-detalle-link-wrap {
+  margin-top: 1.1rem;
+}
+
+.recibo-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  background: var(--primary, #2d6a4f);
+  color: #fff;
+  border-radius: 8px;
+  padding: .55rem 1rem;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity .15s;
+  width: 100%;
+  justify-content: center;
+}
+.recibo-link-btn:hover { opacity: .88; }
