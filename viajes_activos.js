@@ -319,7 +319,9 @@ async function loadViajeDetalle(viajeId) {
   const btnAgregar = document.getElementById("btn-agregar-vp");
   if (btnAgregar) btnAgregar.style.display = esWorkerOAdmin ? "" : "none";
 
-  // Mostrar tab presupuesto y resumen solo para worker y admin
+  // Mostrar tabs según rol
+  const tabEgresos = document.getElementById("tab-egresos");
+  if (tabEgresos) tabEgresos.style.display = esWorkerOAdmin ? "" : "none";
   const tabPres = document.getElementById("tab-presupuesto");
   if (tabPres) tabPres.style.display = esWorkerOAdmin ? "" : "none";
   const tabRes = document.getElementById("tab-resumen");
@@ -922,6 +924,14 @@ function capitalizarNombre(str) {
 
 /* ── TABS VIAJE DETALLE ────────────────────── */
 function switchViajeTab(tab) {
+  // Redirigir viewer si intenta acceder a tabs restringidos
+  const _esWorkerOAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin","worker"].includes(r))
+    : ["admin","worker"].includes(currentUserRole);
+  if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen")) {
+    tab = "pasajeros";
+  }
+
   // Botones
   document.getElementById("tab-pasajeros").classList.toggle("active", tab === "pasajeros");
   document.getElementById("tab-egresos").classList.toggle("active", tab === "egresos");
