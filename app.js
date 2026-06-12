@@ -758,9 +758,9 @@ async function cargarVendedores(selectId, valorActual = "") {
   if (_vendedoresCache.length === 0) {
     const { data, error } = await supabaseClient
       .from("vendedores")
-      .select("nombre")
-      .order("nombre", { ascending: true });
-    if (!error && data) _vendedoresCache = data.map(v => v.nombre);
+      .select("Nombre_del_vendedor")
+      .order("Nombre_del_vendedor", { ascending: true });
+    if (!error && data) _vendedoresCache = data.map(v => v.Nombre_del_vendedor);
   }
 
   sel.innerHTML = `<option value="">— Sin vendedor —</option>` +
