@@ -28,8 +28,8 @@ async function loadViajes(modo = "activos") {
 
   const { data, error } = await (
     modo === "historico"
-      ? query.or(`fecha_regreso.lt.${hoy},fecha_regreso.is.null`)
-      : query.gte("fecha_regreso", hoy)
+      ? query.in("estado", ["completado", "cancelado"])
+      : query.eq("estado", "activo")
   );
 
   if (error) {
