@@ -1,4 +1,4 @@
-const CACHE_NAME = 'guarani-tour-v1';
+const CACHE_NAME = 'guarani-tour-v2';
 
 const STATIC_ASSETS = [
   '/Guarani-tour-APP/',
