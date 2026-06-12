@@ -269,6 +269,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Histórico de viajes" }
     ]);
+    const _hs = document.getElementById("historico-search");
+    if (_hs) _hs.value = "";
     loadViajes("historico");
 
   }

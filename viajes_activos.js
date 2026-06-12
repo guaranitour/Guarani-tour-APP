@@ -45,8 +45,15 @@ async function loadViajes(modo = "activos") {
     return;
   }
 
+  if (modo === "historico") {
+    renderHistorico(data);
+  } else {
+    list.innerHTML = renderViajeCards(data);
+  }
+}
 
-list.innerHTML = data.map(v => {
+function renderViajeCards(data) {
+  return data.map(v => {
   const estado = v.estado || "activo";
   const placeholder = `
     <div class="viaje-card-img-placeholder">
@@ -72,6 +79,24 @@ list.innerHTML = data.map(v => {
     </div>
   </div>`
 }).join("");
+}
+
+function renderHistorico(data) {
+  const list = document.getElementById("historico-list");
+  if (!list) return;
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="users-empty">Sin resultados</div>`;
+    return;
+  }
+  list.innerHTML = renderViajeCards(data);
+}
+
+function filtrarHistorico() {
+  const q = document.getElementById("historico-search")?.value.toLowerCase().trim() || "";
+  const filtrados = q
+    ? allViajes.filter(v => (v.nombre || "").toLowerCase().includes(q))
+    : allViajes;
+  renderHistorico(filtrados);
 }
 
 /* ── FORMATEAR FECHA ───────────────────────── */
