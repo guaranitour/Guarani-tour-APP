@@ -758,6 +758,15 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>` : ""}
+      <button class="btn-pdf-vp" title="Descargar historial de pagos"
+        onclick="generarHistorialPDF(event, '${p.id}', '${nombreE}')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <polyline points="9 15 12 18 15 15"/>
+        </svg>
+      </button>
       <div class="vp-chevron" style="cursor:pointer"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">›</div>
     </div>`;
@@ -1856,4 +1865,106 @@ async function agregarCatExtra() {
   input.value = "";
   const nuevoInput = document.querySelector(`.presupuesto-input[data-cat-id="${nueva.id}"]`);
   if (nuevoInput) nuevoInput.focus();
+}
+
+// ── Generador de Historial de Pagos PDF ──────────────────────────────────────
+const APPS_SCRIPT_PDF_URL = "https://script.google.com/macros/s/AKfycbzal5GP399HgePINzuV7ifuSl_N5wiLGfkurCQ2XbMtdX4BaCJFb9PetaS3Qn6VHGFn/exec";
+
+async function generarHistorialPDF(event, vpId, nombrePasajero) {
+  event.stopPropagation();
+
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.classList.add("btn-pdf-loading");
+
+  try {
+    // 1. Datos del viaje_pasajero
+    const { data: vp, error: vpErr } = await supabaseClient
+      .from("viajes_pasajeros")
+      .select("total_a_pagar, viajes(nombre)")
+      .eq("id", vpId)
+      .single();
+
+    if (vpErr || !vp) throw new Error("No se pudo obtener datos del pasajero.");
+
+    // 2. Pagos + métodos de pago (join por metodo_pago_id)
+    const [{ data: pagos, error: pgErr }, { data: metodos }] = await Promise.all([
+      supabaseClient
+        .from("pagos")
+        .select("monto, tipo, fecha_pago, metodo_pago_id, creado_por")
+        .eq("viaje_pasajero_id", vpId)
+        .order("fecha_pago", { ascending: true }),
+      supabaseClient
+        .from("metodos_de_pago")
+        .select("id, metodo_de_pago")
+    ]);
+
+    if (pgErr) throw new Error("No se pudo obtener el historial de pagos.");
+
+    const metodosMap = Object.fromEntries(
+      (metodos || []).map(m => [String(m.id), m.metodo_de_pago])
+    );
+
+    const listaPagos     = pagos || [];
+    const pagosReales    = listaPagos.filter(p => p.tipo === "Pago");
+    const devoluciones   = listaPagos.filter(p => p.tipo === "Devolución");
+    const transferencias = listaPagos.filter(p => p.tipo === "Transferencia");
+
+    const sumaPagado  = pagosReales.reduce((s, p) => s + (p.monto || 0), 0);
+    const sumaDevuelto = devoluciones.reduce((s, p) => s + (p.monto || 0), 0);
+    const sumaTransf  = transferencias.reduce((s, p) => s + (p.monto || 0), 0);
+    const neto        = sumaPagado - sumaDevuelto - sumaTransf;
+    const total       = vp.total_a_pagar || 0;
+    const saldo       = Math.max(0, total - neto);
+
+    const formatFechaLocal = (fechaStr) => {
+      if (!fechaStr) return "—";
+      const d = new Date(fechaStr + "T00:00:00");
+      return d.toLocaleDateString("es-PY", { day: "2-digit", month: "2-digit", year: "numeric" });
+    };
+
+    // 3. Armar payload para Apps Script
+    const payload = {
+      pasajero : nombrePasajero,
+      viaje    : vp.viajes?.nombre || "—",
+      total    : total,
+      suma     : neto,
+      saldo    : saldo,
+      pagos    : listaPagos.map(p => ({
+        fecha          : formatFechaLocal(p.fecha_pago),
+        medio          : metodosMap[String(p.metodo_pago_id)] || p.tipo || "—",
+        monto          : (p.tipo === "Devolución" || p.tipo === "Transferencia")
+                           ? -Math.abs(p.monto || 0)
+                           : (p.monto || 0),
+        registrado_por : p.creado_por || "—"
+      }))
+    };
+
+    // 4. Llamar al Apps Script
+    const response = await fetch(APPS_SCRIPT_PDF_URL, {
+      method : "POST",
+      body   : JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    if (!result.ok) throw new Error(result.error || "Error en Apps Script");
+
+    // 5. Descargar el PDF
+    const byteChars = atob(result.pdf);
+    const byteArray = new Uint8Array([...byteChars].map(c => c.charCodeAt(0)));
+    const blob      = new Blob([byteArray], { type: "application/pdf" });
+    const url       = URL.createObjectURL(blob);
+    const a         = document.createElement("a");
+    a.href          = url;
+    a.download      = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${(vp.viajes?.nombre || "viaje").replace(/\s+/g, "_")}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.error("Error generando PDF:", err);
+    alert("No se pudo generar el PDF: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("btn-pdf-loading");
+  }
 }
