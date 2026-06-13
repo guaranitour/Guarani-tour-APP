@@ -1,4 +1,6 @@
-const CACHE_NAME = 'guarani-tour-v3';
+const CACHE_NAME    = 'guarani-tour-v4';
+const CACHE_IMAGES  = 'guarani-tour-images-v1';
+const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
 const STATIC_ASSETS = [
   '/Guarani-tour-APP/',
@@ -27,27 +29,60 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activar: limpiar caches viejos
+// Activar: limpiar caches viejos (respeta CACHE_IMAGES y CACHE_EXTERN)
 self.addEventListener('activate', event => {
+  const keep = [CACHE_NAME, CACHE_IMAGES, CACHE_EXTERN];
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => !keep.includes(k)).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-// Fetch: cache-first para assets, network-first para Supabase
+// Fetch
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Supabase y Google APIs siempre desde la red
-  if (url.hostname.includes('supabase.co') || url.hostname.includes('google')) {
+  // ── Imágenes de Supabase Storage: cache-first, guarda en CACHE_IMAGES
+  if (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/')) {
+    event.respondWith(
+      caches.open(CACHE_IMAGES).then(async cache => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response.ok) cache.put(event.request, response.clone());
+        return response;
+      })
+    );
+    return;
+  }
+
+  // ── API REST de Supabase: siempre red, sin cache
+  if (url.hostname.includes('supabase.co')) {
     event.respondWith(fetch(event.request).catch(() => new Response('', { status: 503 })));
     return;
   }
 
-  // Assets estáticos: cache first
+  // ── Google Fonts y CDN jsdelivr: cache-first, guarda en CACHE_EXTERN
+  if (
+    url.hostname.includes('fonts.googleapis.com') ||
+    url.hostname.includes('fonts.gstatic.com') ||
+    url.hostname.includes('cdn.jsdelivr.net')
+  ) {
+    event.respondWith(
+      caches.open(CACHE_EXTERN).then(async cache => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response.ok) cache.put(event.request, response.clone());
+        return response;
+      })
+    );
+    return;
+  }
+
+  // ── Todo lo demás (tus JS/CSS/HTML): cache-first
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request))
   );
