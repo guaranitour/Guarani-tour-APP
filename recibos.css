@@ -383,28 +383,29 @@
 }
 
 .recibo-doc-partes {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem 1rem;
 }
 
 .recibo-doc-parte {
   display: flex;
   flex-direction: column;
-  gap: .15rem;
-  min-width: 0;
+  gap: .2rem;
+  background: var(--bg, #f0f5f2);
+  border-radius: 9px;
+  padding: .65rem .85rem;
 }
 
 .recibo-doc-parte--right {
-  align-items: flex-end;
-  text-align: right;
+  align-items: flex-start;
+  text-align: left;
 }
 
 .recibo-doc-parte-label {
-  font-size: .68rem;
+  font-size: .65rem;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .07em;
   color: var(--text-light, #aaa);
   font-weight: 600;
 }
@@ -416,7 +417,7 @@
 }
 
 .recibo-doc-parte-sub {
-  font-size: .75rem;
+  font-size: .74rem;
   color: var(--text-light, #999);
 }
 
