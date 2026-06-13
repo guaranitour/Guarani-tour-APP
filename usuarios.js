@@ -37,7 +37,7 @@ async function loadUsers() {
 
   const { data, error } = await supabaseClient
     .from("staff")
-    .select("id, email, role, status")
+    .select("id, email, role, status, nombre")
     .order("email");
 
   if (error) {
@@ -56,13 +56,11 @@ async function loadUsers() {
         Sin usuarios registrados
       </div>`;
 
-    // Actualizar contador en el título si existe
     const titleEl = list.closest(".detalle-section")?.querySelector(".section-title");
     if (titleEl) titleEl.setAttribute("data-count", "0");
     return;
   }
 
-  // Actualizar contador en el título
   const titleEl = list.closest(".detalle-section")?.querySelector(".section-title");
   if (titleEl) {
     titleEl.classList.add("with-count");
@@ -72,10 +70,23 @@ async function loadUsers() {
   list.innerHTML = data.map(u => `
     <div class="user-card">
 
-      <div class="user-avatar">${getInitials(u.email)}</div>
+      <div class="user-avatar">${u.nombre ? u.nombre.trim().split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase() : getInitials(u.email)}</div>
 
       <div class="user-info">
+        ${u.nombre ? `<div class="user-nombre">${u.nombre}</div>` : ""}
         <div class="user-email" title="${u.email}">${u.email}</div>
+
+        <div class="user-nombre-edit">
+          <input
+            type="text"
+            class="user-nombre-input"
+            value="${u.nombre || ""}"
+            placeholder="Agregar nombre…"
+            onblur="updateUserNombre('${u.id}', this)"
+            onkeydown="if(event.key==='Enter') this.blur()"
+          />
+        </div>
+
         <div class="user-controls">
 
           <select
@@ -106,6 +117,7 @@ async function loadUsers() {
 
 
 async function createUser() {
+  const nombre = document.getElementById("u-nombre").value.trim();
   const email  = document.getElementById("u-email").value.trim();
   const role   = document.getElementById("u-role").value;
   const status = document.getElementById("u-status").value;
@@ -122,7 +134,7 @@ async function createUser() {
 
   const { error } = await supabaseClient
     .from("staff")
-    .insert([{ email, role, status }]);
+    .insert([{ email, role, status, nombre: nombre || null }]);
 
   if (btn) { btn.disabled = false; btn.textContent = "Agregar usuario"; }
 
@@ -134,6 +146,7 @@ async function createUser() {
     return;
   }
 
+  document.getElementById("u-nombre").value = "";
   document.getElementById("u-email").value = "";
   loadUsers();
 }
@@ -148,6 +161,51 @@ async function updateUserRole(id, selectEl) {
     .eq("id", id);
 
   showFeedback(selectEl, error ? "err" : "ok");
+  if (error) console.error(error);
+}
+
+
+// ── CAMBIAR NOMBRE ─────────────────────────────────────────────────────────
+async function updateUserNombre(id, inputEl) {
+  const nuevoNombre = inputEl.value.trim() || null;
+
+  // Si el valor no cambió respecto al placeholder, no hacer nada
+  const nombreActual = inputEl.defaultValue.trim() || null;
+  if (nuevoNombre === nombreActual) return;
+
+  const { error } = await supabaseClient
+    .from("staff")
+    .update({ nombre: nuevoNombre })
+    .eq("id", id);
+
+  if (!error) {
+    inputEl.defaultValue = nuevoNombre || "";
+    // Actualizar avatar e indicador de nombre visibles en la card
+    const card = inputEl.closest(".user-card");
+    if (card) {
+      const avatarEl = card.querySelector(".user-avatar");
+      const nombreEl = card.querySelector(".user-nombre");
+      const emailEl  = card.querySelector(".user-email");
+      if (avatarEl) {
+        avatarEl.textContent = nuevoNombre
+          ? nuevoNombre.split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase()
+          : getInitials(emailEl?.textContent || "");
+      }
+      if (nuevoNombre) {
+        if (nombreEl) nombreEl.textContent = nuevoNombre;
+        else {
+          const div = document.createElement("div");
+          div.className = "user-nombre";
+          div.textContent = nuevoNombre;
+          emailEl?.insertAdjacentElement("beforebegin", div);
+        }
+      } else {
+        nombreEl?.remove();
+      }
+    }
+  }
+
+  showFeedback(inputEl, error ? "err" : "ok");
   if (error) console.error(error);
 }
 
