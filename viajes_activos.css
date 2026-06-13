@@ -863,7 +863,8 @@
 .btn-filtro-vp {
   position: relative;
   width: 44px;
-  min-height: 44px;
+  height: auto;
+  align-self: stretch;
   border-radius: 10px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
