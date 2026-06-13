@@ -1144,11 +1144,17 @@
       <h1>Recibos</h1>
       <span class="passenger-count" id="recibos-count">—</span>
     </div>
-    <div class="search-wrap" style="margin-bottom:1rem">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input type="text" id="recibos-search" placeholder="Buscar por cliente, CI, vendedor…" oninput="filtrarRecibos()" />
+    <div class="recibos-toolbar">
+      <div class="search-wrap" style="margin-bottom:0;flex:1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="recibos-search" placeholder="Buscar por cliente, CI, vendedor…" oninput="filtrarRecibos()" />
+      </div>
+      <button class="btn-nuevo-recibo" onclick="abrirFormRecibo()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo
+      </button>
     </div>
     <div id="recibos-cont"></div>
   </div>
@@ -1160,13 +1166,121 @@
     <div class="modal-recibo-header">
       <div class="modal-recibo-titulo">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Detalle del recibo
+        Recibo de pago
       </div>
       <button class="modal-recibo-close" onclick="cerrarModalRecibo(event)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div id="modal-recibo-body"></div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO RECIBO -->
+<div id="modal-form-recibo" class="modal-recibo-overlay" style="display:none" onclick="cerrarFormRecibo(event)">
+  <div class="modal-recibo-card">
+    <div class="modal-recibo-header">
+      <div class="modal-recibo-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo recibo
+      </div>
+      <button class="modal-recibo-close" onclick="cerrarFormRecibo(event)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="form-recibo" onsubmit="return false">
+      <div class="form-recibo-grid">
+
+        <!-- Cliente + CI -->
+        <div class="form-recibo-row">
+          <div class="form-recibo-field" style="grid-column:1/3">
+            <label for="frec-cliente">Cliente *</label>
+            <input id="frec-cliente" type="text" placeholder="Nombre completo" autocomplete="off" />
+          </div>
+        </div>
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-ci">CI</label>
+            <input id="frec-ci" type="text" placeholder="Nº documento" />
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-correo">Correo</label>
+            <input id="frec-correo" type="email" placeholder="correo@ejemplo.com" />
+          </div>
+        </div>
+
+        <hr class="form-recibo-sep" />
+
+        <!-- Monto + Fecha -->
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-monto">Monto (Gs.) *</label>
+            <input id="frec-monto" type="number" placeholder="0" min="0" />
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-fecha">Fecha *</label>
+            <input id="frec-fecha" type="date" />
+          </div>
+        </div>
+
+        <!-- Concepto -->
+        <div class="form-recibo-field">
+          <label for="frec-concepto">Concepto</label>
+          <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
+        </div>
+
+        <hr class="form-recibo-sep" />
+
+        <!-- Forma de pago + Banco -->
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-forma-pago">Forma de pago</label>
+            <select id="frec-forma-pago">
+              <option value="">— Seleccionar —</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Depósito">Depósito</option>
+              <option value="Tarjeta">Tarjeta</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-banco">Banco</label>
+            <input id="frec-banco" type="text" placeholder="Nombre del banco" />
+          </div>
+        </div>
+
+        <!-- Comprobante + Abona por -->
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-comprobante">Nº Comprobante</label>
+            <input id="frec-comprobante" type="text" placeholder="Nº operación" />
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-abona-por">Abona por</label>
+            <input id="frec-abona-por" type="text" placeholder="Vendedor / agente" />
+          </div>
+        </div>
+
+        <hr class="form-recibo-sep" />
+
+        <!-- Link comprobante -->
+        <div class="form-recibo-field form-recibo-link-group">
+          <label for="frec-link">Link comprobante</label>
+          <input id="frec-link" type="url" placeholder="https://…"
+                 oninput="actualizarPreviewLinkForm(this.value)" />
+          <div id="frec-link-preview"></div>
+        </div>
+
+        <!-- Error y acciones -->
+        <p class="form-recibo-error" id="form-recibo-error"></p>
+        <div class="form-recibo-actions">
+          <button type="button" class="btn-recibo-cancelar" onclick="cerrarFormRecibo()">Cancelar</button>
+          <button type="button" class="btn-recibo-guardar" id="btn-guardar-recibo" onclick="guardarNuevoRecibo()">Guardar recibo</button>
+        </div>
+
+      </div>
+    </form>
   </div>
 </div>
 

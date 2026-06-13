@@ -23,6 +23,33 @@
 .recibos-empty svg { opacity: .35; }
 .recibos-empty p { font-size: .9rem; margin: 0; }
 
+/* ── Botón nuevo recibo ──────────────────────── */
+.recibos-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.btn-nuevo-recibo {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--primary, #2d6a4f);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .5rem .9rem;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-nuevo-recibo:hover { opacity: .88; }
+
 /* ── Grupo (accordion) ───────────────────────── */
 .recibos-grupo {
   border: 1px solid var(--border, #e8ede9);
@@ -210,19 +237,15 @@
 .recibo-metodo-cheque         { background: #fce4ec; color: #c62828; }
 .recibo-metodo-deposito       { background: #e3f2fd; color: #1565c0; }
 
-/* fallback */
-.recibo-metodo-badge:not([class*="recibo-metodo-"]) {
-  background: #f0f0f0;
-  color: #666;
-}
-
 .recibo-banco,
 .recibo-comprobante-nro {
   font-size: .75rem;
   color: var(--text-light, #999);
 }
 
-/* ── Modal detalle ───────────────────────────── */
+/* ════════════════════════════════════════════════
+   MODAL BASE (compartido por detalle y formulario)
+   ════════════════════════════════════════════════ */
 .modal-recibo-overlay {
   position: fixed;
   inset: 0;
@@ -246,7 +269,7 @@
   border-radius: 18px 18px 0 0;
   width: 100%;
   max-width: 520px;
-  max-height: 90vh;
+  max-height: 92vh;
   overflow-y: auto;
   padding: 1.25rem 1.25rem 2rem;
 }
@@ -287,43 +310,255 @@
 }
 .modal-recibo-close:hover { background: var(--border, #e8ede9); color: var(--text, #333); }
 
-/* ── Grilla de datos detalle ─────────────────── */
-.recibo-detalle-grid {
+/* ════════════════════════════════════════════════
+   DOCUMENTO RECIBO (layout tipo impreso)
+   ════════════════════════════════════════════════ */
+.recibo-doc {
+  background: #fafcfb;
+  border: 1px solid var(--border, #e0e9e4);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.recibo-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: .75rem;
+}
+
+.recibo-doc-empresa {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: .15rem;
 }
 
-.recibo-detalle-row {
+.recibo-doc-logo-text {
+  font-family: 'Lora', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary, #2d6a4f);
+  letter-spacing: -.01em;
+}
+
+.recibo-doc-subtitulo {
+  font-size: .72rem;
+  color: var(--text-light, #999);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.recibo-doc-nro-bloque {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .1rem;
+}
+
+.recibo-doc-nro-label {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--text-light, #aaa);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.recibo-doc-nro {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text, #1a2e1e);
+  font-family: 'Lora', serif;
+}
+
+.recibo-doc-fecha {
+  font-size: .75rem;
+  color: var(--text-light, #aaa);
+}
+
+.recibo-doc-sep {
+  border: none;
+  border-top: 1px dashed var(--border, #d4e4db);
+  margin: 1rem 0;
+}
+
+.recibo-doc-partes {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.recibo-doc-parte {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.recibo-doc-parte--right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.recibo-doc-parte-label {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-light, #aaa);
+  font-weight: 600;
+}
+
+.recibo-doc-parte-nombre {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text, #1a2e1e);
+}
+
+.recibo-doc-parte-sub {
+  font-size: .75rem;
+  color: var(--text-light, #999);
+}
+
+/* ── Bloque de monto destacado ────────────────── */
+.recibo-doc-monto-bloque {
+  background: var(--primary, #2d6a4f);
+  border-radius: 10px;
+  padding: .9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  margin: 1rem 0;
+}
+
+.recibo-doc-monto-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: rgba(255,255,255,.7);
+  font-weight: 600;
+}
+
+.recibo-doc-monto {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Lora', serif;
+  letter-spacing: -.01em;
+}
+
+/* ── Concepto ─────────────────────────────────── */
+.recibo-doc-concepto {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  background: var(--bg, #f0f5f2);
+  border-radius: 8px;
+  padding: .65rem .9rem;
+  margin-bottom: .25rem;
+}
+
+.recibo-doc-concepto-label {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-light, #aaa);
+  font-weight: 600;
+}
+
+.recibo-doc-concepto-val {
+  font-size: .88rem;
+  color: var(--text, #1a2e1e);
+  font-style: italic;
+}
+
+/* ── Info de pago ─────────────────────────────── */
+.recibo-doc-pago-info {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.recibo-doc-pago-row {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: .75rem;
-  padding: .6rem 0;
-  border-bottom: 1px solid var(--border, #f0f0f0);
 }
-.recibo-detalle-row:last-child { border-bottom: none; }
 
-.recibo-detalle-label {
-  font-size: .8rem;
+.recibo-doc-pago-lbl {
+  font-size: .78rem;
   color: var(--text-light, #888);
   flex-shrink: 0;
-  min-width: 110px;
 }
 
-.recibo-detalle-valor {
-  font-size: .88rem;
+.recibo-doc-pago-val {
+  font-size: .85rem;
   font-weight: 500;
   color: var(--text, #1a2e1e);
   text-align: right;
-  word-break: break-word;
 }
 
-/* ── Botón link comprobante ──────────────────── */
-.recibo-detalle-link-wrap {
-  margin-top: 1.1rem;
+/* ════════════════════════════════════════════════
+   PREVIEW DE COMPROBANTE
+   ════════════════════════════════════════════════ */
+.recibo-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-top: .25rem;
 }
 
+.recibo-preview-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-light, #aaa);
+  font-weight: 600;
+  margin: 0;
+}
+
+.recibo-preview-img {
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e0e9e4);
+  background: var(--bg, #f5f7f6);
+}
+
+.recibo-preview-iframe {
+  width: 100%;
+  height: 300px;
+  border: 1px solid var(--border, #e0e9e4);
+  border-radius: 10px;
+}
+
+.recibo-preview-fallback {
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  padding: 2rem;
+  background: var(--bg, #f5f7f6);
+  border-radius: 10px;
+  color: var(--text-light, #aaa);
+  font-size: .82rem;
+  text-align: center;
+}
+
+.recibo-preview-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .8rem;
+  color: var(--primary, #2d6a4f);
+  font-weight: 600;
+  text-decoration: none;
+}
+.recibo-preview-link:hover { text-decoration: underline; }
+
+/* ── Botón link comprobante (fallback genérico) ─ */
 .recibo-link-btn {
   display: inline-flex;
   align-items: center;
@@ -340,3 +575,117 @@
   justify-content: center;
 }
 .recibo-link-btn:hover { opacity: .88; }
+
+/* ════════════════════════════════════════════════
+   FORMULARIO NUEVO RECIBO
+   ════════════════════════════════════════════════ */
+.form-recibo-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+
+.form-recibo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .65rem;
+}
+
+.form-recibo-field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.form-recibo-field label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-light, #888);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.form-recibo-field input,
+.form-recibo-field select,
+.form-recibo-field textarea {
+  background: var(--bg, #f7faf8);
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 8px;
+  padding: .55rem .75rem;
+  font-size: .88rem;
+  color: var(--text, #1a2e1e);
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .15s;
+  font-family: inherit;
+}
+.form-recibo-field input:focus,
+.form-recibo-field select:focus,
+.form-recibo-field textarea:focus {
+  border-color: var(--primary, #2d6a4f);
+}
+
+.form-recibo-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-recibo-sep {
+  border: none;
+  border-top: 1px dashed var(--border, #d4e4db);
+  margin: .25rem 0;
+}
+
+.form-recibo-link-group {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+#frec-link-preview {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.form-recibo-error {
+  font-size: .8rem;
+  color: #c0392b;
+  min-height: 1.1rem;
+}
+
+.form-recibo-actions {
+  display: flex;
+  gap: .65rem;
+  margin-top: .25rem;
+}
+
+.btn-recibo-guardar {
+  flex: 1;
+  background: var(--primary, #2d6a4f);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: .65rem 1rem;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+  font-family: inherit;
+}
+.btn-recibo-guardar:hover:not(:disabled) { opacity: .88; }
+.btn-recibo-guardar:disabled { opacity: .55; cursor: not-allowed; }
+
+.btn-recibo-cancelar {
+  background: var(--bg, #f0f5f2);
+  color: var(--text, #1a2e1e);
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 9px;
+  padding: .65rem 1rem;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  font-family: inherit;
+}
+.btn-recibo-cancelar:hover { background: var(--border, #e0e9e4); }
