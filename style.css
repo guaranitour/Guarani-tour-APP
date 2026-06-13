@@ -412,7 +412,18 @@ h2 {
 .card-body { flex: 1; }
 .card-body h3 { font-size: .95rem; font-weight: 600; margin-bottom: .2rem; }
 .card-body p  { font-size: .78rem; color: var(--text-muted); line-height: 1.4; }
-.card-arrow { color: var(--accent); }
+
+/* Flecha unificada: todas las cards activas la muestran, las soon no */
+.card-arrow { display: none; }
+.home-card.active::after {
+  content: "";
+  display: block;
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  background-color: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M5 12h14M12 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M5 12h14M12 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat;
+}
 
 .soon-badge {
   position: absolute; top: .7rem; right: .9rem;
