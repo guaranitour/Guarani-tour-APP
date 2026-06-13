@@ -1880,9 +1880,9 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
   try {
     // 1. Datos del viaje_pasajero
     const { data: vp, error: vpErr } = await supabaseClient
-      .from("viajes_pasajeros")
-      .select("total_a_pagar, viajes(nombre)")
-      .eq("id", vpId)
+      .from("viaje_pasajeros")
+      .select("total_a_pagar")
+      .eq("id", parseInt(vpId))
       .single();
 
     if (vpErr || !vp) throw new Error("No se pudo obtener datos del pasajero.");
@@ -1892,7 +1892,7 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
       supabaseClient
         .from("pagos")
         .select("monto, tipo, fecha_pago, metodo_pago_id, creado_por")
-        .eq("viaje_pasajero_id", vpId)
+        .eq("viaje_pasajero_id", parseInt(vpId))
         .order("fecha_pago", { ascending: true }),
       supabaseClient
         .from("metodos_de_pago")
@@ -1926,7 +1926,7 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     // 3. Armar payload para Apps Script
     const payload = {
       pasajero : nombrePasajero,
-      viaje    : vp.viajes?.nombre || "—",
+      viaje    : viajeActualData?.nombre || "—",
       total    : total,
       suma     : neto,
       saldo    : saldo,
@@ -1956,7 +1956,7 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     const url       = URL.createObjectURL(blob);
     const a         = document.createElement("a");
     a.href          = url;
-    a.download      = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${(vp.viajes?.nombre || "viaje").replace(/\s+/g, "_")}.pdf`;
+    a.download      = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${(viajeActualData?.nombre || "viaje").replace(/\s+/g, "_")}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
 
