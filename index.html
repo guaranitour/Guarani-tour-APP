@@ -1186,11 +1186,11 @@
         </div>
         <div class="form-recibo-row">
           <div class="form-recibo-field">
-            <label for="frec-ci">CI</label>
+            <label for="frec-ci">CI *</label>
             <input id="frec-ci" type="text" placeholder="Nº documento" />
           </div>
           <div class="form-recibo-field">
-            <label for="frec-correo">Correo</label>
+            <label for="frec-correo">Correo *</label>
             <input id="frec-correo" type="email" placeholder="correo@ejemplo.com" />
           </div>
         </div>
@@ -1209,7 +1209,7 @@
         </div>
 
         <div class="form-recibo-field">
-          <label for="frec-concepto">Concepto</label>
+          <label for="frec-concepto">Concepto *</label>
           <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
         </div>
 
@@ -1217,7 +1217,7 @@
 
         <div class="form-recibo-row">
           <div class="form-recibo-field">
-            <label for="frec-forma-pago">Forma de pago</label>
+            <label for="frec-forma-pago">Forma de pago *</label>
             <select id="frec-forma-pago" onchange="toggleCamposTransferencia()">
               <option value="">— Seleccionar —</option>
               <option value="Efectivo">Efectivo</option>
@@ -1226,7 +1226,7 @@
             </select>
           </div>
           <div class="form-recibo-field">
-            <label for="frec-abona-por">Abona por (viaje)</label>
+            <label for="frec-abona-por">Abona por (viaje) *</label>
             <select id="frec-abona-por">
               <option value="">— Cargando… —</option>
             </select>
@@ -1234,11 +1234,14 @@
         </div>
 
         <div class="form-recibo-row" id="frec-grupo-transferencia" style="display:none">
-          <div class="form-recibo-field">
-            <label for="frec-banco">Banco</label>
-            <select id="frec-banco">
-              <option value="">— Seleccionar —</option>
-            </select>
+          <div class="form-recibo-field frec-banco-wrap">
+            <label for="frec-banco-input">Banco</label>
+            <input id="frec-banco-input" type="text" placeholder="Buscar banco…" autocomplete="off"
+                   oninput="filtrarBancosDropdown(this.value)"
+                   onfocus="abrirBancosDropdown()"
+                   onblur="cerrarBancosDropdown()" />
+            <div id="frec-banco-dropdown" class="frec-banco-dropdown"></div>
+            <input type="hidden" id="frec-banco" />
           </div>
           <div class="form-recibo-field">
             <label for="frec-comprobante">Nº Comprobante</label>

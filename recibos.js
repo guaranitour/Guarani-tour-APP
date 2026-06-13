@@ -267,11 +267,55 @@ function toggleCamposTransferencia() {
   if (!grupo) return;
   grupo.style.display = forma === 'Transferencia' ? '' : 'none';
   if (forma !== 'Transferencia') {
-    const banco = document.getElementById('frec-banco');
-    const comp  = document.getElementById('frec-comprobante');
-    if (banco) banco.value = '';
-    if (comp)  comp.value  = '';
+    const bancoInput  = document.getElementById('frec-banco-input');
+    const bancoHidden = document.getElementById('frec-banco');
+    const comp        = document.getElementById('frec-comprobante');
+    if (bancoInput)  bancoInput.value  = '';
+    if (bancoHidden) bancoHidden.value = '';
+    if (comp)        comp.value        = '';
   }
+}
+
+// ── Autocomplete banco ────────────────────────
+let _bancosCache = [];
+
+function filtrarBancosDropdown(q) {
+  const dd = document.getElementById('frec-banco-dropdown');
+  if (!dd) return;
+  const termino = q.trim().toLowerCase();
+  const resultado = termino
+    ? _bancosCache.filter(b => b.toLowerCase().includes(termino))
+    : _bancosCache;
+
+  if (resultado.length === 0) {
+    dd.innerHTML = '<div class="frec-banco-dd-item frec-banco-dd-empty">Sin resultados</div>';
+  } else {
+    dd.innerHTML = resultado.map(b =>
+      `<div class="frec-banco-dd-item" onmousedown="seleccionarBanco('${b.replace(/'/g, "\'")}')">${b}</div>`
+    ).join('');
+  }
+  dd.style.display = 'block';
+}
+
+function abrirBancosDropdown() {
+  const input = document.getElementById('frec-banco-input');
+  filtrarBancosDropdown(input?.value || '');
+}
+
+function cerrarBancosDropdown() {
+  setTimeout(() => {
+    const dd = document.getElementById('frec-banco-dropdown');
+    if (dd) dd.style.display = 'none';
+  }, 150);
+}
+
+function seleccionarBanco(nombre) {
+  const input  = document.getElementById('frec-banco-input');
+  const hidden = document.getElementById('frec-banco');
+  const dd     = document.getElementById('frec-banco-dropdown');
+  if (input)  input.value  = nombre;
+  if (hidden) hidden.value = nombre;
+  if (dd)     dd.style.display = 'none';
 }
 
 async function cargarViajesActivosEnSelect() {
@@ -294,21 +338,14 @@ async function cargarViajesActivosEnSelect() {
 }
 
 async function cargarBancosEnSelect() {
-  const sel = document.getElementById('frec-banco');
-  if (!sel) return;
-
   const { data, error } = await supabaseClient
     .from('bancos')
-    .select('id, banco_id')
+    .select('banco_id')
     .order('banco_id', { ascending: true });
 
-  if (error || !data) {
-    sel.innerHTML = '<option value="">— Error al cargar —</option>';
-    return;
+  if (!error && data) {
+    _bancosCache = data.map(b => b.banco_id);
   }
-
-  sel.innerHTML = '<option value="">— Seleccionar banco —</option>' +
-    data.map(b => `<option value="${b.banco_id}">${b.banco_id}</option>`).join('');
 }
 
 function actualizarPreviewLinkForm(url) {
@@ -342,14 +379,23 @@ async function guardarNuevoRecibo() {
   const errEl = document.getElementById('form-recibo-error');
   errEl.textContent = '';
 
-  const cliente   = document.getElementById('frec-cliente').value.trim();
-  const monto     = document.getElementById('frec-monto').value.trim();
-  const fecha     = document.getElementById('frec-fecha').value;
+  const cliente    = document.getElementById('frec-cliente').value.trim();
+  const ci         = document.getElementById('frec-ci').value.trim();
+  const correo     = document.getElementById('frec-correo').value.trim();
+  const monto      = document.getElementById('frec-monto').value.trim();
+  const fecha      = document.getElementById('frec-fecha').value;
+  const concepto   = document.getElementById('frec-concepto').value.trim();
   const forma_pago = document.getElementById('frec-forma-pago').value || null;
+  const abona_por  = document.getElementById('frec-abona-por').value || null;
 
-  if (!cliente) { errEl.textContent = 'El nombre del cliente es obligatorio.'; return; }
-  if (!monto || isNaN(Number(monto))) { errEl.textContent = 'Ingresá un monto válido.'; return; }
-  if (!fecha) { errEl.textContent = 'La fecha es obligatoria.'; return; }
+  if (!cliente)                        { errEl.textContent = 'El nombre del cliente es obligatorio.'; return; }
+  if (!ci)                             { errEl.textContent = 'El CI es obligatorio.'; return; }
+  if (!correo)                         { errEl.textContent = 'El correo es obligatorio.'; return; }
+  if (!monto || isNaN(Number(monto)))  { errEl.textContent = 'Ingresá un monto válido.'; return; }
+  if (!fecha)                          { errEl.textContent = 'La fecha es obligatoria.'; return; }
+  if (!concepto)                       { errEl.textContent = 'El concepto es obligatorio.'; return; }
+  if (!forma_pago)                     { errEl.textContent = 'Seleccioná una forma de pago.'; return; }
+  if (!abona_por)                      { errEl.textContent = 'Seleccioná el viaje (abona por).'; return; }
 
   btn.disabled = true;
   btn.textContent = 'Generando recibo…';
@@ -364,12 +410,12 @@ async function guardarNuevoRecibo() {
       cliente,
       monto:       Number(monto),
       fecha,
-      ci:          document.getElementById('frec-ci').value.trim()          || '',
-      concepto:    document.getElementById('frec-concepto').value.trim()    || '',
+      ci:          ci,
+      concepto:    concepto,
       metodo_pago: forma_pago || '',
       banco:       document.getElementById('frec-banco').value.trim()       || '',
       comprobante: document.getElementById('frec-comprobante').value.trim() || '',
-      email:       document.getElementById('frec-correo').value.trim()      || '',
+      email:       correo,
     };
 
     const gsRes = await fetch(APPSCRIPT_URL, {
@@ -402,13 +448,13 @@ async function guardarNuevoRecibo() {
     cliente,
     monto:               Number(monto),
     fecha,
-    ci:                  document.getElementById('frec-ci').value.trim()          || null,
-    correo_beneficiario: document.getElementById('frec-correo').value.trim()      || null,
-    concepto:            document.getElementById('frec-concepto').value.trim()    || null,
+    ci:                  ci                || null,
+    correo_beneficiario: correo            || null,
+    concepto:            concepto          || null,
     forma_pago,
     banco:               document.getElementById('frec-banco').value.trim()       || null,
     comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
-    abona_por:           document.getElementById('frec-abona-por').value.trim()   || null,
+    abona_por:           abona_por,
     link:                linkPdf || null,
     ...(recibo_nro && { recibo_nro }),
   };

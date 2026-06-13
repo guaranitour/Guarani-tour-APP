@@ -765,3 +765,40 @@
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ── Autocomplete banco ───────────────────────── */
+.frec-banco-wrap {
+  position: relative;
+}
+
+.frec-banco-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  z-index: 200;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.frec-banco-dd-item {
+  padding: .55rem .75rem;
+  font-size: .88rem;
+  color: var(--text, #1a2e1e);
+  cursor: pointer;
+  transition: background .12s;
+}
+.frec-banco-dd-item:hover {
+  background: var(--bg, #f0f5f2);
+}
+.frec-banco-dd-empty {
+  color: var(--text-light, #aaa);
+  cursor: default;
+  font-style: italic;
+}
