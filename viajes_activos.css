@@ -851,7 +851,7 @@
 .buscador-filtro-row {
   display: flex;
   gap: .5rem;
-  align-items: center;
+  align-items: stretch;
   margin-bottom: .75rem;
 }
 
@@ -862,8 +862,8 @@
 
 .btn-filtro-vp {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  min-height: 44px;
   border-radius: 10px;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -928,7 +928,7 @@
 
 .filtro-panel-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: .6rem;
 }
 

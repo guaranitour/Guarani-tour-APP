@@ -587,7 +587,7 @@ function _inyectarUIFiltros() {
   panel.innerHTML = `
     <div class="filtro-panel-title">Filtrar pasajeros</div>
     <div class="filtro-panel-fields">
-      <div class="form-field full">
+      <div class="form-field">
         <label class="form-label">Vendedor</label>
         <select id="filtro-sel-vendedor" class="form-input">
           <option value="">Todos</option>
