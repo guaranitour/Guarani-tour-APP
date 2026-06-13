@@ -363,20 +363,57 @@ function slugMetodo(m) {
 
 // ── Compartir comprobante ─────────────────────
 async function compartirComprobante(url) {
+  const esDrive = url.includes('drive.google.com') || url.includes('docs.google.com');
+
+  // Intentar compartir como archivo PDF
+  if (navigator.share && navigator.canShare) {
+    try {
+      mostrarToastRecibo('Descargando archivo…');
+
+      // Para Drive: convertir la URL a descarga directa
+      let fetchUrl = url;
+      if (esDrive) {
+        const matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (matchId) {
+          fetchUrl = `https://drive.google.com/uc?export=download&id=${matchId[1]}`;
+        }
+      }
+
+      const response = await fetch(fetchUrl);
+      if (!response.ok) throw new Error('No se pudo descargar el archivo');
+
+      const blob = await response.blob();
+      const tipo = blob.type || 'application/pdf';
+      const extension = tipo.includes('pdf') ? '.pdf' : tipo.includes('image') ? '.jpg' : '';
+      const nombreArchivo = `comprobante${extension}`;
+      const archivo = new File([blob], nombreArchivo, { type: tipo });
+
+      if (navigator.canShare({ files: [archivo] })) {
+        await navigator.share({ files: [archivo], title: 'Comprobante' });
+        return;
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return; // usuario canceló
+      // Si falla la descarga o canShare, caer al fallback de link
+    }
+  }
+
+  // Fallback 1: compartir link
   if (navigator.share) {
     try {
-      await navigator.share({ url });
+      await navigator.share({ url, title: 'Comprobante' });
+      return;
     } catch (e) {
-      // usuario canceló o error — sin acción
+      if (e.name === 'AbortError') return;
     }
-  } else {
-    // Fallback: copiar al portapapeles
-    try {
-      await navigator.clipboard.writeText(url);
-      mostrarToastRecibo('Link copiado al portapapeles');
-    } catch (e) {
-      mostrarToastRecibo('No se pudo compartir');
-    }
+  }
+
+  // Fallback 2: copiar al portapapeles
+  try {
+    await navigator.clipboard.writeText(url);
+    mostrarToastRecibo('Link copiado al portapapeles');
+  } catch (e) {
+    mostrarToastRecibo('No se pudo compartir');
   }
 }
 
