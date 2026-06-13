@@ -427,11 +427,27 @@ function navigateTo(view, idx = null, _fromHash = false) {
 }
 
 function updateBreadcrumb(items) {
-  document.getElementById("breadcrumb").innerHTML = items.map((item, i) => {
+  const container = document.getElementById("breadcrumb");
+  container.innerHTML = "";
+  items.forEach((item, i) => {
     const isLast = i === items.length - 1;
-    if (isLast) return `<span class="bc-current">${item.label}</span>`;
-    return `<span class="bc-link" onclick="(${item.action})()">${item.label}</span><span class="bc-sep">›</span>`;
-  }).join("");
+    if (isLast) {
+      const span = document.createElement("span");
+      span.className = "bc-current";
+      span.textContent = item.label;
+      container.appendChild(span);
+    } else {
+      const link = document.createElement("span");
+      link.className = "bc-link";
+      link.textContent = item.label;
+      if (item.action) link.addEventListener("click", item.action);
+      container.appendChild(link);
+      const sep = document.createElement("span");
+      sep.className = "bc-sep";
+      sep.textContent = "›";
+      container.appendChild(sep);
+    }
+  });
 }
 
 // ── Carga ──────────────────────────────────────────────────
