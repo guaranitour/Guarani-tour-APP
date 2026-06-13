@@ -1039,3 +1039,25 @@
 .btn-pdf-vp.btn-pdf-loading svg {
   animation: pdf-spin .8s linear infinite;
 }
+
+/* ── Puntos de carga en botón guardar ───────────────────── */
+.btn-dots {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.btn-dots span {
+  animation: btnDot .9s infinite;
+  opacity: 0;
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.btn-dots span:nth-child(2) { animation-delay: .2s; }
+.btn-dots span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes btnDot {
+  0%, 80%, 100% { opacity: 0; }
+  40%            { opacity: 1; }
+}

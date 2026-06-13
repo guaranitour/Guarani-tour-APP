@@ -147,8 +147,16 @@ async function crearViaje() {
   const file     = document.getElementById("v-imagen").files[0];
 
   if (!nombre) {
-    alert("El nombre es obligatorio");
+    document.getElementById("v-nombre").classList.add("error");
+    setTimeout(() => document.getElementById("v-nombre").classList.remove("error"), 2000);
     return;
+  }
+
+  const btn = document.querySelector("#view-viaje-nuevo .btn-save");
+  if (btn) {
+    if (btn.disabled) return;          // guard doble ejecución
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn-dots"><span>.</span><span>.</span><span>.</span></span> Guardando`;
   }
 
   let imagen_url = null;
@@ -158,6 +166,10 @@ async function crearViaje() {
       imagen_url = await uploadViajeImage(file);
     } catch (e) {
       console.error(e);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar viaje`;
+      }
       alert("Error subiendo imagen");
       return;
     }
@@ -176,6 +188,10 @@ async function crearViaje() {
 
   if (error) {
     console.error(error);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar viaje`;
+    }
     alert("Error al guardar viaje");
     return;
   }
