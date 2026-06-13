@@ -274,35 +274,84 @@ function actualizarPreviewLinkForm(url) {
   }
 }
 
+const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuNQvpfiulc2ts-aIyoiy6U0bc_ywAlnZ4t2WrDaQrEWd2AWQ2_eMVDQj2OefLEEtx3w/exec';
+const APPSCRIPT_TOKEN = 'MI_TOKEN_SECRETO'; // ⚠️ debe coincidir con el token en Apps Script
+
 async function guardarNuevoRecibo() {
   const btn = document.getElementById('btn-guardar-recibo');
   const errEl = document.getElementById('form-recibo-error');
   errEl.textContent = '';
 
-  const cliente = document.getElementById('frec-cliente').value.trim();
-  const monto   = document.getElementById('frec-monto').value.trim();
-  const fecha   = document.getElementById('frec-fecha').value;
+  const cliente   = document.getElementById('frec-cliente').value.trim();
+  const monto     = document.getElementById('frec-monto').value.trim();
+  const fecha     = document.getElementById('frec-fecha').value;
+  const forma_pago = document.getElementById('frec-forma-pago').value || null;
 
   if (!cliente) { errEl.textContent = 'El nombre del cliente es obligatorio.'; return; }
   if (!monto || isNaN(Number(monto))) { errEl.textContent = 'Ingresá un monto válido.'; return; }
   if (!fecha) { errEl.textContent = 'La fecha es obligatoria.'; return; }
 
+  btn.disabled = true;
+  btn.textContent = 'Generando recibo…';
+
+  // ── 1. Llamar a Apps Script para generar el PDF ──────────────────────
+  let linkPdf = null;
+  let recibo_nro = null;
+
+  try {
+    const gsPayload = {
+      token:       APPSCRIPT_TOKEN,
+      cliente,
+      monto:       Number(monto),
+      fecha,
+      ci:          document.getElementById('frec-ci').value.trim()          || '',
+      concepto:    document.getElementById('frec-concepto').value.trim()    || '',
+      metodo_pago: forma_pago || '',
+      banco:       document.getElementById('frec-banco').value.trim()       || '',
+      comprobante: document.getElementById('frec-comprobante').value.trim() || '',
+      email:       document.getElementById('frec-correo').value.trim()      || '',
+    };
+
+    const gsRes = await fetch(APPSCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' }, // Apps Script requiere text/plain para evitar preflight CORS
+      body:    JSON.stringify(gsPayload),
+    });
+
+    const gsData = await gsRes.json();
+
+    if (!gsData.ok) throw new Error(gsData.error || 'Error en Apps Script');
+
+    linkPdf   = gsData.data.url   || null;
+    recibo_nro = gsData.data.recibo || null;
+
+  } catch (e) {
+    // Si falla el PDF, preguntamos si igual quiere guardar sin él
+    const continuar = confirm(`⚠️ No se pudo generar el PDF del recibo:\n${e.message}\n\n¿Guardar el registro igualmente?`);
+    if (!continuar) {
+      btn.disabled = false;
+      btn.textContent = 'Guardar recibo';
+      return;
+    }
+  }
+
+  // ── 2. Guardar en Supabase ───────────────────────────────────────────
+  btn.textContent = 'Guardando…';
+
   const payload = {
     cliente,
     monto:               Number(monto),
     fecha,
-    ci:                  document.getElementById('frec-ci').value.trim()        || null,
-    correo_beneficiario: document.getElementById('frec-correo').value.trim()    || null,
-    concepto:            document.getElementById('frec-concepto').value.trim()  || null,
-    forma_pago:          document.getElementById('frec-forma-pago').value       || null,
-    banco:               document.getElementById('frec-banco').value.trim()     || null,
+    ci:                  document.getElementById('frec-ci').value.trim()          || null,
+    correo_beneficiario: document.getElementById('frec-correo').value.trim()      || null,
+    concepto:            document.getElementById('frec-concepto').value.trim()    || null,
+    forma_pago,
+    banco:               document.getElementById('frec-banco').value.trim()       || null,
     comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
-    abona_por:           document.getElementById('frec-abona-por').value.trim() || null,
-    link:                document.getElementById('frec-link').value.trim()      || null,
+    abona_por:           document.getElementById('frec-abona-por').value.trim()   || null,
+    link:                linkPdf || document.getElementById('frec-link').value.trim() || null,
+    ...(recibo_nro && { recibo_nro }),
   };
-
-  btn.disabled = true;
-  btn.textContent = 'Guardando…';
 
   const { error } = await supabaseClient.from('recibos').insert([payload]);
 
@@ -314,6 +363,7 @@ async function guardarNuevoRecibo() {
     return;
   }
 
+  if (linkPdf) mostrarToastRecibo('✅ Recibo generado y guardado');
   navigateTo('recibos');
 }
 
