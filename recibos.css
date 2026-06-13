@@ -695,3 +695,73 @@
   font-family: inherit;
 }
 .btn-recibo-cancelar:hover { background: var(--border, #e0e9e4); }
+
+/* ── Acciones del comprobante ────────────────── */
+.recibo-preview-acciones {
+  display: flex;
+  gap: .6rem;
+  margin-top: .65rem;
+}
+
+.recibo-preview-acciones .recibo-preview-link {
+  flex: 1;
+  justify-content: center;
+  background: var(--bg, #f0f5f2);
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 8px;
+  padding: .55rem .75rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text, #1a2e1e);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  transition: background .15s;
+}
+.recibo-preview-acciones .recibo-preview-link:hover {
+  background: var(--border, #e0e9e4);
+  text-decoration: none;
+}
+
+.recibo-btn-compartir {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  background: var(--primary, #2d6a4f);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .55rem .75rem;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s;
+}
+.recibo-btn-compartir:hover { opacity: .88; }
+
+/* ── Toast ───────────────────────────────────── */
+.recibo-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  background: #1a2e1e;
+  color: #fff;
+  padding: .55rem 1.1rem;
+  border-radius: 20px;
+  font-size: .82rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+  z-index: 2000;
+  white-space: nowrap;
+}
+.recibo-toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

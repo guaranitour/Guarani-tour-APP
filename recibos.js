@@ -127,10 +127,16 @@ function initReciboDetalleView(id) {
           </div>
           <img src="${url}" class="recibo-preview-img" alt="Comprobante"
                onerror="this.style.display='none'" />
-          <a href="${url}" target="_blank" class="recibo-preview-link" style="margin-top:.6rem">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Abrir en nueva pestaña
-          </a>
+          <div class="recibo-preview-acciones">
+            <a href="${url}" target="_blank" class="recibo-preview-link">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Abrir
+            </a>
+            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Compartir
+            </button>
+          </div>
         </div>`;
     } else if (esPdf || esDrive) {
       const embedUrl = esDrive
@@ -143,10 +149,16 @@ function initReciboDetalleView(id) {
             Comprobante adjunto
           </div>
           <iframe src="${embedUrl}" class="recibo-preview-iframe" allowfullscreen></iframe>
-          <a href="${url}" target="_blank" class="recibo-preview-link" style="margin-top:.6rem">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Abrir en nueva pestaña
-          </a>
+          <div class="recibo-preview-acciones">
+            <a href="${url}" target="_blank" class="recibo-preview-link">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Abrir
+            </a>
+            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Compartir
+            </button>
+          </div>
         </div>`;
     } else {
       previewHtml = `
@@ -347,4 +359,36 @@ function inicialRecibo(nombre) {
 
 function slugMetodo(m) {
   return (m || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+// ── Compartir comprobante ─────────────────────
+async function compartirComprobante(url) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ url });
+    } catch (e) {
+      // usuario canceló o error — sin acción
+    }
+  } else {
+    // Fallback: copiar al portapapeles
+    try {
+      await navigator.clipboard.writeText(url);
+      mostrarToastRecibo('Link copiado al portapapeles');
+    } catch (e) {
+      mostrarToastRecibo('No se pudo compartir');
+    }
+  }
+}
+
+function mostrarToastRecibo(msg) {
+  let t = document.getElementById('recibo-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'recibo-toast';
+    t.className = 'recibo-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('recibo-toast--visible');
+  setTimeout(() => t.classList.remove('recibo-toast--visible'), 2500);
 }
