@@ -32,25 +32,9 @@ async function initPagosView(ctx) {
 
   ocultarFormPago();
 
-  // ── Cargar métodos (tabla: id, metodo_de_pago) ──
-  if (pagosCtx.metodos.length === 0) {
-    const { data, error } = await supabaseClient
-      .from("metodos_de_pago")
-      .select("id, metodo_de_pago")
-      .order("metodo_de_pago");
-    if (error) console.error("Error metodos:", error);
-    pagosCtx.metodos = data || [];
-  }
-
-  // ── Cargar bancos (tabla: id, banco_id=nombre) ──
-  if (pagosCtx.bancos.length === 0) {
-    const { data, error } = await supabaseClient
-      .from("bancos")
-      .select("id, banco_id")
-      .order("banco_id");
-    if (error) console.error("Error bancos:", error);
-    pagosCtx.bancos = data || [];
-  }
+  // ── Cargar métodos y bancos desde caché global ──
+  pagosCtx.metodos = await getMetodosPago();
+  pagosCtx.bancos  = await getBancos();
 
   // Poblar select métodos
   const selMetodo = document.getElementById("pago-metodo");

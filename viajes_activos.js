@@ -7,7 +7,6 @@ let pasajerosDelViaje = [];
 ───────────────────────────────────────────── */
 
 let allViajes = [];
-let allVendedores = [];
 
 /* ── CARGAR VIAJES ─────────────────────────── */
 // modo: "activos" (default) → fecha_regreso >= hoy
@@ -991,16 +990,10 @@ function seleccionarPasajero(idx) {
 async function mostrarFormCrearPasajero(nombre) {
   const cont = document.getElementById("resultados-pasajero");
 
-  // Cargar vendedores si no están en caché
-  if (allVendedores.length === 0) {
-    const { data } = await supabaseClient
-      .from("vendedores")
-      .select('Nombre_del_vendedor')
-      .order('Nombre_del_vendedor', { ascending: true });
-    allVendedores = data || [];
-  }
+  // Cargar vendedores desde caché global
+  const vendedoresData = await getVendedores();
 
-  const optsVendedor = allVendedores
+  const optsVendedor = vendedoresData
     .map(v => `<option value="${v.Nombre_del_vendedor}">${v.Nombre_del_vendedor}</option>`)
     .join("");
 
@@ -1165,13 +1158,13 @@ async function loadEgresos(viajeId) {
     return;
   }
 
-  // Traer nombres de categorías y métodos de pago por separado (más robusto que el join)
-  const [{ data: catData }, { data: metData }] = await Promise.all([
+  // Traer nombres de categorías (sin cache) y métodos desde cache global
+  const [{ data: catData }, metDataRaw] = await Promise.all([
     supabaseClient.from("categorias").select("id, nombre"),
-    supabaseClient.from("metodos_de_pago").select("id, nombre")
+    getMetodosPago()
   ]);
   const catMap = Object.fromEntries((catData || []).map(c => [c.id, c.nombre]));
-  const metMap = Object.fromEntries((metData || []).map(m => [m.id, m.metodo_de_pago]));
+  const metMap = Object.fromEntries(metDataRaw.map(m => [m.id, m.metodo_de_pago]));
 
   if (!data || data.length === 0) {
     listEl.innerHTML = `
@@ -1263,14 +1256,9 @@ async function _cargarOpcionesFormEgreso() {
   // Ordenar alfabéticamente
   _egresosCategorias.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
-  // Métodos de pago (caja saliente)
-  if (_egresosMetodos.length === 0) {
-    const { data } = await supabaseClient
-      .from("metodos_de_pago")
-      .select("id, metodo_de_pago")
-      .order("metodo_de_pago", { ascending: true });
-    _egresosMetodos = data || [];
-  }
+  // Métodos de pago (caja saliente) — desde caché global
+  const metodosList = await getMetodosPago();
+  _egresosMetodos = metodosList;
 
   const selCat = document.getElementById("egreso-categoria");
   const selCaja = document.getElementById("egreso-caja");
@@ -1476,17 +1464,13 @@ async function initEgresoDetalleView({ egresoId, viajeId }) {
   cont.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
   // Query egreso + categorías + métodos en paralelo
-  const [
-    { data: e, error },
-    { data: catData },
-    { data: metData }
-  ] = await Promise.all([
+  const [{ data: e, error }, { data: catData }, metDataRaw] = await Promise.all([
     supabaseClient.from("egresos")
       .select("id, monto, descripcion, fecha, ejecutor, creado_por, categoria_id, caja_saliente, comprobante_nro")
       .eq("id", egresoId)
       .single(),
     supabaseClient.from("categorias").select("id, nombre"),
-    supabaseClient.from("metodos_de_pago").select("id, metodo_de_pago")
+    getMetodosPago()
   ]);
 
   if (error || !e) {
@@ -1495,7 +1479,7 @@ async function initEgresoDetalleView({ egresoId, viajeId }) {
   }
 
   const catMap = Object.fromEntries((catData || []).map(c => [c.id, c.nombre]));
-  const metMap = Object.fromEntries((metData || []).map(m => [m.id, m.metodo_de_pago]));
+  const metMap = Object.fromEntries(metDataRaw.map(m => [m.id, m.metodo_de_pago]));
 
   const categoria  = catMap[e.categoria_id] || "Sin categoría";
   const caja       = metMap[e.caja_saliente] || "—";

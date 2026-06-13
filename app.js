@@ -4,7 +4,45 @@ let avatarCache = {};
 let currentView = "home";
 let selectedIdx = null;
 let appReady = false;
-let _vendedoresCache = [];
+
+// ── Caches de tablas estáticas ─────────────────────────────
+// Se cargan una sola vez por sesión y se reutilizan en todos los módulos
+let _vendedoresCache  = [];   // [{ Nombre_del_vendedor }]
+let _metodosCache     = [];   // [{ id, metodo_de_pago }]
+let _bancosCache      = [];   // [{ id, banco_id }]
+
+async function getVendedores() {
+  if (_vendedoresCache.length === 0) {
+    const { data } = await supabaseClient
+      .from("vendedores")
+      .select("Nombre_del_vendedor")
+      .order("Nombre_del_vendedor", { ascending: true });
+    _vendedoresCache = data || [];
+  }
+  return _vendedoresCache;
+}
+
+async function getMetodosPago() {
+  if (_metodosCache.length === 0) {
+    const { data } = await supabaseClient
+      .from("metodos_de_pago")
+      .select("id, metodo_de_pago")
+      .order("metodo_de_pago", { ascending: true });
+    _metodosCache = data || [];
+  }
+  return _metodosCache;
+}
+
+async function getBancos() {
+  if (_bancosCache.length === 0) {
+    const { data } = await supabaseClient
+      .from("bancos")
+      .select("id, banco_id")
+      .order("banco_id", { ascending: true });
+    _bancosCache = data || [];
+  }
+  return _bancosCache;
+}
 
 // ── Visibilidad ────────────────────────────────────────────
 function showEl(id)  { document.getElementById(id).style.display = ""; }
@@ -828,19 +866,10 @@ document.addEventListener("click", (e) => {
 async function cargarVendedores(selectId, valorActual = "") {
   const sel = document.getElementById(selectId);
   if (!sel) return;
-
-  // Traer de Supabase solo si el caché está vacío
-  if (_vendedoresCache.length === 0) {
-    const { data, error } = await supabaseClient
-      .from("vendedores")
-      .select("Nombre_del_vendedor")
-      .order("Nombre_del_vendedor", { ascending: true });
-    if (!error && data) _vendedoresCache = data.map(v => v.Nombre_del_vendedor);
-  }
-
+  const lista = await getVendedores();
   sel.innerHTML = `<option value="">— Sin vendedor —</option>` +
-    _vendedoresCache.map(n =>
-      `<option value="${n}" ${n === valorActual ? "selected" : ""}>${n}</option>`
+    lista.map(n =>
+      `<option value="${n.Nombre_del_vendedor}" ${n.Nombre_del_vendedor === valorActual ? "selected" : ""}>${n.Nombre_del_vendedor}</option>`
     ).join("");
 }
 
