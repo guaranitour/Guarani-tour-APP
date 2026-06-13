@@ -28,7 +28,8 @@ async function cargarRecibos() {
 function renderizarRecibos(lista) {
   const cont = document.getElementById('recibos-cont');
 
-  document.getElementById('recibos-count').textContent =
+  const countEl = document.getElementById('recibos-count');
+  if (countEl) countEl.textContent =
     lista.length === 1 ? '1 recibo' : `${lista.length} recibos`;
 
   if (lista.length === 0) {
@@ -241,38 +242,51 @@ function initReciboDetalleView(id) {
 
 // ── Vista nuevo recibo (página completa) ──────
 async function initReciboNuevoView() {
-  const form = document.getElementById('form-recibo-nuevo');
-  if (form) form.reset();
+  // Reset manual de campos (no form.reset() para evitar race conditions)
+  const ids = ['frec-cliente','frec-ci','frec-correo','frec-monto',
+                'frec-concepto','frec-comprobante','frec-banco-input','frec-banco'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
-  // Restaurar visibilidad de campos transferencia
-  toggleCamposTransferencia();
+  const selForma = document.getElementById('frec-forma-pago');
+  if (selForma) selForma.value = '';
 
-  const hoy = new Date().toISOString().split('T')[0];
+  const selViaje = document.getElementById('frec-abona-por');
+  if (selViaje) selViaje.value = '';
+
+  // Ocultar grupo transferencia explícitamente
+  const grupo = document.getElementById('frec-grupo-transferencia');
+  if (grupo) grupo.style.display = 'none';
+
+  // Fecha de hoy
   const campoFecha = document.getElementById('frec-fecha');
-  if (campoFecha) campoFecha.value = hoy;
+  if (campoFecha) campoFecha.value = new Date().toISOString().split('T')[0];
 
   const errEl = document.getElementById('form-recibo-error');
   if (errEl) errEl.textContent = '';
 
-  // Cargar viajes activos
-  await cargarViajesActivosEnSelect();
+  // Cerrar dropdown banco si estuviera abierto
+  const dd = document.getElementById('frec-banco-dropdown');
+  if (dd) dd.style.display = 'none';
 
-  // Cargar bancos
-  await cargarBancosEnSelect();
+  // Cargar datos
+  await Promise.all([cargarViajesActivosEnSelect(), cargarBancosEnSelect()]);
 }
 
 function toggleCamposTransferencia() {
-  const forma = document.getElementById('frec-forma-pago')?.value || '';
-  const grupo = document.getElementById('frec-grupo-transferencia');
-  if (!grupo) return;
-  grupo.style.display = forma === 'Transferencia' ? '' : 'none';
-  if (forma !== 'Transferencia') {
-    const bancoInput  = document.getElementById('frec-banco-input');
-    const bancoHidden = document.getElementById('frec-banco');
-    const comp        = document.getElementById('frec-comprobante');
-    if (bancoInput)  bancoInput.value  = '';
-    if (bancoHidden) bancoHidden.value = '';
-    if (comp)        comp.value        = '';
+  const selForma = document.getElementById('frec-forma-pago');
+  const grupo    = document.getElementById('frec-grupo-transferencia');
+  if (!selForma || !grupo) return;
+
+  const esTransferencia = selForma.value === 'Transferencia';
+  grupo.style.display = esTransferencia ? '' : 'none';
+
+  if (!esTransferencia) {
+    ['frec-banco-input', 'frec-banco', 'frec-comprobante'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const dd = document.getElementById('frec-banco-dropdown');
+    if (dd) dd.style.display = 'none';
   }
 }
 
@@ -290,9 +304,10 @@ function filtrarBancosDropdown(q) {
   if (resultado.length === 0) {
     dd.innerHTML = '<div class="frec-banco-dd-item frec-banco-dd-empty">Sin resultados</div>';
   } else {
-    dd.innerHTML = resultado.map(b =>
-      `<div class="frec-banco-dd-item" onmousedown="seleccionarBanco('${b.replace(/'/g, "\'")}')">${b}</div>`
-    ).join('');
+    dd.innerHTML = resultado.map(b => {
+      const esc = b.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return `<div class="frec-banco-dd-item" onmousedown="seleccionarBanco('${esc}')">${b}</div>`;
+    }).join('');
   }
   dd.style.display = 'block';
 }
