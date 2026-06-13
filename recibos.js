@@ -240,15 +240,75 @@ function initReciboDetalleView(id) {
 }
 
 // ── Vista nuevo recibo (página completa) ──────
-function initReciboNuevoView() {
+async function initReciboNuevoView() {
   const form = document.getElementById('form-recibo-nuevo');
   if (form) form.reset();
+
+  // Restaurar visibilidad de campos transferencia
+  toggleCamposTransferencia();
+
   const hoy = new Date().toISOString().split('T')[0];
   const campoFecha = document.getElementById('frec-fecha');
   if (campoFecha) campoFecha.value = hoy;
+
   const errEl = document.getElementById('form-recibo-error');
   if (errEl) errEl.textContent = '';
-  actualizarPreviewLinkForm('');
+
+  // Cargar viajes activos
+  await cargarViajesActivosEnSelect();
+
+  // Cargar bancos
+  await cargarBancosEnSelect();
+}
+
+function toggleCamposTransferencia() {
+  const forma = document.getElementById('frec-forma-pago')?.value || '';
+  const grupo = document.getElementById('frec-grupo-transferencia');
+  if (!grupo) return;
+  grupo.style.display = forma === 'Transferencia' ? '' : 'none';
+  if (forma !== 'Transferencia') {
+    const banco = document.getElementById('frec-banco');
+    const comp  = document.getElementById('frec-comprobante');
+    if (banco) banco.value = '';
+    if (comp)  comp.value  = '';
+  }
+}
+
+async function cargarViajesActivosEnSelect() {
+  const sel = document.getElementById('frec-abona-por');
+  if (!sel) return;
+
+  const { data, error } = await supabaseClient
+    .from('viajes')
+    .select('id, nombre')
+    .eq('estado', 'activo')
+    .order('nombre', { ascending: true });
+
+  if (error || !data) {
+    sel.innerHTML = '<option value="">— Error al cargar —</option>';
+    return;
+  }
+
+  sel.innerHTML = '<option value="">— Seleccionar viaje —</option>' +
+    data.map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join('');
+}
+
+async function cargarBancosEnSelect() {
+  const sel = document.getElementById('frec-banco');
+  if (!sel) return;
+
+  const { data, error } = await supabaseClient
+    .from('bancos')
+    .select('id, banco_id')
+    .order('banco_id', { ascending: true });
+
+  if (error || !data) {
+    sel.innerHTML = '<option value="">— Error al cargar —</option>';
+    return;
+  }
+
+  sel.innerHTML = '<option value="">— Seleccionar banco —</option>' +
+    data.map(b => `<option value="${b.banco_id}">${b.banco_id}</option>`).join('');
 }
 
 function actualizarPreviewLinkForm(url) {
@@ -349,7 +409,7 @@ async function guardarNuevoRecibo() {
     banco:               document.getElementById('frec-banco').value.trim()       || null,
     comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
     abona_por:           document.getElementById('frec-abona-por').value.trim()   || null,
-    link:                linkPdf || document.getElementById('frec-link').value.trim() || null,
+    link:                linkPdf || null,
     ...(recibo_nro && { recibo_nro }),
   };
 

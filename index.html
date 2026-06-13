@@ -1218,39 +1218,32 @@
         <div class="form-recibo-row">
           <div class="form-recibo-field">
             <label for="frec-forma-pago">Forma de pago</label>
-            <select id="frec-forma-pago">
+            <select id="frec-forma-pago" onchange="toggleCamposTransferencia()">
               <option value="">— Seleccionar —</option>
               <option value="Efectivo">Efectivo</option>
               <option value="Transferencia">Transferencia</option>
-              <option value="Depósito">Depósito</option>
-              <option value="Tarjeta">Tarjeta</option>
-              <option value="Cheque">Cheque</option>
+              <option value="Tigo Money">Tigo Money</option>
             </select>
           </div>
           <div class="form-recibo-field">
-            <label for="frec-banco">Banco</label>
-            <input id="frec-banco" type="text" placeholder="Nombre del banco" />
+            <label for="frec-abona-por">Abona por (viaje)</label>
+            <select id="frec-abona-por">
+              <option value="">— Cargando… —</option>
+            </select>
           </div>
         </div>
 
-        <div class="form-recibo-row">
+        <div class="form-recibo-row" id="frec-grupo-transferencia" style="display:none">
+          <div class="form-recibo-field">
+            <label for="frec-banco">Banco</label>
+            <select id="frec-banco">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
           <div class="form-recibo-field">
             <label for="frec-comprobante">Nº Comprobante</label>
             <input id="frec-comprobante" type="text" placeholder="Nº operación" />
           </div>
-          <div class="form-recibo-field">
-            <label for="frec-abona-por">Abona por</label>
-            <input id="frec-abona-por" type="text" placeholder="Vendedor / agente" />
-          </div>
-        </div>
-
-        <hr class="form-recibo-sep" />
-
-        <div class="form-recibo-field">
-          <label for="frec-link">Link comprobante</label>
-          <input id="frec-link" type="url" placeholder="https://…"
-                 oninput="actualizarPreviewLinkForm(this.value)" />
-          <div id="frec-link-preview"></div>
         </div>
 
         <p class="form-recibo-error" id="form-recibo-error"></p>
