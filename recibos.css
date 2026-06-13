@@ -395,6 +395,8 @@
   background: var(--bg, #f0f5f2);
   border-radius: 9px;
   padding: .65rem .85rem;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .recibo-doc-parte--right {
@@ -419,6 +421,9 @@
 .recibo-doc-parte-sub {
   font-size: .74rem;
   color: var(--text-light, #999);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Bloque de monto destacado ────────────────── */
