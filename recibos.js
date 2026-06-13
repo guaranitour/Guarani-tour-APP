@@ -370,23 +370,29 @@ async function compartirComprobante(url) {
     try {
       mostrarToastRecibo('Descargando archivo…');
 
-      // Para Drive: convertir la URL a descarga directa
+      // Obtener el ID del archivo de Drive y construir URL de descarga directa
       let fetchUrl = url;
       if (esDrive) {
         const matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
         if (matchId) {
-          fetchUrl = `https://drive.google.com/uc?export=download&id=${matchId[1]}`;
+          const fileId = matchId[1];
+          // Usar proxy CORS para evitar el bloqueo de Google Drive
+          const driveDownload = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          fetchUrl = `https://corsproxy.io/?${encodeURIComponent(driveDownload)}`;
         }
       }
 
       const response = await fetch(fetchUrl);
-      if (!response.ok) throw new Error('No se pudo descargar el archivo');
+      if (!response.ok) throw new Error('Descarga fallida');
 
       const blob = await response.blob();
+      // Google a veces devuelve HTML de confirmación para archivos grandes;
+      // verificar que sea realmente un PDF o imagen
+      if (blob.type.includes('text/html')) throw new Error('Respuesta inesperada de Drive');
+
       const tipo = blob.type || 'application/pdf';
-      const extension = tipo.includes('pdf') ? '.pdf' : tipo.includes('image') ? '.jpg' : '';
-      const nombreArchivo = `comprobante${extension}`;
-      const archivo = new File([blob], nombreArchivo, { type: tipo });
+      const extension = tipo.includes('pdf') ? '.pdf' : tipo.includes('image') ? '.jpg' : '.pdf';
+      const archivo = new File([blob], `comprobante${extension}`, { type: tipo });
 
       if (navigator.canShare({ files: [archivo] })) {
         await navigator.share({ files: [archivo], title: 'Comprobante' });
@@ -394,7 +400,7 @@ async function compartirComprobante(url) {
       }
     } catch (e) {
       if (e.name === 'AbortError') return; // usuario canceló
-      // Si falla la descarga o canShare, caer al fallback de link
+      // Cualquier otro error: caer al fallback de link
     }
   }
 
