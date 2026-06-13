@@ -182,6 +182,10 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vve) _vve.style.display = "none";
   const _vrec = document.getElementById("view-recibos");
   if (_vrec) _vrec.style.display = "none";
+  const _vrecdet = document.getElementById("view-recibo-detalle");
+  if (_vrecdet) _vrecdet.style.display = "none";
+  const _vrecnew = document.getElementById("view-recibo-nuevo");
+  if (_vrecnew) _vrecnew.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -394,6 +398,30 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Recibos" }
     ]);
     cargarRecibos();
+
+  }
+
+  else if (view === "recibo-detalle") {
+
+    showEl("view-recibo-detalle");
+    updateBreadcrumb([
+      { label: "Inicio",   action: () => navigateTo("home") },
+      { label: "Recibos", action: () => navigateTo("recibos") },
+      { label: "Detalle" }
+    ]);
+    initReciboDetalleView(idx);
+
+  }
+
+  else if (view === "recibo-nuevo") {
+
+    showEl("view-recibo-nuevo");
+    updateBreadcrumb([
+      { label: "Inicio",   action: () => navigateTo("home") },
+      { label: "Recibos", action: () => navigateTo("recibos") },
+      { label: "Nuevo recibo" }
+    ]);
+    initReciboNuevoView();
 
   }
 }

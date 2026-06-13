@@ -5,7 +5,7 @@
 let todosLosRecibos = [];
 let recibosFiltrados = [];
 
-// ── Cargar y renderizar ───────────────────────
+// ── Cargar y renderizar lista ─────────────────
 async function cargarRecibos() {
   const cont = document.getElementById('recibos-cont');
   cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
@@ -36,7 +36,6 @@ function renderizarRecibos(lista) {
     return;
   }
 
-  // Agrupar por abona_por
   const grupos = {};
   for (const r of lista) {
     const clave = r.abona_por || '(Sin vendedor)';
@@ -80,7 +79,7 @@ function renderReciboCard(r) {
     : '';
 
   return `
-    <div class="recibo-card" onclick="verDetalleRecibo(${r.id})">
+    <div class="recibo-card" onclick="navigateTo('recibo-detalle', ${r.id})">
       <div class="recibo-card-top">
         <div class="recibo-card-left">
           <span class="recibo-nro">#${r.recibo_nro || r.id}</span>
@@ -100,15 +99,18 @@ function renderReciboCard(r) {
     </div>`;
 }
 
-// ── Detalle tipo recibo real ──────────────────
-async function verDetalleRecibo(id) {
+// ── Vista detalle (página completa) ──────────
+function initReciboDetalleView(id) {
   const recibo = todosLosRecibos.find(r => r.id === id);
-  if (!recibo) return;
+  const cont = document.getElementById('recibo-detalle-cont');
+  if (!cont) return;
 
-  const modal = document.getElementById('modal-recibo-detalle');
-  const body  = document.getElementById('modal-recibo-body');
+  if (!recibo) {
+    cont.innerHTML = '<p class="recibos-error">Recibo no encontrado.</p>';
+    return;
+  }
 
-  // Determinar tipo de preview del link
+  // Determinar preview del link
   let previewHtml = '';
   if (recibo.link) {
     const url = recibo.link.trim();
@@ -118,16 +120,14 @@ async function verDetalleRecibo(id) {
 
     if (esImagen) {
       previewHtml = `
-        <div class="recibo-preview-wrap">
-          <p class="recibo-preview-label">Comprobante adjunto</p>
-          <img src="${url}" class="recibo-preview-img" alt="Comprobante"
-               onerror="this.closest('.recibo-preview-wrap').querySelector('.recibo-preview-img').style.display='none';
-                        this.closest('.recibo-preview-wrap').querySelector('.recibo-preview-fallback').style.display='flex';" />
-          <div class="recibo-preview-fallback" style="display:none">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span>No se pudo cargar la imagen</span>
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Comprobante adjunto
           </div>
-          <a href="${url}" target="_blank" class="recibo-preview-link">
+          <img src="${url}" class="recibo-preview-img" alt="Comprobante"
+               onerror="this.style.display='none'" />
+          <a href="${url}" target="_blank" class="recibo-preview-link" style="margin-top:.6rem">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Abrir en nueva pestaña
           </a>
@@ -137,27 +137,30 @@ async function verDetalleRecibo(id) {
         ? url.replace('/view', '/preview').replace('/edit', '/preview')
         : url;
       previewHtml = `
-        <div class="recibo-preview-wrap">
-          <p class="recibo-preview-label">Comprobante adjunto</p>
+        <div class="detalle-section">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Comprobante adjunto
+          </div>
           <iframe src="${embedUrl}" class="recibo-preview-iframe" allowfullscreen></iframe>
-          <a href="${url}" target="_blank" class="recibo-preview-link">
+          <a href="${url}" target="_blank" class="recibo-preview-link" style="margin-top:.6rem">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Abrir en nueva pestaña
           </a>
         </div>`;
     } else {
       previewHtml = `
-        <div class="recibo-preview-wrap">
+        <div class="detalle-section">
           <a href="${url}" target="_blank" class="recibo-link-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Ver comprobante / recibo
+            Ver comprobante
           </a>
         </div>`;
     }
   }
 
-  // Layout tipo recibo impreso
-  body.innerHTML = `
+  cont.innerHTML = `
+    <!-- Encabezado tipo documento -->
     <div class="recibo-doc">
 
       <div class="recibo-doc-header">
@@ -222,34 +225,18 @@ async function verDetalleRecibo(id) {
     </div>
 
     ${previewHtml}`;
-
-  modal.style.display = 'flex';
 }
 
-function cerrarModalRecibo(e) {
-  if (!e || e.target === document.getElementById('modal-recibo-detalle') || e.currentTarget.classList.contains('modal-recibo-close')) {
-    document.getElementById('modal-recibo-detalle').style.display = 'none';
-  }
-}
-
-// ── Formulario nuevo recibo ───────────────────
-function abrirFormRecibo() {
-  const modal = document.getElementById('modal-form-recibo');
-  if (!modal) return;
-  document.getElementById('form-recibo').reset();
-  // Fecha de hoy por defecto
+// ── Vista nuevo recibo (página completa) ──────
+function initReciboNuevoView() {
+  const form = document.getElementById('form-recibo-nuevo');
+  if (form) form.reset();
   const hoy = new Date().toISOString().split('T')[0];
   const campoFecha = document.getElementById('frec-fecha');
   if (campoFecha) campoFecha.value = hoy;
-  // Limpiar preview de link
+  const errEl = document.getElementById('form-recibo-error');
+  if (errEl) errEl.textContent = '';
   actualizarPreviewLinkForm('');
-  modal.style.display = 'flex';
-}
-
-function cerrarFormRecibo(e) {
-  if (!e || e.target === document.getElementById('modal-form-recibo') || e.currentTarget.classList.contains('modal-recibo-close')) {
-    document.getElementById('modal-form-recibo').style.display = 'none';
-  }
 }
 
 function actualizarPreviewLinkForm(url) {
@@ -280,9 +267,9 @@ async function guardarNuevoRecibo() {
   const errEl = document.getElementById('form-recibo-error');
   errEl.textContent = '';
 
-  const cliente   = document.getElementById('frec-cliente').value.trim();
-  const monto     = document.getElementById('frec-monto').value.trim();
-  const fecha     = document.getElementById('frec-fecha').value;
+  const cliente = document.getElementById('frec-cliente').value.trim();
+  const monto   = document.getElementById('frec-monto').value.trim();
+  const fecha   = document.getElementById('frec-fecha').value;
 
   if (!cliente) { errEl.textContent = 'El nombre del cliente es obligatorio.'; return; }
   if (!monto || isNaN(Number(monto))) { errEl.textContent = 'Ingresá un monto válido.'; return; }
@@ -290,17 +277,16 @@ async function guardarNuevoRecibo() {
 
   const payload = {
     cliente,
-    monto:                Number(monto),
+    monto:               Number(monto),
     fecha,
-    ci:                   document.getElementById('frec-ci').value.trim()       || null,
-    correo_beneficiario:  document.getElementById('frec-correo').value.trim()   || null,
-    concepto:             document.getElementById('frec-concepto').value.trim() || null,
-    forma_pago:           document.getElementById('frec-forma-pago').value      || null,
-    banco:                document.getElementById('frec-banco').value.trim()    || null,
-    comprobante:          document.getElementById('frec-comprobante').value.trim() || null,
-    abona_por:            document.getElementById('frec-abona-por').value.trim() || null,
-    link:                 document.getElementById('frec-link').value.trim()     || null,
-    usuario:              (typeof currentUserEmail !== 'undefined' ? currentUserEmail : null),
+    ci:                  document.getElementById('frec-ci').value.trim()        || null,
+    correo_beneficiario: document.getElementById('frec-correo').value.trim()    || null,
+    concepto:            document.getElementById('frec-concepto').value.trim()  || null,
+    forma_pago:          document.getElementById('frec-forma-pago').value       || null,
+    banco:               document.getElementById('frec-banco').value.trim()     || null,
+    comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
+    abona_por:           document.getElementById('frec-abona-por').value.trim() || null,
+    link:                document.getElementById('frec-link').value.trim()      || null,
   };
 
   btn.disabled = true;
@@ -316,8 +302,7 @@ async function guardarNuevoRecibo() {
     return;
   }
 
-  cerrarFormRecibo();
-  cargarRecibos();
+  navigateTo('recibos');
 }
 
 // ── Búsqueda / filtro ─────────────────────────
@@ -327,12 +312,12 @@ function filtrarRecibos() {
     recibosFiltrados = [...todosLosRecibos];
   } else {
     recibosFiltrados = todosLosRecibos.filter(r =>
-      (r.cliente      || '').toLowerCase().includes(q) ||
-      (r.ci           || '').toLowerCase().includes(q) ||
-      (r.abona_por    || '').toLowerCase().includes(q) ||
-      (r.concepto     || '').toLowerCase().includes(q) ||
-      (r.recibo_nro   || '').toString().includes(q)    ||
-      (r.forma_pago   || '').toLowerCase().includes(q)
+      (r.cliente    || '').toLowerCase().includes(q) ||
+      (r.ci         || '').toLowerCase().includes(q) ||
+      (r.abona_por  || '').toLowerCase().includes(q) ||
+      (r.concepto   || '').toLowerCase().includes(q) ||
+      (r.recibo_nro || '').toString().includes(q)    ||
+      (r.forma_pago || '').toLowerCase().includes(q)
     );
   }
   renderizarRecibos(recibosFiltrados);
