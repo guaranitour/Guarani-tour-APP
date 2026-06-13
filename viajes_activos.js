@@ -1887,16 +1887,23 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
 
     if (vpErr || !vp) throw new Error("No se pudo obtener datos del pasajero.");
 
-    // 2. Pagos + métodos de pago (join por metodo_pago_id)
-    const [{ data: pagos, error: pgErr }] = await Promise.all([
+    // 2. Pagos + bancos en paralelo
+    const [{ data: pagos, error: pgErr }, { data: bancosData }] = await Promise.all([
       supabaseClient
         .from("pagos")
         .select("monto, tipo, fecha_pago, banco, comprobante_nro")
         .eq("viaje_pasajero_id", parseInt(vpId))
         .order("fecha_pago", { ascending: true }),
+      supabaseClient
+        .from("bancos")
+        .select("id, banco_id"),
     ]);
 
     if (pgErr) throw new Error("No se pudo obtener el historial de pagos.");
+
+    const bancosMap = Object.fromEntries(
+      (bancosData || []).map(b => [String(b.id), b.banco_id])
+    );
 
     const listaPagos     = pagos || [];
     const pagosReales    = listaPagos.filter(p => p.tipo === "Pago");
@@ -1925,7 +1932,7 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
       saldo    : saldo,
       pagos    : listaPagos.map(p => ({
         fecha       : formatFechaLocal(p.fecha_pago),
-        banco       : p.banco       || "—",
+        banco       : bancosMap[String(p.banco)] || "—",
         comprobante : p.comprobante_nro || "—",
         monto       : (p.tipo === "Devolución" || p.tipo === "Transferencia")
                         ? -Math.abs(p.monto || 0)
