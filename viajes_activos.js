@@ -328,11 +328,6 @@ function handleFabViajes() {
   navigateTo("viaje-nuevo");
 }
 function irAgregarPasajero() {
-  if (!["admin", "worker"].includes(currentUserRole)) {
-    alert("Solo lectura");
-    return;
-  }
-
   navigateTo("viaje-pasajero-nuevo", viajeActualId);
 }
 
