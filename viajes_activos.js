@@ -410,12 +410,9 @@ async function loadViajeDetalle(viajeId) {
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
   console.log("viaje_pasajeros result:", pasajeros, "error:", errPasajeros);
 
-  // Mostrar/ocultar botón agregar siempre (antes de posible return)
-  const esWorkerOAdminEarly = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin","worker"].includes(r))
-    : ["admin","worker"].includes(currentUserRole);
+  // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
   const btnAgregarEarly = document.getElementById("btn-agregar-vp");
-  if (btnAgregarEarly) btnAgregarEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  if (btnAgregarEarly) btnAgregarEarly.style.display = "";
 
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
@@ -474,9 +471,9 @@ async function loadViajeDetalle(viajeId) {
     };
   });
 
-  // Mostrar/ocultar botón agregar
+  // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
   const btnAgregar = document.getElementById("btn-agregar-vp");
-  if (btnAgregar) btnAgregar.style.display = esWorkerOAdmin ? "" : "none";
+  if (btnAgregar) btnAgregar.style.display = "";
 
   // Mostrar tabs según rol
   const tabEgresos = document.getElementById("tab-egresos");
