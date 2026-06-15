@@ -750,6 +750,12 @@
 .viaje-tab.active svg { opacity: 1; }
 .viaje-tab:hover:not(.active) { color: #444; }
 
+/* Contenedor de paneles: permite scroll vertical normal pero deja que JS
+   gestione el gesto horizontal para cambiar de tab */
+#viaje-tab-panels {
+  touch-action: pan-y;
+}
+
 /* ── EGRESOS ─────────────────────────────────── */
 
 .egresos-total-row {

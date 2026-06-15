@@ -488,6 +488,9 @@ async function loadViajeDetalle(viajeId) {
   // Inyectar botón filtro junto al buscador (solo una vez)
   _inyectarUIFiltros();
 
+  // Habilitar swipe horizontal entre tabs (solo una vez)
+  _initSwipeTabsViaje();
+
   renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
 }
 
@@ -1132,6 +1135,77 @@ function switchViajeTab(tab) {
   if (tab === "egresos")     loadEgresos(viajeActualId);
   if (tab === "presupuesto") loadPresupuesto(viajeActualId);
   if (tab === "resumen")     loadResumen(viajeActualId);
+}
+
+/* ── SWIPE HORIZONTAL ENTRE TABS (desde las cards) ─── */
+let _swipeTabsInit = false;
+function _initSwipeTabsViaje() {
+  if (_swipeTabsInit) return;
+  _swipeTabsInit = true;
+
+  const wrap = document.getElementById("viaje-tab-panels");
+  if (!wrap) return;
+
+  let startX = 0, startY = 0, tracking = false, isHorizontal = false;
+  const UMBRAL_DIRECCION = 10; // px para decidir si el gesto es horizontal
+  const UMBRAL_CAMBIO    = 50; // px para considerar que se quiso cambiar de tab
+
+  wrap.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+    isHorizontal = false;
+  }, { passive: true });
+
+  wrap.addEventListener("touchmove", (e) => {
+    if (!tracking || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+
+    if (!isHorizontal && (Math.abs(dx) > UMBRAL_DIRECCION || Math.abs(dy) > UMBRAL_DIRECCION)) {
+      isHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    // Si el gesto es horizontal, evitamos que el navegador haga scroll vertical
+    if (isHorizontal) e.preventDefault();
+  }, { passive: false });
+
+  wrap.addEventListener("touchend", (e) => {
+    if (!tracking) return;
+    tracking = false;
+    if (!isHorizontal) return;
+
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) < UMBRAL_CAMBIO) return;
+
+    // Deslizar hacia la izquierda → siguiente tab. Hacia la derecha → tab anterior.
+    _cambiarTabViajePorSwipe(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+function _cambiarTabViajePorSwipe(direccion) {
+  const ordenTabs = ["pasajeros", "egresos", "presupuesto", "resumen"];
+
+  // Solo se consideran las tabs visibles según el rol del usuario
+  const visibles = ordenTabs.filter(t => {
+    const btn = document.getElementById("tab-" + t);
+    return btn && btn.style.display !== "none";
+  });
+
+  const actual = visibles.find(t => document.getElementById("tab-" + t).classList.contains("active"));
+  let idx = visibles.indexOf(actual);
+  if (idx === -1) idx = 0;
+
+  idx += direccion;
+  if (idx < 0 || idx >= visibles.length) return; // ya está en el extremo
+
+  switchViajeTab(visibles[idx]);
+
+  // Asegura que el tab activo quede visible dentro del scroll de tabs
+  const tabBtn = document.getElementById("tab-" + visibles[idx]);
+  if (tabBtn && tabBtn.scrollIntoView) {
+    tabBtn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }
 }
 
 /* ── EGRESOS ───────────────────────────────── */
