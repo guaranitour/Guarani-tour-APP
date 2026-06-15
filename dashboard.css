@@ -1,0 +1,351 @@
+/* ─────────────────────────────────────────────
+   dashboard.css — Panel de control (resumen general)
+───────────────────────────────────────────── */
+
+/* ── Pill de aviso en el Home ──────────────────────────── */
+.dashboard-announce-pill {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  background: linear-gradient(135deg, rgba(45,106,79,.10), rgba(201,168,76,.14));
+  border: 1px solid rgba(45,106,79,.22);
+  border-radius: 999px;
+  padding: .65rem .8rem .65rem .6rem;
+  margin-bottom: 1.2rem;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .15s, background .15s;
+  animation: dashPillIn .4s both;
+}
+.dashboard-announce-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(45,106,79,.14);
+  background: linear-gradient(135deg, rgba(45,106,79,.16), rgba(201,168,76,.2));
+}
+.dashboard-announce-pill:active { transform: translateY(0); }
+
+@keyframes dashPillIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dap-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.dap-text {
+  flex: 1;
+  min-width: 0;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--accent2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dap-text small {
+  display: block;
+  font-size: .72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dap-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 20px;
+  padding: .22rem .55rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.dap-arrow { color: var(--accent); flex-shrink: 0; }
+
+.dap-close {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: none; border-radius: 50%;
+  background: rgba(255,255,255,.6);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.dap-close:hover { background: #fff; color: var(--text); }
+
+/* ── Layout general del panel ──────────────────────────── */
+#view-dashboard .dash-section { margin-bottom: 1.6rem; }
+#view-dashboard .dash-section:last-child { margin-bottom: .5rem; }
+
+.dash-section-title {
+  display: flex; align-items: center; gap: .55rem;
+  font-family: 'Lora', serif;
+  font-size: 1.02rem; font-weight: 600;
+  color: var(--text);
+  margin-bottom: .7rem;
+}
+.dash-section-title .dash-icon {
+  width: 30px; height: 30px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: rgba(45,106,79,.1); color: var(--accent);
+}
+.dash-section-count {
+  margin-left: auto;
+  font-size: .72rem; font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg2); border-radius: 20px;
+  padding: .15rem .6rem;
+}
+.dash-section-sub {
+  font-size: .76rem; color: var(--text-muted);
+  margin: -.35rem 0 .7rem;
+}
+.dash-section-divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 1.6rem 0;
+}
+
+/* ── KPI cards ──────────────────────────────────────────── */
+.dash-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+}
+.dash-kpi-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: .9rem 1rem;
+}
+.dash-kpi-card.full { grid-column: 1 / -1; }
+
+.dash-kpi-label {
+  font-size: .7rem; font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: .25rem;
+}
+.dash-kpi-value {
+  font-family: 'Lora', serif;
+  font-size: 1.65rem; font-weight: 700;
+  color: var(--accent2);
+  line-height: 1.1;
+}
+.dash-kpi-breakdown {
+  display: flex; gap: .4rem; flex-wrap: wrap;
+  margin-top: .65rem;
+}
+.dash-chip {
+  font-size: .7rem; color: var(--text-mid);
+  background: var(--bg2); border-radius: 20px;
+  padding: .2rem .6rem; white-space: nowrap;
+}
+.dash-chip strong { color: var(--text); }
+
+.dash-bar-track {
+  height: 7px; border-radius: 6px;
+  background: var(--bg2);
+  overflow: hidden;
+  margin-top: .55rem;
+}
+.dash-bar-fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  transition: width .4s ease;
+}
+
+/* ── Viajes activos ─────────────────────────────────────── */
+.dash-viaje-card {
+  display: flex; align-items: center; gap: .8rem;
+  background: rgba(255,255,255,.7);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .75rem .9rem;
+  margin-bottom: .5rem;
+  cursor: pointer;
+  transition: background .15s, transform .12s, box-shadow .15s;
+}
+.dash-viaje-card:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.07);
+}
+.dash-viaje-card:last-child { margin-bottom: 0; }
+
+.dvc-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.dvc-body { flex: 1; min-width: 0; }
+.dvc-nombre {
+  font-size: .9rem; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dvc-meta {
+  display: flex; gap: .55rem; flex-wrap: wrap;
+  font-size: .73rem; color: var(--text-muted);
+  margin-top: .2rem;
+}
+.dvc-pasajeros {
+  font-size: .76rem; font-weight: 600;
+  color: var(--accent);
+  background: rgba(45,106,79,.1);
+  border-radius: 20px;
+  padding: .2rem .65rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Ranking de pasajeros (puntos) ─────────────────────── */
+.dash-card {
+  background: rgba(255,255,255,.7);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: .4rem .9rem;
+}
+
+.dash-rank-row {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .65rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity .12s;
+}
+.dash-rank-row:last-child { border-bottom: none; }
+.dash-rank-row:active { opacity: .7; }
+
+.dash-rank-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 700;
+  background: var(--bg2); color: var(--text-mid);
+}
+.dash-rank-num.top1 { background: linear-gradient(135deg,#f6d365,#c9a84c); color: #fff; }
+.dash-rank-num.top2 { background: linear-gradient(135deg,#d9d9d4,#9a9a92); color: #fff; }
+.dash-rank-num.top3 { background: linear-gradient(135deg,#d8a17a,#8b5e3c); color: #fff; }
+
+.dash-rank-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0; overflow: hidden;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .68rem; font-weight: 600;
+}
+
+.dash-rank-name {
+  flex: 1; min-width: 0;
+  font-size: .87rem; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.dash-rank-pts {
+  font-size: .76rem; font-weight: 600;
+  color: #8a6d1a;
+  background: rgba(201,168,76,.16);
+  border-radius: 20px;
+  padding: .2rem .6rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Comparativo egresos vs ingresos ───────────────────── */
+.dash-comp-card {
+  background: rgba(255,255,255,.7);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .9rem 1rem;
+  margin-bottom: .6rem;
+}
+.dash-comp-card:last-child { margin-bottom: 0; }
+
+.dash-comp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .5rem;
+  margin-bottom: .65rem;
+}
+.dash-comp-nombre {
+  font-size: .9rem; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-comp-estado {
+  font-size: .62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+  border-radius: 20px; padding: .15rem .55rem;
+  flex-shrink: 0;
+}
+.dash-comp-estado.activo    { background: rgba(45,106,79,.12); color: var(--accent); }
+.dash-comp-estado.completado{ background: var(--bg2); color: var(--text-muted); }
+
+.dash-comp-rows { display: flex; flex-direction: column; gap: .5rem; }
+.dash-comp-row { display: flex; align-items: center; gap: .6rem; }
+.dash-comp-row-label {
+  width: 58px; flex-shrink: 0;
+  font-size: .74rem; color: var(--text-muted);
+}
+.dash-comp-row .dash-bar-track { flex: 1; margin-top: 0; }
+.dash-comp-row.ingreso .dash-bar-fill { background: var(--accent); }
+.dash-comp-row.egreso  .dash-bar-fill { background: var(--danger); }
+.dash-comp-row-value {
+  font-size: .76rem; font-weight: 600;
+  white-space: nowrap; flex-shrink: 0;
+  width: auto; text-align: right; min-width: 86px;
+}
+
+.dash-comp-balance {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: .7rem; padding-top: .6rem;
+  border-top: 1px solid var(--border);
+  font-size: .8rem; font-weight: 700;
+}
+.dash-comp-balance.positivo { color: var(--accent); }
+.dash-comp-balance.negativo { color: var(--danger); }
+
+/* ── Ranking de vendedores ──────────────────────────────── */
+.dash-vendor-row {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.dash-vendor-row:last-child { border-bottom: none; }
+
+.dash-vendor-body { flex: 1; min-width: 0; }
+.dash-vendor-name {
+  font-size: .87rem; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-vendor-meta {
+  font-size: .72rem; color: var(--text-muted);
+  margin-top: .15rem;
+}
+
+.dash-vendor-eff { text-align: right; flex-shrink: 0; }
+.dash-vendor-eff-value { font-size: .9rem; font-weight: 700; }
+.dash-vendor-eff-value.alta  { color: var(--accent); }
+.dash-vendor-eff-value.media { color: #8a6d1a; }
+.dash-vendor-eff-value.baja  { color: var(--danger); }
+.dash-vendor-eff-label {
+  font-size: .62rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+
+/* ── Estados (carga / error / vacío) ───────────────────── */
+.dash-state {
+  text-align: center; padding: 2rem 1rem;
+  color: var(--text-muted); font-size: .85rem;
+}

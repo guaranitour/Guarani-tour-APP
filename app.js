@@ -87,7 +87,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     // Si hay un hash en la URL al cargar, intentar restaurar esa vista
     const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
     const restorableViews = [
-      "home","clientes","nuevo","usuarios","viajes","viaje-nuevo",
+      "home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
       "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
     ];
     if (hashView && hashView !== "home" && restorableViews.includes(hashView)) {
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Navegación por hash ────────────────────────────────────
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
-const _hashSimpleViews = ["home","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico"];
+const _hashSimpleViews = ["home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
 
 function _buildHash(view, idx) {
@@ -224,6 +224,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vrecdet) _vrecdet.style.display = "none";
   const _vrecnew = document.getElementById("view-recibo-nuevo");
   if (_vrecnew) _vrecnew.style.display = "none";
+  const _vdash = document.getElementById("view-dashboard");
+  if (_vdash) _vdash.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -241,6 +243,17 @@ function navigateTo(view, idx = null, _fromHash = false) {
 
     showEl("view-home");
     updateBreadcrumb([{ label: "Inicio" }]);
+
+  }
+
+  else if (view === "dashboard") {
+
+    showEl("view-dashboard");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Panel de control" }
+    ]);
+    loadDashboard();
 
   }
 
