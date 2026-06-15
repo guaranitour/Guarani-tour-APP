@@ -184,3 +184,9 @@
 .user-feedback.show { opacity: 1; }
 .user-feedback.ok   { background: #ebfbee; color: #2f9e44; }
 .user-feedback.err  { background: #fff5f5; color: #c92a2a; }
+
+.usuarios-view {
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+}
