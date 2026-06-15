@@ -83,6 +83,41 @@
 }
 .dap-close:hover { background: #fff; color: var(--text); }
 
+/* ── Tarjeta "Dashboard" destacada en el Home (temporal) ── */
+.home-card.dashboard-promo {
+  position: relative;
+  overflow: visible;
+  background: linear-gradient(135deg, rgba(45,106,79,.10), rgba(201,168,76,.18));
+  border: 1px solid rgba(201,168,76,.4);
+  animation: dashCardGlow 2.4s ease-in-out infinite;
+}
+
+.dashboard-promo-badge {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 20px;
+  padding: .24rem .65rem;
+  box-shadow: 0 2px 10px rgba(45,106,79,.4);
+  animation: dashBadgePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dashCardGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+  50% { box-shadow: 0 0 0 6px rgba(201,168,76,.14); }
+}
+
+@keyframes dashBadgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
 /* ── Layout general del panel ──────────────────────────── */
 #view-dashboard .dash-section { margin-bottom: 1.6rem; }
 #view-dashboard .dash-section:last-child { margin-bottom: .5rem; }

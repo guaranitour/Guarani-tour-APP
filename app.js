@@ -55,12 +55,13 @@ function showLogin() {
 }
 
 let currentUserRole = null;
+let currentUserName = null;
 
 async function enterApp(user) {
   // Verificar si el usuario está en la tabla staff y habilitado
   const { data, error } = await supabaseClient
     .from("staff")
-    .select("role, status")
+    .select("role, status, nombre")
     .eq("email", user.email)
     .single();
 
@@ -73,6 +74,7 @@ async function enterApp(user) {
   }
 
   currentUserRole = data.role;
+  currentUserName = data.nombre || user.email.split("@")[0];
 
   hideEl("login-view");
   showEl("app-view");
@@ -185,6 +187,22 @@ window.addEventListener("popstate", () => {
 });
 
 // ── Navegación ─────────────────────────────────────────────
+function getSaludo() {
+  const h = new Date().getHours();
+  if (h < 12) return "Buenos días";
+  if (h < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+function setHomeGreeting() {
+  const el = document.getElementById("home-greeting");
+  if (!el) return;
+  const primerNombre = (currentUserName || "").split(" ")[0];
+  el.textContent = primerNombre
+    ? `${getSaludo()}, ${primerNombre}`
+    : "Panel de inicio";
+}
+
 function navigateTo(view, idx = null, _fromHash = false) {
 
   currentView = view;
@@ -242,6 +260,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (view === "home") {
 
     showEl("view-home");
+    setHomeGreeting();
     updateBreadcrumb([{ label: "Inicio" }]);
 
   }
