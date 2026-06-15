@@ -606,3 +606,6 @@ function mostrarToastRecibo(msg) {
   t.classList.add('recibo-toast--visible');
   setTimeout(() => t.classList.remove('recibo-toast--visible'), 2500);
 }
+window.cargarRecibos = cargarRecibos;
+window.initReciboDetalleView = initReciboDetalleView;
+window.initReciboNuevoView = initReciboNuevoView;
