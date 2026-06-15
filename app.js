@@ -318,12 +318,14 @@ function navigateTo(view, idx = null, _fromHash = false) {
   else if (view === "usuarios") {
   if (currentUserRole !== "admin") return;
 
+  showEl("view-usuarios");
+
   fetch('./views/usuarios.html')
     .then(res => res.text())
     .then(html => {
 
-      // 🔥 REEMPLAZA TODO el contenido principal
-      document.getElementById("app-view").innerHTML = html;
+      // ✅ inyecta solo dentro de su propio contenedor (no pisa el resto del SPA)
+      document.getElementById("view-usuarios").innerHTML = html;
 
       // ✅ breadcrumb sigue igual
       updateBreadcrumb([
