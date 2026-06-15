@@ -316,16 +316,31 @@ function navigateTo(view, idx = null, _fromHash = false) {
 
   // ESTE ES EL BLOQUE CLAVE
   else if (view === "usuarios") {
+  if (currentUserRole !== "admin") return;
 
-    if (currentUserRole !== "admin") return;
-    showEl("view-usuarios");
-    updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
-      { label: "Usuarios" }
-    ]);
-    loadUsers();
+  fetch('./views/usuarios.html')
+    .then(res => res.text())
+    .then(html => {
 
-  }
+      // 🔥 REEMPLAZA TODO el contenido principal
+      document.getElementById("app-view").innerHTML = html;
+
+      // ✅ breadcrumb sigue igual
+      updateBreadcrumb([
+        { label: "Inicio", action: () => navigateTo("home") },
+        { label: "Usuarios" }
+      ]);
+
+      // ✅ volver a ejecutar lógica
+      loadUsers();
+
+      // ✅ reconectar botón
+      const btn = document.getElementById("btn-crear-user");
+      if (btn) {
+        btn.addEventListener("click", createUser);
+      }
+    });
+}
 
   else if (view === "viajes") {
 
