@@ -20,6 +20,59 @@
   <link rel="stylesheet" href="byc.css" />
   <link rel="stylesheet" href="dashboard.css" />
 
+  <style>
+  /* ── Modal Acerca de ── */
+  .acerca-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.45);
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: acercaFadeIn .2s ease;
+  }
+  @keyframes acercaFadeIn { from { opacity:0 } to { opacity:1 } }
+  .acerca-sheet {
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 540px;
+    padding: 28px 24px 40px;
+    max-height: 88vh; overflow-y: auto;
+    position: relative;
+    animation: acercaSlideUp .25s cubic-bezier(.32,1,.23,1);
+  }
+  @keyframes acercaSlideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }
+  .acerca-close {
+    position: absolute; top: 16px; right: 16px;
+    background: #f0f0f0; border: none; border-radius: 50%;
+    width: 32px; height: 32px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #555; transition: background .15s;
+  }
+  .acerca-close:hover { background: #e0e0e0; }
+  .acerca-logo-wrap { text-align: center; margin-bottom: 10px; }
+  .acerca-logo { width: 64px; height: 64px; border-radius: 16px; }
+  .acerca-titulo {
+    text-align: center; margin: 0 0 4px;
+    font-family: 'Lora', serif; font-size: 1.4rem; color: #1a3a2a;
+  }
+  .acerca-subtitulo {
+    text-align: center; margin: 0 0 20px;
+    font-size: .85rem; color: #888;
+  }
+  .acerca-card {
+    background: #f6f8fa; border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .acerca-card h3 { margin: 0 0 8px; font-size: .95rem; color: #1a3a2a; }
+  .acerca-card p, .acerca-card li { font-size: .875rem; color: #555; margin: 0; line-height: 1.5; }
+  .acerca-card ul { padding-left: 18px; margin: 0; }
+  .acerca-card li { margin-top: 5px; }
+  .acerca-intro { background: #e8f0eb; }
+  .acerca-footer {
+    text-align: center; margin-top: 20px;
+    font-size: .78rem; color: #aaa;
+  }
+  .acerca-footer p { margin: 2px 0; }
+  .acerca-version { color: #bbb; }
+  </style>
 </head>
 <body>
 
@@ -59,6 +112,14 @@
         </button>
         <div class="hamburger-menu" id="hamburger-menu">
           <div class="menu-user" id="user-email"></div>
+          <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Acerca de
+          </button>
           <button class="menu-item danger" onclick="logout(); closeMenu()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -1370,6 +1431,47 @@
 </div>
 
   </div><!-- /app-view -->
+
+  <!-- ── MODAL: ACERCA DE ── -->
+  <div id="modal-acerca" class="acerca-overlay" style="display:none" onclick="cerrarAcercaDe(event)">
+    <div class="acerca-sheet">
+      <button class="acerca-close" onclick="cerrarAcercaDe()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <div class="acerca-logo-wrap">
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" alt="Guarani Tour" class="acerca-logo" />
+      </div>
+      <h2 class="acerca-titulo">Guarani Tour</h2>
+      <p class="acerca-subtitulo">Sistema interno de gestión</p>
+
+      <div class="acerca-card acerca-intro">
+        <p>Plataforma diseñada para optimizar la gestión de viajes, pasajeros y cobros dentro del equipo de trabajo.</p>
+      </div>
+
+      <div class="acerca-card">
+        <h3>⚙️ Funcionalidades</h3>
+        <ul>
+          <li>Gestión de pasajeros y viajes</li>
+          <li>Registro de pagos y recibos</li>
+          <li>Control de gastos por viaje</li>
+          <li>Dashboard con KPIs y ranking</li>
+          <li>Estado ByC y beneficios</li>
+        </ul>
+      </div>
+
+      <div class="acerca-card">
+        <h3>🔐 Acceso</h3>
+        <p>Uso exclusivo del staff autorizado. Acceso controlado por roles: <strong>admin</strong>, <strong>worker</strong> y <strong>viewer</strong>.</p>
+      </div>
+
+      <div class="acerca-footer">
+        <p>© 2026 Guarani Tour</p>
+        <p class="acerca-version">Versión 1.0.0</p>
+      </div>
+    </div>
+  </div>
 
     <!-- FAB -->
   <button class="fab" id="fab-viaje-nuevo" onclick="navigateTo('viaje-nuevo')" title="Nuevo viaje" style="display:none">

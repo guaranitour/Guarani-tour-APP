@@ -925,6 +925,23 @@ function closeMenu() {
   document.getElementById("hamburger-menu").classList.remove("open");
 }
 
+// ── Modal Acerca de ────────────────────────────────────────
+function abrirAcercaDe() {
+  const modal = document.getElementById("modal-acerca");
+  if (!modal) return;
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+
+function cerrarAcercaDe(e) {
+  // Si se pasa un evento, solo cerrar si el click fue en el overlay (no en el sheet)
+  if (e && e.target !== document.getElementById("modal-acerca")) return;
+  const modal = document.getElementById("modal-acerca");
+  if (!modal) return;
+  modal.style.display = "none";
+  document.body.style.overflow = "";
+}
+
 // Cerrar al hacer click fuera
 document.addEventListener("click", (e) => {
   const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
