@@ -1,0 +1,195 @@
+/* ══════════════════════════════════════════════
+   MÓDULO ESTADO BYC
+   ══════════════════════════════════════════════ */
+
+/* ── Loading / Error / Empty ─────────────────── */
+.byc-loading,
+.byc-error {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-light, #888);
+  font-size: .9rem;
+}
+.byc-error { color: #c0392b; }
+
+.byc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+  padding: 3rem 1rem;
+  color: var(--text-light, #aaa);
+}
+.byc-empty svg { opacity: .3; }
+.byc-empty p   { font-size: .9rem; margin: 0; }
+
+/* ── Toolbar ─────────────────────────────────── */
+.byc-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+
+.byc-toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.byc-count {
+  font-size: .8rem;
+  color: var(--text-light, #888);
+  white-space: nowrap;
+}
+
+.byc-filters {
+  display: flex;
+  gap: .5rem;
+}
+
+.byc-filters select {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 8px;
+  padding: .4rem .6rem;
+  font-size: .8rem;
+  color: var(--text, #1a2e1e);
+  outline: none;
+  cursor: pointer;
+  flex: 1;
+  font-family: inherit;
+}
+.byc-filters select:focus {
+  border-color: var(--primary, #2d6a4f);
+}
+
+/* ── Lista ───────────────────────────────────── */
+#byc-cont {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface, #fff);
+}
+
+/* ── Fila ────────────────────────────────────── */
+.byc-row {
+  padding: .7rem 1rem;
+  border-bottom: 1px solid var(--border, #e8ede9);
+  transition: background .12s;
+}
+.byc-row:last-child {
+  border-bottom: none;
+}
+.byc-row:hover {
+  background: var(--bg, #f7faf8);
+}
+
+.byc-row-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+}
+
+.byc-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  min-width: 0;
+}
+
+.byc-nombre {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text, #1a2e1e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.byc-ci {
+  font-size: .75rem;
+  color: var(--text-light, #999);
+}
+
+.byc-row-right {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex-shrink: 0;
+}
+
+.byc-row-email {
+  margin-top: .25rem;
+}
+
+.byc-email {
+  font-size: .78rem;
+  color: var(--text-light, #7a9a82);
+}
+.byc-email--vacio {
+  color: var(--text-light, #bbb);
+  font-style: italic;
+}
+
+.byc-dup-tag {
+  display: inline-block;
+  background: #fff3cd;
+  color: #856404;
+  font-size: .68rem;
+  font-weight: 600;
+  padding: .05rem .3rem;
+  border-radius: 4px;
+  margin-left: .2rem;
+  vertical-align: middle;
+}
+
+/* ── Badges estado ───────────────────────────── */
+.byc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .18rem .5rem;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+/* Estado principal */
+.byc-estado-sin          { background: #f0f0f0; color: #999; }
+.byc-estado-activo       { background: #e6f4ec; color: #2d6a4f; }
+.byc-estado-pendiente    { background: #fff8e1; color: #b07d00; }
+.byc-estado-inactivo     { background: #fce8e8; color: #b33; }
+.byc-estado-completo     { background: #e8f0fb; color: #3b5bdb; }
+
+/* Estado envío */
+.byc-envio-enviado       { background: #e6f4ec; color: #2d6a4f; }
+.byc-envio-pendiente     { background: #fff8e1; color: #b07d00; }
+.byc-envio-no-enviado,
+.byc-envio-no-enviado    { background: #fce8e8; color: #b33; }
+.byc-envio-sin-email     { background: #f0f0f0; color: #999; }
+
+/* ── Botón link ──────────────────────────────── */
+.byc-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--primary, #2d6a4f);
+  text-decoration: none;
+  padding: .2rem .45rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, #d4e4db);
+  background: var(--bg, #f0f5f2);
+  transition: background .12s;
+}
+.byc-link-btn:hover {
+  background: #d8eee3;
+  text-decoration: none;
+}

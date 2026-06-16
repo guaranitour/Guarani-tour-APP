@@ -244,6 +244,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vrecnew) _vrecnew.style.display = "none";
   const _vdash = document.getElementById("view-dashboard");
   if (_vdash) _vdash.style.display = "none";
+  const _vbyc = document.getElementById("view-byc");
+  if (_vbyc) _vbyc.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -348,6 +350,17 @@ function navigateTo(view, idx = null, _fromHash = false) {
     const _hs = document.getElementById("historico-search");
     if (_hs) _hs.value = "";
     loadViajes("historico");
+
+  }
+
+  else if (view === "byc") {
+
+    showEl("view-byc");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Estado ByC" }
+    ]);
+    initBycView();
 
   }
 
