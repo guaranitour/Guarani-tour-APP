@@ -13,6 +13,7 @@ const _dashIcons = {
   panel: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
   cerrar: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
   flecha: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
+  byc:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
 };
 
 // ── Pill de aviso en el Home ────────────────────────────────
@@ -43,13 +44,15 @@ async function loadDashboard() {
       { data: pasajerosData, error: errPas },
       { data: viajesData,    error: errViajes },
       { data: vpData,        error: errVp },
+      { data: bycData,       error: errByc },
     ] = await Promise.all([
-      supabaseClient.from("pasajeros").select("id, Sexo"),
+      supabaseClient.from("pasajeros").select(`id, Sexo, "Documento de Identidad"`),
       supabaseClient.from("viajes")
         .select("id, nombre, fecha_salida, fecha_regreso, estado, puntos_destino")
         .order("fecha_salida", { ascending: false }),
       supabaseClient.from("viaje_pasajeros")
         .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero, Vendedor )"),
+      supabaseClient.from("basesycondiciones").select("id, ci, estado"),
     ]);
 
     if (errPas || errViajes || errVp) {
@@ -57,12 +60,14 @@ async function loadDashboard() {
       root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el panel.</div>`;
       return;
     }
+    if (errByc) console.warn("No se pudo cargar BYC:", errByc);
 
     const viajesMap = {};
     (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
 
     let html = "";
     html += renderKpisPasajeros(pasajerosData || [], vpData || []);
+    html += renderKpisByc(bycData || [], pasajerosData || []);
     html += renderViajesActivos(viajesData || [], vpData || []);
     html += renderTopPuntos2026(vpData || [], viajesMap);
 
@@ -149,6 +154,60 @@ function renderKpisPasajeros(pasajerosData, vpData) {
         <div class="dash-kpi-breakdown">
           <span class="dash-chip">⭐ Miembros: <strong>${miembros}</strong></span>
           <span class="dash-chip">No miembros: <strong>${noMiembros}</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── KPIs de BYC ─────────────────────────────────────────────
+function _normalizarCI(ci) {
+  return (ci || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
+}
+
+function renderKpisByc(bycData, pasajerosData) {
+  const totalByc     = bycData.length;
+  const aceptados    = bycData.filter(r => (r.estado || "").toLowerCase() === "aceptado");
+  const totalAcept   = aceptados.length;
+
+  // Set de CIs normalizados en pasajeros
+  const cisPasajeros = new Set(
+    pasajerosData.map(p => _normalizarCI(p["Documento de Identidad"]))
+  );
+
+  // De los aceptados, cuántos ya tienen CI en pasajeros
+  let vinculados = 0;
+  aceptados.forEach(r => {
+    if (r.ci && cisPasajeros.has(_normalizarCI(r.ci))) vinculados++;
+  });
+  const faltantes = totalAcept - vinculados;
+
+  const pctAcept = totalByc   > 0 ? Math.round((totalAcept  / totalByc)   * 100) : 0;
+  const pctVinc  = totalAcept > 0 ? Math.round((vinculados  / totalAcept) * 100) : 0;
+
+  return `
+  <div class="dash-section">
+    <div class="dash-section-title">
+      <span class="dash-icon">${_dashIcons.byc}</span>
+      Bases y condiciones
+    </div>
+    <div class="dash-kpi-grid">
+      <div class="dash-kpi-card">
+        <div class="dash-kpi-label">Aceptaron T&amp;C</div>
+        <div class="dash-kpi-value">${totalAcept}</div>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctAcept}%"></div></div>
+        <div class="dash-kpi-breakdown">
+          <span class="dash-chip">✅ Aceptados: <strong>${totalAcept}</strong></span>
+          <span class="dash-chip">Total BYC: <strong>${totalByc}</strong></span>
+        </div>
+      </div>
+      <div class="dash-kpi-card">
+        <div class="dash-kpi-label">En base de clientes</div>
+        <div class="dash-kpi-value">${vinculados}</div>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctVinc}%"></div></div>
+        <div class="dash-kpi-breakdown">
+          <span class="dash-chip">🔗 Vinculados: <strong>${vinculados}</strong></span>
+          <span class="dash-chip dash-chip--warn">⚠️ Faltan: <strong>${faltantes}</strong></span>
         </div>
       </div>
     </div>

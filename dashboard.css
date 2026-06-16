@@ -181,12 +181,10 @@
   display: flex; gap: .4rem; flex-wrap: wrap;
   margin-top: .65rem;
 }
-.dash-chip {
-  font-size: .7rem; color: var(--text-mid);
-  background: var(--bg2); border-radius: 20px;
-  padding: .2rem .6rem; white-space: nowrap;
-}
+.dash-chip { font-size: .7rem; color: var(--text-mid); background: var(--bg2); border-radius: 20px; padding: .2rem .6rem; white-space: nowrap; }
 .dash-chip strong { color: var(--text); }
+.dash-chip--warn { background: rgba(192,57,43,.10); color: #c0392b; }
+.dash-chip--warn strong { color: #c0392b; }
 
 .dash-bar-track {
   height: 7px; border-radius: 6px;
