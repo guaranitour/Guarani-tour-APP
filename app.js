@@ -97,6 +97,8 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     } else {
       navigateTo("home");
     }
+    // Mostrar novedades si el usuario no las vio aún
+    checkNovedades(user.email, currentUserRole);
   }
 }
 
