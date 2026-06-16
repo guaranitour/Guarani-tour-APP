@@ -246,6 +246,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vdash) _vdash.style.display = "none";
   const _vbyc = document.getElementById("view-byc");
   if (_vbyc) _vbyc.style.display = "none";
+  const _vbycv = document.getElementById("view-byc-vincular");
+  if (_vbycv) _vbycv.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
 
@@ -361,6 +363,19 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Estado ByC" }
     ]);
     initBycView();
+
+  }
+
+  else if (view === "byc-vincular") {
+
+    showEl("view-byc-vincular");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Estado ByC", action: () => navigateTo("byc") },
+      { label: "Pendientes de vincular" }
+    ]);
+    mostrarPaso1();
+    cargarPendientes();
 
   }
 

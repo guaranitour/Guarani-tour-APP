@@ -109,27 +109,22 @@ let _pasajeroSeleccionado = null;
 let _pasajerosCache = [];
 let _bycTouchBlocked = false; // Bloquea toques accidentales durante transiciones
 
-// ── Abrir modal ───────────────────────────────
-async function abrirPendientesVincular() {
-  const overlay = document.getElementById('byc-vincular-overlay');
-  overlay.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  mostrarPaso1();
-  await cargarPendientes();
+// ── Abrir vista ───────────────────────────────
+function abrirPendientesVincular() {
+  navigateTo('byc-vincular');
 }
 
 function cerrarPendientesVincular() {
-  _cerrarModalVincular();
+  navigateTo('byc');
 }
 
 function _cerrarModalVincular() {
-  document.getElementById('byc-vincular-overlay').style.display = 'none';
-  document.body.style.overflow = '';
   _pendienteSeleccionado = null;
   _pasajeroSeleccionado = null;
   _bycTouchBlocked = false;
   const inp = document.getElementById('byc-pendientes-search');
   if (inp) inp.value = '';
+  navigateTo('byc');
 }
 
 // ── Paso 1: cargar pendientes ─────────────────
