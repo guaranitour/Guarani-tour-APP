@@ -58,7 +58,7 @@
 }
 
 .pr-value {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: .95rem;
   font-weight: 700;
   color: var(--text);
@@ -205,7 +205,7 @@
 /* ── MONTO ──────────────────────────────────── */
 
 .pago-monto {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   font-weight: 700;
   white-space: nowrap;
@@ -229,7 +229,7 @@
   background: rgba(0,0,0,.05);
   padding: .15rem .45rem;
   border-radius: 6px;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
 }
 
 .pago-metodo {
@@ -391,7 +391,7 @@
 /* ══ DETALLE DE PAGO ═════════════════════════ */
 
 .pd-monto-valor {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 2rem;
   font-weight: 700;
   margin-top: .25rem;
@@ -563,7 +563,7 @@
 }
 
 .modal-transferir-monto {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1.6rem;
   font-weight: 700;
   color: #2d6a4f;

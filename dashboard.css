@@ -124,7 +124,7 @@
 
 .dash-section-title {
   display: flex; align-items: center; gap: .55rem;
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1.02rem; font-weight: 600;
   color: var(--text);
   margin-bottom: .7rem;
@@ -172,7 +172,7 @@
   margin-bottom: .25rem;
 }
 .dash-kpi-value {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1.65rem; font-weight: 700;
   color: var(--accent2);
   line-height: 1.1;

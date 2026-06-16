@@ -61,7 +61,7 @@
 }
 
 .viaje-card-nombre {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
@@ -181,7 +181,7 @@
   gap: .4rem;
   color: rgba(255,255,255,.7);
   font-size: .8rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Roboto', sans-serif;
   z-index: 1;
   transition: color .15s;
 }
@@ -271,7 +271,7 @@
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   font-weight: 700;
   display: flex;
