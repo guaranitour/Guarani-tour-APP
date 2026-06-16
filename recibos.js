@@ -81,7 +81,6 @@ function renderReciboCard(r) {
     <div class="recibo-card" onclick="navigateTo('recibo-detalle', ${r.id})">
       <div class="recibo-card-inner">
         <div class="recibo-card-left">
-          <span class="recibo-nro">#${r.recibo_nro || r.id}</span>
           <span class="recibo-cliente">${r.cliente || '—'}</span>
         </div>
         <div class="recibo-card-right">
