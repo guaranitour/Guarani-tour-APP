@@ -386,7 +386,7 @@ function actualizarPreviewLinkForm(url) {
   }
 }
 
-const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuNQvpfiulc2ts-aIyoiy6U0bc_ywAlnZ4t2WrDaQrEWd2AWQ2_eMVDQj2OefLEEtx3w/exec';
+const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8i_g5g1iG7Yb9xYq34dWv4UIq9CoAszM0sy_uKZfrRIEgGJaGgxAFBFBQ5b7bLAvRUw/exec';
 const APPSCRIPT_TOKEN = 'MI_TOKEN_SECRETO'; // ⚠️ debe coincidir con el token en Apps Script
 
 async function guardarNuevoRecibo() {
@@ -470,6 +470,7 @@ async function guardarNuevoRecibo() {
     banco:               document.getElementById('frec-banco').value.trim()       || null,
     comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
     abona_por:           abona_por,
+    usuario:             currentUserName || null,
     link:                linkPdf || null,
     ...(recibo_nro && { recibo_nro }),
   };
