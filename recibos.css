@@ -802,3 +802,83 @@
   cursor: default;
   font-style: italic;
 }
+
+/* ── Autocomplete cliente ───────────────────── */
+.frec-cliente-wrap {
+  position: relative;
+}
+
+.frec-cliente-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  z-index: 200;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.frec-cliente-dd-item {
+  padding: .55rem .75rem;
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background .12s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.frec-cliente-dd-item:hover {
+  background: var(--bg, #f0f5f2);
+}
+.frec-cliente-dd-nombre {
+  color: var(--text, #1a2e1e);
+  font-weight: 500;
+}
+.frec-cliente-dd-sub {
+  color: var(--text-light, #7a9a82);
+  font-size: .78rem;
+}
+.frec-cliente-dd-empty {
+  color: var(--text-light, #aaa);
+  cursor: default;
+  font-style: italic;
+}
+
+/* ── Campos bloqueados CI / Correo ──────────── */
+.frec-locked-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.frec-locked-wrap input {
+  flex: 1;
+}
+.frec-locked-wrap input[readonly] {
+  background: var(--bg, #f0f5f2);
+  color: var(--text-light, #7a9a82);
+  cursor: default;
+}
+
+.frec-unlock-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border, #d4e4db);
+  border-radius: 6px;
+  padding: 0 8px;
+  height: 36px;
+  font-size: 1rem;
+  color: var(--text-light, #7a9a82);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.frec-unlock-btn:hover {
+  background: var(--bg, #f0f5f2);
+  color: var(--primary, #2d6a4f);
+}

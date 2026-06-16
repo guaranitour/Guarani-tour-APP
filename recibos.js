@@ -242,10 +242,21 @@ function initReciboDetalleView(id) {
 
 // ── Vista nuevo recibo (página completa) ──────
 async function initReciboNuevoView() {
-  // Reset manual de campos (no form.reset() para evitar race conditions)
-  const ids = ['frec-cliente','frec-ci','frec-correo','frec-monto',
+  // Reset manual de campos
+  const ids = ['frec-cliente','frec-monto',
                 'frec-concepto','frec-comprobante','frec-banco-input','frec-banco'];
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+  // Reset CI y correo: vaciar y volver a readonly
+  ['frec-ci','frec-correo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.readOnly = true; }
+  });
+  // Mostrar botones de desbloqueo
+  ['btn-unlock-ci','btn-unlock-correo'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = '';
+  });
 
   const selForma = document.getElementById('frec-forma-pago');
   if (selForma) selForma.value = '';
@@ -264,12 +275,14 @@ async function initReciboNuevoView() {
   const errEl = document.getElementById('form-recibo-error');
   if (errEl) errEl.textContent = '';
 
-  // Cerrar dropdown banco si estuviera abierto
-  const dd = document.getElementById('frec-banco-dropdown');
-  if (dd) dd.style.display = 'none';
+  // Cerrar dropdowns si estuvieran abiertos
+  ['frec-banco-dropdown','frec-cliente-dropdown'].forEach(id => {
+    const dd = document.getElementById(id);
+    if (dd) dd.style.display = 'none';
+  });
 
   // Cargar datos
-  await Promise.all([cargarViajesActivosEnSelect(), cargarBancosEnSelect()]);
+  await Promise.all([cargarViajesActivosEnSelect(), cargarBancosEnSelect(), cargarClientesCache()]);
 }
 
 function toggleCamposTransferencia() {
@@ -288,6 +301,88 @@ function toggleCamposTransferencia() {
     const dd = document.getElementById('frec-banco-dropdown');
     if (dd) dd.style.display = 'none';
   }
+}
+
+// ── Autocomplete cliente (basesycondiciones) ──
+let _clientesCache = [];
+
+async function cargarClientesCache() {
+  if (_clientesCache.length > 0) return; // ya cargado
+  const { data, error } = await supabaseClient
+    .from('basesycondiciones')
+    .select('nombre, ci, email')
+    .order('nombre', { ascending: true });
+  if (!error && data) _clientesCache = data;
+}
+
+function filtrarClientesDropdown(q) {
+  const dd = document.getElementById('frec-cliente-dropdown');
+  if (!dd) return;
+  const termino = q.trim().toLowerCase();
+  const resultado = termino
+    ? _clientesCache.filter(c => (c.nombre || '').toLowerCase().includes(termino))
+    : _clientesCache.slice(0, 8);
+
+  if (resultado.length === 0) {
+    dd.innerHTML = '<div class="frec-cliente-dd-item frec-cliente-dd-empty">Sin coincidencias — podés ingresar manualmente</div>';
+  } else {
+    dd.innerHTML = resultado.map(c => {
+      const nombre = (c.nombre || '').replace(/'/g, "\\'");
+      const ci     = (c.ci    || '').replace(/'/g, "\\'");
+      const email  = (c.email || '').replace(/'/g, "\\'");
+      return `<div class="frec-cliente-dd-item" onmousedown="seleccionarCliente('${nombre}','${ci}','${email}')">
+        <span class="frec-cliente-dd-nombre">${c.nombre || '—'}</span>
+        <span class="frec-cliente-dd-sub">CI: ${c.ci || '—'} · ${c.email || 'sin correo'}</span>
+      </div>`;
+    }).join('');
+  }
+  dd.style.display = 'block';
+}
+
+function abrirClientesDropdown() {
+  const input = document.getElementById('frec-cliente');
+  filtrarClientesDropdown(input?.value || '');
+}
+
+function cerrarClientesDropdown() {
+  setTimeout(() => {
+    const dd = document.getElementById('frec-cliente-dropdown');
+    if (dd) dd.style.display = 'none';
+  }, 150);
+}
+
+function seleccionarCliente(nombre, ci, email) {
+  const inputNombre = document.getElementById('frec-cliente');
+  const inputCi     = document.getElementById('frec-ci');
+  const inputCorreo = document.getElementById('frec-correo');
+  const dd          = document.getElementById('frec-cliente-dropdown');
+
+  if (inputNombre) inputNombre.value = nombre;
+
+  // CI
+  if (inputCi) {
+    inputCi.value = ci;
+    inputCi.readOnly = !!ci; // readonly si tiene dato, editable si está vacío
+  }
+  const btnCi = document.getElementById('btn-unlock-ci');
+  if (btnCi) btnCi.style.display = ci ? '' : 'none';
+
+  // Correo
+  if (inputCorreo) {
+    inputCorreo.value = email;
+    inputCorreo.readOnly = !!email;
+  }
+  const btnCorreo = document.getElementById('btn-unlock-correo');
+  if (btnCorreo) btnCorreo.style.display = email ? '' : 'none';
+
+  if (dd) dd.style.display = 'none';
+}
+
+function desbloquearCampoCliente(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (input) { input.readOnly = false; input.focus(); }
+  if (btn)   btn.style.display = 'none';
 }
 
 // ── Autocomplete banco ────────────────────────

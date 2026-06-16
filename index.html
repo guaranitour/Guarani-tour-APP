@@ -1226,19 +1226,29 @@
       <div class="form-recibo-grid">
 
         <div class="form-recibo-row">
-          <div class="form-recibo-field" style="grid-column:1/3">
+          <div class="form-recibo-field frec-cliente-wrap" style="grid-column:1/3">
             <label for="frec-cliente">Cliente *</label>
-            <input id="frec-cliente" type="text" placeholder="Nombre completo" autocomplete="off" />
+            <input id="frec-cliente" type="text" placeholder="Buscar por nombre…" autocomplete="off"
+                   oninput="filtrarClientesDropdown(this.value)"
+                   onfocus="abrirClientesDropdown()"
+                   onblur="cerrarClientesDropdown()" />
+            <div id="frec-cliente-dropdown" class="frec-cliente-dropdown"></div>
           </div>
         </div>
         <div class="form-recibo-row">
           <div class="form-recibo-field">
             <label for="frec-ci">CI *</label>
-            <input id="frec-ci" type="text" placeholder="Nº documento" />
+            <div class="frec-locked-wrap">
+              <input id="frec-ci" type="text" placeholder="Nº documento" readonly />
+              <button type="button" class="frec-unlock-btn" id="btn-unlock-ci" onclick="desbloquearCampoCliente('frec-ci','btn-unlock-ci')" title="Editar manualmente">✎</button>
+            </div>
           </div>
           <div class="form-recibo-field">
             <label for="frec-correo">Correo *</label>
-            <input id="frec-correo" type="email" placeholder="correo@ejemplo.com" />
+            <div class="frec-locked-wrap">
+              <input id="frec-correo" type="email" placeholder="correo@ejemplo.com" readonly />
+              <button type="button" class="frec-unlock-btn" id="btn-unlock-correo" onclick="desbloquearCampoCliente('frec-correo','btn-unlock-correo')" title="Editar manualmente">✎</button>
+            </div>
           </div>
         </div>
 
