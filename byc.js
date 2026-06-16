@@ -107,6 +107,7 @@ let _pendientesFiltrados = [];
 let _pendienteSeleccionado = null;
 let _pasajeroSeleccionado = null;
 let _pasajerosCache = [];
+let _bycTouchBlocked = false; // Bloquea toques accidentales durante transiciones
 
 // ── Abrir modal ───────────────────────────────
 async function abrirPendientesVincular() {
@@ -126,6 +127,7 @@ function _cerrarModalVincular() {
   document.body.style.overflow = '';
   _pendienteSeleccionado = null;
   _pasajeroSeleccionado = null;
+  _bycTouchBlocked = false;
   const inp = document.getElementById('byc-pendientes-search');
   if (inp) inp.value = '';
 }
@@ -176,7 +178,7 @@ function renderPendientes(lista) {
   cont.innerHTML = `
     <div class="byc-pendientes-list">
       ${lista.map(r => `
-        <div class="byc-pendiente-row" onclick="seleccionarPendiente(${r.id})" ontouchend="event.preventDefault();seleccionarPendiente(${r.id})">
+        <div class="byc-pendiente-row" data-id="${r.id}">
           <div class="byc-row-left">
             <span class="byc-nombre">${r.nombre || '—'}</span>
             <span class="byc-ci">${r.ci || '—'}</span>
@@ -184,6 +186,24 @@ function renderPendientes(lista) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#aaa;flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>
         </div>`).join('')}
     </div>`;
+
+  // Eventos con control total: evita toques accidentales y pantalla negra
+  cont.querySelectorAll('.byc-pendiente-row').forEach(row => {
+    const id = parseInt(row.dataset.id);
+    let touchMoved = false;
+
+    row.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
+    row.addEventListener('touchmove',  () => { touchMoved = true;  }, { passive: true });
+    row.addEventListener('touchend', e => {
+      if (touchMoved || _bycTouchBlocked) return;
+      e.preventDefault(); // Cancela el click sintético posterior
+      seleccionarPendiente(id);
+    });
+    // Solo activo en desktop (en móvil el touchend ya previno el click)
+    row.addEventListener('click', () => {
+      if (!_bycTouchBlocked) seleccionarPendiente(id);
+    });
+  });
 }
 
 // ── Paso 2: seleccionar pendiente y buscar pasajero ──
@@ -220,8 +240,16 @@ async function seleccionarPendiente(id) {
       ${_pendienteSeleccionado.email ? `<span>${_pendienteSeleccionado.email}</span>` : ''}
     </div>`;
 
-  // Forzar repaint antes de cambiar de paso (evita pantalla negra en móvil)
-  requestAnimationFrame(() => mostrarPaso2());
+  // Bloquear toques durante la transición para evitar selecciones accidentales
+  _bycTouchBlocked = true;
+
+  // Doble rAF: primer frame aplica cambios DOM, segundo confirma el repaint
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      mostrarPaso2();
+      setTimeout(() => { _bycTouchBlocked = false; }, 400);
+    });
+  });
 }
 
 // ── Autocomplete pasajeros ────────────────────
@@ -353,7 +381,9 @@ function mostrarPaso2() {
 function volverPaso1() {
   _pendienteSeleccionado = null;
   _pasajeroSeleccionado = null;
+  _bycTouchBlocked = true;
   mostrarPaso1();
+  setTimeout(() => { _bycTouchBlocked = false; }, 400);
 }
 
 // ── Toast ─────────────────────────────────────
