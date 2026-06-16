@@ -112,8 +112,7 @@ async function abrirPendientesVincular() {
   await cargarPendientes();
 }
 
-function cerrarPendientesVincular(e) {
-  if (e && e.target !== document.getElementById('byc-vincular-overlay')) return;
+function cerrarPendientesVincular() {
   _cerrarModalVincular();
 }
 

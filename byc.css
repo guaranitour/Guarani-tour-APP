@@ -178,12 +178,9 @@
 /* ── Header toolbar (search + botón) ────────── */
 .byc-header-toolbar {
   display: flex;
-  align-items: center;
-  gap: .65rem;
+  flex-direction: column;
+  gap: .5rem;
   margin-bottom: 1rem;
-}
-.byc-header-toolbar .search-wrap {
-  flex: 1;
 }
 
 .byc-btn-pendientes {
