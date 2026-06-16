@@ -63,7 +63,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .9rem 1rem;
+  padding: .85rem 1rem;
   cursor: pointer;
   user-select: none;
   transition: background .15s;
@@ -75,23 +75,7 @@
 .recibos-grupo-info {
   display: flex;
   align-items: center;
-  gap: .75rem;
   min-width: 0;
-}
-
-.recibos-grupo-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--primary, #2d6a4f);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .95rem;
-  font-weight: 700;
-  flex-shrink: 0;
-  font-family: 'Lora', serif;
 }
 
 .recibos-grupo-datos {
@@ -129,8 +113,6 @@
 .recibos-grupo-body {
   display: none;
   border-top: 1px solid var(--border, #e8ede9);
-  padding: .5rem .75rem .75rem;
-  gap: .5rem;
   flex-direction: column;
 }
 
@@ -138,31 +120,31 @@
   display: flex;
 }
 
-/* ── Tarjeta de recibo ───────────────────────── */
+/* ── Tarjeta de recibo (fila con divisor) ────── */
 .recibo-card {
-  background: var(--bg, #f7faf8);
-  border: 1px solid var(--border, #e8ede9);
-  border-radius: 9px;
-  padding: .75rem .9rem;
+  padding: .7rem 1rem;
   cursor: pointer;
-  transition: box-shadow .15s, border-color .15s;
+  transition: background .12s;
+  border-bottom: 1px solid var(--border, #e8ede9);
+}
+.recibo-card:last-child {
+  border-bottom: none;
 }
 .recibo-card:hover {
-  border-color: var(--primary-light, #a8d5be);
-  box-shadow: 0 2px 8px rgba(45,106,79,.08);
+  background: var(--bg, #f7faf8);
 }
 
-.recibo-card-top {
+.recibo-card-inner {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: .5rem;
+  align-items: center;
+  gap: .75rem;
 }
 
 .recibo-card-left {
   display: flex;
-  flex-direction: column;
-  gap: .15rem;
+  align-items: center;
+  gap: .6rem;
   min-width: 0;
 }
 
@@ -170,22 +152,14 @@
   font-size: .72rem;
   font-weight: 600;
   color: var(--primary, #2d6a4f);
-  letter-spacing: .03em;
-  text-transform: uppercase;
+  letter-spacing: .02em;
+  flex-shrink: 0;
 }
 
 .recibo-cliente {
-  font-size: .9rem;
-  font-weight: 600;
+  font-size: .88rem;
+  font-weight: 500;
   color: var(--text, #1a2e1e);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recibo-concepto {
-  font-size: .78rem;
-  color: var(--text-light, #888);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -193,33 +167,17 @@
 
 .recibo-card-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: .15rem;
+  align-items: center;
+  gap: .5rem;
   flex-shrink: 0;
 }
 
 .recibo-monto {
-  font-size: .92rem;
+  font-size: .88rem;
   font-weight: 700;
   color: var(--text, #1a2e1e);
   white-space: nowrap;
 }
-
-.recibo-fecha {
-  font-size: .75rem;
-  color: var(--text-light, #aaa);
-}
-
-.recibo-card-bottom {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: .4rem;
-  margin-top: .5rem;
-}
-
-/* ── Badges de método de pago ────────────────── */
 .recibo-metodo-badge {
   display: inline-flex;
   align-items: center;

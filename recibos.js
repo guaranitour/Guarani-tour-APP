@@ -58,7 +58,6 @@ function renderizarRecibos(lista) {
       <div class="recibos-grupo">
         <div class="recibos-grupo-header" onclick="toggleGrupoRecibos(this)">
           <div class="recibos-grupo-info">
-            <div class="recibos-grupo-avatar">${inicialRecibo(clave)}</div>
             <div class="recibos-grupo-datos">
               <span class="recibos-grupo-nombre">${clave}</span>
               <span class="recibos-grupo-sub">${items.length} recibo${items.length !== 1 ? 's' : ''} · ${formatGs(totalGs)}</span>
@@ -74,28 +73,21 @@ function renderizarRecibos(lista) {
 }
 
 function renderReciboCard(r) {
-  const fecha = r.fecha ? formatFechaRecibo(r.fecha) : '—';
   const metodoBadge = r.forma_pago
     ? `<span class="recibo-metodo-badge recibo-metodo-${slugMetodo(r.forma_pago)}">${r.forma_pago}</span>`
     : '';
 
   return `
     <div class="recibo-card" onclick="navigateTo('recibo-detalle', ${r.id})">
-      <div class="recibo-card-top">
+      <div class="recibo-card-inner">
         <div class="recibo-card-left">
           <span class="recibo-nro">#${r.recibo_nro || r.id}</span>
           <span class="recibo-cliente">${r.cliente || '—'}</span>
-          <span class="recibo-concepto">${r.concepto || ''}</span>
         </div>
         <div class="recibo-card-right">
           <span class="recibo-monto">${formatGs(r.monto)}</span>
-          <span class="recibo-fecha">${fecha}</span>
+          ${metodoBadge}
         </div>
-      </div>
-      <div class="recibo-card-bottom">
-        ${metodoBadge}
-        ${r.banco ? `<span class="recibo-banco">${r.banco}</span>` : ''}
-        ${r.comprobante ? `<span class="recibo-comprobante-nro">Comp. ${r.comprobante}</span>` : ''}
       </div>
     </div>`;
 }
