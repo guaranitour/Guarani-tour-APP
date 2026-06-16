@@ -253,7 +253,7 @@
   font-size: 1rem;
   font-weight: 700;
   color: var(--text, #1a2e1e);
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .modal-recibo-close {
@@ -293,7 +293,7 @@
 }
 
 .recibo-doc-logo-text {
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--primary, #2d6a4f);
@@ -326,7 +326,7 @@
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text, #1a2e1e);
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .recibo-doc-fecha {
@@ -408,7 +408,7 @@
   font-size: 1.55rem;
   font-weight: 700;
   color: #fff;
-  font-family: 'Lora', serif;
+  font-family: 'Roboto', sans-serif;
   letter-spacing: -.01em;
 }
 

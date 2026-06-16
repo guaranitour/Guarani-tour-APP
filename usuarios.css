@@ -31,7 +31,7 @@
 .user-nombre-input {
   display: block;
   width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-size: .88rem;
   font-weight: 600;
   color: var(--text);
@@ -80,7 +80,7 @@
   border: 1px solid rgba(0,0,0,.12);
   border-radius: 8px;
   padding: .3rem .75rem .3rem .6rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-size: .78rem;
   font-weight: 500;
   cursor: pointer;
