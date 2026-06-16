@@ -1067,3 +1067,53 @@
   0%, 80%, 100% { opacity: 0; }
   40%            { opacity: 1; }
 }
+
+/* ── TOAST GLOBAL ──────────────────────────── */
+
+#app-toast {
+  position: fixed;
+  bottom: 5rem;           /* por encima del FAB */
+  left: 50%;
+  transform: translateX(-50%) translateY(1.5rem);
+  z-index: 9999;
+  min-width: 220px;
+  max-width: 88vw;
+  padding: .75rem 1.25rem;
+  border-radius: 12px;
+  font-size: .9rem;
+  font-weight: 500;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .22s ease, transform .22s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,.22);
+}
+
+#app-toast.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#app-toast.toast-success {
+  background: #1a7a4a;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+#app-toast.toast-error {
+  background: #8b2020;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+#app-toast.toast-warning {
+  background: #7a5a10;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+#app-toast.toast-info {
+  background: var(--glass-bg);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+}

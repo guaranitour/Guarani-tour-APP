@@ -866,19 +866,19 @@ async function guardarEdicionVP(vpId) {
 async function guardarPasajeroEnViaje() {
   try {
     if (!viajeActualId) {
-      alert("Error: no hay viaje seleccionado");
+      showToast("Error: no hay viaje seleccionado", "error");
       return;
     }
 
     if (!pasajeroSeleccionado) {
-      alert("Seleccioná un pasajero");
+      showToast("Seleccioná un pasajero", "warning");
       return;
     }
 
     const total = parseInt(document.getElementById("input-total").value);
 
     if (total == null || isNaN(total) || total < 0) {
-      alert("Ingresá un monto válido");
+      showToast("Ingresá un monto válido", "warning");
       return;
     }
 
@@ -924,16 +924,16 @@ const { error } = await supabaseClient
 
     if (error) {
       console.error("ERROR SUPABASE:", error);
-      alert("Error al guardar en base de datos");
+      showToast("Error al guardar en base de datos", "error");
       return;
     }
 
-    alert("✅ Pasajero agregado correctamente");
+    showToast("✅ Pasajero agregado correctamente", "success");
 
     navigateTo("viaje-detalle", viajeActualId);
   } catch (e) {
     console.error("ERROR GENERAL:", e);
-    alert("Error inesperado");
+    showToast("Error inesperado", "error");
   }
 }
 function buscarPasajero() {
