@@ -166,24 +166,18 @@ function _normalizarCI(ci) {
 }
 
 function renderKpisByc(bycData, pasajerosData) {
-  const totalByc     = bycData.length;
-  const aceptados    = bycData.filter(r => (r.estado || "").toLowerCase() === "aceptado");
-  const totalAcept   = aceptados.length;
+  const totalByc = bycData.length;
 
-  // Set de CIs normalizados en pasajeros
+  // Set de CIs normalizados en pasajeros (igual que cargarPendientes en byc.js)
   const cisPasajeros = new Set(
     pasajerosData.map(p => _normalizarCI(p["Documento de Identidad"]))
   );
 
-  // De los aceptados, cuántos ya tienen CI en pasajeros
-  let vinculados = 0;
-  aceptados.forEach(r => {
-    if (r.ci && cisPasajeros.has(_normalizarCI(r.ci))) vinculados++;
-  });
-  const faltantes = totalAcept - vinculados;
-
-  const pctAcept = totalByc   > 0 ? Math.round((totalAcept  / totalByc)   * 100) : 0;
-  const pctVinc  = totalAcept > 0 ? Math.round((vinculados  / totalAcept) * 100) : 0;
+  // Pendientes = están en ByC con CI pero NO tienen coincidencia en pasajeros
+  const pendientes = bycData.filter(r => r.ci && !cisPasajeros.has(_normalizarCI(r.ci)));
+  const faltantes  = pendientes.length;
+  const vinculados = totalByc - faltantes;
+  const pctVinc    = totalByc > 0 ? Math.round((vinculados / totalByc) * 100) : 0;
 
   return `
   <div class="dash-section">
@@ -193,21 +187,23 @@ function renderKpisByc(bycData, pasajerosData) {
     </div>
     <div class="dash-kpi-grid">
       <div class="dash-kpi-card">
-        <div class="dash-kpi-label">Aceptaron T&amp;C</div>
-        <div class="dash-kpi-value">${totalAcept}</div>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctAcept}%"></div></div>
-        <div class="dash-kpi-breakdown">
-          <span class="dash-chip">✅ Aceptados: <strong>${totalAcept}</strong></span>
-          <span class="dash-chip">Total BYC: <strong>${totalByc}</strong></span>
-        </div>
-      </div>
-      <div class="dash-kpi-card">
-        <div class="dash-kpi-label">En base de clientes</div>
-        <div class="dash-kpi-value">${vinculados}</div>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctVinc}%"></div></div>
+        <div class="dash-kpi-label">Total en ByC</div>
+        <div class="dash-kpi-value">${totalByc}</div>
         <div class="dash-kpi-breakdown">
           <span class="dash-chip">🔗 Vinculados: <strong>${vinculados}</strong></span>
-          <span class="dash-chip dash-chip--warn">⚠️ Faltan: <strong>${faltantes}</strong></span>
+          <span class="dash-chip dash-chip--warn">⚠️ Sin vincular: <strong>${faltantes}</strong></span>
+        </div>
+      </div>
+      <div class="dash-kpi-card clickable" onclick="navigateTo('byc-vincular')" style="cursor:pointer">
+        <div class="dash-kpi-label">Faltan vincular</div>
+        <div class="dash-kpi-value" style="color:${faltantes > 0 ? '#c9a84c' : '#2d6a4f'}">${faltantes}</div>
+        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctVinc}%"></div></div>
+        <div class="dash-kpi-breakdown">
+          <span class="dash-chip">${pctVinc}% ya en base de clientes</span>
+        </div>
+        <div style="margin-top:.6rem; font-size:.75rem; color:#3949ab; font-weight:500; display:flex; align-items:center; gap:.3rem;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Ir a pendientes
         </div>
       </div>
     </div>
