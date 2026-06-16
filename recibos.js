@@ -291,15 +291,15 @@ function toggleCamposTransferencia() {
 }
 
 // ── Autocomplete banco ────────────────────────
-let _bancosCache = [];
+let _bancosRecibosCache = [];
 
 function filtrarBancosDropdown(q) {
   const dd = document.getElementById('frec-banco-dropdown');
   if (!dd) return;
   const termino = q.trim().toLowerCase();
   const resultado = termino
-    ? _bancosCache.filter(b => b.toLowerCase().includes(termino))
-    : _bancosCache;
+    ? _bancosRecibosCache.filter(b => b.toLowerCase().includes(termino))
+    : _bancosRecibosCache;
 
   if (resultado.length === 0) {
     dd.innerHTML = '<div class="frec-banco-dd-item frec-banco-dd-empty">Sin resultados</div>';
@@ -359,7 +359,7 @@ async function cargarBancosEnSelect() {
     .order('banco_id', { ascending: true });
 
   if (!error && data) {
-    _bancosCache = data.map(b => b.banco_id);
+    _bancosRecibosCache = data.map(b => b.banco_id);
   }
 }
 
@@ -606,6 +606,3 @@ function mostrarToastRecibo(msg) {
   t.classList.add('recibo-toast--visible');
   setTimeout(() => t.classList.remove('recibo-toast--visible'), 2500);
 }
-window.cargarRecibos = cargarRecibos;
-window.initReciboDetalleView = initReciboDetalleView;
-window.initReciboNuevoView = initReciboNuevoView;
