@@ -21,7 +21,7 @@ const _NOVEDADES = [
     descripcion: "Tu panel de control central. Vas a encontrar el total de pasajeros, viajes activos, el ranking de puntos Club Destino y —si sos admin o worker— el comparativo de ingresos vs egresos de los últimos viajes.",
   },
   {
-    roles: ["admin", "worker"],
+    roles: null,
     icono: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
