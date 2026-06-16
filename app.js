@@ -467,6 +467,11 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Inicio", action: () => navigateTo("home") },
       { label: "Recibos" }
     ]);
+    // Ocultar botón "Nuevo" para viewer
+    const btnNuevoRecibo = document.querySelector(".btn-nuevo-recibo");
+    if (btnNuevoRecibo) {
+      btnNuevoRecibo.style.display = ["admin", "worker"].includes(currentUserRole) ? "" : "none";
+    }
     cargarRecibos();
 
   }
@@ -485,6 +490,10 @@ function navigateTo(view, idx = null, _fromHash = false) {
 
   else if (view === "recibo-nuevo") {
 
+    if (!["admin", "worker"].includes(currentUserRole)) {
+      navigateTo("recibos");
+      return;
+    }
     showEl("view-recibo-nuevo");
     updateBreadcrumb([
       { label: "Inicio",   action: () => navigateTo("home") },
