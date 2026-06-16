@@ -93,6 +93,11 @@ function slugByc(s) {
   return (s || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+// ── Normalizar CI (quita puntos, guiones y espacios para comparar) ──
+function normalizarCI(ci) {
+  return (ci || '').replace(/[\.\-\s]/g, '').trim().toLowerCase();
+}
+
 // ══════════════════════════════════════════════
 //  PENDIENTES DE VINCULAR
 // ══════════════════════════════════════════════
@@ -142,12 +147,12 @@ async function cargarPendientes() {
   }
 
   const cisPasajeros = new Set(
-    (pasRes.data || []).map(p => (p['Documento de Identidad'] || '').trim().toLowerCase())
+    (pasRes.data || []).map(p => normalizarCI(p['Documento de Identidad']))
   );
 
-  // Pendientes = están en byc pero NO en pasajeros
+  // Pendientes = están en byc pero NO en pasajeros (comparación normalizada)
   _pendientesLista = (bycRes.data || []).filter(r =>
-    r.ci && !cisPasajeros.has(r.ci.trim().toLowerCase())
+    r.ci && !cisPasajeros.has(normalizarCI(r.ci))
   );
   _pendientesFiltrados = [..._pendientesLista];
   renderPendientes(_pendientesFiltrados);
@@ -171,7 +176,7 @@ function renderPendientes(lista) {
   cont.innerHTML = `
     <div class="byc-pendientes-list">
       ${lista.map(r => `
-        <div class="byc-pendiente-row" onclick="seleccionarPendiente(${r.id})">
+        <div class="byc-pendiente-row" onclick="seleccionarPendiente(${r.id})" ontouchend="event.preventDefault();seleccionarPendiente(${r.id})">
           <div class="byc-row-left">
             <span class="byc-nombre">${r.nombre || '—'}</span>
             <span class="byc-ci">${r.ci || '—'}</span>
@@ -215,7 +220,8 @@ async function seleccionarPendiente(id) {
       ${_pendienteSeleccionado.email ? `<span>${_pendienteSeleccionado.email}</span>` : ''}
     </div>`;
 
-  mostrarPaso2();
+  // Forzar repaint antes de cambiar de paso (evita pantalla negra en móvil)
+  requestAnimationFrame(() => mostrarPaso2());
 }
 
 // ── Autocomplete pasajeros ────────────────────

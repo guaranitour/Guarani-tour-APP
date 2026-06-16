@@ -184,9 +184,11 @@
 }
 
 .byc-btn-pendientes {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: .4rem;
+  width: 100%;
   background: var(--surface, #fff);
   border: 1px solid var(--border, #d4e4db);
   border-radius: 8px;
@@ -196,7 +198,6 @@
   color: var(--text, #1a2e1e);
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
   font-family: inherit;
   transition: background .12s, border-color .12s;
 }
