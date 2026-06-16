@@ -252,6 +252,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vbycv) _vbycv.style.display = "none";
   const _fotoWrap = document.getElementById("pd-foto-wrap");
   if (_fotoWrap) _fotoWrap.style.display = "none";
+  const _vsa = document.getElementById("view-seleccion-asiento");
+  if (_vsa) _vsa.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -341,6 +343,18 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Viajes activos" }
     ]);
     loadViajes("activos");
+
+  }
+
+  else if (view === "seleccion-asiento") {
+
+    showEl("view-seleccion-asiento");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Selección de asiento" }
+    ]);
+    // Abrir automáticamente en nueva pestaña
+    window.open("https://guaranitour.github.io/reservas/#/Inicio", "_blank", "noopener,noreferrer");
 
   }
 

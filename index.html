@@ -219,6 +219,21 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </div>
+          <div class="home-card active" onclick="navigateTo('seleccion-asiento')">
+            <div class="card-icon" style="background:#e8eaf6; color:#3949ab">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                <line x1="4" y1="22" x2="4" y2="15"/>
+              </svg>
+            </div>
+            <div class="card-body">
+              <h3>Selección de asiento</h3>
+              <p>Elegí y asigná asientos para los pasajeros del viaje.</p>
+            </div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
           <div class="home-card active" id="card-usuarios" onclick="navigateTo('usuarios')" style="display:none">
   <div class="card-icon" style="background:#edf2ff; color:#3b5bdb">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -290,6 +305,26 @@
       <input type="text" id="historico-search" placeholder="Buscar viaje…" oninput="filtrarHistorico()" />
     </div>
     <div id="historico-list"></div>
+  </div>
+</div>
+
+<!-- VISTA SELECCIÓN DE ASIENTO -->
+<div id="view-seleccion-asiento" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Selección de asiento</h1>
+      <p class="page-desc">Asignación de asientos por pasajero</p>
+    </div>
+    <div id="seleccion-asiento-content" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; gap:1.2rem;">
+      <div style="font-size:3rem;">🪑</div>
+      <p style="color:#555; font-size:.95rem; text-align:center; max-width:300px;">Redirigiendo a la plataforma de selección de asientos…</p>
+      <a href="https://guaranitour.github.io/reservas/#/Inicio" target="_blank" rel="noopener noreferrer"
+         style="display:inline-flex; align-items:center; gap:.5rem; background:#3949ab; color:#fff; border-radius:10px; padding:.75rem 1.4rem; font-size:.93rem; font-weight:500; text-decoration:none; box-shadow:0 2px 8px rgba(57,73,171,.25); transition:background .15s;"
+         onmouseover="this.style.background='#283593'" onmouseout="this.style.background='#3949ab'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Abrir selección de asientos
+      </a>
+    </div>
   </div>
 </div>
 
