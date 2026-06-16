@@ -1,0 +1,78 @@
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: #f4f6f9;
+  color: #333;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  margin-top: 12px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+.card p {
+  color: #555;
+}
+
+.card ul {
+  padding-left: 18px;
+}
+
+.card li {
+  margin-top: 6px;
+}
+
+/* Intro especial */
+.intro {
+  background: #eef3f8;
+  font-weight: 400;
+}
+
+/* Footer */
+.footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.version {
+  margin-top: 4px;
+}
+``
