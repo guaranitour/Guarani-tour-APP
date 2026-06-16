@@ -81,12 +81,11 @@ function renderizarByc(lista) {
 
 // ── Fila de registro ──────────────────────────
 function renderBycRow(r) {
-  const estadoBadge  = r.estado      ? `<span class="byc-badge byc-estado-${slugByc(r.estado)}">${r.estado}</span>`           : '<span class="byc-badge byc-estado-sin">—</span>';
-  const envioBadge   = r.estado_envio ? `<span class="byc-badge byc-envio-${slugByc(r.estado_envio)}">${r.estado_envio}</span>` : '';
-  const emailInfo    = r.email
-    ? `<span class="byc-email">${r.email}${r.correo_duplicado ? ' <span class="byc-dup-tag">dup.</span>' : ''}</span>`
-    : '<span class="byc-email byc-email--vacio">Sin email</span>';
-  const linkBtn      = r.link
+  const fechaEnvio = r.estado_envio
+    ? `<span class="byc-fecha-envio">${r.estado_envio}</span>`
+    : '<span class="byc-fecha-envio byc-fecha-envio--vacia">Sin fecha de envío</span>';
+
+  const linkBtn = r.link
     ? `<a href="${r.link}" target="_blank" class="byc-link-btn" onclick="event.stopPropagation()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Ver
@@ -95,18 +94,16 @@ function renderBycRow(r) {
 
   return `
     <div class="byc-row">
-      <div class="byc-row-main">
+      <div class="byc-row-inner">
         <div class="byc-row-left">
           <span class="byc-nombre">${r.nombre || '—'}</span>
-          <span class="byc-ci">${r.ci || ''}</span>
+          <span class="byc-ci">${r.ci || '—'}</span>
+          ${fechaEnvio}
         </div>
         <div class="byc-row-right">
-          ${estadoBadge}
-          ${envioBadge}
           ${linkBtn}
         </div>
       </div>
-      <div class="byc-row-email">${emailInfo}</div>
     </div>`;
 }
 

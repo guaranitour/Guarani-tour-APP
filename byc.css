@@ -88,7 +88,7 @@
   background: var(--bg, #f7faf8);
 }
 
-.byc-row-main {
+.byc-row-inner {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -116,36 +116,17 @@
   color: var(--text-light, #999);
 }
 
-.byc-row-right {
-  display: flex;
-  align-items: center;
-  gap: .4rem;
-  flex-shrink: 0;
-}
-
-.byc-row-email {
-  margin-top: .25rem;
-}
-
-.byc-email {
-  font-size: .78rem;
+.byc-fecha-envio {
+  font-size: .75rem;
   color: var(--text-light, #7a9a82);
 }
-.byc-email--vacio {
-  color: var(--text-light, #bbb);
+.byc-fecha-envio--vacia {
+  color: var(--text-light, #ccc);
   font-style: italic;
 }
 
-.byc-dup-tag {
-  display: inline-block;
-  background: #fff3cd;
-  color: #856404;
-  font-size: .68rem;
-  font-weight: 600;
-  padding: .05rem .3rem;
-  border-radius: 4px;
-  margin-left: .2rem;
-  vertical-align: middle;
+.byc-row-right {
+  flex-shrink: 0;
 }
 
 /* ── Badges estado ───────────────────────────── */
