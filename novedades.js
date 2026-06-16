@@ -30,7 +30,7 @@ const _NOVEDADES = [
     </svg>`,
     color: "linear-gradient(135deg, #2d6a4f, #c9a84c)",
     nombre: "Recibos",
-    descripcion: "Creá, consultá y descargá recibos de pago en PDF. Podés buscar por cliente, CI o vendedor, y generar el comprobante directamente desde el sistema.",
+    descripcion: "Consultá y descargá recibos de pago en PDF. Podés buscar por cliente o CI, y generar el comprobante directamente desde el sistema si sos admin o worker.",
   },
   {
     roles: null,
