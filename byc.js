@@ -9,13 +9,6 @@ let bycFiltrados = [];
 function initBycView() {
   const search = document.getElementById('byc-search');
   if (search) search.value = '';
-
-  const filterEstado = document.getElementById('byc-filter-estado');
-  if (filterEstado) filterEstado.value = '';
-
-  const filterEnvio = document.getElementById('byc-filter-envio');
-  if (filterEnvio) filterEnvio.value = '';
-
   cargarByc();
 }
 
@@ -42,18 +35,11 @@ async function cargarByc() {
 // ── Filtrar ───────────────────────────────────
 function filtrarByc() {
   const q = (document.getElementById('byc-search')?.value || '').trim().toLowerCase();
-  const estado = document.getElementById('byc-filter-estado')?.value || '';
-  const envio  = document.getElementById('byc-filter-envio')?.value  || '';
 
-  bycFiltrados = todosLosRegistrosByc.filter(r => {
-    const matchQ = !q ||
-      (r.nombre || '').toLowerCase().includes(q) ||
-      (r.ci     || '').toLowerCase().includes(q) ||
-      (r.email  || '').toLowerCase().includes(q);
-    const matchEstado = !estado || (r.estado || '') === estado;
-    const matchEnvio  = !envio  || (r.estado_envio || '') === envio;
-    return matchQ && matchEstado && matchEnvio;
-  });
+  bycFiltrados = !q ? [...todosLosRegistrosByc] : todosLosRegistrosByc.filter(r =>
+    (r.nombre || '').toLowerCase().includes(q) ||
+    (r.ci     || '').toLowerCase().includes(q)
+  );
 
   renderizarByc(bycFiltrados);
 }
@@ -81,10 +67,6 @@ function renderizarByc(lista) {
 
 // ── Fila de registro ──────────────────────────
 function renderBycRow(r) {
-  const fechaEnvio = r.estado_envio
-    ? `<span class="byc-fecha-envio">${r.estado_envio}</span>`
-    : '<span class="byc-fecha-envio byc-fecha-envio--vacia">Sin fecha de envío</span>';
-
   const linkBtn = r.link
     ? `<a href="${r.link}" target="_blank" class="byc-link-btn" onclick="event.stopPropagation()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -98,7 +80,6 @@ function renderBycRow(r) {
         <div class="byc-row-left">
           <span class="byc-nombre">${r.nombre || '—'}</span>
           <span class="byc-ci">${r.ci || '—'}</span>
-          ${fechaEnvio}
         </div>
         <div class="byc-row-right">
           ${linkBtn}

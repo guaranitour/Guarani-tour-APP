@@ -237,33 +237,12 @@
       <h1>Estado ByC</h1>
       <p class="page-desc">Bases y condiciones por pasajero</p>
     </div>
-    <div class="byc-toolbar">
-      <div class="search-wrap">
+    <div class="search-wrap" style="margin-bottom:1rem">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
-        <input type="text" id="byc-search" placeholder="Buscar por nombre, CI o email…" oninput="filtrarByc()" />
+        <input type="text" id="byc-search" placeholder="Buscar por nombre o CI…" oninput="filtrarByc()" />
       </div>
-      <div class="byc-toolbar-top">
-        <span class="byc-count" id="byc-count"></span>
-        <div class="byc-filters">
-          <select id="byc-filter-estado" onchange="filtrarByc()">
-            <option value="">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Inactivo">Inactivo</option>
-            <option value="Completo">Completo</option>
-          </select>
-          <select id="byc-filter-envio" onchange="filtrarByc()">
-            <option value="">Todos los envíos</option>
-            <option value="Enviado">Enviado</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="No enviado">No enviado</option>
-            <option value="Sin email">Sin email</option>
-          </select>
-        </div>
-      </div>
-    </div>
     <div id="byc-cont"></div>
   </div>
 </div>
