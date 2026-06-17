@@ -1121,3 +1121,54 @@
   color: var(--text);
   border: 1px solid var(--glass-border);
 }
+
+/* ── Skeleton stale-while-revalidate ─────────────────────────────────────── */
+.viaje-pasajeros-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .5rem 0;
+}
+
+.vp-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  background: var(--card-bg, #1e2a24);
+  overflow: hidden;
+}
+
+.vp-sk-nombre {
+  flex: 1;
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--border,#2a3b31) 25%, var(--hover,#243029) 50%, var(--border,#2a3b31) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite;
+}
+
+.vp-sk-pill {
+  width: 72px;
+  height: 22px;
+  border-radius: 20px;
+  background: linear-gradient(90deg, var(--border,#2a3b31) 25%, var(--hover,#243029) 50%, var(--border,#2a3b31) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Indicador de revalidando (cuando hay caché y se está actualizando) */
+.swr-indicator {
+  font-size: .72rem;
+  color: var(--text-muted, #6b7f74);
+  text-align: right;
+  padding: 0 .25rem .4rem;
+  opacity: .7;
+}
