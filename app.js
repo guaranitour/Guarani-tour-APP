@@ -82,6 +82,9 @@ async function enterApp(user) {
  // 👇 OCULTAR USUARIOS SI NO ES ADMIN
 const card = document.getElementById("card-usuarios");
 if (card) card.style.display = data.role === "admin" ? "" : "none";
+  // 👇 MOVIMIENTOS BANCARIOS: solo admin y worker
+  const cardMov = document.getElementById("card-movimientos");
+  if (cardMov) cardMov.style.display = ["admin", "worker"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   if (!appReady) {
@@ -254,6 +257,10 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_fotoWrap) _fotoWrap.style.display = "none";
   const _vsa = document.getElementById("view-seleccion-asiento");
   if (_vsa) _vsa.style.display = "none";
+  const _vmov = document.getElementById("view-movimientos");
+  if (_vmov) _vmov.style.display = "none";
+  const _vmovn = document.getElementById("view-movimiento-nuevo");
+  if (_vmovn) _vmovn.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -545,6 +552,37 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Nuevo recibo" }
     ]);
     initReciboNuevoView();
+
+  }
+
+  else if (view === "movimientos") {
+
+    if (!["admin", "worker"].includes(currentUserRole)) {
+      navigateTo("home");
+      return;
+    }
+    showEl("view-movimientos");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Movimientos bancarios" }
+    ]);
+    cargarMovimientos();
+
+  }
+
+  else if (view === "movimiento-nuevo") {
+
+    if (!["admin", "worker"].includes(currentUserRole)) {
+      navigateTo("movimientos");
+      return;
+    }
+    showEl("view-movimiento-nuevo");
+    updateBreadcrumb([
+      { label: "Inicio",                  action: () => navigateTo("home") },
+      { label: "Movimientos bancarios",   action: () => navigateTo("movimientos") },
+      { label: "Nuevo movimiento" }
+    ]);
+    iniciarFormMovimiento();
 
   }
 }
@@ -1112,4 +1150,173 @@ async function loadHistorialViajes(idx) {
         </div>
       </div>`;
   }).join("");
+}
+
+// ── Movimientos bancarios ───────────────────────────────────
+let _todosMovimientos = [];
+
+function formatMonto(n) {
+  if (n == null) return "—";
+  return "Gs. " + Number(n).toLocaleString("es-PY");
+}
+
+async function cargarMovimientos() {
+  const listEl  = document.getElementById("mov-list");
+  const resEl   = document.getElementById("mov-resumen");
+  if (!listEl) return;
+
+  listEl.innerHTML = `<div class="list-state"><div class="icon">⏳</div>Cargando movimientos…</div>`;
+  if (resEl) resEl.innerHTML = "";
+
+  const { data, error } = await supabaseClient
+    .from("movimientos_bancarios")
+    .select("id, created_at, fecha, tipo, categoria, descripcion, monto, cuenta_beneficiaria, cuenta_emisora, usuario")
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    listEl.innerHTML = `<div class="list-state"><div class="icon">⚠️</div>Error al cargar movimientos.</div>`;
+    return;
+  }
+
+  _todosMovimientos = data || [];
+  renderMovimientos(_todosMovimientos);
+}
+
+function renderMovimientos(lista) {
+  const listEl = document.getElementById("mov-list");
+  const resEl  = document.getElementById("mov-resumen");
+
+  // Resumen
+  const totalIng = lista.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (m.monto || 0), 0);
+  const totalEgr = lista.filter(m => m.tipo === "egreso").reduce((s, m)  => s + (m.monto || 0), 0);
+  const balance  = totalIng - totalEgr;
+
+  if (resEl) {
+    resEl.innerHTML = `
+      <div style="flex:1; min-width:130px; background:#e8f5e9; border-radius:10px; padding:.75rem 1rem;">
+        <div style="font-size:.72rem; color:#388e3c; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Ingresos</div>
+        <div style="font-size:1rem; font-weight:700; color:#2e7d32; margin-top:.25rem;">${formatMonto(totalIng)}</div>
+      </div>
+      <div style="flex:1; min-width:130px; background:#fce4ec; border-radius:10px; padding:.75rem 1rem;">
+        <div style="font-size:.72rem; color:#c62828; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Egresos</div>
+        <div style="font-size:1rem; font-weight:700; color:#b71c1c; margin-top:.25rem;">${formatMonto(totalEgr)}</div>
+      </div>
+      <div style="flex:1; min-width:130px; background:${balance >= 0 ? '#e8f5e9' : '#fce4ec'}; border-radius:10px; padding:.75rem 1rem;">
+        <div style="font-size:.72rem; color:${balance >= 0 ? '#388e3c' : '#c62828'}; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Balance</div>
+        <div style="font-size:1rem; font-weight:700; color:${balance >= 0 ? '#2e7d32' : '#b71c1c'}; margin-top:.25rem;">${formatMonto(balance)}</div>
+      </div>`;
+  }
+
+  if (!lista.length) {
+    listEl.innerHTML = `<div class="list-state"><div class="icon">📭</div>No hay movimientos registrados.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = lista.map(m => {
+    const esIngreso = m.tipo === "ingreso";
+    const color     = esIngreso ? "#2e7d32" : "#b71c1c";
+    const bg        = esIngreso ? "#e8f5e9"  : "#fce4ec";
+    const signo     = esIngreso ? "+" : "−";
+    const fecha     = formatDate(m.fecha) || "—";
+    const cat       = m.categoria ? `<span style="font-size:.72rem; background:#f0f0f0; border-radius:5px; padding:1px 6px; color:#666;">${m.categoria}</span>` : "";
+    const cuentas   = [m.cuenta_emisora, m.cuenta_beneficiaria].filter(Boolean).join(" → ");
+
+    return `
+      <div style="background:#fff; border-radius:12px; padding:1rem; margin-bottom:.65rem; box-shadow:0 1px 4px rgba(0,0,0,.07); display:flex; gap:.9rem; align-items:flex-start;">
+        <div style="width:40px; height:40px; border-radius:10px; background:${bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2">
+            ${esIngreso
+              ? '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'
+              : '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>'}
+          </svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; margin-bottom:.2rem;">
+            <span style="font-weight:600; font-size:.93rem; color:#1a1a1a;">${m.descripcion || "Sin descripción"}</span>
+            ${cat}
+          </div>
+          <div style="font-size:.78rem; color:#888; display:flex; gap:.75rem; flex-wrap:wrap;">
+            <span>📅 ${fecha}</span>
+            ${cuentas ? `<span>🏦 ${cuentas}</span>` : ""}
+            ${m.usuario ? `<span>👤 ${m.usuario}</span>` : ""}
+          </div>
+        </div>
+        <div style="font-size:1rem; font-weight:700; color:${color}; white-space:nowrap;">${signo} ${formatMonto(m.monto)}</div>
+      </div>`;
+  }).join("");
+}
+
+function filtrarMovimientos() {
+  const q    = (document.getElementById("mov-search")?.value || "").toLowerCase();
+  const tipo = document.getElementById("mov-filtro-tipo")?.value || "";
+
+  const filtrado = _todosMovimientos.filter(m => {
+    const matchTipo = !tipo || m.tipo === tipo;
+    const matchQ    = !q ||
+      (m.descripcion || "").toLowerCase().includes(q) ||
+      (m.categoria   || "").toLowerCase().includes(q) ||
+      (m.cuenta_emisora || "").toLowerCase().includes(q) ||
+      (m.cuenta_beneficiaria || "").toLowerCase().includes(q) ||
+      (m.usuario || "").toLowerCase().includes(q);
+    return matchTipo && matchQ;
+  });
+
+  renderMovimientos(filtrado);
+}
+
+function iniciarFormMovimiento() {
+  // Fecha por defecto: hoy
+  const hoy = new Date().toISOString().split("T")[0];
+  const fechaEl = document.getElementById("mnv-fecha");
+  if (fechaEl) fechaEl.value = hoy;
+
+  // Limpiar campos
+  ["mnv-tipo","mnv-categoria","mnv-descripcion","mnv-monto","mnv-cuenta-emisora","mnv-cuenta-beneficiaria"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && id !== "mnv-fecha") el.value = "";
+  });
+  const errEl = document.getElementById("mnv-error");
+  if (errEl) errEl.textContent = "";
+  const btn = document.getElementById("btn-guardar-movimiento");
+  if (btn) { btn.disabled = false; btn.textContent = "Guardar"; }
+}
+
+async function guardarMovimiento() {
+  const errEl = document.getElementById("mnv-error");
+  if (errEl) errEl.textContent = "";
+
+  const fecha       = document.getElementById("mnv-fecha")?.value;
+  const tipo        = document.getElementById("mnv-tipo")?.value;
+  const descripcion = document.getElementById("mnv-descripcion")?.value.trim();
+  const monto       = document.getElementById("mnv-monto")?.value;
+
+  if (!fecha || !tipo || !descripcion || !monto) {
+    if (errEl) errEl.textContent = "Completá los campos obligatorios (fecha, tipo, descripción y monto).";
+    return;
+  }
+
+  const btn = document.getElementById("btn-guardar-movimiento");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+
+  const { error } = await supabaseClient
+    .from("movimientos_bancarios")
+    .insert([{
+      fecha,
+      tipo,
+      categoria:            document.getElementById("mnv-categoria")?.value.trim() || null,
+      descripcion,
+      monto:                Number(monto),
+      cuenta_emisora:       document.getElementById("mnv-cuenta-emisora")?.value.trim() || null,
+      cuenta_beneficiaria:  document.getElementById("mnv-cuenta-beneficiaria")?.value.trim() || null,
+      usuario:              document.getElementById("user-email")?.textContent || null,
+    }]);
+
+  if (error) {
+    if (errEl) errEl.textContent = "Error al guardar. Intentá de nuevo.";
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar"; }
+    return;
+  }
+
+  showToast("Movimiento guardado correctamente.", "success");
+  navigateTo("movimientos");
 }

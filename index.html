@@ -225,12 +225,14 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>
           </div>
-          <div class="home-card soon">
-            <div class="card-icon" style="background:#f5f5f0; color:#bbb">
+          <div class="home-card active" id="card-movimientos" onclick="navigateTo('movimientos')" style="display:none">
+            <div class="card-icon" style="background:#e8f5e9; color:#2e7d32">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
             <div class="card-body"><h3>Movimientos bancarios</h3><p>Registro y control de ingresos y egresos de caja.</p></div>
-            <span class="soon-badge">Próximamente</span>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
           </div>
           <div class="home-card active" id="card-usuarios" onclick="navigateTo('usuarios')" style="display:none">
   <div class="card-icon" style="background:#edf2ff; color:#3b5bdb">
@@ -1461,6 +1463,103 @@
 
       </div>
     </form>
+  </div>
+</div>
+
+<!-- VISTA: MOVIMIENTOS BANCARIOS -->
+<div id="view-movimientos" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Movimientos bancarios</h1>
+      <p class="page-desc">Registro y control de ingresos y egresos</p>
+    </div>
+
+    <!-- Toolbar: búsqueda + filtro tipo + botón nuevo -->
+    <div style="display:flex; gap:.6rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap;">
+      <div class="search-wrap" style="flex:1; min-width:160px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="mov-search" placeholder="Buscar descripción, cuenta…" oninput="filtrarMovimientos()" />
+      </div>
+      <select id="mov-filtro-tipo" onchange="filtrarMovimientos()" style="padding:.5rem .75rem; border-radius:8px; border:1px solid #ddd; font-size:.875rem; background:#fff;">
+        <option value="">Todos los tipos</option>
+        <option value="ingreso">Ingreso</option>
+        <option value="egreso">Egreso</option>
+      </select>
+      <button id="btn-nuevo-movimiento" onclick="navigateTo('movimiento-nuevo')"
+        style="display:flex; align-items:center; gap:.4rem; background:#2d6a4f; color:#fff; border:none; border-radius:8px; padding:.5rem 1rem; font-size:.875rem; font-weight:500; cursor:pointer; white-space:nowrap;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo
+      </button>
+    </div>
+
+    <!-- Resumen totales -->
+    <div id="mov-resumen" style="display:flex; gap:.75rem; margin-bottom:1.1rem; flex-wrap:wrap;"></div>
+
+    <!-- Lista -->
+    <div id="mov-list"></div>
+  </div>
+</div>
+
+<!-- VISTA: NUEVO MOVIMIENTO -->
+<div id="view-movimiento-nuevo" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Nuevo movimiento</h1>
+      <p class="page-desc">Completá los datos del movimiento bancario</p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1rem; max-width:560px;">
+
+      <div class="form-recibo-row">
+        <div class="form-recibo-field">
+          <label for="mnv-fecha">Fecha *</label>
+          <input id="mnv-fecha" type="date" />
+        </div>
+        <div class="form-recibo-field">
+          <label for="mnv-tipo">Tipo *</label>
+          <select id="mnv-tipo">
+            <option value="">— Seleccionar —</option>
+            <option value="ingreso">Ingreso</option>
+            <option value="egreso">Egreso</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-recibo-field">
+        <label for="mnv-categoria">Categoría</label>
+        <input id="mnv-categoria" type="text" placeholder="Ej: Combustible, Hospedaje…" />
+      </div>
+
+      <div class="form-recibo-field">
+        <label for="mnv-descripcion">Descripción *</label>
+        <textarea id="mnv-descripcion" rows="2" placeholder="Detallá el movimiento…"></textarea>
+      </div>
+
+      <div class="form-recibo-row">
+        <div class="form-recibo-field">
+          <label for="mnv-monto">Monto (Gs.) *</label>
+          <input id="mnv-monto" type="number" placeholder="0" min="0" />
+        </div>
+        <div class="form-recibo-field">
+          <label for="mnv-cuenta-emisora">Cuenta emisora</label>
+          <input id="mnv-cuenta-emisora" type="text" placeholder="Banco / cuenta origen" />
+        </div>
+      </div>
+
+      <div class="form-recibo-field">
+        <label for="mnv-cuenta-beneficiaria">Cuenta beneficiaria</label>
+        <input id="mnv-cuenta-beneficiaria" type="text" placeholder="Banco / cuenta destino" />
+      </div>
+
+      <p class="form-recibo-error" id="mnv-error"></p>
+
+      <div class="form-recibo-actions">
+        <button type="button" class="btn-recibo-cancelar" onclick="navigateTo('movimientos')">Cancelar</button>
+        <button type="button" class="btn-recibo-guardar" id="btn-guardar-movimiento" onclick="guardarMovimiento()">Guardar</button>
+      </div>
+    </div>
   </div>
 </div>
 
