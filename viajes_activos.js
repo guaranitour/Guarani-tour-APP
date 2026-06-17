@@ -354,131 +354,91 @@ async function loadViajeDetalle(viajeId) {
   viajeActualId = parseInt(viajeId, 10);
 
   const nombreEl = document.getElementById("detalle-viaje-nombre");
-  const infoEl   = document.getElementById("detalle-viaje-info");
-  const listEl   = document.getElementById("viaje-pasajeros-list");
+  const infoEl = document.getElementById("detalle-viaje-info");
+  const listEl = document.getElementById("viaje-pasajeros-list");
 
-  const esAdmin = Array.isArray(currentUserRole)
+  listEl.innerHTML = "Cargando...";
+
+  const { data: viaje } = await supabaseClient
+    .from("viajes")
+    .select("*")
+    .eq("id", viajeId)
+    .single();
+
+  if (!viaje) return;
+
+  // ✅ AHORA SÍ existe
+  viajeActualData = viaje;
+
+  nombreEl.textContent = viaje.nombre;
+  const estado = viaje.estado || "activo";
+
+  const esAdminDetalle = Array.isArray(currentUserRole)
     ? currentUserRole.includes("admin")
     : currentUserRole === "admin";
-  const esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin","worker"].includes(r))
-    : ["admin","worker"].includes(currentUserRole);
 
-  // ── Helper: aplicar datos a la UI ──────────────────────────────────────
-  function _aplicarDatos(viaje, pasajeros, pagosPorVP, bycSet) {
-    viajeActualData = viaje;
-    nombreEl.textContent = viaje.nombre;
-    const estado = viaje.estado || "activo";
+  infoEl.innerHTML = `
+    <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
+    ${viaje.puntos_destino ? `<span class="viaje-puntos" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
+    ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
+    ${esAdminDetalle ? `
+    <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Editar
+    </button>` : ""}
+  `;
 
-    infoEl.innerHTML = `
-      <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
-      ${viaje.puntos_destino ? `<span class="viaje-puntos" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
-      ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
-      ${esAdmin ? `
-      <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        Editar
-      </button>` : ""}
-    `;
 
-    const btnAgregar = document.getElementById("btn-agregar-vp");
-    if (btnAgregar) btnAgregar.style.display = "";
-
-    const tabEgresos = document.getElementById("tab-egresos");
-    if (tabEgresos) tabEgresos.style.display = esWorkerOAdmin ? "" : "none";
-    const tabPres = document.getElementById("tab-presupuesto");
-    if (tabPres) tabPres.style.display = esWorkerOAdmin ? "" : "none";
-    const tabRes = document.getElementById("tab-resumen");
-    if (tabRes) tabRes.style.display = esWorkerOAdmin ? "" : "none";
-
-    if (!pasajeros || pasajeros.length === 0) {
-      listEl.innerHTML = `
-        <div class="viaje-pasajeros-empty">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          Sin pasajeros aún
-        </div>`;
-      pasajerosDelViaje = [];
-      return;
-    }
-
-    _bycAceptados = bycSet;
-
-    pasajerosDelViaje = pasajeros.map(p => {
-      const _pgs         = pagosPorVP[p.id] || [];
-      const _pagado      = _pgs.filter(pg => pg.tipo === "Pago").reduce((s, pg) => s + (pg.monto || 0), 0);
-      const _devuelto    = _pgs.filter(pg => pg.tipo === "Devolución").reduce((s, pg) => s + (pg.monto || 0), 0);
-      const _transferido = _pgs.filter(pg => pg.tipo === "Transferencia").reduce((s, pg) => s + (pg.monto || 0), 0);
-      const total  = p.total_a_pagar || 0;
-      const neto   = _pagado - _devuelto - _transferido;
-      const esCanje = total === 0;
-      let _pillClass;
-      if (esCanje && neto > 0)            _pillClass = "excedente";
-      else if (esCanje)                   _pillClass = "canje";
-      else if (neto > total)              _pillClass = "excedente";
-      else if (total > 0 && neto >= total) _pillClass = "saldado";
-      else if (neto / (total || 1) >= 0.5) _pillClass = "parcial";
-      else                                _pillClass = "deuda";
-
-      return {
-        ...p,
-        _nombre    : p.pasajeros?.Pasajero || "Sin nombre",
-        _vendedor  : (p.pasajeros?.Vendedor || "").trim().replace(/\s+/g, " "),
-        _esMiembro : (p.puntos_destino || 0) > 0,
-        _pillClass,
-        _pagos     : _pgs,
-      };
-    });
-
-    const buscador = document.getElementById("buscador-vp");
-    if (buscador) buscador.value = "";
-    _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
-    const panelF = document.getElementById("filtro-panel-vp");
-    if (panelF) panelF.style.display = "none";
-
-    _inyectarUIFiltros();
-    _initSwipeTabsViaje();
-    renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
-  }
-
-  // ── 1. Render instantáneo desde caché si existe ─────────────────────────
-  const cached = _detalleCache[viajeActualId];
-  if (cached) {
-    _aplicarDatos(cached.viaje, cached.pasajeros, cached.pagosPorVP, cached.bycAceptados);
-    // Indicador sutil de revalidando
-    const ind = document.createElement("div");
-    ind.id = "swr-indicator";
-    ind.className = "swr-indicator";
-    ind.textContent = "Actualizando…";
-    listEl.parentElement?.insertBefore(ind, listEl);
-  } else {
-    listEl.innerHTML = `<div class="viaje-pasajeros-skeleton">${Array(4).fill('<div class="vp-skeleton-row"><div class="vp-sk-nombre"></div><div class="vp-sk-pill"></div></div>').join("")}</div>`;
-  }
-
-  // ── 2. Fetch en paralelo ────────────────────────────────────────────────
-  const [
-    { data: viaje },
-    { data: pasajeros, error: errPasajeros },
-    { data: bycData }
-  ] = await Promise.all([
-    supabaseClient.from("viajes").select("*").eq("id", viajeActualId).single(),
-    supabaseClient.from("viaje_pasajeros").select(`
-      id, pasajero_id, total_a_pagar, puntos_destino, asistencia,
+  const { data: pasajeros, error: errPasajeros } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select(`
+      id,
+      pasajero_id,
+      total_a_pagar,
+      puntos_destino,
+      asistencia,
       pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
-    `).eq("viaje_id", viajeActualId),
-    supabaseClient.from("basesycondiciones").select("ci")
-  ]);
+    `)
+    .eq("viaje_id", viajeId);
 
-  if (errPasajeros) console.error("Error cargando pasajeros:", errPasajeros);
-  if (!viaje) { document.getElementById("swr-indicator")?.remove(); return; }
+  if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
+  console.log("viaje_pasajeros result:", pasajeros, "error:", errPasajeros);
 
-  // ── 3. Pagos (necesita los IDs de pasajeros) ────────────────────────────
-  const vpIds = (pasajeros || []).map(p => p.id);
-  const { data: todosPagos } = vpIds.length
-    ? await supabaseClient.from("pagos").select("viaje_pasajero_id, monto, tipo").in("viaje_pasajero_id", vpIds)
-    : { data: [] };
+  // ── Consultar BYC para insignia de pendientes ──────────────────────────
+  _bycAceptados = new Set();
+  if (pasajeros && pasajeros.length > 0) {
+    const { data: bycData } = await supabaseClient
+      .from("basesycondiciones")
+      .select("ci");
+    (bycData || []).forEach(r => {
+      const norm = (r.ci || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
+      if (norm) _bycAceptados.add(norm);
+    });
+  }
+  // ───────────────────────────────────────────────────────────────────────
+
+  // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
+  const btnAgregarEarly = document.getElementById("btn-agregar-vp");
+  if (btnAgregarEarly) btnAgregarEarly.style.display = "";
+
+  if (!pasajeros || pasajeros.length === 0) {
+    listEl.innerHTML = `
+      <div class="viaje-pasajeros-empty">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Sin pasajeros aún
+      </div>`;
+    return;
+  }
+
+  // Traer pagos por separado para calcular restante
+  const vpIds = pasajeros.map(p => p.id);
+  const { data: todosPagos } = await supabaseClient
+    .from("pagos")
+    .select("viaje_pasajero_id, monto, tipo")
+    .in("viaje_pasajero_id", vpIds);
 
   const pagosPorVP = {};
   (todosPagos || []).forEach(pg => {
@@ -486,27 +446,67 @@ async function loadViajeDetalle(viajeId) {
     pagosPorVP[pg.viaje_pasajero_id].push(pg);
   });
 
-  const bycSet = new Set();
-  (bycData || []).forEach(r => {
-    const norm = (r.ci || "").replace(/[.\-\s]/g, "").trim().toLowerCase();
-    if (norm) bycSet.add(norm);
+  const esAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.includes("admin")
+    : currentUserRole === "admin";
+
+  const esWorkerOAdmin = Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin","worker"].includes(r))
+    : ["admin","worker"].includes(currentUserRole);
+
+  // Guardar para filtrado — incluye campos pre-calculados para los filtros
+  pasajerosDelViaje = pasajeros.map(p => {
+    const _pgs         = pagosPorVP[p.id] || [];
+    const _pagado      = _pgs.filter(pg => pg.tipo === "Pago").reduce((s, pg) => s + (pg.monto || 0), 0);
+    const _devuelto    = _pgs.filter(pg => pg.tipo === "Devolución").reduce((s, pg) => s + (pg.monto || 0), 0);
+    const _transferido = _pgs.filter(pg => pg.tipo === "Transferencia").reduce((s, pg) => s + (pg.monto || 0), 0);
+    const total  = p.total_a_pagar || 0;
+    const neto   = _pagado - _devuelto - _transferido;
+    const esCanje = total === 0;
+    let _pillClass;
+    if (esCanje && neto > 0)       _pillClass = "excedente";
+    else if (esCanje)              _pillClass = "canje";
+    else if (neto > total)         _pillClass = "excedente";
+    else if (total > 0 && neto >= total) _pillClass = "saldado";
+    else if (neto / (total || 1) >= 0.5) _pillClass = "parcial";
+    else                           _pillClass = "deuda";
+
+    return {
+      ...p,
+      _nombre    : p.pasajeros?.Pasajero || "Sin nombre",
+      _vendedor  : (p.pasajeros?.Vendedor || "").trim().replace(/\s+/g, " "),
+      _esMiembro : (p.puntos_destino || 0) > 0,
+      _pillClass,
+      _pagos     : _pgs,
+    };
   });
 
-  // ── 4. Comparar con caché para decidir si re-renderizar ─────────────────
-  const newHash = JSON.stringify({ pasajeros, todosPagos });
-  const oldHash = cached ? JSON.stringify({ pasajeros: cached.pasajeros, todosPagos: cached.todosPagos }) : null;
-  const cambio  = newHash !== oldHash;
+  // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
+  const btnAgregar = document.getElementById("btn-agregar-vp");
+  if (btnAgregar) btnAgregar.style.display = "";
 
-  // Guardar en caché siempre
-  _detalleCache[viajeActualId] = { viaje, pasajeros: pasajeros || [], pagosPorVP, bycAceptados: bycSet, todosPagos: todosPagos || [] };
+  // Mostrar tabs según rol
+  const tabEgresos = document.getElementById("tab-egresos");
+  if (tabEgresos) tabEgresos.style.display = esWorkerOAdmin ? "" : "none";
+  const tabPres = document.getElementById("tab-presupuesto");
+  if (tabPres) tabPres.style.display = esWorkerOAdmin ? "" : "none";
+  const tabRes = document.getElementById("tab-resumen");
+  if (tabRes) tabRes.style.display = esWorkerOAdmin ? "" : "none";
 
-  // Quitar indicador de revalidando
-  document.getElementById("swr-indicator")?.remove();
+  // Limpiar buscador y filtros al cargar
+  const buscador = document.getElementById("buscador-vp");
+  if (buscador) buscador.value = "";
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
+  const panelF = document.getElementById("filtro-panel-vp");
+  if (panelF) panelF.style.display = "none";
 
-  // Solo re-renderizar si no había caché o si los datos cambiaron
-  if (!cached || cambio) {
-    _aplicarDatos(viaje, pasajeros || [], pagosPorVP, bycSet);
-  }
+  // Inyectar botón filtro junto al buscador (solo una vez)
+  _inyectarUIFiltros();
+
+  // Habilitar swipe horizontal entre tabs (solo una vez)
+  _initSwipeTabsViaje();
+
+  renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
 }
 
 // Estado de filtros activos
@@ -878,7 +878,6 @@ async function guardarEdicionVP(vpId) {
   }
 
   cerrarEdicionVP();
-  delete _detalleCache[viajeActualId];
   loadViajeDetalle(viajeActualId);
 }
 async function guardarPasajeroEnViaje() {
@@ -948,7 +947,6 @@ const { error } = await supabaseClient
 
     showToast("✅ Pasajero agregado correctamente", "success");
 
-    delete _detalleCache[viajeActualId];
     navigateTo("viaje-detalle", viajeActualId);
   } catch (e) {
     console.error("ERROR GENERAL:", e);
