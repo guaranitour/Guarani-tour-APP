@@ -11,13 +11,6 @@ function formatMonto(n) {
   return "Gs. " + Number(n).toLocaleString("es-PY");
 }
 
-function _formatFechaCorta(fechaStr) {
-  if (!fechaStr) return "—";
-  const [y, m, d] = fechaStr.split("-");
-  if (!y || !m || !d) return fechaStr;
-  return `${d}/${m}/${y}`;
-}
-
 function _labelFecha(fechaStr) {
   if (!fechaStr) return "Sin fecha";
   const hoy  = new Date();
@@ -25,40 +18,28 @@ function _labelFecha(fechaStr) {
   const [y, m, d] = fechaStr.split("-").map(Number);
   const fecha = new Date(y, m - 1, d);
 
+  if (fecha.toDateString() === hoy.toDateString())  return "Hoy";
+  if (fecha.toDateString() === ayer.toDateString()) return "Ayer";
+
   const mismoAnio = fecha.getFullYear() === hoy.getFullYear();
-  const opts = mismoAnio
+  return fecha.toLocaleDateString("es-PY", mismoAnio
     ? { day: "numeric", month: "long", weekday: "long" }
-    : { day: "numeric", month: "long", year: "numeric", weekday: "long" };
-
-  if (
-    fecha.getDate()     === hoy.getDate() &&
-    fecha.getMonth()    === hoy.getMonth() &&
-    fecha.getFullYear() === hoy.getFullYear()
-  ) return "Hoy";
-
-  if (
-    fecha.getDate()     === ayer.getDate() &&
-    fecha.getMonth()    === ayer.getMonth() &&
-    fecha.getFullYear() === ayer.getFullYear()
-  ) return "Ayer";
-
-  return fecha.toLocaleDateString("es-PY", opts);
+    : { day: "numeric", month: "long", year: "numeric", weekday: "long" }
+  );
 }
 
 // ── Tarjeta bancaria ────────────────────────────────
 function _renderTarjetaBanco(totalIng, totalEgr, balance) {
   const card = document.getElementById("mov-banco-card");
   if (!card) return;
-  const esNegativo = balance < 0;
+  const esNeg = balance < 0;
 
   card.innerHTML = `
     <div class="banco-card">
+      <div class="banco-card__bg1"></div>
+      <div class="banco-card__bg2"></div>
 
-      <!-- Decoración fondo -->
-      <div class="banco-card__bg-circle1"></div>
-      <div class="banco-card__bg-circle2"></div>
-
-      <!-- Fila principal: info cuenta + saldo -->
+      <!-- Fila: nombre+número | saldo -->
       <div class="banco-card__top">
         <div class="banco-card__info">
           <span class="banco-card__nombre">Caja E.A.S.</span>
@@ -66,30 +47,24 @@ function _renderTarjetaBanco(totalIng, totalEgr, balance) {
         </div>
         <div class="banco-card__saldo-wrap">
           <span class="banco-card__saldo-label">Saldo</span>
-          <span class="banco-card__saldo-monto${esNegativo ? " negativo" : ""}">
-            ${formatMonto(Math.abs(balance))}${esNegativo ? `<span class="banco-card__neg-tag">(−)</span>` : ""}
+          <span class="banco-card__saldo-monto${esNeg ? " negativo" : ""}">
+            ${formatMonto(Math.abs(balance))}${esNeg ? `<em class="banco-card__neg">(−)</em>` : ""}
           </span>
         </div>
       </div>
 
-      <!-- Stats ingresos / egresos -->
+      <!-- Stats -->
       <div class="banco-card__stats">
         <div class="banco-card__stat">
-          <div class="banco-card__stat-label">
-            <span class="stat-dot ing"></span> Ingresos
-          </div>
+          <div class="banco-card__stat-label"><span class="stat-dot ing"></span>Ingresos</div>
           <div class="banco-card__stat-val">+ ${formatMonto(totalIng)}</div>
         </div>
-        <div class="banco-card__stat banco-card__stat--right">
-          <div class="banco-card__stat-label">
-            <span class="stat-dot egr"></span> Egresos
-          </div>
+        <div class="banco-card__stat banco-card__stat--sep">
+          <div class="banco-card__stat-label"><span class="stat-dot egr"></span>Egresos</div>
           <div class="banco-card__stat-val">− ${formatMonto(totalEgr)}</div>
         </div>
       </div>
-
-    </div>
-  `;
+    </div>`;
 }
 
 // ── Carga desde Supabase ────────────────────────────
@@ -97,7 +72,7 @@ async function cargarMovimientos() {
   const listEl = document.getElementById("mov-list");
   if (!listEl) return;
 
-  // Renderizar tarjeta con ceros mientras carga
+  // Mostrar tarjeta con ceros mientras carga
   _renderTarjetaBanco(0, 0, 0);
 
   listEl.innerHTML = `
@@ -124,17 +99,15 @@ async function cargarMovimientos() {
   renderMovimientos(_todosMovimientos);
 }
 
-// ── Render de lista ─────────────────────────────────
+// ── Render lista ────────────────────────────────────
 function renderMovimientos(lista) {
   const listEl = document.getElementById("mov-list");
   if (!listEl) return;
 
-  // Totales siempre sobre todos los datos (no solo filtrados)
-  const totalIngG = _todosMovimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (m.monto || 0), 0);
-  const totalEgrG = _todosMovimientos.filter(m => m.tipo === "egreso").reduce((s, m)  => s + (m.monto || 0), 0);
-  const balanceG  = totalIngG - totalEgrG;
-
-  _renderTarjetaBanco(totalIngG, totalEgrG, balanceG);
+  // Totales siempre sobre todos los datos
+  const totalIng = _todosMovimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (m.monto || 0), 0);
+  const totalEgr = _todosMovimientos.filter(m => m.tipo === "egreso").reduce((s, m)  => s + (m.monto || 0), 0);
+  _renderTarjetaBanco(totalIng, totalEgr, totalIng - totalEgr);
 
   const resEl = document.getElementById("mov-resumen");
   if (resEl) resEl.style.display = "none";
@@ -143,12 +116,11 @@ function renderMovimientos(lista) {
     listEl.innerHTML = `
       <div class="mov-estado">
         <div class="icon">📭</div>
-        <p>No hay movimientos${lista.length !== _todosMovimientos.length ? " que coincidan con el filtro" : " registrados"}.</p>
+        <p>No hay movimientos${lista.length !== _todosMovimientos.length ? " que coincidan" : " registrados"}.</p>
       </div>`;
     return;
   }
 
-  // Agrupar por fecha
   const grupos = {};
   lista.forEach(m => {
     const key = m.fecha || "sin-fecha";
@@ -157,51 +129,43 @@ function renderMovimientos(lista) {
   });
 
   let html = "";
-  Object.keys(grupos).forEach(fechaKey => {
-    html += `<div class="mov-fecha-group">${_labelFecha(fechaKey)}</div>`;
-    grupos[fechaKey].forEach(m => {
-      html += _renderMovItem(m);
-    });
+  Object.keys(grupos).forEach(k => {
+    html += `<div class="mov-fecha-group">${_labelFecha(k)}</div>`;
+    grupos[k].forEach(m => { html += _renderMovItem(m); });
   });
 
   listEl.innerHTML = html;
 }
 
 function _renderMovItem(m) {
-  const esIngreso = m.tipo === "ingreso";
-  const cls       = esIngreso ? "ing" : "egr";
-  const signo     = esIngreso ? "+" : "−";
-  const color     = esIngreso ? "#2e7d32" : "#c62828";
+  const esIng  = m.tipo === "ingreso";
+  const cls    = esIng ? "ing" : "egr";
+  const signo  = esIng ? "+" : "−";
+  const color  = esIng ? "#2e7d32" : "#c62828";
+  const icon   = esIng
+    ? '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'
+    : '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>';
 
-  const catHtml = m.categoria
-    ? `<span class="mov-item__categoria">${m.categoria}</span>`
-    : "";
+  const cat = m.categoria
+    ? `<span class="mov-item__categoria">${m.categoria}</span>` : "";
 
   const cuentas = [m.cuenta_emisora, m.cuenta_beneficiaria].filter(Boolean);
   const cuentasHtml = cuentas.length
     ? `<span class="mov-item__cuentas">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/>
+        </svg>
         ${cuentas.join(" → ")}
-       </span>`
-    : "";
-
-  const iconPath = esIngreso
-    ? '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'
-    : '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>';
+       </span>` : "";
 
   return `
     <div class="mov-item">
       <div class="mov-item__icon ${cls}">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2">
-          ${iconPath}
-        </svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2">${icon}</svg>
       </div>
       <div class="mov-item__body">
         <div class="mov-item__desc">${m.descripcion || "Sin descripción"}</div>
-        <div class="mov-item__meta">
-          ${catHtml}
-          ${cuentasHtml}
-        </div>
+        <div class="mov-item__meta">${cat}${cuentasHtml}</div>
       </div>
       <div class="mov-item__monto ${cls}">${signo} ${formatMonto(m.monto)}</div>
     </div>`;
@@ -215,11 +179,11 @@ function filtrarMovimientos() {
   const filtrado = _todosMovimientos.filter(m => {
     const matchTipo = !tipo || m.tipo === tipo;
     const matchQ    = !q ||
-      (m.descripcion          || "").toLowerCase().includes(q) ||
-      (m.categoria            || "").toLowerCase().includes(q) ||
-      (m.cuenta_emisora       || "").toLowerCase().includes(q) ||
-      (m.cuenta_beneficiaria  || "").toLowerCase().includes(q) ||
-      (m.usuario              || "").toLowerCase().includes(q);
+      (m.descripcion         || "").toLowerCase().includes(q) ||
+      (m.categoria           || "").toLowerCase().includes(q) ||
+      (m.cuenta_emisora      || "").toLowerCase().includes(q) ||
+      (m.cuenta_beneficiaria || "").toLowerCase().includes(q) ||
+      (m.usuario             || "").toLowerCase().includes(q);
     return matchTipo && matchQ;
   });
 
@@ -240,7 +204,6 @@ function iniciarFormMovimiento() {
 
   const errEl = document.getElementById("mnv-error");
   if (errEl) errEl.textContent = "";
-
   const btn = document.getElementById("btn-guardar-movimiento");
   if (btn) { btn.disabled = false; btn.textContent = "Guardar"; }
 }

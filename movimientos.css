@@ -3,47 +3,39 @@
    Guaraní Tour APP
    ══════════════════════════════════════════════════ */
 
-/* ── Tarjeta de cuenta bancaria ──────────────────── */
+/* ── Tarjeta bancaria ────────────────────────────── */
 .banco-card {
   position: relative;
   background: linear-gradient(135deg, #1a3a2a 0%, #2d6a4f 55%, #40916c 100%);
   border-radius: 20px;
-  padding: 1.25rem 1.4rem 1.25rem;
+  padding: 1.25rem 1.4rem;
   margin-bottom: 1.2rem;
   color: #fff;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(26, 58, 42, 0.35);
+  box-shadow: 0 8px 28px rgba(26,58,42,.35);
 }
 
-/* Decoración de fondo */
-.banco-card__bg-circle1 {
-  position: absolute;
-  top: -40px; right: -40px;
-  width: 160px; height: 160px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.06);
-  pointer-events: none;
+.banco-card__bg1 {
+  position: absolute; top: -40px; right: -40px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: rgba(255,255,255,.06); pointer-events: none;
 }
-.banco-card__bg-circle2 {
-  position: absolute;
-  bottom: -30px; right: 30px;
-  width: 100px; height: 100px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.04);
-  pointer-events: none;
+.banco-card__bg2 {
+  position: absolute; bottom: -30px; right: 30px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: rgba(255,255,255,.04); pointer-events: none;
 }
 
-/* ── Fila principal: nombre+cuenta | saldo ──────── */
+/* Fila principal */
 .banco-card__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
   position: relative;
 }
 
-/* Bloque izquierdo: nombre de cuenta + número */
 .banco-card__info {
   display: flex;
   flex-direction: column;
@@ -54,18 +46,16 @@
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
-  letter-spacing: .01em;
 }
 
 .banco-card__cuenta {
   font-family: 'Roboto Mono', monospace;
   font-size: .78rem;
-  font-weight: 400;
   color: rgba(255,255,255,.6);
   letter-spacing: .04em;
 }
 
-/* Bloque derecho: saldo */
+/* Saldo (derecha) */
 .banco-card__saldo-wrap {
   display: flex;
   flex-direction: column;
@@ -75,7 +65,7 @@
 }
 
 .banco-card__saldo-label {
-  font-size: .65rem;
+  font-size: .62rem;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -84,30 +74,27 @@
 
 .banco-card__saldo-monto {
   font-family: 'Roboto Mono', monospace;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #fff;
-  letter-spacing: .01em;
-  line-height: 1.15;
   text-align: right;
+  line-height: 1.2;
 }
+.banco-card__saldo-monto.negativo { color: #ff8a80; }
 
-.banco-card__saldo-monto.negativo {
-  color: #ff8a80;
-}
-
-.banco-card__neg-tag {
-  font-size: .75rem;
+.banco-card__neg {
+  font-style: normal;
+  font-size: .72rem;
   font-weight: 400;
   opacity: .7;
   margin-left: .2rem;
 }
 
-/* ── Stats ingresos / egresos ────────────────────── */
+/* Stats */
 .banco-card__stats {
   display: flex;
   gap: .75rem;
-  padding-top: .9rem;
+  padding-top: .85rem;
   border-top: 1px solid rgba(255,255,255,.15);
   position: relative;
 }
@@ -119,7 +106,7 @@
   gap: .15rem;
 }
 
-.banco-card__stat--right {
+.banco-card__stat--sep {
   border-left: 1px solid rgba(255,255,255,.12);
   padding-left: .75rem;
 }
@@ -135,9 +122,10 @@
   gap: .3rem;
 }
 
-.banco-card__stat-label .stat-dot {
+.stat-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
+  display: inline-block;
 }
 .stat-dot.ing { background: #69f0ae; }
 .stat-dot.egr { background: #ff8a80; }
@@ -149,7 +137,7 @@
   color: rgba(255,255,255,.9);
 }
 
-/* ── Toolbar: buscador + filtro ──────────────────── */
+/* ── Toolbar ─────────────────────────────────────── */
 .mov-toolbar-filters {
   display: flex;
   gap: .6rem;
@@ -169,11 +157,9 @@
   flex-shrink: 0;
   transition: border-color .15s;
 }
-.mov-filtro-select:focus {
-  border-color: #2d6a4f;
-}
+.mov-filtro-select:focus { border-color: #2d6a4f; }
 
-/* ── Botón Nuevo ─────────────────────────────────── */
+/* ── Botón nuevo ─────────────────────────────────── */
 .mov-btn-nuevo {
   display: flex;
   align-items: center;
@@ -207,7 +193,7 @@
   border-bottom: 1px solid #eef1f3;
 }
 
-/* ── Fila de movimiento ──────────────────────────── */
+/* ── Item de movimiento ──────────────────────────── */
 .mov-item {
   display: flex;
   align-items: flex-start;
@@ -218,7 +204,6 @@
   margin-bottom: .5rem;
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
   transition: box-shadow .15s, transform .1s;
-  cursor: default;
 }
 .mov-item:hover {
   box-shadow: 0 3px 12px rgba(0,0,0,.10);
@@ -236,10 +221,7 @@
 .mov-item__icon.ing { background: #e8f5e9; }
 .mov-item__icon.egr { background: #fce4ec; }
 
-.mov-item__body {
-  flex: 1;
-  min-width: 0;
-}
+.mov-item__body { flex: 1; min-width: 0; }
 
 .mov-item__desc {
   font-weight: 600;
@@ -291,29 +273,12 @@
   padding: 2.5rem 1rem;
   color: #aab3bb;
 }
-.mov-estado .icon {
-  font-size: 2rem;
-  margin-bottom: .5rem;
-}
-.mov-estado p {
-  font-size: .9rem;
-  margin: 0;
-}
-
-/* ── Vista formulario nuevo movimiento ───────────── */
-#view-movimiento-nuevo .main {
-  max-width: 560px;
-}
+.mov-estado .icon { font-size: 2rem; margin-bottom: .5rem; }
+.mov-estado p     { font-size: .9rem; margin: 0; }
 
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 480px) {
-  .banco-card__saldo-monto {
-    font-size: 1.15rem;
-  }
-  .banco-card {
-    padding: 1.1rem 1.2rem;
-  }
-  .banco-card__nombre {
-    font-size: .92rem;
-  }
+  .banco-card { padding: 1.1rem 1.1rem; }
+  .banco-card__saldo-monto { font-size: 1.1rem; }
+  .banco-card__nombre { font-size: .92rem; }
 }
