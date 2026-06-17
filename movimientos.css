@@ -1,0 +1,325 @@
+/* ══════════════════════════════════════════════════
+   movimientos.css — Módulo Movimientos Bancarios
+   Guaraní Tour APP
+   ══════════════════════════════════════════════════ */
+
+/* ── Tarjeta de cuenta bancaria ──────────────────── */
+.banco-card {
+  position: relative;
+  background: linear-gradient(135deg, #1a3a2a 0%, #2d6a4f 55%, #40916c 100%);
+  border-radius: 20px;
+  padding: 1.5rem 1.5rem 1.4rem;
+  margin-bottom: 1.4rem;
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(26, 58, 42, 0.35);
+}
+
+/* Decoración de fondo tipo tarjeta */
+.banco-card::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+.banco-card::after {
+  content: "";
+  position: absolute;
+  bottom: -30px;
+  right: 30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+
+/* Encabezado: banco + ícono */
+.banco-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+
+.banco-card__banco {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.banco-card__nombre {
+  font-size: .75rem;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.banco-card__cuenta {
+  font-family: 'Roboto Mono', monospace;
+  font-size: .92rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: .04em;
+}
+
+/* Ícono chip / banco derecha */
+.banco-card__chip {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Saldo principal */
+.banco-card__saldo-label {
+  font-size: .7rem;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: .3rem;
+}
+
+.banco-card__saldo-monto {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .01em;
+  line-height: 1.1;
+  margin-bottom: 1.2rem;
+}
+
+.banco-card__saldo-monto.negativo {
+  color: #ff8a80;
+}
+
+/* Fila de mini-stats ingresos / egresos */
+.banco-card__stats {
+  display: flex;
+  gap: .75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.banco-card__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .18rem;
+}
+
+.banco-card__stat-label {
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.banco-card__stat-label .stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.stat-dot.ing  { background: #69f0ae; }
+.stat-dot.egr  { background: #ff8a80; }
+
+.banco-card__stat-val {
+  font-family: 'Roboto Mono', monospace;
+  font-size: .88rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Toolbar de búsqueda / filtro ────────────────── */
+.mov-toolbar {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.mov-toolbar .search-wrap {
+  flex: 1;
+  min-width: 160px;
+}
+
+.mov-filtro-select {
+  padding: .5rem .75rem;
+  border-radius: 10px;
+  border: 1px solid #dde2e6;
+  font-size: .875rem;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+}
+.mov-filtro-select:focus {
+  border-color: #2d6a4f;
+}
+
+.mov-btn-nuevo {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, transform .1s;
+}
+.mov-btn-nuevo:hover  { background: #1a5235; }
+.mov-btn-nuevo:active { transform: scale(.97); }
+
+/* ── Agrupadores de fecha ────────────────────────── */
+.mov-fecha-group {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #9aa5ae;
+  padding: .4rem .25rem .3rem;
+  margin-top: .6rem;
+  margin-bottom: .35rem;
+  border-bottom: 1px solid #eef1f3;
+}
+
+/* ── Fila de movimiento ──────────────────────────── */
+.mov-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  padding: .85rem .9rem;
+  background: #fff;
+  border-radius: 14px;
+  margin-bottom: .5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+  transition: box-shadow .15s, transform .1s;
+  cursor: default;
+}
+.mov-item:hover {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .10);
+  transform: translateY(-1px);
+}
+
+/* Ícono lateral */
+.mov-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mov-item__icon.ing { background: #e8f5e9; }
+.mov-item__icon.egr { background: #fce4ec; }
+
+/* Cuerpo texto */
+.mov-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mov-item__desc {
+  font-weight: 600;
+  font-size: .92rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: .18rem;
+}
+
+.mov-item__meta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+.mov-item__categoria {
+  font-size: .68rem;
+  background: #f0f3f5;
+  border-radius: 5px;
+  padding: 1px 6px;
+  color: #6b7a85;
+  font-weight: 500;
+}
+
+.mov-item__cuentas {
+  font-size: .75rem;
+  color: #9aa5ae;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+
+/* Monto derecha */
+.mov-item__monto {
+  font-family: 'Roboto Mono', monospace;
+  font-size: .97rem;
+  font-weight: 700;
+  white-space: nowrap;
+  align-self: center;
+}
+.mov-item__monto.ing { color: #2e7d32; }
+.mov-item__monto.egr { color: #c62828; }
+
+/* ── Estado vacío / cargando ─────────────────────── */
+.mov-estado {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #aab3bb;
+}
+.mov-estado .icon {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+}
+.mov-estado p {
+  font-size: .9rem;
+  margin: 0;
+}
+
+/* ── Vista formulario nuevo movimiento ───────────── */
+#view-movimiento-nuevo .main {
+  max-width: 560px;
+}
+
+.mnv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Responsive tweaks ───────────────────────────── */
+@media (max-width: 480px) {
+  .banco-card__saldo-monto {
+    font-size: 1.45rem;
+  }
+  .banco-card {
+    padding: 1.2rem 1.2rem 1.2rem;
+  }
+}
