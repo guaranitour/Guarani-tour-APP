@@ -771,7 +771,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     <div class="viaje-pasajero-row">
       <div class="vp-info" style="cursor:pointer;flex:1;min-width:0"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
-        <div class="vp-nombre">${nombre}${sinByc ? `<span class="byc-pendiente-dot" title="No aceptó ByC"></span>` : ""}</div>
+        <div class="vp-nombre${sinByc ? " byc-pendiente" : ""}">${nombre}</div>
       </div>
       <div class="vp-pills" style="cursor:pointer"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
