@@ -1478,14 +1478,8 @@
     <!-- Tarjeta bancaria (contenido inyectado por movimientos.js) -->
     <div id="mov-banco-card"></div>
 
-    <!-- Fila: buscador + filtro tipo -->
+    <!-- Filtro tipo -->
     <div class="mov-toolbar-filters">
-      <div class="search-wrap" style="flex:1; min-width:0;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input type="text" id="mov-search" placeholder="Buscar descripción, cuenta…" oninput="filtrarMovimientos()" />
-      </div>
       <select id="mov-filtro-tipo" class="mov-filtro-select" onchange="filtrarMovimientos()">
         <option value="">Todos los tipos</option>
         <option value="ingreso">Ingreso</option>

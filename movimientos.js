@@ -138,25 +138,15 @@ function renderMovimientos(lista) {
 }
 
 function _renderMovItem(m) {
-  const esIng  = m.tipo === "ingreso";
-  const cls    = esIng ? "ing" : "egr";
-  const signo  = esIng ? "+" : "−";
-  const color  = esIng ? "#2e7d32" : "#c62828";
-  const icon   = esIng
+  const esIng = m.tipo === "ingreso";
+  const cls   = esIng ? "ing" : "egr";
+  const signo = esIng ? "+" : "−";
+  const color = esIng ? "#2e7d32" : "#c62828";
+  const icon  = esIng
     ? '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'
     : '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>';
 
-  const cat = m.categoria
-    ? `<span class="mov-item__categoria">${m.categoria}</span>` : "";
-
-  const cuentas = [m.cuenta_emisora, m.cuenta_beneficiaria].filter(Boolean);
-  const cuentasHtml = cuentas.length
-    ? `<span class="mov-item__cuentas">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/>
-        </svg>
-        ${cuentas.join(" → ")}
-       </span>` : "";
+  const cat = m.categoria || (esIng ? "Ingreso" : "Egreso");
 
   return `
     <div class="mov-item">
@@ -164,8 +154,7 @@ function _renderMovItem(m) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2">${icon}</svg>
       </div>
       <div class="mov-item__body">
-        <div class="mov-item__desc">${m.descripcion || "Sin descripción"}</div>
-        <div class="mov-item__meta">${cat}${cuentasHtml}</div>
+        <span class="mov-item__categoria">${cat}</span>
       </div>
       <div class="mov-item__monto ${cls}">${signo} ${formatMonto(m.monto)}</div>
     </div>`;

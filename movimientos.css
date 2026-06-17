@@ -221,40 +221,17 @@
 .mov-item__icon.ing { background: #e8f5e9; }
 .mov-item__icon.egr { background: #fce4ec; }
 
-.mov-item__body { flex: 1; min-width: 0; }
-
-.mov-item__desc {
-  font-weight: 600;
-  font-size: .92rem;
-  color: #1a1a1a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: .18rem;
-}
-
-.mov-item__meta {
+.mov-item__body {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: .5rem;
-  flex-wrap: wrap;
 }
 
 .mov-item__categoria {
-  font-size: .68rem;
-  background: #f0f3f5;
-  border-radius: 5px;
-  padding: 1px 6px;
-  color: #6b7a85;
-  font-weight: 500;
-}
-
-.mov-item__cuentas {
-  font-size: .75rem;
-  color: #9aa5ae;
-  display: flex;
-  align-items: center;
-  gap: .25rem;
+  font-size: .88rem;
+  font-weight: 600;
+  color: #333;
 }
 
 .mov-item__monto {
