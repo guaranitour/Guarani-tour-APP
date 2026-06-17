@@ -50,7 +50,6 @@ function _labelFecha(fechaStr) {
 function _renderTarjetaBanco(totalIng, totalEgr, balance) {
   const card = document.getElementById("mov-banco-card");
   if (!card) return;
-
   const esNegativo = balance < 0;
 
   card.innerHTML = `

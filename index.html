@@ -1474,10 +1474,10 @@
       <p class="page-desc">Registro y control de ingresos y egresos</p>
     </div>
 
-    <!-- Tarjeta bancaria (rellenada por movimientos.js) -->
+    <!-- Tarjeta bancaria (contenido inyectado por movimientos.js) -->
     <div id="mov-banco-card"></div>
 
-    <!-- Fila 1: búsqueda + filtro -->
+    <!-- Fila: buscador + filtro tipo -->
     <div class="mov-toolbar-filters">
       <div class="search-wrap" style="flex:1; min-width:0;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1492,13 +1492,15 @@
       </select>
     </div>
 
-    <!-- Fila 2: botón Nuevo -->
+    <!-- Botón nuevo — ancho completo -->
     <button id="btn-nuevo-movimiento" class="mov-btn-nuevo" onclick="navigateTo('movimiento-nuevo')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
       Nuevo movimiento
     </button>
 
-    <!-- Lista -->
+    <!-- Lista de movimientos -->
     <div id="mov-list"></div>
   </div>
 </div>
