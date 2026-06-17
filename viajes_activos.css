@@ -292,6 +292,22 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+/* Insignia ByC pendiente */
+.byc-pendiente-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e07b39;
+  opacity: .85;
+  vertical-align: middle;
+  cursor: default;
 }
 
 .vp-ci {

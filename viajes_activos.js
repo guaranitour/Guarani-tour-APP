@@ -2,6 +2,8 @@ let viajeActualId = null;
 let pasajeroSeleccionado = null;
 let viajeActualData = null;
 let pasajerosDelViaje = [];
+// CIs normalizados presentes en basesycondiciones (aceptaron ByC)
+let _bycAceptados = new Set();
 /* ─────────────────────────────────────────────
    viajes_activos.js — Gestión de viajes
 ───────────────────────────────────────────── */
@@ -405,6 +407,19 @@ async function loadViajeDetalle(viajeId) {
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
   console.log("viaje_pasajeros result:", pasajeros, "error:", errPasajeros);
 
+  // ── Consultar BYC para insignia de pendientes ──────────────────────────
+  _bycAceptados = new Set();
+  if (pasajeros && pasajeros.length > 0) {
+    const { data: bycData } = await supabaseClient
+      .from("basesycondiciones")
+      .select("ci");
+    (bycData || []).forEach(r => {
+      const norm = (r.ci || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
+      if (norm) _bycAceptados.add(norm);
+    });
+  }
+  // ───────────────────────────────────────────────────────────────────────
+
   // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
   const btnAgregarEarly = document.getElementById("btn-agregar-vp");
   if (btnAgregarEarly) btnAgregarEarly.style.display = "";
@@ -720,6 +735,8 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     const nombreE  = nombre.replace(/'/g, "\\'");
     const pid      = p.pasajero_id || p.pasajeros?.id || "";
     const total    = p.total_a_pagar || 0;
+    const ciNorm   = (p.pasajeros?.["Documento de Identidad"] || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
+    const sinByc   = !ciNorm || !_bycAceptados.has(ciNorm);
     const esCanje  = total === 0;
     const _pgs         = pagosPorVP[p.id] || [];
     const _pagado      = _pgs.filter(pg => pg.tipo === "Pago").reduce((s, pg) => s + (pg.monto || 0), 0);
@@ -754,7 +771,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     <div class="viaje-pasajero-row">
       <div class="vp-info" style="cursor:pointer;flex:1;min-width:0"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
-        <div class="vp-nombre">${nombre}</div>
+        <div class="vp-nombre">${nombre}${sinByc ? `<span class="byc-pendiente-dot" title="No aceptó ByC"></span>` : ""}</div>
       </div>
       <div class="vp-pills" style="cursor:pointer"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
