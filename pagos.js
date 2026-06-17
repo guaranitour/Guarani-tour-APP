@@ -80,8 +80,7 @@ function filtrarBancos() {
 
   dropdown.innerHTML = matches.map(b =>
     `<div class="banco-option"
-      onmousedown="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')"
-      ontouchstart="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
+      onpointerdown="event.preventDefault(); seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
       ${b.banco_id}
     </div>`
   ).join("");
