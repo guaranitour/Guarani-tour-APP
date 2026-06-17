@@ -79,7 +79,7 @@ function filtrarBancos() {
   }
 
   dropdown.innerHTML = matches.map(b =>
-    `<div class="banco-option" onclick="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\'")}')">
+    `<div class="banco-option" onmousedown="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\'")}')">
       ${b.banco_id}
     </div>`
   ).join("");
@@ -95,7 +95,7 @@ function seleccionarBanco(id, nombre) {
 
 // Cerrar dropdown al hacer click afuera
 document.addEventListener("click", e => {
-  if (!e.target.closest(".banco-search-wrap")) {
+  if (!e.target.closest(".banco-search-wrap") && !e.target.closest("#banco-dropdown")) {
     const dd = document.getElementById("banco-dropdown");
     if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
   }
