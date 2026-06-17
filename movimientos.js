@@ -18,11 +18,10 @@ function _formatFechaCorta(fechaStr) {
   return `${d}/${m}/${y}`;
 }
 
-// Agrupa los movimientos por fecha (YYYY-MM-DD → label legible)
 function _labelFecha(fechaStr) {
   if (!fechaStr) return "Sin fecha";
-  const hoy   = new Date();
-  const ayer  = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+  const hoy  = new Date();
+  const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
   const [y, m, d] = fechaStr.split("-").map(Number);
   const fecha = new Date(y, m - 1, d);
 
@@ -54,25 +53,23 @@ function _renderTarjetaBanco(totalIng, totalEgr, balance) {
 
   card.innerHTML = `
     <div class="banco-card">
-      <!-- Encabezado -->
-      <div class="banco-card__header">
-        <div class="banco-card__banco">
-          <span class="banco-card__nombre">Banco Continental</span>
+
+      <!-- Decoración fondo -->
+      <div class="banco-card__bg-circle1"></div>
+      <div class="banco-card__bg-circle2"></div>
+
+      <!-- Fila principal: info cuenta + saldo -->
+      <div class="banco-card__top">
+        <div class="banco-card__info">
+          <span class="banco-card__nombre">Caja E.A.S.</span>
           <span class="banco-card__cuenta">Nro 1441004705</span>
         </div>
-        <div class="banco-card__chip">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.8">
-            <rect x="2" y="6" width="20" height="14" rx="3"/>
-            <path d="M2 10h20"/>
-            <path d="M6 14h2"/><path d="M10 14h4"/>
-          </svg>
+        <div class="banco-card__saldo-wrap">
+          <span class="banco-card__saldo-label">Saldo</span>
+          <span class="banco-card__saldo-monto${esNegativo ? " negativo" : ""}">
+            ${formatMonto(Math.abs(balance))}${esNegativo ? `<span class="banco-card__neg-tag">(−)</span>` : ""}
+          </span>
         </div>
-      </div>
-
-      <!-- Saldo -->
-      <div class="banco-card__saldo-label">Saldo disponible</div>
-      <div class="banco-card__saldo-monto${esNegativo ? " negativo" : ""}">
-        ${formatMonto(Math.abs(balance))}${esNegativo ? "<span style='font-size:.9rem;font-weight:400;opacity:.7'> (negativo)</span>" : ""}
       </div>
 
       <!-- Stats ingresos / egresos -->
@@ -83,13 +80,14 @@ function _renderTarjetaBanco(totalIng, totalEgr, balance) {
           </div>
           <div class="banco-card__stat-val">+ ${formatMonto(totalIng)}</div>
         </div>
-        <div class="banco-card__stat" style="border-left:1px solid rgba(255,255,255,.12); padding-left:.75rem;">
+        <div class="banco-card__stat banco-card__stat--right">
           <div class="banco-card__stat-label">
             <span class="stat-dot egr"></span> Egresos
           </div>
           <div class="banco-card__stat-val">− ${formatMonto(totalEgr)}</div>
         </div>
       </div>
+
     </div>
   `;
 }
@@ -97,15 +95,16 @@ function _renderTarjetaBanco(totalIng, totalEgr, balance) {
 // ── Carga desde Supabase ────────────────────────────
 async function cargarMovimientos() {
   const listEl = document.getElementById("mov-list");
-  const resEl  = document.getElementById("mov-resumen");
   if (!listEl) return;
+
+  // Renderizar tarjeta con ceros mientras carga
+  _renderTarjetaBanco(0, 0, 0);
 
   listEl.innerHTML = `
     <div class="mov-estado">
       <div class="icon">⏳</div>
       <p>Cargando movimientos…</p>
     </div>`;
-  if (resEl) resEl.innerHTML = "";
 
   const { data, error } = await supabaseClient
     .from("movimientos_bancarios")
@@ -130,15 +129,13 @@ function renderMovimientos(lista) {
   const listEl = document.getElementById("mov-list");
   if (!listEl) return;
 
-  // Totales globales SIEMPRE sobre todos los datos (no solo filtrados)
+  // Totales siempre sobre todos los datos (no solo filtrados)
   const totalIngG = _todosMovimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (m.monto || 0), 0);
   const totalEgrG = _todosMovimientos.filter(m => m.tipo === "egreso").reduce((s, m)  => s + (m.monto || 0), 0);
   const balanceG  = totalIngG - totalEgrG;
 
-  // Siempre re-renderizar tarjeta con totales globales
   _renderTarjetaBanco(totalIngG, totalEgrG, balanceG);
 
-  // Ocultar el div #mov-resumen (ya no se usa, la tarjeta lo reemplaza)
   const resEl = document.getElementById("mov-resumen");
   if (resEl) resEl.style.display = "none";
 
