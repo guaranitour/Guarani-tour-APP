@@ -147,17 +147,11 @@
 }
 
 /* ── Toolbar de búsqueda / filtro ────────────────── */
-.mov-toolbar {
+.mov-toolbar-filters {
   display: flex;
   gap: .6rem;
   align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.mov-toolbar .search-wrap {
-  flex: 1;
-  min-width: 160px;
+  margin-bottom: .6rem;
 }
 
 .mov-filtro-select {
@@ -170,6 +164,7 @@
   cursor: pointer;
   outline: none;
   transition: border-color .15s;
+  flex-shrink: 0;
 }
 .mov-filtro-select:focus {
   border-color: #2d6a4f;
@@ -178,20 +173,22 @@
 .mov-btn-nuevo {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  justify-content: center;
+  gap: .5rem;
+  width: 100%;
   background: #2d6a4f;
   color: #fff;
   border: none;
   border-radius: 10px;
-  padding: .5rem 1rem;
-  font-size: .875rem;
+  padding: .7rem 1rem;
+  font-size: .9rem;
   font-weight: 500;
   cursor: pointer;
-  white-space: nowrap;
+  margin-bottom: 1rem;
   transition: background .15s, transform .1s;
 }
 .mov-btn-nuevo:hover  { background: #1a5235; }
-.mov-btn-nuevo:active { transform: scale(.97); }
+.mov-btn-nuevo:active { transform: scale(.98); }
 
 /* ── Agrupadores de fecha ────────────────────────── */
 .mov-fecha-group {

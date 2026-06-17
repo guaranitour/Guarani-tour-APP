@@ -48,20 +48,8 @@ function _labelFecha(fechaStr) {
 
 // ── Tarjeta bancaria ────────────────────────────────
 function _renderTarjetaBanco(totalIng, totalEgr, balance) {
-  // Busca o crea el contenedor de la tarjeta (antes del toolbar)
-  let card = document.getElementById("mov-banco-card");
-  if (!card) {
-    card = document.createElement("div");
-    card.id = "mov-banco-card";
-    const toolbar = document.querySelector("#view-movimientos .mov-toolbar")
-      || document.getElementById("mov-toolbar-wrap");
-    const parent  = document.getElementById("view-movimientos")?.querySelector(".main");
-    if (toolbar && toolbar.parentNode === parent) {
-      parent.insertBefore(card, toolbar);
-    } else if (parent) {
-      parent.prepend(card);
-    }
-  }
+  const card = document.getElementById("mov-banco-card");
+  if (!card) return;
 
   const esNegativo = balance < 0;
 
@@ -119,10 +107,6 @@ async function cargarMovimientos() {
       <p>Cargando movimientos…</p>
     </div>`;
   if (resEl) resEl.innerHTML = "";
-
-  // Limpiar tarjeta anterior si existe
-  const cardVieja = document.getElementById("mov-banco-card");
-  if (cardVieja) cardVieja.remove();
 
   const { data, error } = await supabaseClient
     .from("movimientos_bancarios")
