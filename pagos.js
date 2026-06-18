@@ -83,7 +83,9 @@ function filtrarBancos() {
 
   dropdown.innerHTML = matches.map(b =>
     `<div class="banco-option"
-      onpointerdown="event.preventDefault(); seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
+      onmousedown="event.preventDefault();"
+      ontouchstart="event.preventDefault();"
+      onclick="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
       ${b.banco_id}
     </div>`
   ).join("");
@@ -91,9 +93,10 @@ function filtrarBancos() {
 
   input.onblur = () => {
     setTimeout(() => {
+      if (_ignorarFiltro) return;
       const dd = document.getElementById("banco-dropdown");
       if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
-    }, 150);
+    }, 300);
   };
 }
 
