@@ -125,11 +125,13 @@ document.addEventListener("DOMContentLoaded", () => {
   hideEl("app-view");
 
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    hideEl("splash-view");
     if (session?.user) enterApp(session.user);
     else showLogin();
   });
 
   supabaseClient.auth.onAuthStateChange((_event, session) => {
+    hideEl("splash-view");
     if (session?.user) enterApp(session.user);
     else showLogin();
   });
