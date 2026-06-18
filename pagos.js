@@ -101,15 +101,16 @@ function filtrarBancos() {
 }
 
 function seleccionarBanco(id, nombre) {
-  _bancoPendienteSeleccion = false;
   document.getElementById("pago-banco").value       = id;
   document.getElementById("pago-banco-input").value = nombre;
   const dropdown = document.getElementById("banco-dropdown");
   if (dropdown) { dropdown.innerHTML = ""; dropdown.style.display = "none"; }
+  _bancoPendienteSeleccion = false;
 }
 
 // Cerrar dropdown al hacer click afuera
 document.addEventListener("click", e => {
+  if (_bancoPendienteSeleccion) return;
   if (!e.target.closest(".banco-search-wrap") && !e.target.closest("#banco-dropdown")) {
     const dd = document.getElementById("banco-dropdown");
     if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
