@@ -1540,7 +1540,9 @@
 
       <div class="form-recibo-field">
         <label for="mnv-categoria">Categoría</label>
-        <input id="mnv-categoria" type="text" placeholder="Ej: Combustible, Hospedaje…" />
+        <select id="mnv-categoria">
+          <option value="">— Seleccionar tipo primero —</option>
+        </select>
       </div>
 
       <div class="form-recibo-field">
@@ -1555,13 +1557,19 @@
         </div>
         <div class="form-recibo-field">
           <label for="mnv-cuenta-emisora">Cuenta emisora</label>
-          <input id="mnv-cuenta-emisora" type="text" placeholder="Banco / cuenta origen" />
+          <select id="mnv-cuenta-emisora">
+            <option value="Caja E.A.S">Caja E.A.S</option>
+          </select>
         </div>
       </div>
 
       <div class="form-recibo-field">
         <label for="mnv-cuenta-beneficiaria">Cuenta beneficiaria</label>
-        <input id="mnv-cuenta-beneficiaria" type="text" placeholder="Banco / cuenta destino" />
+        <select id="mnv-cuenta-beneficiaria">
+          <option value="">— Seleccionar —</option>
+          <option value="UENO JAMIL">UENO JAMIL</option>
+          <option value="UENO OSCAR">UENO OSCAR</option>
+        </select>
       </div>
 
       <p class="form-recibo-error" id="mnv-error"></p>

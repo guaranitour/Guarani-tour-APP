@@ -180,16 +180,41 @@ function filtrarMovimientos() {
 }
 
 // ── Formulario nuevo movimiento ─────────────────────
+const _catPorTipo = {
+  ingreso: ["Pasaje", "Club Destino", "Servicio"],
+  egreso:  ["Préstamo", "Pérdida", "Inversión", "Club Destino"],
+};
+
+function actualizarCategoriasMovimiento() {
+  const tipo = document.getElementById("mnv-tipo")?.value;
+  const sel  = document.getElementById("mnv-categoria");
+  if (!sel) return;
+  const opciones = _catPorTipo[tipo] || [];
+  sel.innerHTML = opciones.length
+    ? `<option value="">— Seleccionar —</option>` + opciones.map(c => `<option value="${c}">${c}</option>`).join("")
+    : `<option value="">— Seleccionar tipo primero —</option>`;
+}
+
 function iniciarFormMovimiento() {
   const hoy = new Date().toISOString().split("T")[0];
   const fechaEl = document.getElementById("mnv-fecha");
   if (fechaEl) fechaEl.value = hoy;
 
-  ["mnv-tipo","mnv-categoria","mnv-descripcion","mnv-monto",
-   "mnv-cuenta-emisora","mnv-cuenta-beneficiaria"].forEach(id => {
+  ["mnv-tipo","mnv-descripcion","mnv-monto","mnv-cuenta-beneficiaria"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+
+  // Cuenta emisora siempre es Caja E.A.S
+  const emisora = document.getElementById("mnv-cuenta-emisora");
+  if (emisora) emisora.value = "Caja E.A.S";
+
+  // Resetear categorías
+  actualizarCategoriasMovimiento();
+
+  // Escuchar cambio de tipo para actualizar categorías
+  const tipoEl = document.getElementById("mnv-tipo");
+  if (tipoEl) tipoEl.onchange = actualizarCategoriasMovimiento;
 
   const errEl = document.getElementById("mnv-error");
   if (errEl) errEl.textContent = "";
