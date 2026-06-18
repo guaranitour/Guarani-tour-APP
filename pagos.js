@@ -57,7 +57,6 @@ async function initPagosView(ctx) {
 }
 
 /* ── BÚSQUEDA DE BANCO ──────────────────────── */
-let _bancoPendienteSeleccion = false;
 
 function filtrarBancos() {
   const input    = document.getElementById("pago-banco-input");
@@ -82,8 +81,7 @@ function filtrarBancos() {
 
   dropdown.innerHTML = matches.map(b =>
     `<div class="banco-option"
-      onpointerdown="_bancoPendienteSeleccion = true; event.preventDefault();"
-      onclick="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
+      onpointerdown="event.preventDefault(); seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
       ${b.banco_id}
     </div>`
   ).join("");
@@ -91,12 +89,9 @@ function filtrarBancos() {
 
   input.onblur = () => {
     setTimeout(() => {
-      if (!_bancoPendienteSeleccion) {
-        const dd = document.getElementById("banco-dropdown");
-        if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
-      }
-      _bancoPendienteSeleccion = false;
-    }, 200);
+      const dd = document.getElementById("banco-dropdown");
+      if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
+    }, 150);
   };
 }
 
@@ -105,12 +100,10 @@ function seleccionarBanco(id, nombre) {
   document.getElementById("pago-banco-input").value = nombre;
   const dropdown = document.getElementById("banco-dropdown");
   if (dropdown) { dropdown.innerHTML = ""; dropdown.style.display = "none"; }
-  _bancoPendienteSeleccion = false;
 }
 
 // Cerrar dropdown al hacer click afuera
 document.addEventListener("click", e => {
-  if (_bancoPendienteSeleccion) return;
   if (!e.target.closest(".banco-search-wrap") && !e.target.closest("#banco-dropdown")) {
     const dd = document.getElementById("banco-dropdown");
     if (dd) { dd.innerHTML = ""; dd.style.display = "none"; }
