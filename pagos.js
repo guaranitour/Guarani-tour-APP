@@ -85,7 +85,7 @@ function filtrarBancos() {
     `<div class="banco-option"
       onmousedown="event.preventDefault();"
       ontouchstart="event.preventDefault();"
-      onclick="seleccionarBanco(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
+      onclick="seleccionarBancoPago(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
       ${b.banco_id}
     </div>`
   ).join("");
@@ -100,7 +100,7 @@ function filtrarBancos() {
   };
 }
 
-function seleccionarBanco(id, nombre) {
+function seleccionarBancoPago(id, nombre) {
   _ignorarFiltro = true;
   document.getElementById("pago-banco").value       = id;
   document.getElementById("pago-banco-input").value = nombre;
