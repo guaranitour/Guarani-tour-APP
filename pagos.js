@@ -84,7 +84,7 @@ function filtrarBancos() {
   dropdown.innerHTML = matches.map(b =>
     `<div class="banco-option"
       onmousedown="event.preventDefault();"
-      ontouchstart="event.preventDefault();"
+      ontouchend="event.preventDefault(); seleccionarBancoPago(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}');"
       onclick="seleccionarBancoPago(${b.id}, '${b.banco_id.replace(/'/g, "\\'")}')">
       ${b.banco_id}
     </div>`
