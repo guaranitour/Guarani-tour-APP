@@ -57,8 +57,10 @@ async function initPagosView(ctx) {
 }
 
 /* ── BÚSQUEDA DE BANCO ──────────────────────── */
+let _ignorarFiltro = false;
 
 function filtrarBancos() {
+  if (_ignorarFiltro) { _ignorarFiltro = false; return; }
   const input    = document.getElementById("pago-banco-input");
   const hidden   = document.getElementById("pago-banco");
   const dropdown = document.getElementById("banco-dropdown");
@@ -96,6 +98,7 @@ function filtrarBancos() {
 }
 
 function seleccionarBanco(id, nombre) {
+  _ignorarFiltro = true;
   document.getElementById("pago-banco").value       = id;
   document.getElementById("pago-banco-input").value = nombre;
   const dropdown = document.getElementById("banco-dropdown");
