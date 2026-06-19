@@ -195,26 +195,67 @@ function actualizarCategoriasMovimiento() {
     : `<option value="">— Seleccionar tipo primero —</option>`;
 }
 
+function actualizarCuentasPorTipo() {
+  const tipo    = document.getElementById("mnv-tipo")?.value;
+  const emisora = document.getElementById("mnv-cuenta-emisora");
+  const benef   = document.getElementById("mnv-cuenta-beneficiaria");
+  if (!emisora || !benef) return;
+
+  if (tipo === "ingreso") {
+    // Emisora: UENO JAMIL / UENO OSCAR (seleccionable)
+    emisora.innerHTML = `
+      <option value="">— Seleccionar —</option>
+      <option value="UENO JAMIL">UENO JAMIL</option>
+      <option value="UENO OSCAR">UENO OSCAR</option>`;
+    emisora.disabled = false;
+
+    // Beneficiaria: fijo Caja E.A.S
+    benef.innerHTML = `<option value="Caja E.A.S">Caja E.A.S</option>`;
+    benef.disabled = true;
+
+  } else if (tipo === "egreso") {
+    // Emisora: fijo Caja E.A.S
+    emisora.innerHTML = `<option value="Caja E.A.S">Caja E.A.S</option>`;
+    emisora.disabled = true;
+
+    // Beneficiaria: UENO JAMIL / UENO OSCAR (seleccionable)
+    benef.innerHTML = `
+      <option value="">— Seleccionar —</option>
+      <option value="UENO JAMIL">UENO JAMIL</option>
+      <option value="UENO OSCAR">UENO OSCAR</option>`;
+    benef.disabled = false;
+
+  } else {
+    // Sin tipo — reset
+    emisora.innerHTML = `<option value="">— Seleccionar tipo primero —</option>`;
+    emisora.disabled = false;
+    benef.innerHTML  = `<option value="">— Seleccionar tipo primero —</option>`;
+    benef.disabled   = false;
+  }
+}
+
 function iniciarFormMovimiento() {
   const hoy = new Date().toISOString().split("T")[0];
   const fechaEl = document.getElementById("mnv-fecha");
   if (fechaEl) fechaEl.value = hoy;
 
-  ["mnv-tipo","mnv-descripcion","mnv-monto","mnv-cuenta-beneficiaria"].forEach(id => {
+  ["mnv-tipo", "mnv-descripcion", "mnv-monto"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
 
-  // Cuenta emisora siempre es Caja E.A.S
-  const emisora = document.getElementById("mnv-cuenta-emisora");
-  if (emisora) emisora.value = "Caja E.A.S";
-
-  // Resetear categorías
+  // Resetear categorías y cuentas (sin tipo seleccionado = estado inicial)
   actualizarCategoriasMovimiento();
+  actualizarCuentasPorTipo();
 
-  // Escuchar cambio de tipo para actualizar categorías
+  // Escuchar cambio de tipo para actualizar categorías y cuentas
   const tipoEl = document.getElementById("mnv-tipo");
-  if (tipoEl) tipoEl.onchange = actualizarCategoriasMovimiento;
+  if (tipoEl) {
+    tipoEl.onchange = () => {
+      actualizarCategoriasMovimiento();
+      actualizarCuentasPorTipo();
+    };
+  }
 
   const errEl = document.getElementById("mnv-error");
   if (errEl) errEl.textContent = "";
