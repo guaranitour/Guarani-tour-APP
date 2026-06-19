@@ -409,6 +409,15 @@ h2 {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
+.card-icon--img {
+  background: transparent;
+  padding: 0;
+}
+.card-icon--img img {
+  width: 48px; height: 48px;
+  object-fit: contain;
+  border-radius: 10px;
+}
 .card-body { flex: 1; }
 .card-body h3 { font-size: .95rem; font-weight: 600; margin-bottom: .2rem; }
 .card-body p  { font-size: .78rem; color: var(--text-muted); line-height: 1.4; }
