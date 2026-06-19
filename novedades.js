@@ -1,82 +1,64 @@
 /* ─────────────────────────────────────────────
-   novedades.js — Modal de bienvenida para módulos nuevos
+   novedades.js — Inauguración Guaraní Tour App
+   Slide narrativo: Antes → Transición → Hoy
 ───────────────────────────────────────────── */
 
-// ── Versión: cambiar cada vez que haya nuevos módulos ──────
-const _NOV_VERSION = "v1";
+const _NOV_VERSION = "inaug-v1";
 
-// ── Definición de módulos nuevos ───────────────────────────
-// roles: null = todos, o array con los roles que lo ven
-const _NOVEDADES = [
+// ── Slides de inauguración (visibles para todos los roles) ──
+const _NOV_SLIDES_INAUG = [
   {
-    roles: null,
-    icono: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <rect x="3" y="3" width="7" height="9" rx="1.5"/>
-      <rect x="14" y="3" width="7" height="5" rx="1.5"/>
-      <rect x="14" y="12" width="7" height="9" rx="1.5"/>
-      <rect x="3" y="16" width="7" height="5" rx="1.5"/>
-    </svg>`,
-    color: "linear-gradient(135deg, #2d6a4f, #1b4332)",
-    nombre: "Dashboard",
-    descripcion: "Tu panel de control central. Vas a encontrar el total de pasajeros, viajes activos, el ranking de puntos Club Destino y —si sos admin o worker— el comparativo de ingresos vs egresos de los últimos viajes.",
-  },
-  {
-    roles: null,
-    icono: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    tipo: "pasado",
+    etiqueta: "Antes",
+    titulo: "Así empezamos",
+    texto: "Los viajes se controlaban en Excel. Los datos dependían de carga manual y de una sola persona.",
+    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
-      <line x1="16" y1="13" x2="8" y2="13"/>
-      <line x1="16" y1="17" x2="8" y2="17"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="16" y2="17"/>
+      <line x1="8" y1="9" x2="10" y2="9"/>
     </svg>`,
-    color: "linear-gradient(135deg, #2d6a4f, #c9a84c)",
-    nombre: "Recibos",
-    descripcion: "Consultá y descargá recibos de pago en PDF. Podés buscar por cliente o CI, y generar el comprobante directamente desde el sistema si sos admin o worker.",
   },
   {
-    roles: null,
-    icono: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+    tipo: "transicion",
+    etiqueta: "El cambio",
+    titulo: "Construimos algo propio",
+    texto: "Empezamos a ordenar la información y a construir una herramienta pensada para el equipo, paso a paso.",
+    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
     </svg>`,
-    color: "linear-gradient(135deg, #c9a84c, #8a6d1a)",
-    nombre: "Estado ByC",
-    descripcion: "Visualizá quién aceptó las bases y condiciones y si ya está cargado en la base de clientes. Desde acá también podés vincular registros pendientes con su pasajero correspondiente.",
+  },
+  {
+    tipo: "hoy",
+    etiqueta: "Hoy",
+    titulo: "Guaraní Tour App",
+    texto: "Viajes, pasajeros y pagos en tiempo real. Más claro, más rápido y más confiable.\n\nY esto es solo el comienzo.",
+    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>`,
   },
 ];
 
 // ── Estado interno ─────────────────────────────────────────
 let _novSlideActual = 0;
-let _novSlides = [];
+let _novEmail       = "";
 
-// ── Clave de localStorage por usuario ─────────────────────
 function _novKey(email) {
   return `guarani_novedad_${_NOV_VERSION}_${email}`;
 }
 
-// ── Punto de entrada: llamar desde enterApp() ──────────────
+// ── Punto de entrada ───────────────────────────────────────
 function checkNovedades(email, role) {
   if (localStorage.getItem(_novKey(email)) === "1") return;
-
-  // Filtrar slides según el rol del usuario
-  const esArray = Array.isArray(role);
-  _novSlides = _NOVEDADES.filter(n => {
-    if (!n.roles) return true;
-    return esArray
-      ? n.roles.some(r => role.includes(r))
-      : n.roles.includes(role);
-  });
-
-  if (_novSlides.length === 0) {
-    localStorage.setItem(_novKey(email), "1");
-    return;
-  }
-
+  _novEmail       = email;
   _novSlideActual = 0;
-  _renderNovedadesModal(email);
+  _renderInaugModal();
 }
 
 // ── Renderizar modal ───────────────────────────────────────
-function _renderNovedadesModal(email) {
-  // Crear overlay si no existe
+function _renderInaugModal() {
   let overlay = document.getElementById("nov-overlay");
   if (!overlay) {
     overlay = document.createElement("div");
@@ -86,11 +68,11 @@ function _renderNovedadesModal(email) {
   }
 
   overlay.innerHTML = `
-    <div class="nov-sheet" role="dialog" aria-modal="true" aria-label="Novedades">
+    <div class="nov-sheet" role="dialog" aria-modal="true" aria-label="Inauguración">
 
       <div class="nov-header">
-        <div class="nov-header-label">✨ Novedades</div>
-        <button class="nov-close" onclick="_cerrarNovedades('${email}')" aria-label="Cerrar">
+        <div class="nov-header-label">🎉 Inauguración</div>
+        <button class="nov-close" onclick="_cerrarNovedades()" aria-label="Cerrar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -105,7 +87,7 @@ function _renderNovedadesModal(email) {
 
       <div class="nov-actions">
         <button class="nov-btn-prev" id="nov-btn-prev" onclick="_novAnterior()">← Anterior</button>
-        <button class="nov-btn-next" id="nov-btn-next" onclick="_novSiguiente('${email}')">Siguiente →</button>
+        <button class="nov-btn-next" id="nov-btn-next" onclick="_novSiguiente()">Siguiente →</button>
       </div>
 
     </div>`;
@@ -113,7 +95,6 @@ function _renderNovedadesModal(email) {
   _novRenderSlides();
   _novActualizarEstado();
 
-  // Entrada con animación
   requestAnimationFrame(() => overlay.classList.add("nov-visible"));
 }
 
@@ -122,37 +103,40 @@ function _novRenderSlides() {
   const wrap = document.getElementById("nov-slides");
   if (!wrap) return;
 
-  wrap.innerHTML = _novSlides.map((n, i) => `
-    <div class="nov-slide ${i === _novSlideActual ? "activa" : ""}" data-idx="${i}">
-      <div class="nov-slide-icon" style="background:${n.color}">
-        ${n.icono}
+  wrap.innerHTML = _NOV_SLIDES_INAUG.map((s, i) => `
+    <div class="nov-slide nov-slide--${s.tipo} ${i === _novSlideActual ? "activa" : ""}" data-idx="${i}">
+      <div class="nov-slide-visual">
+        <div class="nov-slide-icon">${s.icono}</div>
       </div>
-      <div class="nov-slide-badge">Módulo nuevo</div>
-      <h2 class="nov-slide-nombre">${n.nombre}</h2>
-      <p class="nov-slide-desc">${n.descripcion}</p>
+      <div class="nov-slide-badge nov-badge--${s.tipo}">${s.etiqueta}</div>
+      <h2 class="nov-slide-nombre">${s.titulo}</h2>
+      <p class="nov-slide-desc">${s.texto.replace(/\n/g, "<br>")}</p>
     </div>
   `).join("");
 }
 
-// ── Dots de posición ───────────────────────────────────────
+// ── Dots y estado ──────────────────────────────────────────
 function _novActualizarEstado() {
-  const total = _novSlides.length;
+  const total  = _NOV_SLIDES_INAUG.length;
   const actual = _novSlideActual;
 
-  // Dots
   const dotsEl = document.getElementById("nov-dots");
   if (dotsEl) {
-    dotsEl.innerHTML = _novSlides.map((_, i) =>
+    dotsEl.innerHTML = _NOV_SLIDES_INAUG.map((_, i) =>
       `<span class="nov-dot ${i === actual ? "activo" : ""}" onclick="_novIrA(${i})"></span>`
     ).join("");
   }
 
-  // Slides: mostrar solo la activa
   document.querySelectorAll(".nov-slide").forEach((el, i) => {
     el.classList.toggle("activa", i === actual);
   });
 
-  // Botones
+  // Actualizar fondo del sheet según slide activo
+  const sheet = document.querySelector(".nov-sheet");
+  if (sheet) {
+    sheet.dataset.tipo = _NOV_SLIDES_INAUG[actual].tipo;
+  }
+
   const btnPrev = document.getElementById("nov-btn-prev");
   const btnNext = document.getElementById("nov-btn-next");
   if (btnPrev) btnPrev.style.visibility = actual === 0 ? "hidden" : "visible";
@@ -176,18 +160,18 @@ function _novAnterior() {
   }
 }
 
-function _novSiguiente(email) {
-  if (_novSlideActual < _novSlides.length - 1) {
+function _novSiguiente() {
+  if (_novSlideActual < _NOV_SLIDES_INAUG.length - 1) {
     _novSlideActual++;
     _novActualizarEstado();
   } else {
-    _cerrarNovedades(email);
+    _cerrarNovedades();
   }
 }
 
-// ── Cerrar y marcar como visto ─────────────────────────────
-function _cerrarNovedades(email) {
-  localStorage.setItem(_novKey(email), "1");
+// ── Cerrar ─────────────────────────────────────────────────
+function _cerrarNovedades() {
+  localStorage.setItem(_novKey(_novEmail), "1");
   const overlay = document.getElementById("nov-overlay");
   if (!overlay) return;
   overlay.classList.remove("nov-visible");

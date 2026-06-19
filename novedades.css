@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   novedades.css — Modal de bienvenida para módulos nuevos
+   novedades.css — Inauguración Guaraní Tour App
 ───────────────────────────────────────────── */
 
 /* ── Overlay ───────────────────────────────────────────── */
@@ -11,11 +11,11 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  transition: background .3s ease;
+  transition: background .35s ease;
   pointer-events: none;
 }
 .nov-overlay.nov-visible {
-  background: rgba(0, 0, 0, .45);
+  background: rgba(0, 0, 0, .55);
   pointer-events: all;
 }
 
@@ -24,28 +24,44 @@
   width: 100%;
   max-width: 480px;
   background: var(--bg);
-  border-radius: 22px 22px 0 0;
-  padding: 1.2rem 1.4rem 2rem;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, .18);
+  border-radius: 24px 24px 0 0;
+  padding: 1.2rem 1.4rem 2.2rem;
+  box-shadow: 0 -8px 48px rgba(0, 0, 0, .22);
   transform: translateY(100%);
-  transition: transform .35s cubic-bezier(.32, .72, 0, 1);
+  transition: transform .38s cubic-bezier(.32, .72, 0, 1);
   will-change: transform;
+  position: relative;
+  overflow: hidden;
 }
 .nov-overlay.nov-visible .nov-sheet {
   transform: translateY(0);
 }
+
+/* Banda de color sutil en el borde superior según slide */
+.nov-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 24px 24px 0 0;
+  background: var(--border);
+  transition: background .4s ease;
+}
+.nov-sheet[data-tipo="pasado"]::before    { background: #9e9e9e; }
+.nov-sheet[data-tipo="transicion"]::before { background: linear-gradient(90deg, #9e9e9e, var(--accent)); }
+.nov-sheet[data-tipo="hoy"]::before        { background: linear-gradient(90deg, var(--accent), var(--gold)); }
 
 /* ── Header ────────────────────────────────────────────── */
 .nov-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.5rem;
 }
 .nov-header-label {
-  font-size: .78rem;
+  font-size: .75rem;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -63,7 +79,7 @@
 
 /* ── Slides wrapper ────────────────────────────────────── */
 .nov-slides-wrap {
-  min-height: 260px;
+  min-height: 280px;
   display: flex;
   align-items: stretch;
 }
@@ -79,57 +95,79 @@
   align-items: center;
   text-align: center;
   padding: 0 .5rem;
-  animation: novSlideIn .28s ease both;
+  animation: novSlideIn .3s ease both;
 }
-.nov-slide.activa {
-  display: flex;
-}
+.nov-slide.activa { display: flex; }
 
 @keyframes novSlideIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Ícono del módulo ──────────────────────────────────── */
+/* ── Visual: contenedor del ícono ──────────────────────── */
+.nov-slide-visual {
+  margin-bottom: 1.1rem;
+}
 .nov-slide-icon {
-  width: 72px; height: 72px;
-  border-radius: 20px;
+  width: 80px; height: 80px;
+  border-radius: 22px;
   display: flex; align-items: center; justify-content: center;
   color: #fff;
-  margin-bottom: 1rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
-  flex-shrink: 0;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .16);
 }
 
-/* ── Badge "Módulo nuevo" ──────────────────────────────── */
+/* Colores por tipo de slide */
+.nov-slide--pasado .nov-slide-icon {
+  background: linear-gradient(135deg, #757575, #424242);
+  color: #e0e0e0;
+}
+.nov-slide--transicion .nov-slide-icon {
+  background: linear-gradient(135deg, #424242, #2d6a4f);
+}
+.nov-slide--hoy .nov-slide-icon {
+  background: linear-gradient(135deg, #2d6a4f, #c9a84c);
+}
+
+/* ── Badge de etapa ────────────────────────────────────── */
 .nov-slide-badge {
-  font-size: .65rem;
+  font-size: .62rem;
   font-weight: 700;
-  letter-spacing: .07em;
+  letter-spacing: .08em;
   text-transform: uppercase;
+  border-radius: 20px;
+  padding: .22rem .7rem;
+  margin-bottom: .8rem;
+  border: 1.5px solid currentColor;
+}
+.nov-badge--pasado    { color: #9e9e9e;          border-color: #9e9e9e; }
+.nov-badge--transicion { color: var(--accent2);   border-color: var(--accent2); }
+.nov-badge--hoy        {
   color: #fff;
   background: linear-gradient(135deg, var(--accent), var(--gold));
-  border-radius: 20px;
-  padding: .2rem .65rem;
-  margin-bottom: .75rem;
+  border-color: transparent;
 }
 
-/* ── Nombre del módulo ─────────────────────────────────── */
+/* ── Título ────────────────────────────────────────────── */
 .nov-slide-nombre {
   font-family: 'Roboto', sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: .6rem;
+  margin-bottom: .65rem;
   line-height: 1.2;
 }
+/* Slide pasado: tono más apagado */
+.nov-slide--pasado .nov-slide-nombre { color: var(--text-muted); }
 
 /* ── Descripción ───────────────────────────────────────── */
 .nov-slide-desc {
   font-size: .86rem;
   color: var(--text-mid);
-  line-height: 1.55;
+  line-height: 1.6;
   max-width: 340px;
+}
+.nov-slide--hoy .nov-slide-desc {
+  color: var(--text);
 }
 
 /* ── Dots ──────────────────────────────────────────────── */
@@ -138,7 +176,7 @@
   align-items: center;
   justify-content: center;
   gap: .45rem;
-  margin: 1.3rem 0 1.2rem;
+  margin: 1.4rem 0 1.2rem;
 }
 .nov-dot {
   width: 7px; height: 7px;
@@ -146,14 +184,13 @@
   background: var(--bg2);
   border: 1.5px solid var(--border);
   cursor: pointer;
-  transition: background .2s, transform .2s, width .2s;
+  transition: background .2s, width .2s, border-radius .2s;
 }
 .nov-dot.activo {
   background: var(--accent);
   border-color: var(--accent);
   width: 18px;
   border-radius: 4px;
-  transform: none;
 }
 
 /* ── Acciones ──────────────────────────────────────────── */
@@ -163,7 +200,6 @@
   justify-content: space-between;
   gap: .7rem;
 }
-
 .nov-btn-prev {
   background: none;
   border: none;
@@ -178,7 +214,7 @@
 
 .nov-btn-next {
   flex: 1;
-  padding: .75rem 1.2rem;
+  padding: .78rem 1.2rem;
   border: none;
   border-radius: 12px;
   background: var(--accent2);
@@ -190,15 +226,15 @@
 }
 .nov-btn-next:hover {
   background: var(--accent);
-  box-shadow: 0 4px 14px rgba(45, 106, 79, .3);
+  box-shadow: 0 4px 14px rgba(45, 106, 79, .28);
   transform: translateY(-1px);
 }
 .nov-btn-next:active { transform: translateY(0); }
 
-/* Variante "¡Empezar!" — degradado gold */
+/* Variante final "¡Empezar!" */
 .nov-btn-next.nov-btn-empezar {
   background: linear-gradient(135deg, var(--accent), var(--gold));
-  box-shadow: 0 4px 14px rgba(201, 168, 76, .3);
+  box-shadow: 0 4px 16px rgba(201, 168, 76, .32);
 }
 .nov-btn-next.nov-btn-empezar:hover {
   background: linear-gradient(135deg, var(--accent2), var(--accent));
