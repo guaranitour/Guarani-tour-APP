@@ -65,17 +65,19 @@ function renderViajeCards(data) {
     </div>`;
   return `
   <div class="viaje-card" onclick="openViajeDetalle('${v.id}')">
-    ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : placeholder}
-    <div class="viaje-card-body">
-      <div class="viaje-card-nombre">${v.nombre}</div>
-      <div class="viaje-card-meta">
-        <span class="viaje-pill ${estado}">${estado}</span>
-        ${v.puntos_destino ? `<span class="viaje-puntos">⭐ ${v.puntos_destino} pts</span>` : ""}
-        ${v.fecha_salida ? `
-          <span class="viaje-card-fecha">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            ${formatFecha(v.fecha_salida)}
-          </span>` : ""}
+    <div class="viaje-card-media">
+      ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : placeholder}
+      <div class="viaje-card-overlay">
+        <div class="viaje-card-nombre">${v.nombre}</div>
+        <div class="viaje-card-meta">
+          <span class="viaje-pill ${estado}">${estado}</span>
+          ${v.puntos_destino ? `<span class="viaje-puntos">⭐ ${v.puntos_destino} pts</span>` : ""}
+          ${v.fecha_salida ? `
+            <span class="viaje-card-fecha">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              ${formatFecha(v.fecha_salida)}
+            </span>` : ""}
+        </div>
       </div>
     </div>
   </div>`

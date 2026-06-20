@@ -32,18 +32,25 @@
   transform: translateY(0);
 }
 
-/* ── IMAGEN DE LA TARJETA ──────────────────── */
+/* ── MEDIA DE LA TARJETA (imagen + overlay de texto) ───────── */
+
+.viaje-card-media {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+}
 
 .viaje-card-img {
   width: 100%;
-  height: 170px;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
 
 .viaje-card-img-placeholder {
   width: 100%;
-  height: 170px;
+  height: 100%;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   display: flex;
   align-items: center;
@@ -54,22 +61,34 @@
   opacity: .35;
 }
 
-/* ── CONTENIDO DE LA TARJETA ───────────────── */
-
-.viaje-card-body {
-  padding: 1rem 1.1rem 1.1rem;
+/* Capa de texto superpuesta sobre la imagen, anclada abajo,
+   con degradado oscuro para que el texto siempre sea legible
+   sin importar el color de la foto de fondo. */
+.viaje-card-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2.2rem .9rem .8rem;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,.85) 0%,
+    rgba(0,0,0,.55) 55%,
+    rgba(0,0,0,0) 100%
+  );
 }
 
 .viaje-card-nombre {
   font-family: 'Roboto', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--text);
+  color: #fff;
   margin-bottom: .55rem;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0,0,0,.4);
 }
 
 .viaje-card-meta {
@@ -81,7 +100,7 @@
 
 .viaje-card-fecha {
   font-size: .78rem;
-  color: var(--text-muted);
+  color: rgba(255,255,255,.85);
   display: flex;
   align-items: center;
   gap: .3rem;
@@ -89,7 +108,7 @@
 
 .viaje-card-fecha svg {
   flex-shrink: 0;
-  opacity: .6;
+  opacity: .8;
 }
 
 /* ── PILL DE ESTADO ────────────────────────── */
@@ -107,18 +126,18 @@
 }
 
 .viaje-pill.activo {
-  background: rgba(45,106,79,.12);
-  color: var(--accent);
+  background: rgba(45,106,79,.9);
+  color: #fff;
 }
 
 .viaje-pill.completado {
-  background: rgba(201,168,76,.15);
-  color: #8a6d1a;
+  background: rgba(201,168,76,.9);
+  color: #2b2106;
 }
 
 .viaje-pill.cancelado {
-  background: rgba(192,57,43,.1);
-  color: var(--danger);
+  background: rgba(192,57,43,.9);
+  color: #fff;
 }
 
 /* ── ESTADO VACÍO ──────────────────────────── */
@@ -216,12 +235,13 @@
   color: var(--text-muted);
 }
 .viaje-puntos {
-  background: #f1f5f9;
-  color: #334155;
+  background: rgba(255,255,255,.18);
+  color: #fff;
   padding: 2px 8px;
   border-radius: 8px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  backdrop-filter: blur(2px);
 }
 
 /* ── DETALLE DE VIAJE: HERO ────────────────── */
