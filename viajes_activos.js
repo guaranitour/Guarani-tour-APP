@@ -381,7 +381,7 @@ async function loadViajeDetalle(viajeId) {
 
   infoEl.innerHTML = `
     <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
-    ${viaje.puntos_destino ? `<span class="viaje-puntos" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
+    ${viaje.puntos_destino ? `<span class="viaje-puntos viaje-puntos-claro" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
     ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
     ${esAdminDetalle ? `
     <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
