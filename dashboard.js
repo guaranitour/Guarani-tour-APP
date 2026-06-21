@@ -578,17 +578,6 @@ async function _generarImagenPuntos(registro) {
   _roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 22);
   ctx.clip();
 
-  // ── Marca de agua: logo a tamaño fijo (50% del ancho de la imagen),
-  // centrado, muy sutil. Tamaño constante sin importar cuántos viajes
-  // tenga la lista, para que nunca se vea desproporcionado. ──
-  if (logo) {
-    ctx.save();
-    ctx.globalAlpha = 0.06;
-    const wmSize = WIDTH * 0.5;
-    ctx.drawImage(logo, (WIDTH - wmSize) / 2, (height - wmSize) / 2, wmSize, wmSize);
-    ctx.restore();
-  }
-
   // ── Franja decorativa superior con degradé ──
   const stripeGrad = ctx.createLinearGradient(cardX, 0, cardX + cardWidth, 0);
   stripeGrad.addColorStop(0, "#2d6a4f");
@@ -596,6 +585,27 @@ async function _generarImagenPuntos(registro) {
   stripeGrad.addColorStop(1, "#1b4332");
   ctx.fillStyle = stripeGrad;
   ctx.fillRect(cardX, cardY, cardWidth, STRIPE_H);
+
+  // ── Marca de agua: limitada a la zona de la lista de viajes (entre el
+  // intro y el footer), para que nunca invada el header ni el footer ni
+  // se vea cortada de forma rara contra esos bloques de color sólido. ──
+  const listZoneTop    = cardY + STRIPE_H + HEADER_H + GREET_H + INTRO_H - 8;
+  const listZoneBottom = cardY + cardHeight - FOOTER_H;
+  const listZoneH      = listZoneBottom - listZoneTop;
+  if (logo && listZoneH > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cardX, listZoneTop, cardWidth, listZoneH);
+    ctx.clip();
+    ctx.globalAlpha = 0.07;
+    // El tamaño se adapta a la zona disponible (mitad del ancho de la
+    // tarjeta como máximo) para que jamás sobresalga del recorte.
+    const wmSize = Math.min(cardWidth * 0.5, listZoneH * 0.9);
+    const wmX = cardX + (cardWidth - wmSize) / 2;
+    const wmY = listZoneTop + (listZoneH - wmSize) / 2;
+    ctx.drawImage(logo, wmX, wmY, wmSize, wmSize);
+    ctx.restore();
+  }
 
   // ── Header: logo circular + título ──
   const logoSize = 50;
@@ -702,11 +712,12 @@ async function _generarImagenPuntos(registro) {
     cursorY += ROW_H;
   });
 
-  // ── Footer: total acumulado, con fondo propio ──
+  // ── Footer: total acumulado, con fondo propio (verde suave, en línea
+  // con la paleta del resto de la tarjeta en vez de un tono ajeno) ──
   const footerY = cardY + cardHeight - FOOTER_H;
-  ctx.fillStyle = "#f7f4ea";
+  ctx.fillStyle = "#eef5f0";
   ctx.fillRect(cardX, footerY, cardWidth, FOOTER_H);
-  ctx.strokeStyle = "#ecdfb8";
+  ctx.strokeStyle = "#d8e8dd";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(cardX, footerY);
