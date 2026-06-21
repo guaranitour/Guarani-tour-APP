@@ -361,11 +361,32 @@ async function loadViajeDetalle(viajeId) {
 
   listEl.innerHTML = "Cargando...";
 
-  const { data: viaje } = await supabaseClient
-    .from("viajes")
-    .select("*")
-    .eq("id", viajeId)
-    .single();
+  // Etapa 1: viaje, lista de pasajeros y BYC no dependen entre sí → en paralelo
+  const [
+    { data: viaje },
+    { data: pasajeros, error: errPasajeros },
+    { data: bycData },
+  ] = await Promise.all([
+    supabaseClient
+      .from("viajes")
+      .select("*")
+      .eq("id", viajeId)
+      .single(),
+    supabaseClient
+      .from("viaje_pasajeros")
+      .select(`
+        id,
+        pasajero_id,
+        total_a_pagar,
+        puntos_destino,
+        asistencia,
+        pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
+      `)
+      .eq("viaje_id", viajeId),
+    supabaseClient
+      .from("basesycondiciones")
+      .select("ci"),
+  ]);
 
   if (!viaje) return;
 
@@ -393,28 +414,11 @@ async function loadViajeDetalle(viajeId) {
     </button>` : ""}
   `;
 
-
-  const { data: pasajeros, error: errPasajeros } = await supabaseClient
-    .from("viaje_pasajeros")
-    .select(`
-      id,
-      pasajero_id,
-      total_a_pagar,
-      puntos_destino,
-      asistencia,
-      pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
-    `)
-    .eq("viaje_id", viajeId);
-
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
-  console.log("viaje_pasajeros result:", pasajeros, "error:", errPasajeros);
 
-  // ── Consultar BYC para insignia de pendientes ──────────────────────────
+  // ── Insignia de pendientes BYC ──────────────────────────────────────────
   _bycAceptados = new Set();
   if (pasajeros && pasajeros.length > 0) {
-    const { data: bycData } = await supabaseClient
-      .from("basesycondiciones")
-      .select("ci");
     (bycData || []).forEach(r => {
       const norm = (r.ci || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
       if (norm) _bycAceptados.add(norm);
