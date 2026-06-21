@@ -292,6 +292,7 @@ function _calcularRankingPuntos2026(vpData, viajesMap) {
       puntos: puntosPorPasajero[pid] || 0,
       viajes: viajesPorPasajero[pid] || [],
     }))
+    .filter(r => r.puntos > 0) // el ranking solo muestra a quienes tienen puntos
     .sort((a, b) => b.puntos - a.puntos);
 }
 
@@ -497,132 +498,218 @@ async function compartirPuntosPasajero(pasajeroId) {
 }
 
 // Dibuja la tarjeta de puntos en un canvas y devuelve un Blob PNG
-function _generarImagenPuntos(registro) {
-  return new Promise((resolve) => {
-    const PADDING   = 48;
-    const WIDTH     = 720;
-    const ROW_H     = 64;
-    const HEADER_H  = 210;
-    const FOOTER_H  = 130;
-    const height = HEADER_H + (registro.viajes.length * ROW_H) + FOOTER_H;
+async function _generarImagenPuntos(registro) {
+  // Aseguramos que la tipografía esté lista antes de medir/dibujar texto,
+  // si no el canvas cae a una fuente genérica y se ve desprolijo.
+  const FONT = "Roboto, -apple-system, sans-serif";
+  try {
+    await Promise.all([
+      document.fonts.load("400 16px " + FONT),
+      document.fonts.load("500 16px " + FONT),
+      document.fonts.load("600 16px " + FONT),
+      document.fonts.load("700 16px " + FONT),
+    ]);
+    await document.fonts.ready;
+  } catch (e) { /* si falla, seguimos con fallback del navegador */ }
 
-    const canvas = document.createElement("canvas");
-    const scale = 2; // exportar a mayor resolución
-    canvas.width  = WIDTH * scale;
-    canvas.height = height * scale;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(scale, scale);
+  const WIDTH       = 640;
+  const OUTER_PAD    = 32;   // margen exterior de la imagen
+  const CARD_PAD     = 36;   // padding interno de la tarjeta blanca
+  const HEADER_H     = 168;
+  const ROW_H        = 58;
+  const LIST_TOP_GAP = 8;
+  const TOTAL_H      = 96;
+  const FOOTER_GAP   = 24;
 
-    // Fondo
-    const bgGrad = ctx.createLinearGradient(0, 0, WIDTH, height);
-    bgGrad.addColorStop(0, "#f4f7f5");
-    bgGrad.addColorStop(1, "#e8efe9");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, WIDTH, height);
+  const cardWidth  = WIDTH - OUTER_PAD * 2;
+  const listHeight = registro.viajes.length * ROW_H;
+  const cardHeight = HEADER_H + LIST_TOP_GAP + listHeight + TOTAL_H + CARD_PAD;
+  const height = cardHeight + OUTER_PAD * 2;
 
-    // Header con gradiente accent
-    const headerGrad = ctx.createLinearGradient(0, 0, WIDTH, HEADER_H);
-    headerGrad.addColorStop(0, "#2d6a4f");
-    headerGrad.addColorStop(1, "#1b4332");
-    ctx.fillStyle = headerGrad;
-    ctx.fillRect(0, 0, WIDTH, HEADER_H);
+  const canvas = document.createElement("canvas");
+  const scale = 2.5; // exportar a mayor resolución para que se vea nítida al compartir
+  canvas.width  = WIDTH * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+  ctx.textBaseline = "alphabetic";
 
-    // Sello "Club Destino"
-    ctx.fillStyle = "rgba(255,255,255,.16)";
-    ctx.font = "600 13px Roboto, sans-serif";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText("CLUB DESTINO · 2026", PADDING, 38);
+  // ── Fondo exterior ──
+  ctx.fillStyle = "#eef2ef";
+  ctx.fillRect(0, 0, WIDTH, height);
 
-    // Saludo
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "700 26px Roboto, sans-serif";
-    _wrapText(ctx, `Hola ${registro.nombre},`, PADDING, 82, WIDTH - PADDING * 2, 32);
-    ctx.font = "400 16px Roboto, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,.92)";
-    _wrapText(
-      ctx,
-      "estos son los viajes que hiciste en 2026 y los puntos que acumulaste en cada uno.",
-      PADDING, 118, WIDTH - PADDING * 2, 22
-    );
+  // ── Tarjeta blanca con sombra suave ──
+  const cardX = OUTER_PAD, cardY = OUTER_PAD;
+  ctx.save();
+  ctx.shadowColor = "rgba(27,67,50,.14)";
+  ctx.shadowBlur = 24;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = "#ffffff";
+  _roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 20);
+  ctx.fill();
+  ctx.restore();
 
-    // Filas de viajes
-    let y = HEADER_H;
-    registro.viajes.forEach((v, i) => {
-      if (i % 2 === 0) {
-        ctx.fillStyle = "rgba(45,106,79,.05)";
-        ctx.fillRect(0, y, WIDTH, ROW_H);
-      }
-      // separador
-      ctx.strokeStyle = "rgba(0,0,0,.06)";
+  // Clip al borde redondeado para todo lo que se dibuje encima
+  ctx.save();
+  _roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 20);
+  ctx.clip();
+
+  // ── Header con gradiente accent ──
+  const headerGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardWidth, cardY + HEADER_H);
+  headerGrad.addColorStop(0, "#2d6a4f");
+  headerGrad.addColorStop(1, "#1b4332");
+  ctx.fillStyle = headerGrad;
+  ctx.fillRect(cardX, cardY, cardWidth, HEADER_H);
+
+  // Marca de agua: estrella grande sutil en el header
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = "#ffffff";
+  _drawStar(ctx, cardX + cardWidth - 56, cardY + 56, 8, 64, 30);
+  ctx.restore();
+
+  const textX = cardX + CARD_PAD;
+  const textMaxW = cardWidth - CARD_PAD * 2 - 40;
+
+  // Etiqueta superior
+  ctx.fillStyle = "rgba(255,255,255,.7)";
+  ctx.font = "600 12px " + FONT;
+  ctx.textLetterSpacing = "1.5px";
+  ctx.fillText("CLUB DESTINO · 2026", textX, cardY + 38);
+  ctx.textLetterSpacing = "0px";
+
+  // Saludo
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 25px " + FONT;
+  const saludoLines = _wrapTextLines(ctx, `¡Hola, ${registro.nombre}!`, textMaxW);
+  let greetY = cardY + 76;
+  saludoLines.forEach(line => { ctx.fillText(line, textX, greetY); greetY += 30; });
+
+  // Subtítulo
+  ctx.fillStyle = "rgba(255,255,255,.88)";
+  ctx.font = "400 14.5px " + FONT;
+  const subLines = _wrapTextLines(
+    ctx,
+    "Estos son los viajes que hiciste en 2026 y los puntos que sumaste en cada uno.",
+    textMaxW
+  );
+  let subY = greetY + 6;
+  subLines.forEach(line => { ctx.fillText(line, textX, subY); subY += 19; });
+
+  // ── Lista de viajes ──
+  let y = cardY + HEADER_H + LIST_TOP_GAP;
+  registro.viajes.forEach((v, i) => {
+    const rowTextX = cardX + CARD_PAD;
+    const rowRightX = cardX + cardWidth - CARD_PAD;
+
+    // separador entre filas (no antes de la primera)
+    if (i > 0) {
+      ctx.strokeStyle = "#eef0ee";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(PADDING, y + ROW_H);
-      ctx.lineTo(WIDTH - PADDING, y + ROW_H);
+      ctx.moveTo(rowTextX, y);
+      ctx.lineTo(rowRightX, y);
       ctx.stroke();
+    }
 
-      // nombre del viaje
-      ctx.fillStyle = "#1a3a2a";
-      ctx.font = "600 16px Roboto, sans-serif";
-      const nombreViaje = _truncateText(ctx, v.nombre, WIDTH - PADDING * 2 - 180);
-      ctx.fillText(nombreViaje, PADDING, y + 28);
+    const centerY = y + ROW_H / 2;
 
-      // fecha
-      ctx.fillStyle = "#6b7d73";
-      ctx.font = "400 13px Roboto, sans-serif";
-      ctx.fillText(_formatFechaCorta(v.fecha_salida), PADDING, y + 48);
-
-      // puntos (pill, alineado a la derecha)
-      const ptsLabel = `⭐ ${v.puntos} pts`;
-      ctx.font = "700 14px Roboto, sans-serif";
-      const ptsWidth = ctx.measureText(ptsLabel).width + 28;
-      const pillX = WIDTH - PADDING - ptsWidth;
-      const pillY = y + ROW_H / 2 - 14;
-      _roundRect(ctx, pillX, pillY, ptsWidth, 28, 14);
-      ctx.fillStyle = "rgba(201,168,76,.18)";
-      ctx.fill();
-      ctx.fillStyle = "#8a6d1a";
-      ctx.fillText(ptsLabel, pillX + 14, pillY + 19);
-
-      y += ROW_H;
-    });
-
-    // Footer con total
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, y, WIDTH, FOOTER_H);
-    ctx.strokeStyle = "rgba(0,0,0,.08)";
+    // Punto indicador + nombre del viaje
+    ctx.fillStyle = "#2d6a4f";
     ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(WIDTH, y);
-    ctx.stroke();
+    ctx.arc(rowTextX + 4, centerY - 9, 4, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.fillStyle = "#1a3a2a";
-    ctx.font = "500 16px Roboto, sans-serif";
-    ctx.fillText("Total acumulado en 2026", PADDING, y + 52);
+    ctx.font = "600 15.5px " + FONT;
+    const nombreMaxW = rowRightX - (rowTextX + 18) - 110;
+    const nombreViaje = _truncateText(ctx, v.nombre, nombreMaxW);
+    ctx.fillText(nombreViaje, rowTextX + 18, centerY - 4);
 
-    ctx.fillStyle = "#2d6a4f";
-    ctx.font = "700 36px Roboto, sans-serif";
-    ctx.fillText(`⭐ ${registro.puntos} pts`, PADDING, y + 92);
+    // Fecha
+    ctx.fillStyle = "#8a9a90";
+    ctx.font = "400 12.5px " + FONT;
+    ctx.fillText(_formatFechaCorta(v.fecha_salida), rowTextX + 18, centerY + 16);
 
+    // Puntos a la derecha
+    const ptsLabel = v.puntos > 0 ? `+${v.puntos} pts` : "0 pts";
+    ctx.font = "700 15px " + FONT;
+    const ptsColor = v.puntos > 0 ? "#8a6d1a" : "#a9b3ad";
+    ctx.fillStyle = ptsColor;
+    const ptsW = ctx.measureText(ptsLabel).width;
+    ctx.fillText(ptsLabel, rowRightX - ptsW, centerY + 5);
+
+    y += ROW_H;
+  });
+
+  // ── Separador grueso antes del total ──
+  ctx.strokeStyle = "#e4e8e4";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cardX + CARD_PAD, y);
+  ctx.lineTo(cardX + cardWidth - CARD_PAD, y);
+  ctx.stroke();
+
+  // ── Total ──
+  const totalY = y + TOTAL_H / 2;
+  ctx.fillStyle = "#5c6e63";
+  ctx.font = "500 14px " + FONT;
+  ctx.fillText("Total acumulado en 2026", cardX + CARD_PAD, totalY + 5);
+
+  const totalLabel = `⭐ ${registro.puntos} pts`;
+  ctx.font = "700 26px " + FONT;
+  ctx.fillStyle = "#2d6a4f";
+  const totalW = ctx.measureText(totalLabel).width;
+  ctx.fillText(totalLabel, cardX + cardWidth - CARD_PAD - totalW, totalY + 9);
+
+  ctx.restore(); // fin del clip
+
+  return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/png", 1);
   });
 }
 
-// Helpers de dibujo en canvas
-function _wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+// Dibuja una estrella (usada como marca de agua decorativa)
+function _drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+  let rot = (Math.PI / 2) * 3;
+  const step = Math.PI / spikes;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+  for (let i = 0; i < spikes; i++) {
+    let x = cx + Math.cos(rot) * outerRadius;
+    let y = cy + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+    x = cx + Math.cos(rot) * innerRadius;
+    y = cy + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+  }
+  ctx.lineTo(cx, cy - outerRadius);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Parte texto en líneas según un ancho máximo y devuelve el array de líneas
+// (a diferencia de _wrapText, no dibuja: deja que el caller controle el interlineado)
+function _wrapTextLines(ctx, text, maxWidth) {
   const words = text.split(" ");
+  const lines = [];
   let line = "";
-  let curY = y;
   words.forEach((word, i) => {
     const testLine = line + word + " ";
     if (ctx.measureText(testLine).width > maxWidth && i > 0) {
-      ctx.fillText(line.trim(), x, curY);
+      lines.push(line.trim());
       line = word + " ";
-      curY += lineHeight;
     } else {
       line = testLine;
     }
   });
-  ctx.fillText(line.trim(), x, curY);
+  if (line.trim()) lines.push(line.trim());
+  return lines;
 }
+
+// Helpers de dibujo en canvas
 
 function _truncateText(ctx, text, maxWidth) {
   if (ctx.measureText(text).width <= maxWidth) return text;
