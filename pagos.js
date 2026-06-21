@@ -32,9 +32,11 @@ async function initPagosView(ctx) {
 
   ocultarFormPago();
 
-  // ── Cargar métodos y bancos desde caché global ──
-  pagosCtx.metodos = await getMetodosPago();
-  pagosCtx.bancos  = await getBancos();
+  // ── Cargar métodos y bancos desde caché global (en paralelo) ──
+  [pagosCtx.metodos, pagosCtx.bancos] = await Promise.all([
+    getMetodosPago(),
+    getBancos(),
+  ]);
 
   // Poblar select métodos
   const selMetodo = document.getElementById("pago-metodo");
@@ -140,16 +142,32 @@ async function loadPagosPasajero() {
 
   listEl.innerHTML = `<div class="pagos-loading">Cargando…</div>`;
 
-  // Total a pagar
-  const { data: vp } = await supabaseClient
-    .from("viaje_pasajeros")
-    .select("total_a_pagar, puntos_destino, asistencia, pasajero_id")
-    .eq("id", parseInt(pagosCtx.viajePasajeroId))
-    .single();
+  // Etapa 1: total a pagar y lista de pagos no dependen entre sí → en paralelo
+  const [
+    { data: vp },
+    { data: pagos, error },
+  ] = await Promise.all([
+    supabaseClient
+      .from("viaje_pasajeros")
+      .select("total_a_pagar, puntos_destino, asistencia, pasajero_id")
+      .eq("id", parseInt(pagosCtx.viajePasajeroId))
+      .single(),
+    supabaseClient
+      .from("pagos")
+      .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, creado_por, banco, metodo_pago_id")
+      .eq("viaje_pasajero_id", parseInt(pagosCtx.viajePasajeroId))
+      .order("fecha_pago", { ascending: false }),
+  ]);
 
   pagosCtx.totalAPagar = vp?.total_a_pagar || 0;
 
-  // Calcular membresía Club Destino
+  if (error) {
+    listEl.innerHTML = `<div class="pagos-empty">Error al cargar pagos</div>`;
+    console.error("Error pagos:", error);
+    return;
+  }
+
+  // Etapa 2: membresía Club Destino depende de pasajero_id (recién disponible tras la etapa 1)
   let esMiembro = false;
   let puntosViaje = vp?.puntos_destino || 0;
   if (vp?.pasajero_id) {
@@ -159,19 +177,6 @@ async function loadPagosPasajero() {
       .eq("pasajero_id", vp.pasajero_id)
       .eq("asistencia", "Asiste");
     esMiembro = (historial || []).length >= 3;
-  }
-
-  // ── Query PLANA sin joins ──
-  const { data: pagos, error } = await supabaseClient
-    .from("pagos")
-    .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, creado_por, banco, metodo_pago_id")
-    .eq("viaje_pasajero_id", parseInt(pagosCtx.viajePasajeroId))
-    .order("fecha_pago", { ascending: false });
-
-  if (error) {
-    listEl.innerHTML = `<div class="pagos-empty">Error al cargar pagos</div>`;
-    console.error("Error pagos:", error);
-    return;
   }
 
   // Totales
