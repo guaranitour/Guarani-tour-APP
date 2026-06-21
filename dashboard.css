@@ -271,11 +271,28 @@
   display: flex; align-items: center; gap: .7rem;
   padding: .65rem 0;
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
   transition: opacity .12s;
 }
 .dash-rank-row:last-child { border-bottom: none; }
-.dash-rank-row:active { opacity: .7; }
+
+.dash-rank-num, .dash-rank-avatar, .dash-rank-name, .dash-rank-pts {
+  cursor: pointer;
+}
+
+.dash-rank-share-btn {
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg2, #fff);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+}
+.dash-rank-share-btn:hover { background: rgba(45,106,79,.1); }
+.dash-rank-share-btn:active { opacity: .6; }
+.dash-rank-share-btn:disabled { opacity: .5; cursor: default; }
 
 .dash-rank-num {
   width: 24px; height: 24px; border-radius: 50%;

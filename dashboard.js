@@ -259,24 +259,38 @@ let _rankingPuntosCompleto = [];
 function _calcularRankingPuntos2026(vpData, viajesMap) {
   const puntosPorPasajero  = {};
   const nombresPorPasajero = {};
+  const viajesPorPasajero  = {}; // detalle de viajes asistidos en 2026, para compartir
 
   vpData.forEach(vp => {
     const viaje = viajesMap[vp.viaje_id];
     if (!viaje || !viaje.fecha_salida) return;
     if (!viaje.fecha_salida.startsWith("2026")) return;
+    if (vp.asistencia !== "Asiste") return; // solo cuenta si asistió
 
     const pts = vp.puntos_destino || 0;
-    if (pts <= 0) return;
 
     puntosPorPasajero[vp.pasajero_id]  = (puntosPorPasajero[vp.pasajero_id] || 0) + pts;
     nombresPorPasajero[vp.pasajero_id] = vp.pasajeros?.Pasajero || "Sin nombre";
+
+    if (!viajesPorPasajero[vp.pasajero_id]) viajesPorPasajero[vp.pasajero_id] = [];
+    viajesPorPasajero[vp.pasajero_id].push({
+      nombre: viaje.nombre || "Viaje sin nombre",
+      fecha_salida: viaje.fecha_salida,
+      puntos: pts,
+    });
   });
 
-  return Object.keys(puntosPorPasajero)
+  // Ordenamos cada detalle de viajes por fecha de salida ascendente
+  Object.keys(viajesPorPasajero).forEach(pid => {
+    viajesPorPasajero[pid].sort((a, b) => (a.fecha_salida || "").localeCompare(b.fecha_salida || ""));
+  });
+
+  return Object.keys(nombresPorPasajero)
     .map(pid => ({
       pasajeroId: parseInt(pid, 10),
       nombre: nombresPorPasajero[pid],
-      puntos: puntosPorPasajero[pid],
+      puntos: puntosPorPasajero[pid] || 0,
+      viajes: viajesPorPasajero[pid] || [],
     }))
     .sort((a, b) => b.puntos - a.puntos);
 }
@@ -289,11 +303,14 @@ function _renderRankRows(ranking) {
     const pos = i + 1;
     const cls = pos === 1 ? "top1" : pos === 2 ? "top2" : pos === 3 ? "top3" : "";
     return `
-    <div class="dash-rank-row" onclick="irADashPasajero(${r.pasajeroId})">
-      <div class="dash-rank-num ${cls}">${pos}</div>
-      <div class="dash-rank-avatar">${getInitials(r.nombre)}</div>
-      <div class="dash-rank-name">${r.nombre}</div>
-      <span class="dash-rank-pts">⭐ ${r.puntos} pts</span>
+    <div class="dash-rank-row">
+      <div class="dash-rank-num ${cls}" onclick="irADashPasajero(${r.pasajeroId})">${pos}</div>
+      <div class="dash-rank-avatar" onclick="irADashPasajero(${r.pasajeroId})">${getInitials(r.nombre)}</div>
+      <div class="dash-rank-name" onclick="irADashPasajero(${r.pasajeroId})">${r.nombre}</div>
+      <span class="dash-rank-pts" onclick="irADashPasajero(${r.pasajeroId})">⭐ ${r.puntos} pts</span>
+      <button class="dash-rank-share-btn" title="Compartir" onclick="event.stopPropagation(); compartirPuntosPasajero(${r.pasajeroId})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
     </div>`;
   }).join("");
 }
@@ -344,9 +361,9 @@ async function loadRankingPuntos() {
         { data: vpData,     error: errVp },
       ] = await Promise.all([
         supabaseClient.from("viajes")
-          .select("id, fecha_salida"),
+          .select("id, nombre, fecha_salida"),
         supabaseClient.from("viaje_pasajeros")
-          .select("id, pasajero_id, viaje_id, puntos_destino, pasajeros ( Pasajero )"),
+          .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero )"),
       ]);
 
       if (errViajes || errVp) {
@@ -397,14 +414,244 @@ function filtrarRankingPuntos() {
       const posOriginal = _rankingPuntosCompleto.indexOf(r) + 1;
       const cls = posOriginal === 1 ? "top1" : posOriginal === 2 ? "top2" : posOriginal === 3 ? "top3" : "";
       return `
-      <div class="dash-rank-row" onclick="irADashPasajero(${r.pasajeroId})">
-        <div class="dash-rank-num ${cls}">${posOriginal}</div>
-        <div class="dash-rank-avatar">${getInitials(r.nombre)}</div>
-        <div class="dash-rank-name">${r.nombre}</div>
-        <span class="dash-rank-pts">⭐ ${r.puntos} pts</span>
+      <div class="dash-rank-row">
+        <div class="dash-rank-num ${cls}" onclick="irADashPasajero(${r.pasajeroId})">${posOriginal}</div>
+        <div class="dash-rank-avatar" onclick="irADashPasajero(${r.pasajeroId})">${getInitials(r.nombre)}</div>
+        <div class="dash-rank-name" onclick="irADashPasajero(${r.pasajeroId})">${r.nombre}</div>
+        <span class="dash-rank-pts" onclick="irADashPasajero(${r.pasajeroId})">⭐ ${r.puntos} pts</span>
+        <button class="dash-rank-share-btn" title="Compartir" onclick="event.stopPropagation(); compartirPuntosPasajero(${r.pasajeroId})">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
       </div>`;
     }).join("");
   }, 200);
+}
+
+// ── Compartir imagen de puntos por pasajero ───────────────────
+// Genera una tarjeta-imagen con los viajes 2026 (asistidos) y los
+// puntos acumulados en cada uno, con el total al pie, y la comparte
+// vía Web Share API (o la descarga si el navegador no la soporta).
+async function compartirPuntosPasajero(pasajeroId) {
+  const btn = event?.currentTarget;
+  if (btn) btn.disabled = true;
+
+  try {
+    let registro = _rankingPuntosCompleto.find(r => r.pasajeroId === pasajeroId);
+
+    // Si el ranking aún no se calculó en esta sesión, lo armamos al vuelo
+    if (!registro) {
+      const [
+        { data: viajesData, error: errViajes },
+        { data: vpData,     error: errVp },
+      ] = await Promise.all([
+        supabaseClient.from("viajes").select("id, nombre, fecha_salida"),
+        supabaseClient.from("viaje_pasajeros")
+          .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero )"),
+      ]);
+      if (errViajes || errVp) {
+        alert("No se pudo generar la imagen. Intentá de nuevo.");
+        return;
+      }
+      const viajesMap = {};
+      (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
+      const ranking = _calcularRankingPuntos2026(vpData || [], viajesMap);
+      registro = ranking.find(r => r.pasajeroId === pasajeroId);
+    }
+
+    if (!registro || registro.viajes.length === 0) {
+      alert("Este pasajero todavía no tiene viajes asistidos en 2026.");
+      return;
+    }
+
+    const blob = await _generarImagenPuntos(registro);
+    const fileName = `puntos-${registro.nombre.replace(/\s+/g, "_").toLowerCase()}-2026.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    const textoCompartir = `Hola ${registro.nombre}, estos son los viajes que hiciste en 2026 y los puntos que acumulaste en cada uno. ¡Vas sumando para el Club Destino! 🌟`;
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: "Puntos Club Destino 2026",
+        text: textoCompartir,
+      });
+    } else {
+      // Fallback: descargar la imagen
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  } catch (e) {
+    if (e?.name !== "AbortError") {
+      console.error("Error al compartir puntos del pasajero:", e);
+      alert("No se pudo generar la imagen para compartir.");
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Dibuja la tarjeta de puntos en un canvas y devuelve un Blob PNG
+function _generarImagenPuntos(registro) {
+  return new Promise((resolve) => {
+    const PADDING   = 48;
+    const WIDTH     = 720;
+    const ROW_H     = 64;
+    const HEADER_H  = 210;
+    const FOOTER_H  = 130;
+    const height = HEADER_H + (registro.viajes.length * ROW_H) + FOOTER_H;
+
+    const canvas = document.createElement("canvas");
+    const scale = 2; // exportar a mayor resolución
+    canvas.width  = WIDTH * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+
+    // Fondo
+    const bgGrad = ctx.createLinearGradient(0, 0, WIDTH, height);
+    bgGrad.addColorStop(0, "#f4f7f5");
+    bgGrad.addColorStop(1, "#e8efe9");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, WIDTH, height);
+
+    // Header con gradiente accent
+    const headerGrad = ctx.createLinearGradient(0, 0, WIDTH, HEADER_H);
+    headerGrad.addColorStop(0, "#2d6a4f");
+    headerGrad.addColorStop(1, "#1b4332");
+    ctx.fillStyle = headerGrad;
+    ctx.fillRect(0, 0, WIDTH, HEADER_H);
+
+    // Sello "Club Destino"
+    ctx.fillStyle = "rgba(255,255,255,.16)";
+    ctx.font = "600 13px Roboto, sans-serif";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("CLUB DESTINO · 2026", PADDING, 38);
+
+    // Saludo
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "700 26px Roboto, sans-serif";
+    _wrapText(ctx, `Hola ${registro.nombre},`, PADDING, 82, WIDTH - PADDING * 2, 32);
+    ctx.font = "400 16px Roboto, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    _wrapText(
+      ctx,
+      "estos son los viajes que hiciste en 2026 y los puntos que acumulaste en cada uno.",
+      PADDING, 118, WIDTH - PADDING * 2, 22
+    );
+
+    // Filas de viajes
+    let y = HEADER_H;
+    registro.viajes.forEach((v, i) => {
+      if (i % 2 === 0) {
+        ctx.fillStyle = "rgba(45,106,79,.05)";
+        ctx.fillRect(0, y, WIDTH, ROW_H);
+      }
+      // separador
+      ctx.strokeStyle = "rgba(0,0,0,.06)";
+      ctx.beginPath();
+      ctx.moveTo(PADDING, y + ROW_H);
+      ctx.lineTo(WIDTH - PADDING, y + ROW_H);
+      ctx.stroke();
+
+      // nombre del viaje
+      ctx.fillStyle = "#1a3a2a";
+      ctx.font = "600 16px Roboto, sans-serif";
+      const nombreViaje = _truncateText(ctx, v.nombre, WIDTH - PADDING * 2 - 180);
+      ctx.fillText(nombreViaje, PADDING, y + 28);
+
+      // fecha
+      ctx.fillStyle = "#6b7d73";
+      ctx.font = "400 13px Roboto, sans-serif";
+      ctx.fillText(_formatFechaCorta(v.fecha_salida), PADDING, y + 48);
+
+      // puntos (pill, alineado a la derecha)
+      const ptsLabel = `⭐ ${v.puntos} pts`;
+      ctx.font = "700 14px Roboto, sans-serif";
+      const ptsWidth = ctx.measureText(ptsLabel).width + 28;
+      const pillX = WIDTH - PADDING - ptsWidth;
+      const pillY = y + ROW_H / 2 - 14;
+      _roundRect(ctx, pillX, pillY, ptsWidth, 28, 14);
+      ctx.fillStyle = "rgba(201,168,76,.18)";
+      ctx.fill();
+      ctx.fillStyle = "#8a6d1a";
+      ctx.fillText(ptsLabel, pillX + 14, pillY + 19);
+
+      y += ROW_H;
+    });
+
+    // Footer con total
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, y, WIDTH, FOOTER_H);
+    ctx.strokeStyle = "rgba(0,0,0,.08)";
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(WIDTH, y);
+    ctx.stroke();
+
+    ctx.fillStyle = "#1a3a2a";
+    ctx.font = "500 16px Roboto, sans-serif";
+    ctx.fillText("Total acumulado en 2026", PADDING, y + 52);
+
+    ctx.fillStyle = "#2d6a4f";
+    ctx.font = "700 36px Roboto, sans-serif";
+    ctx.fillText(`⭐ ${registro.puntos} pts`, PADDING, y + 92);
+
+    canvas.toBlob((blob) => resolve(blob), "image/png", 1);
+  });
+}
+
+// Helpers de dibujo en canvas
+function _wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  let curY = y;
+  words.forEach((word, i) => {
+    const testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+      ctx.fillText(line.trim(), x, curY);
+      line = word + " ";
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  });
+  ctx.fillText(line.trim(), x, curY);
+}
+
+function _truncateText(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let truncated = text;
+  while (truncated.length > 0 && ctx.measureText(truncated + "…").width > maxWidth) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated + "…";
+}
+
+function _roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function _formatFechaCorta(val) {
+  if (!val) return "";
+  if (typeof formatDate === "function") {
+    const f = formatDate(val);
+    if (f) return f;
+  }
+  const [year, month, day] = val.split("-");
+  if (!day) return val;
+  return `${day}/${month}/${year}`;
 }
 
 // ── Comparativo egresos vs ingresos (últimos 3 viajes) ───────
