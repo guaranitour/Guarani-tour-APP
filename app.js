@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Navegación por hash ────────────────────────────────────
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
-const _hashSimpleViews = ["home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico"];
+const _hashSimpleViews = ["home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
 
 function _buildHash(view, idx) {
@@ -251,6 +251,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (_vrecnew) _vrecnew.style.display = "none";
   const _vdash = document.getElementById("view-dashboard");
   if (_vdash) _vdash.style.display = "none";
+  const _vrank = document.getElementById("view-ranking-puntos");
+  if (_vrank) _vrank.style.display = "none";
   const _vbyc = document.getElementById("view-byc");
   if (_vbyc) _vbyc.style.display = "none";
   const _vbycv = document.getElementById("view-byc-vincular");
@@ -290,6 +292,18 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Panel de control" }
     ]);
     loadDashboard();
+
+  }
+
+  else if (view === "ranking-puntos") {
+
+    showEl("view-ranking-puntos");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Panel de control", action: () => navigateTo("dashboard") },
+      { label: "Ranking de puntos" }
+    ]);
+    loadRankingPuntos();
 
   }
 

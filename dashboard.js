@@ -252,7 +252,11 @@ function renderViajesActivos(viajesData, vpData) {
 }
 
 // ── Top de pasajeros con más puntos (2026) ───────────────────
-function renderTopPuntos2026(vpData, viajesMap) {
+// Guarda el ranking COMPLETO (no solo el top 10) para reutilizarlo
+// en la vista de detalle "ranking-puntos" sin volver a pegarle a Supabase.
+let _rankingPuntosCompleto = [];
+
+function _calcularRankingPuntos2026(vpData, viajesMap) {
   const puntosPorPasajero  = {};
   const nombresPorPasajero = {};
 
@@ -268,37 +272,46 @@ function renderTopPuntos2026(vpData, viajesMap) {
     nombresPorPasajero[vp.pasajero_id] = vp.pasajeros?.Pasajero || "Sin nombre";
   });
 
-  const ranking = Object.keys(puntosPorPasajero)
+  return Object.keys(puntosPorPasajero)
     .map(pid => ({
       pasajeroId: parseInt(pid, 10),
       nombre: nombresPorPasajero[pid],
       puntos: puntosPorPasajero[pid],
     }))
-    .sort((a, b) => b.puntos - a.puntos)
-    .slice(0, 10);
+    .sort((a, b) => b.puntos - a.puntos);
+}
 
-  let body;
+function _renderRankRows(ranking) {
   if (ranking.length === 0) {
-    body = `<div class="dash-state">Sin puntos acumulados en viajes de 2026.</div>`;
-  } else {
-    body = ranking.map((r, i) => {
-      const pos = i + 1;
-      const cls = pos === 1 ? "top1" : pos === 2 ? "top2" : pos === 3 ? "top3" : "";
-      return `
-      <div class="dash-rank-row" onclick="irADashPasajero(${r.pasajeroId})">
-        <div class="dash-rank-num ${cls}">${pos}</div>
-        <div class="dash-rank-avatar">${getInitials(r.nombre)}</div>
-        <div class="dash-rank-name">${r.nombre}</div>
-        <span class="dash-rank-pts">⭐ ${r.puntos} pts</span>
-      </div>`;
-    }).join("");
+    return `<div class="dash-state">Sin puntos acumulados en viajes de 2026.</div>`;
   }
+  return ranking.map((r, i) => {
+    const pos = i + 1;
+    const cls = pos === 1 ? "top1" : pos === 2 ? "top2" : pos === 3 ? "top3" : "";
+    return `
+    <div class="dash-rank-row" onclick="irADashPasajero(${r.pasajeroId})">
+      <div class="dash-rank-num ${cls}">${pos}</div>
+      <div class="dash-rank-avatar">${getInitials(r.nombre)}</div>
+      <div class="dash-rank-name">${r.nombre}</div>
+      <span class="dash-rank-pts">⭐ ${r.puntos} pts</span>
+    </div>`;
+  }).join("");
+}
+
+function renderTopPuntos2026(vpData, viajesMap) {
+  _rankingPuntosCompleto = _calcularRankingPuntos2026(vpData, viajesMap);
+  const top10 = _rankingPuntosCompleto.slice(0, 10);
+  const body  = _renderRankRows(top10);
 
   return `
   <div class="dash-section">
     <div class="dash-section-title">
       <span class="dash-icon">${_dashIcons.puntos}</span>
       Top pasajeros · puntos 2026
+      ${_rankingPuntosCompleto.length > 10 ? `
+      <button class="dash-ver-todos-btn" onclick="navigateTo('ranking-puntos')">
+        Ver todos ${_dashIcons.flecha}
+      </button>` : ""}
     </div>
     <div class="dash-card">${body}</div>
   </div>`;
@@ -311,6 +324,87 @@ async function irADashPasajero(pasajeroId) {
   }
   const p = allPassengers.find(x => x.id === pasajeroId);
   if (p) navigateTo("detalle", p._idx);
+}
+
+// ── Vista de ranking completo de puntos (1ro al último) ──────
+async function loadRankingPuntos() {
+  const root = document.getElementById("ranking-puntos-list");
+  if (!root) return;
+
+  const searchEl = document.getElementById("ranking-puntos-search");
+  if (searchEl) searchEl.value = "";
+
+  // Si el dashboard ya se cargó en esta sesión, reutilizamos el cálculo.
+  // Si no (ej. acceso directo por hash), lo recalculamos desde cero.
+  if (_rankingPuntosCompleto.length === 0) {
+    root.innerHTML = `<div class="dash-state">⏳ Cargando ranking…</div>`;
+    try {
+      const [
+        { data: viajesData, error: errViajes },
+        { data: vpData,     error: errVp },
+      ] = await Promise.all([
+        supabaseClient.from("viajes")
+          .select("id, fecha_salida"),
+        supabaseClient.from("viaje_pasajeros")
+          .select("id, pasajero_id, viaje_id, puntos_destino, pasajeros ( Pasajero )"),
+      ]);
+
+      if (errViajes || errVp) {
+        console.error("Error cargando ranking de puntos:", errViajes || errVp);
+        root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el ranking.</div>`;
+        return;
+      }
+
+      const viajesMap = {};
+      (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
+      _rankingPuntosCompleto = _calcularRankingPuntos2026(vpData || [], viajesMap);
+
+    } catch (e) {
+      console.error("Error inesperado cargando ranking de puntos:", e);
+      root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el ranking.</div>`;
+      return;
+    }
+  }
+
+  root.innerHTML = _renderRankRows(_rankingPuntosCompleto);
+}
+
+// Filtro en vivo por nombre dentro del ranking completo
+let _rankingPuntosSearchTimer = null;
+function filtrarRankingPuntos() {
+  clearTimeout(_rankingPuntosSearchTimer);
+  _rankingPuntosSearchTimer = setTimeout(() => {
+    const root = document.getElementById("ranking-puntos-list");
+    const q = document.getElementById("ranking-puntos-search")?.value.toLowerCase().trim() || "";
+    if (!root) return;
+
+    if (!q) {
+      root.innerHTML = _renderRankRows(_rankingPuntosCompleto);
+      return;
+    }
+
+    const filtrado = _rankingPuntosCompleto.filter(r =>
+      (r.nombre || "").toLowerCase().includes(q)
+    );
+
+    // En modo filtrado mantenemos la posición original del ranking general,
+    // no una renumeración 1..N del subconjunto filtrado.
+    if (filtrado.length === 0) {
+      root.innerHTML = `<div class="dash-state">Sin resultados.</div>`;
+      return;
+    }
+    root.innerHTML = filtrado.map(r => {
+      const posOriginal = _rankingPuntosCompleto.indexOf(r) + 1;
+      const cls = posOriginal === 1 ? "top1" : posOriginal === 2 ? "top2" : posOriginal === 3 ? "top3" : "";
+      return `
+      <div class="dash-rank-row" onclick="irADashPasajero(${r.pasajeroId})">
+        <div class="dash-rank-num ${cls}">${posOriginal}</div>
+        <div class="dash-rank-avatar">${getInitials(r.nombre)}</div>
+        <div class="dash-rank-name">${r.nombre}</div>
+        <span class="dash-rank-pts">⭐ ${r.puntos} pts</span>
+      </div>`;
+    }).join("");
+  }, 200);
 }
 
 // ── Comparativo egresos vs ingresos (últimos 3 viajes) ───────

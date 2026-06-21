@@ -142,6 +142,22 @@
   background: var(--bg2); border-radius: 20px;
   padding: .15rem .6rem;
 }
+.dash-ver-todos-btn {
+  margin-left: auto;
+  display: flex; align-items: center; gap: .3rem;
+  font-family: 'Roboto', sans-serif;
+  font-size: .76rem; font-weight: 600;
+  color: var(--accent);
+  background: rgba(45,106,79,.08);
+  border: 1px solid rgba(45,106,79,.18);
+  border-radius: 20px;
+  padding: .3rem .75rem;
+  cursor: pointer;
+  transition: background .15s, transform .12s;
+}
+.dash-ver-todos-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+.dash-ver-todos-btn:hover { background: rgba(45,106,79,.14); }
+.dash-ver-todos-btn:active { transform: translateY(1px); }
 .dash-section-sub {
   font-size: .76rem; color: var(--text-muted);
   margin: -.35rem 0 .7rem;
