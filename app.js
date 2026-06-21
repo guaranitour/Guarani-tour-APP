@@ -790,7 +790,7 @@ async function renderDetalle(idx) {
   document.getElementById("d-ultimo-viaje").textContent = ultimoNombre;
 }
 
-function activarEdicionDetalle() {
+async function activarEdicionDetalle() {
   const p = allPassengers.find(x => x._idx === selectedIdx);
   if (!p) return;
 
@@ -805,15 +805,21 @@ function activarEdicionDetalle() {
   document.getElementById("e-fecha").value   = p["Fecha de nacimiento"] || "";
   document.getElementById("e-email").value   = p["E-mail"] || "";
 
-  // Cargar select vendedores y marcar el actual
-  cargarVendedores("e-vendedor", p.Vendedor || "").then(() => {
-    const selVend = document.getElementById("e-vendedor");
-    if (selVend) {
-      selVend.disabled = !esAdmin;
-      selVend.style.opacity = esAdmin ? "" : "0.5";
-      selVend.title = esAdmin ? "" : "Solo admin puede cambiar el vendedor";
-    }
-  });
+  // Deshabilitar guardado mientras se carga el select de vendedor,
+  // para evitar guardar con el campo vacío si se hace click antes de tiempo.
+  const btnGuardar = document.getElementById("btn-guardar-detalle");
+  if (btnGuardar) btnGuardar.disabled = true;
+
+  // Cargar select vendedores y marcar el actual — esperar a que termine antes de continuar
+  await cargarVendedores("e-vendedor", p.Vendedor || "");
+  const selVend = document.getElementById("e-vendedor");
+  if (selVend) {
+    selVend.disabled = !esAdmin;
+    selVend.style.opacity = esAdmin ? "" : "0.5";
+    selVend.title = esAdmin ? "" : "Solo admin puede cambiar el vendedor";
+  }
+
+  if (btnGuardar) btnGuardar.disabled = false;
 
   // Alternar vistas
   document.getElementById("detalle-fields-view").style.display  = "none";
