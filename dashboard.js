@@ -586,27 +586,6 @@ async function _generarImagenPuntos(registro) {
   ctx.fillStyle = stripeGrad;
   ctx.fillRect(cardX, cardY, cardWidth, STRIPE_H);
 
-  // ── Marca de agua: limitada a la zona de la lista de viajes (entre el
-  // intro y el footer), para que nunca invada el header ni el footer ni
-  // se vea cortada de forma rara contra esos bloques de color sólido. ──
-  const listZoneTop    = cardY + STRIPE_H + HEADER_H + GREET_H + INTRO_H - 8;
-  const listZoneBottom = cardY + cardHeight - FOOTER_H;
-  const listZoneH      = listZoneBottom - listZoneTop;
-  if (logo && listZoneH > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(cardX, listZoneTop, cardWidth, listZoneH);
-    ctx.clip();
-    ctx.globalAlpha = 0.07;
-    // El tamaño se adapta a la zona disponible (mitad del ancho de la
-    // tarjeta como máximo) para que jamás sobresalga del recorte.
-    const wmSize = Math.min(cardWidth * 0.5, listZoneH * 0.9);
-    const wmX = cardX + (cardWidth - wmSize) / 2;
-    const wmY = listZoneTop + (listZoneH - wmSize) / 2;
-    ctx.drawImage(logo, wmX, wmY, wmSize, wmSize);
-    ctx.restore();
-  }
-
   // ── Header: logo circular + título ──
   const logoSize = 50;
   const logoX = cardX + CARD_PAD, logoY = cardY + STRIPE_H + 22;
