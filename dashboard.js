@@ -497,197 +497,170 @@ async function compartirPuntosPasajero(pasajeroId) {
   }
 }
 
-// Dibuja la tarjeta de puntos en un canvas y devuelve un Blob PNG
+// URL pública del logo de la app (ya usado en index.html para favicon/login/topbar)
+const _LOGO_URL = "https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png";
+let _logoImgPromise = null;
+function _cargarLogo() {
+  if (_logoImgPromise) return _logoImgPromise;
+  _logoImgPromise = new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null); // si falla la carga, seguimos sin logo
+    img.src = _LOGO_URL;
+  });
+  return _logoImgPromise;
+}
+
+// Dibuja la tarjeta de puntos en un canvas y devuelve un Blob PNG.
+// Diseño basado en el boceto del usuario: fondo blanco, logo + título
+// arriba a la izquierda, saludo, intro, lista de viajes con bullet
+// (nombre + puntos en la misma línea, fecha debajo en gris) y el
+// total al pie con el mismo patrón izquierda/derecha, más destacado.
 async function _generarImagenPuntos(registro) {
-  // Aseguramos que la tipografía esté lista antes de medir/dibujar texto,
-  // si no el canvas cae a una fuente genérica y se ve desprolijo.
   const FONT = "Roboto, -apple-system, sans-serif";
   try {
     await Promise.all([
       document.fonts.load("400 16px " + FONT),
-      document.fonts.load("500 16px " + FONT),
       document.fonts.load("600 16px " + FONT),
       document.fonts.load("700 16px " + FONT),
     ]);
     await document.fonts.ready;
-  } catch (e) { /* si falla, seguimos con fallback del navegador */ }
+  } catch (e) { /* seguimos con fallback del navegador si falla */ }
 
-  const WIDTH       = 640;
-  const OUTER_PAD    = 32;   // margen exterior de la imagen
-  const CARD_PAD     = 36;   // padding interno de la tarjeta blanca
-  const HEADER_H     = 168;
-  const ROW_H        = 58;
-  const LIST_TOP_GAP = 8;
-  const TOTAL_H      = 96;
-  const FOOTER_GAP   = 24;
+  const logo = await _cargarLogo();
 
-  const cardWidth  = WIDTH - OUTER_PAD * 2;
+  const WIDTH        = 640;
+  const PAD          = 44;    // margen exterior, igual que el boceto
+  const HEADER_H     = 96;    // alto reservado para logo + título
+  const GREET_H      = 44;
+  const INTRO_H      = 56;
+  const LIST_TOP_GAP = 28;
+  const ROW_H        = 64;    // nombre+puntos arriba, fecha debajo
+  const TOTAL_GAP    = 40;
+  const TOTAL_H      = 50;
+  const BOTTOM_PAD   = 56;
+
+  const contentW = WIDTH - PAD * 2;
   const listHeight = registro.viajes.length * ROW_H;
-  const cardHeight = HEADER_H + LIST_TOP_GAP + listHeight + TOTAL_H + CARD_PAD;
-  const height = cardHeight + OUTER_PAD * 2;
+  const height = PAD + HEADER_H + GREET_H + INTRO_H + LIST_TOP_GAP
+               + listHeight + TOTAL_GAP + TOTAL_H + BOTTOM_PAD;
 
   const canvas = document.createElement("canvas");
-  const scale = 2.5; // exportar a mayor resolución para que se vea nítida al compartir
+  const scale = 2.5; // resolución alta para que se vea nítida al compartir
   canvas.width  = WIDTH * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
   ctx.textBaseline = "alphabetic";
 
-  // ── Fondo exterior ──
-  ctx.fillStyle = "#eef2ef";
+  // ── Fondo blanco ──
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, WIDTH, height);
 
-  // ── Tarjeta blanca con sombra suave ──
-  const cardX = OUTER_PAD, cardY = OUTER_PAD;
-  ctx.save();
-  ctx.shadowColor = "rgba(27,67,50,.14)";
-  ctx.shadowBlur = 24;
-  ctx.shadowOffsetY = 8;
-  ctx.fillStyle = "#ffffff";
-  _roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 20);
-  ctx.fill();
-  ctx.restore();
+  // ── Marca de agua: logo grande y muy sutil, centrado en la tarjeta ──
+  if (logo) {
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    const wmSize = WIDTH * 0.85;
+    ctx.drawImage(logo, (WIDTH - wmSize) / 2, (height - wmSize) / 2, wmSize, wmSize);
+    ctx.restore();
+  }
 
-  // Clip al borde redondeado para todo lo que se dibuje encima
-  ctx.save();
-  _roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 20);
-  ctx.clip();
-
-  // ── Header con gradiente accent ──
-  const headerGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardWidth, cardY + HEADER_H);
-  headerGrad.addColorStop(0, "#2d6a4f");
-  headerGrad.addColorStop(1, "#1b4332");
-  ctx.fillStyle = headerGrad;
-  ctx.fillRect(cardX, cardY, cardWidth, HEADER_H);
-
-  // Marca de agua: estrella grande sutil en el header
-  ctx.save();
-  ctx.globalAlpha = 0.08;
-  ctx.fillStyle = "#ffffff";
-  _drawStar(ctx, cardX + cardWidth - 56, cardY + 56, 8, 64, 30);
-  ctx.restore();
-
-  const textX = cardX + CARD_PAD;
-  const textMaxW = cardWidth - CARD_PAD * 2 - 40;
-
-  // Etiqueta superior
-  ctx.fillStyle = "rgba(255,255,255,.7)";
-  ctx.font = "600 12px " + FONT;
-  ctx.textLetterSpacing = "1.5px";
-  ctx.fillText("CLUB DESTINO · 2026", textX, cardY + 38);
-  ctx.textLetterSpacing = "0px";
-
-  // Saludo
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "700 25px " + FONT;
-  const saludoLines = _wrapTextLines(ctx, `¡Hola, ${registro.nombre}!`, textMaxW);
-  let greetY = cardY + 76;
-  saludoLines.forEach(line => { ctx.fillText(line, textX, greetY); greetY += 30; });
-
-  // Subtítulo
-  ctx.fillStyle = "rgba(255,255,255,.88)";
-  ctx.font = "400 14.5px " + FONT;
-  const subLines = _wrapTextLines(
-    ctx,
-    "Estos son los viajes que hiciste en 2026 y los puntos que sumaste en cada uno.",
-    textMaxW
-  );
-  let subY = greetY + 6;
-  subLines.forEach(line => { ctx.fillText(line, textX, subY); subY += 19; });
-
-  // ── Lista de viajes ──
-  let y = cardY + HEADER_H + LIST_TOP_GAP;
-  registro.viajes.forEach((v, i) => {
-    const rowTextX = cardX + CARD_PAD;
-    const rowRightX = cardX + cardWidth - CARD_PAD;
-
-    // separador entre filas (no antes de la primera)
-    if (i > 0) {
-      ctx.strokeStyle = "#eef0ee";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(rowTextX, y);
-      ctx.lineTo(rowRightX, y);
-      ctx.stroke();
-    }
-
-    const centerY = y + ROW_H / 2;
-
-    // Punto indicador + nombre del viaje
+  // ── Header: logo circular + título ──
+  const logoSize = 52;
+  const logoX = PAD, logoY = PAD;
+  if (logo) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+    ctx.restore();
+  } else {
+    // si el logo no cargó, dejamos un círculo de color como respaldo
     ctx.fillStyle = "#2d6a4f";
     ctx.beginPath();
-    ctx.arc(rowTextX + 4, centerY - 9, 4, 0, Math.PI * 2);
+    ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "#1a3a2a";
+  ctx.font = "700 21px " + FONT;
+  ctx.fillText("Club destino | 2026", logoX + logoSize + 16, logoY + logoSize / 2 + 7);
+
+  // ── Saludo ──
+  let cursorY = PAD + HEADER_H + 14;
+  ctx.fillStyle = "#1a3a2a";
+  ctx.font = "700 22px " + FONT;
+  ctx.fillText(`¡Hola, ${registro.nombre}!`, PAD, cursorY);
+
+  // ── Intro ──
+  cursorY += 38;
+  ctx.fillStyle = "#3d4d44";
+  ctx.font = "400 15px " + FONT;
+  const introLines = _wrapTextLines(
+    ctx,
+    "Estos son los viajes que hiciste en 2026 y los puntos que acumulaste con cada uno.",
+    contentW
+  );
+  introLines.forEach(line => { ctx.fillText(line, PAD, cursorY); cursorY += 21; });
+
+  // ── Lista de viajes ──
+  cursorY += LIST_TOP_GAP - 14;
+  registro.viajes.forEach((v) => {
+    const rowTop = cursorY;
+
+    // bullet
+    ctx.fillStyle = "#1a3a2a";
+    ctx.beginPath();
+    ctx.arc(PAD + 3, rowTop - 5, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#1a3a2a";
-    ctx.font = "600 15.5px " + FONT;
-    const nombreMaxW = rowRightX - (rowTextX + 18) - 110;
-    const nombreViaje = _truncateText(ctx, v.nombre, nombreMaxW);
-    ctx.fillText(nombreViaje, rowTextX + 18, centerY - 4);
-
-    // Fecha
-    ctx.fillStyle = "#8a9a90";
-    ctx.font = "400 12.5px " + FONT;
-    ctx.fillText(_formatFechaCorta(v.fecha_salida), rowTextX + 18, centerY + 16);
-
-    // Puntos a la derecha
+    // nombre del viaje (izquierda) y puntos (derecha), misma línea
     const ptsLabel = v.puntos > 0 ? `+${v.puntos} pts` : "0 pts";
-    ctx.font = "700 15px " + FONT;
-    const ptsColor = v.puntos > 0 ? "#8a6d1a" : "#a9b3ad";
+    ctx.font = "700 16px " + FONT;
+    const ptsColor = v.puntos > 0 ? "#2d6a4f" : "#9aa6a0";
     ctx.fillStyle = ptsColor;
     const ptsW = ctx.measureText(ptsLabel).width;
-    ctx.fillText(ptsLabel, rowRightX - ptsW, centerY + 5);
+    ctx.fillText(ptsLabel, PAD + contentW - ptsW, rowTop);
 
-    y += ROW_H;
+    ctx.fillStyle = "#1a3a2a";
+    ctx.font = "600 16px " + FONT;
+    const nombreMaxW = contentW - ptsW - 32;
+    const nombreViaje = _truncateText(ctx, v.nombre, nombreMaxW);
+    ctx.fillText(nombreViaje, PAD + 16, rowTop);
+
+    // fecha debajo, en gris
+    ctx.fillStyle = "#8a9a90";
+    ctx.font = "400 13px " + FONT;
+    ctx.fillText(_formatFechaCorta(v.fecha_salida), PAD + 16, rowTop + 21);
+
+    cursorY += ROW_H;
   });
 
-  // ── Separador grueso antes del total ──
+  // ── Total acumulado ──
+  cursorY += TOTAL_GAP;
   ctx.strokeStyle = "#e4e8e4";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(cardX + CARD_PAD, y);
-  ctx.lineTo(cardX + cardWidth - CARD_PAD, y);
+  ctx.moveTo(PAD, cursorY - 24);
+  ctx.lineTo(PAD + contentW, cursorY - 24);
   ctx.stroke();
 
-  // ── Total ──
-  const totalY = y + TOTAL_H / 2;
-  ctx.fillStyle = "#5c6e63";
-  ctx.font = "500 14px " + FONT;
-  ctx.fillText("Total acumulado en 2026", cardX + CARD_PAD, totalY + 5);
+  ctx.fillStyle = "#1a3a2a";
+  ctx.font = "700 17px " + FONT;
+  ctx.fillText("Total acumulado en 2026", PAD, cursorY);
 
-  const totalLabel = `⭐ ${registro.puntos} pts`;
-  ctx.font = "700 26px " + FONT;
+  const totalLabel = `${registro.puntos} pts`;
+  ctx.font = "700 22px " + FONT;
   ctx.fillStyle = "#2d6a4f";
   const totalW = ctx.measureText(totalLabel).width;
-  ctx.fillText(totalLabel, cardX + cardWidth - CARD_PAD - totalW, totalY + 9);
-
-  ctx.restore(); // fin del clip
+  ctx.fillText(totalLabel, PAD + contentW - totalW, cursorY);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/png", 1);
   });
-}
-
-// Dibuja una estrella (usada como marca de agua decorativa)
-function _drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-  let rot = (Math.PI / 2) * 3;
-  const step = Math.PI / spikes;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - outerRadius);
-  for (let i = 0; i < spikes; i++) {
-    let x = cx + Math.cos(rot) * outerRadius;
-    let y = cy + Math.sin(rot) * outerRadius;
-    ctx.lineTo(x, y);
-    rot += step;
-    x = cx + Math.cos(rot) * innerRadius;
-    y = cy + Math.sin(rot) * innerRadius;
-    ctx.lineTo(x, y);
-    rot += step;
-  }
-  ctx.lineTo(cx, cy - outerRadius);
-  ctx.closePath();
-  ctx.fill();
 }
 
 // Parte texto en líneas según un ancho máximo y devuelve el array de líneas
