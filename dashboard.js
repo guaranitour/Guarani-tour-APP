@@ -558,14 +558,14 @@ async function _generarImagenPuntos(registro) {
   ctx.textBaseline = "alphabetic";
 
   // ── Fondo exterior gris suave ──
-  ctx.fillStyle = "#eef1ef";
+  ctx.fillStyle = "#eef1f8";
   ctx.fillRect(0, 0, WIDTH, height);
 
   const cardX = OUTER_PAD, cardY = OUTER_PAD;
 
   // ── Tarjeta blanca con sombra suave y esquinas redondeadas ──
   ctx.save();
-  ctx.shadowColor = "rgba(27,67,50,.16)";
+  ctx.shadowColor = "rgba(15,35,71,.16)";
   ctx.shadowBlur = 28;
   ctx.shadowOffsetY = 10;
   ctx.fillStyle = "#ffffff";
@@ -580,9 +580,9 @@ async function _generarImagenPuntos(registro) {
 
   // ── Franja decorativa superior con degradé ──
   const stripeGrad = ctx.createLinearGradient(cardX, 0, cardX + cardWidth, 0);
-  stripeGrad.addColorStop(0, "#2d6a4f");
+  stripeGrad.addColorStop(0, "#1a3a6b");
   stripeGrad.addColorStop(0.55, "#c9a84c");
-  stripeGrad.addColorStop(1, "#1b4332");
+  stripeGrad.addColorStop(1, "#0f2347");
   ctx.fillStyle = stripeGrad;
   ctx.fillRect(cardX, cardY, cardWidth, STRIPE_H);
 
@@ -603,13 +603,13 @@ async function _generarImagenPuntos(registro) {
     ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
     ctx.stroke();
   } else {
-    ctx.fillStyle = "#2d6a4f";
+    ctx.fillStyle = "#1a3a6b";
     ctx.beginPath();
     ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  ctx.fillStyle = "#1a3a2a";
+  ctx.fillStyle = "#0f2347";
   ctx.font = "700 20px " + FONT;
   ctx.fillText("Club Destino", logoX + logoSize + 16, logoY + logoSize / 2 - 1);
   ctx.fillStyle = "#8a6d1a";
@@ -620,13 +620,13 @@ async function _generarImagenPuntos(registro) {
 
   // ── Saludo ──
   let cursorY = cardY + STRIPE_H + HEADER_H + 18;
-  ctx.fillStyle = "#1a3a2a";
+  ctx.fillStyle = "#0f2347";
   ctx.font = "700 22px " + FONT;
   ctx.fillText(`¡Hola, ${registro.nombre}!`, cardX + CARD_PAD, cursorY);
 
   // ── Intro ──
   cursorY += 34;
-  ctx.fillStyle = "#5c6e63";
+  ctx.fillStyle = "#4a5a7a";
   ctx.font = "400 14.5px " + FONT;
   const introLines = _wrapTextLines(
     ctx,
@@ -646,7 +646,7 @@ async function _generarImagenPuntos(registro) {
 
     // separador sutil entre filas (no antes de la primera)
     if (i > 0) {
-      ctx.strokeStyle = "#eef0ee";
+      ctx.strokeStyle = "#edf0f7";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(rowLeftX, rowTop - LIST_TOP_GAP / 2 + 4);
@@ -669,34 +669,34 @@ async function _generarImagenPuntos(registro) {
       ctx.fill();
       ctx.fillStyle = "#8a6d1a";
     } else {
-      ctx.fillStyle = "rgba(138,154,144,.12)";
+      ctx.fillStyle = "rgba(138,150,180,.12)";
       _roundRect(ctx, pillX, pillY, pillW, pillH, 13);
       ctx.fill();
-      ctx.fillStyle = "#8a9a90";
+      ctx.fillStyle = "#8a96ab";
     }
     ctx.fillText(ptsLabel, pillX + pillPadX, pillY + pillH / 2 + 5);
 
     // nombre del viaje
-    ctx.fillStyle = "#1a3a2a";
+    ctx.fillStyle = "#0f2347";
     ctx.font = "600 15.5px " + FONT;
     const nombreMaxW = pillX - rowLeftX - 16;
     const nombreViaje = _truncateText(ctx, v.nombre, nombreMaxW);
     ctx.fillText(nombreViaje, rowLeftX, rowCenterY);
 
-    // fecha debajo, en gris
-    ctx.fillStyle = "#8a9a90";
+    // fecha debajo, en gris azulado
+    ctx.fillStyle = "#8a96ab";
     ctx.font = "400 12.5px " + FONT;
     ctx.fillText(_formatFechaCorta(v.fecha_salida), rowLeftX, rowCenterY + 19);
 
     cursorY += ROW_H;
   });
 
-  // ── Footer: total acumulado, con fondo propio (verde suave, en línea
+  // ── Footer: total acumulado, con fondo propio (azul suave, en línea
   // con la paleta del resto de la tarjeta en vez de un tono ajeno) ──
   const footerY = cardY + cardHeight - FOOTER_H;
-  ctx.fillStyle = "#eef5f0";
+  ctx.fillStyle = "#eef3fb";
   ctx.fillRect(cardX, footerY, cardWidth, FOOTER_H);
-  ctx.strokeStyle = "#d8e8dd";
+  ctx.strokeStyle = "#d0ddf0";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(cardX, footerY);
@@ -704,7 +704,7 @@ async function _generarImagenPuntos(registro) {
   ctx.stroke();
 
   const footerCenterY = footerY + FOOTER_H / 2;
-  ctx.fillStyle = "#5c6e63";
+  ctx.fillStyle = "#4a5a7a";
   ctx.font = "500 13.5px " + FONT;
   ctx.fillText("Total acumulado en 2026", cardX + CARD_PAD, footerCenterY - 2);
   ctx.fillStyle = "#8a6d1a";
@@ -715,7 +715,7 @@ async function _generarImagenPuntos(registro) {
 
   const totalLabel = `${registro.puntos} pts`;
   ctx.font = "700 28px " + FONT;
-  ctx.fillStyle = "#2d6a4f";
+  ctx.fillStyle = "#1a3a6b";
   const totalW = ctx.measureText(totalLabel).width;
   ctx.fillText(totalLabel, cardX + cardWidth - CARD_PAD - totalW, footerCenterY + 9);
 
