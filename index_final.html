@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>GUARANI TOUR | Staff</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1a3a2a" />
+  <link rel="icon" type="image/png" href="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" />
+  <link rel="shortcut icon" href="https://guaranitour.github.io/Guarani-tour-APP/favicon.ico" />
+  <link rel="apple-touch-icon" href="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" />
+  <link rel="manifest" href="https://guaranitour.github.io/Guarani-tour-APP/manifest.json" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="usuarios.css" />
+  <link rel="stylesheet" href="viajes_activos.css" />
+  <link rel="stylesheet" href="pagos.css" />
+  <link rel="stylesheet" href="resumen.css" />
+  <link rel="stylesheet" href="recibos.css" />
+  <link rel="stylesheet" href="byc.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="novedades.css" />
+  <link rel="stylesheet" href="movimientos.css" />
+
+  <style>
+  /* ── Modal Acerca de ── */
+  .acerca-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.45);
+    display: flex; align-items: flex-end; justify-content: center;
+    animation: acercaFadeIn .2s ease;
+  }
+  @keyframes acercaFadeIn { from { opacity:0 } to { opacity:1 } }
+  .acerca-sheet {
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 540px;
+    padding: 28px 24px 40px;
+    max-height: 88vh; overflow-y: auto;
+    position: relative;
+    animation: acercaSlideUp .25s cubic-bezier(.32,1,.23,1);
+  }
+  @keyframes acercaSlideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }
+  .acerca-close {
+    position: absolute; top: 16px; right: 16px;
+    background: #f0f0f0; border: none; border-radius: 50%;
+    width: 32px; height: 32px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #555; transition: background .15s;
+  }
+  .acerca-close:hover { background: #e0e0e0; }
+  .acerca-logo-wrap { text-align: center; margin-bottom: 10px; }
+  .acerca-logo { width: 64px; height: 64px; border-radius: 16px; }
+  .acerca-titulo {
+    text-align: center; margin: 0 0 4px;
+    font-family: 'Roboto', sans-serif; font-size: 1.4rem; color: #1a3a2a;
+  }
+  .acerca-subtitulo {
+    text-align: center; margin: 0 0 20px;
+    font-size: .85rem; color: #888;
+  }
+  .acerca-card {
+    background: #f6f8fa; border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .acerca-card h3 { margin: 0 0 8px; font-size: .95rem; color: #1a3a2a; }
+  .acerca-card p, .acerca-card li { font-size: .875rem; color: #555; margin: 0; line-height: 1.5; }
+  .acerca-card ul { padding-left: 18px; margin: 0; }
+  .acerca-card li { margin-top: 5px; }
+  .acerca-intro { background: #e8f0eb; }
+  .acerca-footer {
+    text-align: center; margin-top: 20px;
+    font-size: .78rem; color: #aaa;
+  }
+  .acerca-footer p { margin: 2px 0; }
+  .acerca-version { color: #bbb; }
+  </style>
+</head>
+<body>
+
+  <!-- ── SPLASH ── -->
+  <div id="splash-view">
+    <div class="splash-inner">
+      <div class="splash-ring">
+        <svg viewBox="0 0 100 100" class="splash-svg">
+          <circle class="splash-track" cx="50" cy="50" r="42" />
+          <circle class="splash-bar" cx="50" cy="50" r="42" />
+        </svg>
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" class="splash-logo" alt="Guaraní Tour" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOGIN ── -->
+  <div id="login-view">
+    <div class="login-card">
+      <div class="logo-wrap">
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" alt="GUARANI TOUR" class="login-logo-img" />
+      </div>
+      <h2>GUARANI TOUR</h2>
+      <p class="subtitle">Portal de staff</p>
+      <div class="divider"><span>acceso restringido</span></div>
+      <button class="btn-google" onclick="loginWithGoogle()">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.6 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.6 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.5-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C36.4 38.2 44 33 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+        </svg>
+        Iniciar sesión con Google
+      </button>
+      <p class="footer-note">Solo personal autorizado de <span>GUARANI TOUR</span></p>
+    </div>
+  </div>
+
+  <!-- ── APP ── -->
+  <div id="app-view">
+
+    <header class="topbar">
+      <div class="topbar-brand" onclick="navigateTo('home')" style="cursor:pointer">
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" alt="logo" class="topbar-logo-img" />
+        <span>GUARANI TOUR</span>
+      </div>
+      <div class="hamburger-wrap">
+        <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="hamburger-menu" id="hamburger-menu">
+          <div class="menu-user" id="user-email"></div>
+          <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Acerca de
+          </button>
+          <button class="menu-item danger" onclick="logout(); closeMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="breadcrumb-bar">
+      <div id="breadcrumb" class="breadcrumb"></div>
+    </div>
+
+    <!-- INICIO -->
+    <div id="view-home" style="display:none">
+      <div class="main">
+
+        <div class="page-header">
+          <h1 id="home-greeting">Panel de inicio</h1>
+          <p class="page-desc">Seleccioná un módulo para continuar</p>
+        </div>
+        <div class="home-grid">
+          <div class="home-card active" onclick="navigateTo('dashboard')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/dashboard.png" alt="Dashboard" width="40" height="40">
+            </div>
+            <div class="card-body">
+              <h3>Dashboard</h3>
+              <p>KPIs, viajes activos, ranking y más, todo en un solo lugar.</p>
+            </div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <div class="home-card active" onclick="navigateTo('clientes')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/cliente.png" alt="Base de clientes" width="40" height="40">
+            </div>
+            <div class="card-body">
+              <h3>Base de clientes</h3>
+              <p>Consultá y gestioná el listado completo de pasajeros registrados.</p>
+            </div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="home-card active" onclick="navigateTo('viajes')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/viajes.png" alt="Viajes activos" width="40" height="40">
+            </div>
+            <div class="card-body"><h3>Viajes activos</h3><p>Gestión de reservas, pagos y detalles por viaje.</p></div>
+          </div>
+          <div class="home-card active" onclick="navigateTo('recibos')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/recibo.png" alt="Recibos" width="40" height="40">
+            </div>
+            <div class="card-body"><h3>Recibos</h3><p>Creación, consulta y descarga de recibos de pago.</p></div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <div class="home-card active" onclick="navigateTo('byc')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/byc.png" alt="Estado ByC" width="40" height="40">
+            </div>
+            <div class="card-body"><h3>Estado ByC</h3><p>Visualización del estado de bases y condiciones.</p></div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <div class="home-card active" onclick="navigateTo('historico')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/historial.png" alt="Histórico de viajes" width="40" height="40">
+            </div>
+            <div class="card-body"><h3>Histórico de viajes</h3><p>Consulta del historial completo de viajes realizados.</p></div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <div class="home-card active" onclick="navigateTo('seleccion-asiento')">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/asiento.png" alt="Selección de asiento" width="40" height="40">
+            </div>
+            <div class="card-body">
+              <h3>Selección de asiento</h3>
+              <p>Elegí y asigná asientos para los pasajeros del viaje.</p>
+            </div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <div class="home-card active" id="card-movimientos" onclick="navigateTo('movimientos')" style="display:none">
+            <div class="card-icon card-icon--img">
+              <img src="https://guaranitour.github.io/Guarani-tour-APP/img/bancario.png" alt="Movimientos bancarios" width="40" height="40">
+            </div>
+            <div class="card-body"><h3>Movimientos bancarios</h3><p>Registro y control de ingresos y egresos de caja.</p></div>
+            <div class="card-arrow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+          <div class="home-card active" id="card-usuarios" onclick="navigateTo('usuarios')" style="display:none">
+  <div class="card-icon card-icon--img">
+    <img src="https://guaranitour.github.io/Guarani-tour-APP/img/staff.png" alt="Staff" width="40" height="40">
+  </div>
+  <div class="card-body">
+    <h3>Usuarios</h3>
+    <p>Gestión de accesos al sistema</p>
+  </div>
+  <div class="card-arrow">
+    <svg width="18" height="18" viewBox="0 0 24 24">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </div>
+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DE CONTROL (DASHBOARD) -->
+    <div id="view-dashboard" style="display:none">
+      <div class="main">
+        <div class="page-header">
+          <h1>Panel de control</h1>
+          <p class="page-desc">Resumen general de la operación</p>
+        </div>
+        <div id="dashboard-content"></div>
+      </div>
+    </div>
+
+    <!-- RANKING COMPLETO DE PUNTOS -->
+    <div id="view-ranking-puntos" style="display:none">
+      <div class="main">
+        <div class="page-header">
+          <h1>Ranking de puntos · 2026</h1>
+          <p class="page-desc">Todos los pasajeros con puntos Club Destino acumulados este año</p>
+        </div>
+        <div class="search-wrap" style="margin-bottom:1rem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="ranking-puntos-search" placeholder="Buscar pasajero…" oninput="filtrarRankingPuntos()" />
+        </div>
+        <div class="dash-card" id="ranking-puntos-list"></div>
+      </div>
+    </div>
+
+    <!-- LISTA CLIENTES -->
+    <div id="view-clientes" style="display:none">
+      <div class="main">
+        <div class="page-header">
+          <h1>Base de clientes</h1>
+          <span class="passenger-count" id="passenger-count">—</span>
+        </div>
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="search-input" placeholder="Buscar por nombre o CI…" oninput="filterPassengers()" />
+        </div>
+        <div id="passenger-list"></div>
+      </div>
+    </div>
+    
+
+    <!-- ═══════════════════════════════════════════════════
+         VISTAS DEL MÓDULO VIAJES — cargadas dinámicamente
+    ════════════════════════════════════════════════════ -->
+    <div id="viajes-views-container">
+      <!-- Inyectado por app.js al iniciar (fetch viajes_views.html) -->
+    </div>
+
+    <!-- VISTA USUARIOS -->
+<div id="view-usuarios" style="display:none">
+  <div class="main detalle-main">
+
+    <div class="form-page-header">
+      <h1>Usuarios</h1>
+      <p class="page-desc">Administrá accesos del sistema</p>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">Listado</div>
+      <div id="users-list"></div>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">Nuevo usuario</div>
+
+      <div class="detail-grid">
+        <div class="form-field full">
+          <label class="form-label">Nombre</label>
+          <input type="text" id="u-nombre" class="form-input" placeholder="Nombre completo">
+        </div>
+
+        <div class="form-field full">
+          <label class="form-label">Correo</label>
+          <input type="email" id="u-email" class="form-input">
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Rol</label>
+          <select id="u-role" class="form-input">
+            <option value="viewer">Viewer</option>
+            <option value="worker">Worker</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Estado</label>
+          <select id="u-status" class="form-input">
+            <option value="enabled">Activo</option>
+            <option value="disabled">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-save" onclick="createUser()">Agregar usuario</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+    <div id="view-pago-detalle" style="display:none">
+      <div class="main">
+
+        <div class="form-page-header">
+          <span id="pd-badge" class="pago-tipo-badge" style="margin-bottom:.6rem;display:inline-flex"></span>
+          <div id="pd-monto" class="pd-monto-valor"></div>
+        </div>
+
+        <div class="detalle-section">
+          <div class="pd-grid">
+
+            <div class="pd-row">
+              <span class="pd-label">Fecha</span>
+              <span class="pd-value" id="pd-fecha">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Método de pago</span>
+              <span class="pd-value" id="pd-metodo">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Banco</span>
+              <span class="pd-value" id="pd-banco">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Nº Comprobante</span>
+              <span class="pd-value" id="pd-comprobante">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Observación</span>
+              <span class="pd-value" id="pd-observacion">—</span>
+            </div>
+
+            <div class="pd-row">
+              <span class="pd-label">Registrado por</span>
+              <span class="pd-value" id="pd-creado">—</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Foto comprobante -->
+        <div class="detalle-section" id="pd-foto-wrap">
+          <div class="section-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Comprobante
+          </div>
+          <a id="pd-foto-link" href="#" target="_blank">
+            <img id="pd-foto-img" src="" alt="Comprobante" class="pd-foto-img" />
+          </a>
+        </div>
+
+        <!-- Acciones -->
+        <div id="pd-acciones" style="display:none">
+          <button class="btn-transferir-pago" onclick="abrirModalTransferirPago()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Transferir a otro pasajero
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MODAL: TRANSFERIR PAGO ─────────────── -->
+    <div id="modal-transferir-pago" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalTransferirPago(event)">
+      <div class="modal-transferir-card">
+        <div class="modal-transferir-header">
+          <div class="modal-transferir-titulo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Transferir pago
+          </div>
+          <button class="modal-transferir-close" onclick="cerrarModalTransferirPago()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <p class="modal-transferir-desc">Este pago será reasignado a otro pasajero del mismo viaje.</p>
+
+        <div class="modal-transferir-monto" id="modal-trans-monto">Gs. —</div>
+
+        <div class="form-field" style="margin-top:1rem">
+          <label class="form-label">Buscar pasajero destino</label>
+          <input
+            type="text"
+            id="modal-trans-buscar"
+            class="form-input"
+            placeholder="Nombre o CI…"
+            oninput="buscarPasajeroParaTransferir()"
+            autocomplete="off"
+          />
+        </div>
+
+        <div id="modal-trans-resultados" class="modal-trans-resultados"></div>
+
+        <div id="modal-trans-seleccionado" class="modal-trans-seleccionado" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="modal-trans-nombre-sel"></span>
+        </div>
+
+        <div class="modal-transferir-actions">
+          <button class="btn-cancel" onclick="cerrarModalTransferirPago()">Cancelar</button>
+          <button class="btn-save" id="btn-confirmar-transferencia" onclick="confirmarTransferirPago()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Confirmar transferencia
+          </button>
+        </div>
+      </div>
+    </div>
+
+<!-- VISTA RECIBOS -->
+<div id="view-recibos" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Recibos</h1>
+      <span class="passenger-count" id="recibos-count">—</span>
+    </div>
+    <div class="recibos-toolbar">
+      <div class="search-wrap" style="margin-bottom:0;flex:1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="recibos-search" placeholder="Buscar por cliente, CI, vendedor…" oninput="filtrarRecibos()" />
+      </div>
+      <button class="btn-nuevo-recibo" onclick="navigateTo('recibo-nuevo')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo
+      </button>
+    </div>
+    <div id="recibos-cont"></div>
+  </div>
+</div>
+
+<!-- VISTA: DETALLE RECIBO -->
+<div id="view-recibo-detalle" style="display:none">
+  <div class="main">
+    <div id="recibo-detalle-cont"></div>
+  </div>
+</div>
+
+<!-- VISTA: NUEVO RECIBO -->
+<div id="view-recibo-nuevo" style="display:none">
+  <div class="main">
+    <form id="form-recibo-nuevo" onsubmit="return false">
+      <div class="form-recibo-grid">
+
+        <div class="form-recibo-row">
+          <div class="form-recibo-field frec-cliente-wrap" style="grid-column:1/3">
+            <label for="frec-cliente">Cliente *</label>
+            <input id="frec-cliente" type="text" placeholder="Buscar por nombre…" autocomplete="off"
+                   oninput="filtrarClientesDropdown(this.value)"
+                   onfocus="abrirClientesDropdown()"
+                   onblur="cerrarClientesDropdown()" />
+            <div id="frec-cliente-dropdown" class="frec-cliente-dropdown"></div>
+          </div>
+        </div>
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-ci">CI *</label>
+            <div class="frec-locked-wrap">
+              <input id="frec-ci" type="text" placeholder="Nº documento" readonly />
+              <button type="button" class="frec-unlock-btn" id="btn-unlock-ci" onclick="desbloquearCampoCliente('frec-ci','btn-unlock-ci')" title="Editar manualmente">✎</button>
+            </div>
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-correo">Correo *</label>
+            <div class="frec-locked-wrap">
+              <input id="frec-correo" type="email" placeholder="correo@ejemplo.com" readonly />
+              <button type="button" class="frec-unlock-btn" id="btn-unlock-correo" onclick="desbloquearCampoCliente('frec-correo','btn-unlock-correo')" title="Editar manualmente">✎</button>
+            </div>
+          </div>
+        </div>
+
+        <hr class="form-recibo-sep" />
+
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-monto">Monto (Gs.) *</label>
+            <input id="frec-monto" type="number" placeholder="0" min="0" />
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-fecha">Fecha *</label>
+            <input id="frec-fecha" type="date" />
+          </div>
+        </div>
+
+        <div class="form-recibo-field">
+          <label for="frec-concepto">Concepto *</label>
+          <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
+        </div>
+
+        <hr class="form-recibo-sep" />
+
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="frec-forma-pago">Forma de pago *</label>
+            <select id="frec-forma-pago" onchange="toggleCamposTransferencia()">
+              <option value="">— Seleccionar —</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Tigo Money">Tigo Money</option>
+            </select>
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-abona-por">Abona por (viaje) *</label>
+            <select id="frec-abona-por">
+              <option value="">— Cargando… —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-recibo-row" id="frec-grupo-transferencia" style="display:none">
+          <div class="form-recibo-field frec-banco-wrap">
+            <label for="frec-banco-input">Banco</label>
+            <input id="frec-banco-input" type="text" placeholder="Buscar banco…" autocomplete="off"
+                   oninput="filtrarBancosDropdown(this.value)"
+                   onfocus="abrirBancosDropdown()"
+                   onblur="cerrarBancosDropdown()" />
+            <div id="frec-banco-dropdown" class="frec-banco-dropdown"></div>
+            <input type="hidden" id="frec-banco" />
+          </div>
+          <div class="form-recibo-field">
+            <label for="frec-comprobante">Nº Comprobante</label>
+            <input id="frec-comprobante" type="text" placeholder="Nº operación" />
+          </div>
+        </div>
+
+        <p class="form-recibo-error" id="form-recibo-error"></p>
+        <div class="form-recibo-actions">
+          <button type="button" class="btn-recibo-cancelar" onclick="navigateTo('recibos')">Cancelar</button>
+          <button type="button" class="btn-recibo-guardar" id="btn-guardar-recibo" onclick="guardarNuevoRecibo()">Guardar recibo</button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- VISTA: MOVIMIENTOS BANCARIOS -->
+<div id="view-movimientos" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Movimientos bancarios</h1>
+      <p class="page-desc">Registro y control de ingresos y egresos</p>
+    </div>
+
+    <!-- Tarjeta bancaria (contenido inyectado por movimientos.js) -->
+    <div id="mov-banco-card"></div>
+
+    <!-- Filtro tipo -->
+    <div class="mov-toolbar-filters">
+      <select id="mov-filtro-tipo" class="mov-filtro-select" onchange="filtrarMovimientos()">
+        <option value="">Todos los tipos</option>
+        <option value="ingreso">Ingreso</option>
+        <option value="egreso">Egreso</option>
+      </select>
+    </div>
+
+    <!-- Botón nuevo — ancho completo -->
+    <button id="btn-nuevo-movimiento" class="mov-btn-nuevo" onclick="navigateTo('movimiento-nuevo')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo movimiento
+    </button>
+
+    <!-- Lista de movimientos -->
+    <div id="mov-list"></div>
+  </div>
+</div>
+
+<!-- VISTA: NUEVO MOVIMIENTO -->
+<div id="view-movimiento-nuevo" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Nuevo movimiento</h1>
+      <p class="page-desc">Completá los datos del movimiento bancario</p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1rem; max-width:560px;">
+
+      <div class="form-recibo-row">
+        <div class="form-recibo-field">
+          <label for="mnv-fecha">Fecha *</label>
+          <input id="mnv-fecha" type="date" />
+        </div>
+        <div class="form-recibo-field">
+          <label for="mnv-tipo">Tipo *</label>
+          <select id="mnv-tipo">
+            <option value="">— Seleccionar —</option>
+            <option value="ingreso">Ingreso</option>
+            <option value="egreso">Egreso</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-recibo-field">
+        <label for="mnv-categoria">Categoría</label>
+        <select id="mnv-categoria">
+          <option value="">— Seleccionar tipo primero —</option>
+        </select>
+      </div>
+
+      <div class="form-recibo-field">
+        <label for="mnv-descripcion">Descripción *</label>
+        <textarea id="mnv-descripcion" rows="2" placeholder="Detallá el movimiento…"></textarea>
+      </div>
+
+      <div class="form-recibo-row">
+        <div class="form-recibo-field">
+          <label for="mnv-monto">Monto (Gs.) *</label>
+          <input id="mnv-monto" type="number" placeholder="0" min="0" />
+        </div>
+        <div class="form-recibo-field">
+          <label for="mnv-cuenta-emisora">Cuenta emisora</label>
+          <select id="mnv-cuenta-emisora">
+            <option value="">— Seleccionar tipo primero —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-recibo-field">
+        <label for="mnv-cuenta-beneficiaria">Cuenta beneficiaria</label>
+        <select id="mnv-cuenta-beneficiaria">
+          <option value="">— Seleccionar tipo primero —</option>
+        </select>
+      </div>
+
+      <p class="form-recibo-error" id="mnv-error"></p>
+
+      <div class="form-recibo-actions">
+        <button type="button" class="btn-recibo-cancelar" onclick="navigateTo('movimientos')">Cancelar</button>
+        <button type="button" class="btn-recibo-guardar" id="btn-guardar-movimiento" onclick="guardarMovimiento()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /app-view -->
+
+  <!-- ── MODAL: ACERCA DE ── -->
+  <div id="modal-acerca" class="acerca-overlay" style="display:none" onclick="cerrarAcercaDe(event)">
+    <div class="acerca-sheet">
+      <button class="acerca-close" onclick="cerrarAcercaDe()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <div class="acerca-logo-wrap">
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/app_imagen_512px.png" alt="GUARANI TOUR" class="acerca-logo" />
+      </div>
+      <h2 class="acerca-titulo">GUARANI TOUR</h2>
+      <p class="acerca-subtitulo">Sistema interno de gestión</p>
+
+      <div class="acerca-card acerca-intro">
+        <p>Plataforma interna para la gestión integral de viajes: desde la reserva hasta el cierre financiero, con control de pagos, egresos, recibos y seguimiento por pasajero.</p>
+      </div>
+
+      <div class="acerca-card">
+        <h3>⚙️ Funcionalidades</h3>
+        <ul>
+          <li>Gestión completa de pasajeros y reservas por viaje</li>
+          <li>Registro y seguimiento de pagos, transferencias y devoluciones</li>
+          <li>Control de egresos y presupuesto por viaje</li>
+          <li>Generación y descarga de recibos en PDF</li>
+          <li>Dashboard con KPIs, métricas y ranking en tiempo real</li>
+          <li>Historial de viajes por pasajero con puntos acumulados</li>
+          <li>Estado de bases y condiciones (ByC)</li>
+          <li>Consolidación y gestión centralizada de base de clientes</li>
+        </ul>
+      </div>
+
+      <div class="acerca-card">
+        <h3>🔐 Acceso</h3>
+        <p>Uso exclusivo del staff autorizado. El acceso está controlado mediante autenticación y niveles de permisos diferenciados por rol.</p>
+      </div>
+
+      <div class="acerca-footer">
+        <p>© 2026 GUARANI TOUR</p>
+        <p class="acerca-version">Versión 1.0.0</p>
+      </div>
+    </div>
+  </div>
+
+    <!-- FAB -->
+  <button class="fab" id="fab-viaje-nuevo" onclick="navigateTo('viaje-nuevo')" title="Nuevo viaje" style="display:none">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+  <button class="fab" id="fab-nuevo" onclick="navigateTo('nuevo')" title="Nuevo cliente" style="display:none">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+
+    <!-- ══ DETALLE DE PAGO ══════════════════════ -->
+
+  <script src="supabaseClient.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+  <script src="viajes_activos.js"></script>
+  <script src="egresos.js"></script>
+  <script src="presupuesto.js"></script>
+  <script src="usuarios.js"></script>
+  <script src="pagos.js"></script>
+  <script src="resumen.js"></script>
+  <script src="recibos.js"></script>
+  <script src="byc.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="novedades.js"></script>
+  <script src="movimientos.js"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/Guarani-tour-APP/service-worker.js')
+        .then(reg => console.log('SW registrado:', reg.scope))
+        .catch(err => console.error('SW error:', err));
+    });
+  }
+</script>
+
+<!-- ══ TOAST GLOBAL ══════════════════════════ -->
+<div id="app-toast" aria-live="polite"></div>
+<script>
+  let _toastTimer = null;
+  function showToast(msg, tipo = "success", duracion = 3000) {
+    const el = document.getElementById("app-toast");
+    if (!el) return;
+    clearTimeout(_toastTimer);
+    el.textContent = msg;
+    el.className = "toast-visible toast-" + tipo;
+    _toastTimer = setTimeout(() => {
+      el.className = "";
+      el.textContent = "";
+    }, duracion);
+  }
+</script>
+</body>
+</html>
