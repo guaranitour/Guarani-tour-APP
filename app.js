@@ -45,8 +45,8 @@ async function getBancos() {
 }
 
 // ── Visibilidad ────────────────────────────────────────────
-function showEl(id)  { const el = document.getElementById(id); if (el) el.style.display = ""; }
-function hideEl(id)  { const el = document.getElementById(id); if (el) el.style.display = "none"; }
+function showEl(id)  { document.getElementById(id).style.display = ""; }
+function hideEl(id)  { document.getElementById(id).style.display = "none"; }
 
 function showLogin() {
   appReady = false;
@@ -89,8 +89,6 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (menuEmail) menuEmail.textContent = user.email;
   if (!appReady) {
     appReady = true;
-    // Esperar a que viajes_views.html esté inyectado antes de navegar
-    await _viajesViewsPromise;
     // Si hay un hash en la URL al cargar, intentar restaurar esa vista
     const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
     const restorableViews = [
@@ -122,22 +120,6 @@ function showAccessDenied(isDisabled) {
 }
 
 // ── Auth ───────────────────────────────────────────────────
-// ── Carga dinámica de vistas de viajes ────────────────────
-// viajes_views.html se inyecta en #viajes-views-container
-// antes de que navigateTo() intente mostrar cualquier vista.
-let _viajesViewsReady = false;
-const _viajesViewsPromise = fetch("viajes_views.html")
-  .then(r => r.text())
-  .then(html => {
-    const cont = document.getElementById("viajes-views-container");
-    if (cont) cont.innerHTML = html;
-    _viajesViewsReady = true;
-  })
-  .catch(err => {
-    console.error("Error cargando viajes_views.html:", err);
-    _viajesViewsReady = true; // no bloquear la app si falla
-  });
-
 document.addEventListener("DOMContentLoaded", () => {
   hideEl("login-view");
   hideEl("app-view");
