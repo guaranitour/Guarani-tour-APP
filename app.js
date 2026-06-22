@@ -1029,10 +1029,14 @@ async function cargarVendedores(selectId, valorActual = "") {
   const sel = document.getElementById(selectId);
   if (!sel) return;
   const lista = await getVendedores();
+  const val = (valorActual || "").trim();
   sel.innerHTML = `<option value="">— Sin vendedor —</option>` +
     lista.map(n =>
-      `<option value="${n.Nombre_del_vendedor}" ${n.Nombre_del_vendedor === valorActual ? "selected" : ""}>${n.Nombre_del_vendedor}</option>`
+      `<option value="${n.Nombre_del_vendedor}">${n.Nombre_del_vendedor}</option>`
     ).join("");
+  // Asignar con sel.value es más robusto que confiar solo en el atributo "selected"
+  // (evita fallos por display:none, encoding de acentos u orden del DOM)
+  if (val) sel.value = val;
 }
 
 // ── Formulario nuevo cliente ───────────────────────────────
