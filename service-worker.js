@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v27';
+const CACHE_NAME    = 'guarani-tour-v28';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -12,6 +12,9 @@ const STATIC_ASSETS = [
   '/Guarani-tour-APP/resumen.css',
   '/Guarani-tour-APP/recibos.css',
   '/Guarani-tour-APP/movimientos.css',
+  '/Guarani-tour-APP/byc.css',
+  '/Guarani-tour-APP/dashboard.css',
+  '/Guarani-tour-APP/novedades.css',
   '/Guarani-tour-APP/app.js',
   '/Guarani-tour-APP/auth.js',
   '/Guarani-tour-APP/supabaseClient.js',
@@ -21,6 +24,9 @@ const STATIC_ASSETS = [
   '/Guarani-tour-APP/resumen.js',
   '/Guarani-tour-APP/recibos.js',
   '/Guarani-tour-APP/movimientos.js',
+  '/Guarani-tour-APP/byc.js',
+  '/Guarani-tour-APP/dashboard.js',
+  '/Guarani-tour-APP/novedades.js',
   '/Guarani-tour-APP/app_imagen_512px.png',
   '/Guarani-tour-APP/manifest.json',
 ];
@@ -28,9 +34,10 @@ const STATIC_ASSETS = [
 // Instalar: cachear assets estáticos
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Activar: limpiar caches viejos (respeta CACHE_IMAGES y CACHE_EXTERN)
