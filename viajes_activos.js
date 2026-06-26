@@ -25,7 +25,7 @@ async function loadViajes(modo = "activos") {
   const query = supabaseClient
     .from("viajes")
     .select("*")
-    .order("fecha_salida", { ascending: false });
+    .order("fecha_salida", { ascending: true });
 
   const { data, error } = await (
     modo === "historico"
@@ -50,6 +50,8 @@ async function loadViajes(modo = "activos") {
     renderHistorico(data);
   } else {
     list.innerHTML = renderViajeCards(data);
+    // Chequear alertas 48h solo para viajes activos
+    checkAlertasViajes(data);
   }
 }
 
@@ -64,7 +66,7 @@ function renderViajeCards(data) {
       </svg>
     </div>`;
   return `
-  <div class="viaje-card" onclick="openViajeDetalle('${v.id}')">
+  <div class="viaje-card" data-viaje-id="${v.id}" onclick="openViajeDetalle('${v.id}')">
     <div class="viaje-card-media">
       ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : placeholder}
       <div class="viaje-card-overlay">
@@ -82,6 +84,121 @@ function renderViajeCards(data) {
     </div>
   </div>`
 }).join("");
+}
+
+/* ── ALERTAS 48h ────────────────────────────── */
+async function checkAlertasViajes(viajes) {
+  // Filtrar solo los viajes cuya fecha_salida está dentro de las próximas 48 horas
+  const ahora   = new Date();
+  const en48h   = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+
+  const viajesEnRiesgo = viajes.filter(v => {
+    if (!v.fecha_salida) return false;
+    // fecha_salida es "YYYY-MM-DD"; lo tratamos como inicio del día
+    const salida = new Date(v.fecha_salida + "T00:00:00");
+    return salida > ahora && salida <= en48h;
+  });
+
+  if (viajesEnRiesgo.length === 0) return;
+
+  // Para cada viaje dentro de 48h, consultar pagos y total esperado
+  const checks = await Promise.all(
+    viajesEnRiesgo.map(async v => {
+      // Total esperado: suma de total_a_pagar de los pasajeros del viaje
+      const [{ data: pasajeros }, { data: pagos }] = await Promise.all([
+        supabaseClient
+          .from("viaje_pasajeros")
+          .select("total_a_pagar")
+          .eq("viaje_id", v.id),
+        supabaseClient
+          .from("pagos")
+          .select("monto, tipo")
+          .in("viaje_pasajero_id",
+            // subconsulta inline — necesitamos los IDs de los pasajeros
+            (await supabaseClient
+              .from("viaje_pasajeros")
+              .select("id")
+              .eq("viaje_id", v.id)
+            ).data?.map(p => p.id) || []
+          )
+      ]);
+
+      const totalEsperado = (pasajeros || []).reduce((s, p) => s + (p.total_a_pagar || 0), 0);
+
+      const pagosReales    = (pagos || []).filter(p => p.tipo === "Pago");
+      const devoluciones   = (pagos || []).filter(p => p.tipo === "Devolución");
+      const transferencias = (pagos || []).filter(p => p.tipo === "Transferencia");
+
+      const totalCobrado =
+        pagosReales.reduce((s, p) => s + (p.monto || 0), 0) -
+        devoluciones.reduce((s, p) => s + (p.monto || 0), 0) -
+        transferencias.reduce((s, p) => s + (p.monto || 0), 0);
+
+      const porcentaje = totalEsperado > 0
+        ? Math.round((totalCobrado / totalEsperado) * 100)
+        : 100; // si no hay total definido, no es riesgo
+
+      return { viaje: v, totalEsperado, totalCobrado, porcentaje, enRiesgo: porcentaje < 60 };
+    })
+  );
+
+  const conRiesgo = checks.filter(c => c.enRiesgo);
+  if (conRiesgo.length === 0) return;
+
+  // ── Marcar las cards ────────────────────────
+  conRiesgo.forEach(c => {
+    // Las cards usan onclick con el id del viaje; seleccionamos por data o por texto
+    // Buscamos la card que tenga este viaje. Añadimos data-viaje-id en renderViajeCards
+    const card = document.querySelector(`.viaje-card[data-viaje-id="${c.viaje.id}"]`);
+    if (card) {
+      card.classList.add("alerta-riesgo");
+      // Insertar badge de alerta dentro del overlay
+      const overlay = card.querySelector(".viaje-card-overlay");
+      if (overlay && !overlay.querySelector(".viaje-alerta-badge")) {
+        const badge = document.createElement("div");
+        badge.className = "viaje-alerta-badge";
+        badge.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          ${c.porcentaje}% cobrado`;
+        overlay.insertBefore(badge, overlay.firstChild);
+      }
+    }
+  });
+
+  // ── Banner en la parte superior de la lista ─
+  const list = document.getElementById("viajes-list");
+  if (!list) return;
+
+  const existingBanner = document.getElementById("alerta-viajes-banner");
+  if (existingBanner) existingBanner.remove();
+
+  const nombresViajes = conRiesgo.map(c => `<strong>${c.viaje.nombre}</strong>`).join(", ");
+  const esSingular = conRiesgo.length === 1;
+
+  const banner = document.createElement("div");
+  banner.id = "alerta-viajes-banner";
+  banner.className = "alerta-viajes-banner";
+  banner.innerHTML = `
+    <div class="alerta-banner-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <div class="alerta-banner-texto">
+      <span class="alerta-banner-titulo">
+        ${esSingular ? "Viaje en riesgo" : `${conRiesgo.length} viajes en riesgo`}
+      </span>
+      <span class="alerta-banner-detalle">
+        ${nombresViajes} ${esSingular ? "sale" : "salen"} en menos de 48 hs
+        y ${esSingular ? "no alcanzó" : "no alcanzaron"} el 60% de cobro.
+      </span>
+    </div>`;
+
+  list.insertAdjacentElement("beforebegin", banner);
 }
 
 function renderHistorico(data) {
