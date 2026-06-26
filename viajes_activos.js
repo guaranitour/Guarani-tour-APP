@@ -101,28 +101,25 @@ async function checkAlertasViajes(viajes) {
 
   if (viajesEnRiesgo.length === 0) return;
 
-  // Para cada viaje dentro de 48h, consultar pagos y total esperado
+  // Para cada viaje dentro de 48h, consultar pagos, total esperado y asistentes
   const checks = await Promise.all(
     viajesEnRiesgo.map(async v => {
-      // Total esperado: suma de total_a_pagar de los pasajeros del viaje
-      const [{ data: pasajeros }, { data: pagos }] = await Promise.all([
-        supabaseClient
-          .from("viaje_pasajeros")
-          .select("total_a_pagar")
-          .eq("viaje_id", v.id),
-        supabaseClient
-          .from("pagos")
-          .select("monto, tipo")
-          .in("viaje_pasajero_id",
-            // subconsulta inline — necesitamos los IDs de los pasajeros
-            (await supabaseClient
-              .from("viaje_pasajeros")
-              .select("id")
-              .eq("viaje_id", v.id)
-            ).data?.map(p => p.id) || []
-          )
-      ]);
+      // Traer pasajeros (total_a_pagar + asistencia) en una sola query
+      const { data: pasajeros } = await supabaseClient
+        .from("viaje_pasajeros")
+        .select("id, total_a_pagar, asistencia")
+        .eq("viaje_id", v.id);
 
+      const vpIds = (pasajeros || []).map(p => p.id);
+
+      const { data: pagos } = vpIds.length > 0
+        ? await supabaseClient
+            .from("pagos")
+            .select("monto, tipo")
+            .in("viaje_pasajero_id", vpIds)
+        : { data: [] };
+
+      // ── Cálculo de cobro ────────────────────
       const totalEsperado = (pasajeros || []).reduce((s, p) => s + (p.total_a_pagar || 0), 0);
 
       const pagosReales    = (pagos || []).filter(p => p.tipo === "Pago");
@@ -136,9 +133,17 @@ async function checkAlertasViajes(viajes) {
 
       const porcentaje = totalEsperado > 0
         ? Math.round((totalCobrado / totalEsperado) * 100)
-        : 100; // si no hay total definido, no es riesgo
+        : 100; // si no hay total definido, no es riesgo por cobro
 
-      return { viaje: v, totalEsperado, totalCobrado, porcentaje, enRiesgo: porcentaje < 60 };
+      // ── Cálculo de asistentes ───────────────
+      const cantAsiste = (pasajeros || []).filter(p =>
+        (p.asistencia || "").toLowerCase() === "asiste"
+      ).length;
+      const pocosAsistentes = cantAsiste < 25;
+
+      const enRiesgo = porcentaje < 60 || pocosAsistentes;
+
+      return { viaje: v, totalEsperado, totalCobrado, porcentaje, cantAsiste, pocosAsistentes, enRiesgo };
     })
   );
 
@@ -157,12 +162,15 @@ async function checkAlertasViajes(viajes) {
       if (overlay && !overlay.querySelector(".viaje-alerta-badge")) {
         const badge = document.createElement("div");
         badge.className = "viaje-alerta-badge";
+        const razones = [];
+        if (c.porcentaje < 60) razones.push(`${c.porcentaje}% cobrado`);
+        if (c.pocosAsistentes) razones.push(`${c.cantAsiste} asistentes`);
         badge.innerHTML = `
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          ${c.porcentaje}% cobrado`;
+          ${razones.join(" · ")}`;
         overlay.insertBefore(badge, overlay.firstChild);
       }
     }
@@ -178,6 +186,14 @@ async function checkAlertasViajes(viajes) {
   const nombresViajes = conRiesgo.map(c => `<strong>${c.viaje.nombre}</strong>`).join(", ");
   const esSingular = conRiesgo.length === 1;
 
+  // Armar descripción de causas por viaje
+  const detalleCausas = conRiesgo.map(c => {
+    const causas = [];
+    if (c.porcentaje < 60) causas.push(`${c.porcentaje}% cobrado`);
+    if (c.pocosAsistentes)  causas.push(`${c.cantAsiste} pasajeros confirmados`);
+    return `<strong>${c.viaje.nombre}</strong>: ${causas.join(" · ")}`;
+  }).join("<br>");
+
   const banner = document.createElement("div");
   banner.id = "alerta-viajes-banner";
   banner.className = "alerta-viajes-banner";
@@ -190,12 +206,9 @@ async function checkAlertasViajes(viajes) {
     </div>
     <div class="alerta-banner-texto">
       <span class="alerta-banner-titulo">
-        ${esSingular ? "Viaje en riesgo" : `${conRiesgo.length} viajes en riesgo`}
+        ${esSingular ? "Viaje en riesgo" : `${conRiesgo.length} viajes en riesgo`} · sale${esSingular ? "" : "n"} en menos de 48 hs
       </span>
-      <span class="alerta-banner-detalle">
-        ${nombresViajes} ${esSingular ? "sale" : "salen"} en menos de 48 hs
-        y ${esSingular ? "no alcanzó" : "no alcanzaron"} el 60% de cobro.
-      </span>
+      <span class="alerta-banner-detalle">${detalleCausas}</span>
     </div>`;
 
   list.insertAdjacentElement("beforebegin", banner);
