@@ -31,8 +31,8 @@ const STATIC_ASSETS = [
   '/Guarani-tour-APP/icons/favicon-16x16.png',
   '/Guarani-tour-APP/icons/favicon-32x32.png',
   '/Guarani-tour-APP/icons/apple-touch-icon.png',
-  '/Guarani-tour-APP/icons/android-chrome-192x192.png',
-  '/Guarani-tour-APP/icons/android-chrome-512x512.png',
+  '/Guarani-tour-APP/icons/guaranitour_192.png',
+  '/Guarani-tour-APP/icons/guaranitour_512.png',
   '/Guarani-tour-APP/manifest.json',
 ];
 
