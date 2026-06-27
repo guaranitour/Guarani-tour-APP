@@ -498,7 +498,7 @@ async function compartirPuntosPasajero(pasajeroId) {
 }
 
 // URL pública del logo de la app (ya usado en index.html para favicon/login/topbar)
-const _LOGO_URL = "https://guaranitour.github.io/Guarani-tour-APP/icons/android-chrome-512x512.png";
+const _LOGO_URL = "icons/android-chrome-512x512.png";
 let _logoImgPromise = null;
 function _cargarLogo() {
   if (_logoImgPromise) return _logoImgPromise;
