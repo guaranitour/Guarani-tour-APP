@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v30';
+const CACHE_NAME    = 'guarani-tour-v31';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -27,7 +27,12 @@ const STATIC_ASSETS = [
   '/Guarani-tour-APP/byc.js',
   '/Guarani-tour-APP/dashboard.js',
   '/Guarani-tour-APP/novedades.js',
-  '/Guarani-tour-APP/app_imagen_512px.png',
+  '/Guarani-tour-APP/favicon.ico',
+  '/Guarani-tour-APP/icons/favicon-16x16.png',
+  '/Guarani-tour-APP/icons/favicon-32x32.png',
+  '/Guarani-tour-APP/icons/apple-touch-icon.png',
+  '/Guarani-tour-APP/icons/android-chrome-192x192.png',
+  '/Guarani-tour-APP/icons/android-chrome-512x512.png',
   '/Guarani-tour-APP/manifest.json',
 ];
 
