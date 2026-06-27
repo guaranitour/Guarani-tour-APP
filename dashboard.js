@@ -498,7 +498,7 @@ async function compartirPuntosPasajero(pasajeroId) {
 }
 
 // URL pública del logo de la app (ya usado en index.html para favicon/login/topbar)
-const _LOGO_URL = "icons/guaranitour_512.png";
+const _LOGO_URL = "app_imagen_512px.png";
 let _logoImgPromise = null;
 function _cargarLogo() {
   if (_logoImgPromise) return _logoImgPromise;
