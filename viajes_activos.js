@@ -86,16 +86,19 @@ function renderViajeCards(data) {
 }).join("");
 }
 
-/* ── ALERTAS 48h ────────────────────────────── */
+/* ── ALERTAS 48h / DÍA DE SALIDA ───────────── */
 async function checkAlertasViajes(viajes) {
-  // Filtrar solo los viajes cuya fecha_salida está dentro de las próximas 48 horas
-  const ahora   = new Date();
-  const en48h   = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+  const ahora  = new Date();
+  const en48h  = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+  const hoyStr = ahora.toISOString().split("T")[0]; // "YYYY-MM-DD"
 
+  // Viajes que salen hoy O dentro de las próximas 48 horas
   const viajesEnRiesgo = viajes.filter(v => {
     if (!v.fecha_salida) return false;
-    // fecha_salida es "YYYY-MM-DD"; lo tratamos como inicio del día
     const salida = new Date(v.fecha_salida + "T00:00:00");
+    // Hoy: fecha_salida == hoy (independientemente de la hora actual)
+    if (v.fecha_salida === hoyStr) return true;
+    // Próximas 48h: salida futura pero dentro del rango
     return salida > ahora && salida <= en48h;
   });
 
@@ -142,76 +145,91 @@ async function checkAlertasViajes(viajes) {
       const pocosAsistentes = cantAsiste < 25;
 
       const enRiesgo = porcentaje < 60 || pocosAsistentes;
+      const esHoy    = v.fecha_salida === hoyStr;
 
-      return { viaje: v, totalEsperado, totalCobrado, porcentaje, cantAsiste, pocosAsistentes, enRiesgo };
+      return { viaje: v, totalEsperado, totalCobrado, porcentaje, cantAsiste, pocosAsistentes, enRiesgo, esHoy };
     })
   );
 
   const conRiesgo = checks.filter(c => c.enRiesgo);
   if (conRiesgo.length === 0) return;
 
+  // Separar: los que salen hoy son candidatos a cancelar; el resto, en riesgo
+  const aCancelar  = conRiesgo.filter(c => c.esHoy);
+  const enRiesgo48 = conRiesgo.filter(c => !c.esHoy);
+
   // ── Marcar las cards ────────────────────────
   conRiesgo.forEach(c => {
-    // Las cards usan onclick con el id del viaje; seleccionamos por data o por texto
-    // Buscamos la card que tenga este viaje. Añadimos data-viaje-id en renderViajeCards
     const card = document.querySelector(`.viaje-card[data-viaje-id="${c.viaje.id}"]`);
     if (card) {
-      card.classList.add("alerta-riesgo");
-      // Insertar badge de alerta dentro del overlay
+      card.classList.add(c.esHoy ? "alerta-cancelar" : "alerta-riesgo");
       const overlay = card.querySelector(".viaje-card-overlay");
       if (overlay && !overlay.querySelector(".viaje-alerta-badge")) {
         const badge = document.createElement("div");
-        badge.className = "viaje-alerta-badge";
+        badge.className = "viaje-alerta-badge" + (c.esHoy ? " cancelar" : "");
         const razones = [];
         if (c.porcentaje < 60) razones.push(`${c.porcentaje}% cobrado`);
-        if (c.pocosAsistentes) razones.push(`${c.cantAsiste} asistentes`);
-        badge.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          ${razones.join(" · ")}`;
+        if (c.pocosAsistentes)  razones.push(`${c.cantAsiste} asistentes`);
+        const icono = c.esHoy
+          ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
+          : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+        badge.innerHTML = `${icono} ${c.esHoy ? "Evaluar cancelación" : razones.join(" · ")}`;
         overlay.insertBefore(badge, overlay.firstChild);
       }
     }
   });
 
-  // ── Banner en la parte superior de la lista ─
+  // ── Banner ─────────────────────────────────
   const list = document.getElementById("viajes-list");
   if (!list) return;
 
   const existingBanner = document.getElementById("alerta-viajes-banner");
   if (existingBanner) existingBanner.remove();
 
-  const nombresViajes = conRiesgo.map(c => `<strong>${c.viaje.nombre}</strong>`).join(", ");
-  const esSingular = conRiesgo.length === 1;
+  // El banner muestra el nivel más urgente (cancelación > riesgo)
+  // Si hay ambos, el banner es de cancelación y menciona también los de riesgo
+  const grupoPrincipal = aCancelar.length > 0 ? aCancelar : enRiesgo48;
+  const esCancelar     = aCancelar.length > 0;
+  const esSingular     = grupoPrincipal.length === 1;
 
-  // Armar descripción de causas por viaje
   const detalleCausas = conRiesgo.map(c => {
     const causas = [];
     if (c.porcentaje < 60) causas.push(`${c.porcentaje}% cobrado`);
     if (c.pocosAsistentes)  causas.push(`${c.cantAsiste} pasajeros confirmados`);
-    return `<strong>${c.viaje.nombre}</strong>: ${causas.join(" · ")}`;
+    const prefijo = c.esHoy ? "🔴 " : "⚠️ ";
+    return `${prefijo}<strong>${c.viaje.nombre}</strong>: ${causas.join(" · ")}`;
   }).join("<br>");
+
+  const titulo = esCancelar
+    ? (esSingular
+        ? `Evaluar cancelación: ${aCancelar[0].viaje.nombre}`
+        : `${aCancelar.length} viajes: evaluar cancelación`)
+    : (esSingular
+        ? `Viaje en riesgo · sale en menos de 48 hs`
+        : `${enRiesgo48.length} viajes en riesgo · salen en menos de 48 hs`);
+
+  const subtitulo = esCancelar
+    ? "El viaje sale hoy y no cumple los mínimos. Se recomienda evaluar la cancelación."
+    : "";
 
   const banner = document.createElement("div");
   banner.id = "alerta-viajes-banner";
-  banner.className = "alerta-viajes-banner";
+  banner.className = "alerta-viajes-banner" + (esCancelar ? " cancelar" : "");
   banner.innerHTML = `
     <div class="alerta-banner-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
+      ${esCancelar
+        ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
+        : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+      }
     </div>
     <div class="alerta-banner-texto">
-      <span class="alerta-banner-titulo">
-        ${esSingular ? "Viaje en riesgo" : `${conRiesgo.length} viajes en riesgo`} · sale${esSingular ? "" : "n"} en menos de 48 hs
-      </span>
+      <span class="alerta-banner-titulo">${titulo}</span>
+      ${subtitulo ? `<span class="alerta-banner-subtitulo">${subtitulo}</span>` : ""}
       <span class="alerta-banner-detalle">${detalleCausas}</span>
     </div>`;
 
   list.insertAdjacentElement("beforebegin", banner);
+
 }
 
 function renderHistorico(data) {

@@ -370,9 +370,9 @@
   color: #334155;
 }
 
-/* ── ALERTAS 48H ─────────────────────────────── */
+/* ── ALERTAS 48H / DÍA DE SALIDA ─────────────── */
 
-/* Banner de alerta sobre la lista */
+/* Banner de alerta sobre la lista — nivel riesgo (naranja) */
 .alerta-viajes-banner {
   display: flex;
   align-items: flex-start;
@@ -382,6 +382,12 @@
   border: 1.5px solid rgba(200,70,30,.35);
   border-radius: 14px;
   margin-bottom: 1rem;
+}
+
+/* Banner nivel cancelación (rojo más fuerte) */
+.alerta-viajes-banner.cancelar {
+  background: linear-gradient(135deg, rgba(150,20,20,.15), rgba(150,20,20,.08));
+  border-color: rgba(180,20,20,.45);
 }
 
 .alerta-banner-icon {
@@ -397,6 +403,12 @@
   color: #c0392b;
 }
 
+.alerta-viajes-banner.cancelar .alerta-banner-icon {
+  background: rgba(180,20,20,.18);
+  border-color: rgba(180,20,20,.4);
+  color: #a01010;
+}
+
 .alerta-banner-texto {
   display: flex;
   flex-direction: column;
@@ -410,20 +422,42 @@
   color: #b03010;
 }
 
+.alerta-viajes-banner.cancelar .alerta-banner-titulo {
+  color: #8b0000;
+}
+
+/* Subtítulo solo en nivel cancelación */
+.alerta-banner-subtitulo {
+  font-size: .78rem;
+  font-weight: 500;
+  color: #8b0000;
+  opacity: .85;
+}
+
 .alerta-banner-detalle {
   font-size: .8rem;
   color: #7a3010;
   line-height: 1.5;
 }
 
+.alerta-viajes-banner.cancelar .alerta-banner-detalle {
+  color: #6b1010;
+}
+
 .alerta-banner-detalle strong {
   font-weight: 700;
 }
 
-/* Card en riesgo */
+/* Card en riesgo (naranja) */
 .viaje-card.alerta-riesgo {
   border: 1.5px solid rgba(200,70,30,.55);
   box-shadow: 0 0 0 3px rgba(200,70,30,.1), var(--shadow-md);
+}
+
+/* Card con recomendación de cancelación (rojo) */
+.viaje-card.alerta-cancelar {
+  border: 1.5px solid rgba(160,16,16,.6);
+  box-shadow: 0 0 0 3px rgba(160,16,16,.12), var(--shadow-md);
 }
 
 /* Badge de alerta dentro del overlay de la card */
@@ -442,6 +476,10 @@
   border: 1px solid rgba(255,255,255,.15);
 }
 
+/* Badge nivel cancelación */
+.viaje-alerta-badge.cancelar {
+  background: rgba(140,0,0,.88);
+}
 
 
 .btn-agregar-pasajero {
