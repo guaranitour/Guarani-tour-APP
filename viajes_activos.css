@@ -1126,12 +1126,23 @@
 
 .btn-filtro-aplicar:hover { background: #245c41; }
 
+/* ── TÍTULO + BOTÓN EDITAR ──────────────────── */
+.detalle-titulo-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+.detalle-titulo-row h1 {
+  margin: 0;
+}
+
 /* ── BOTÓN EDITAR VIAJE ─────────────────────── */
 .btn-editar-viaje {
   display: inline-flex;
   align-items: center;
   gap: .35rem;
-  margin-left: .6rem;
+  margin-left: 0;
   padding: .3rem .7rem;
   background: transparent;
   border: 1px solid var(--border, #d0d7de);

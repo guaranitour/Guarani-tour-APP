@@ -396,6 +396,77 @@ async function initFormEditarViaje(viajeId) {
   }
 }
 
+// ── Cancelación automática de viaje ─────────────────────────────────────────
+// Al pasar un viaje a "cancelado":
+//   1. Todos los viaje_pasajeros → asistencia = "No asiste", puntos = 0
+//   2. Por cada pago real (no Devolución, no Transferencia) registrado,
+//      se inserta una Devolución espejando metodo_pago_id y banco originales.
+async function _procesarCancelacionViaje(viajeId) {
+  // 1. Traer todos los viaje_pasajeros del viaje
+  const { data: vps } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select("id")
+    .eq("viaje_id", viajeId);
+
+  if (!vps || vps.length === 0) return;
+
+  const vpIds = vps.map(v => v.id);
+
+  // 2. Marcar todos como No asiste con puntos 0
+  await supabaseClient
+    .from("viaje_pasajeros")
+    .update({ asistencia: "No asiste", puntos_destino: 0 })
+    .in("id", vpIds);
+
+  // 3. Traer pagos reales (excluir Devoluciones y Transferencias)
+  const { data: pagos } = await supabaseClient
+    .from("pagos")
+    .select("viaje_pasajero_id, monto, metodo_pago_id, banco")
+    .in("viaje_pasajero_id", vpIds)
+    .eq("tipo", "Pago");
+
+  if (!pagos || pagos.length === 0) return;
+
+  // 4. Agrupar por viaje_pasajero_id + metodo_pago_id + banco → sumar montos
+  const agrupado = {};
+  pagos.forEach(p => {
+    const key = `${p.viaje_pasajero_id}__${p.metodo_pago_id || ""}__${p.banco || ""}`;
+    if (!agrupado[key]) {
+      agrupado[key] = {
+        viaje_pasajero_id : p.viaje_pasajero_id,
+        metodo_pago_id    : p.metodo_pago_id || null,
+        banco             : p.banco || null,
+        monto             : 0,
+      };
+    }
+    agrupado[key].monto += p.monto || 0;
+  });
+
+  // 5. Insertar una Devolución por cada grupo con monto > 0
+  const hoy = new Date().toISOString().split("T")[0];
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  const devoluciones = Object.values(agrupado)
+    .filter(d => d.monto > 0)
+    .map(d => ({
+      viaje_pasajero_id : d.viaje_pasajero_id,
+      monto             : d.monto,
+      tipo              : "Devolución",
+      metodo_pago_id    : d.metodo_pago_id,
+      banco             : d.banco,
+      fecha_pago        : hoy,
+      observacion       : "Devolución automática por cancelación de viaje",
+      creado_por        : user?.email || null,
+    }));
+
+  if (devoluciones.length > 0) {
+    const { error } = await supabaseClient.from("pagos").insert(devoluciones);
+    if (error) console.error("Error insertando devoluciones:", error);
+    else console.log(`✅ ${devoluciones.length} devolución(es) registrada(s) por cancelación`);
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 async function guardarEditarViaje() {
   const nombre  = document.getElementById("ve-nombre").value.trim();
   const salida  = document.getElementById("ve-salida").value;
@@ -435,8 +506,15 @@ async function guardarEditarViaje() {
     return;
   }
 
-  // Actualizar caché y volver al detalle
+  // Actualizar caché
   viajeActualData = { ...viajeActualData, nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino };
+
+  // ── Lógica de cancelación automática ────────────────────────────────────
+  if (estado === "cancelado" && viajeActualData.estado !== "cancelado") {
+    await _procesarCancelacionViaje(viajeActualId);
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   navigateTo("viaje-detalle", viajeActualId);
 }
 
@@ -552,15 +630,19 @@ async function loadViajeDetalle(viajeId) {
     <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
     ${viaje.puntos_destino ? `<span class="viaje-puntos viaje-puntos-claro" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
     ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
-    ${esAdminDetalle ? `
-    <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-      </svg>
-      Editar
-    </button>` : ""}
   `;
+
+  const editBtnSlot = document.getElementById("detalle-viaje-edit-btn");
+  if (editBtnSlot) {
+    editBtnSlot.innerHTML = esAdminDetalle ? `
+      <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar
+      </button>` : "";
+  }
 
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
 
