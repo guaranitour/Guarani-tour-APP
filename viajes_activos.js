@@ -506,11 +506,14 @@ async function guardarEditarViaje() {
     return;
   }
 
+  // Capturar estado anterior ANTES de pisar el caché
+  const estadoAnterior = viajeActualData?.estado;
+
   // Actualizar caché
   viajeActualData = { ...viajeActualData, nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino };
 
   // ── Lógica de cancelación automática ────────────────────────────────────
-  if (estado === "cancelado" && viajeActualData.estado !== "cancelado") {
+  if (estado === "cancelado" && estadoAnterior !== "cancelado") {
     await _procesarCancelacionViaje(viajeActualId);
   }
   // ────────────────────────────────────────────────────────────────────────
