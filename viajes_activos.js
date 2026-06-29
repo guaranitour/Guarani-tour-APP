@@ -1055,6 +1055,17 @@ function limpiarFiltros() {
 function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
   const listEl = document.getElementById("viaje-pasajeros-list");
 
+  // ── Contador de asistencia (siempre sobre el total real del viaje) ──
+  const counterEl = document.getElementById("vp-asistencia-counter");
+  if (counterEl && pasajerosDelViaje.length > 0) {
+    const totalAsiste = pasajerosDelViaje.filter(p => (p.asistencia || "Asiste") === "Asiste").length;
+    const total = pasajerosDelViaje.length;
+    counterEl.style.display = "";
+    counterEl.textContent = `${totalAsiste} de ${total} asisten`;
+  } else if (counterEl) {
+    counterEl.style.display = "none";
+  }
+
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
       <div class="viaje-pasajeros-empty">

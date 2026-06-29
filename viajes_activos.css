@@ -273,6 +273,13 @@
   margin-top: .3rem;
 }
 
+/* ── CONTADOR DE ASISTENCIA ────────────────── */
+#vp-asistencia-counter {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-bottom: .6rem;
+}
+
 /* ── FILA DE PASAJERO EN DETALLE ───────────── */
 
 .viaje-pasajero-row {
