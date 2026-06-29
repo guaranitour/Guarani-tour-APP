@@ -10,28 +10,42 @@ let _bycAceptados = new Set();
 
 let allViajes = [];
 
+/* ── HISTÓRICO: estado de paginación ───────── */
+// Cada "página" = 6 meses hacia atrás
+// _historicoOffset = 0 → últimos 6 meses
+// _historicoOffset = 1 → meses 6-12 atrás, etc.
+let _historicoOffset     = 0;
+let _historicoAgotado    = false;
+let _historicoData       = []; // acumulado de todos los viajes cargados
+
 /* ── CARGAR VIAJES ─────────────────────────── */
-// modo: "activos" (default) → fecha_regreso >= hoy
-//       "historico"         → fecha_regreso < hoy
+// modo: "activos" (default) → estado activo
+//       "historico"         → completado/cancelado, paginado por fecha_salida
 async function loadViajes(modo = "activos") {
   const listId = modo === "historico" ? "historico-list" : "viajes-list";
   const list = document.getElementById(listId);
   if (!list) return;
 
-  list.innerHTML = "Cargando…";
+  if (modo !== "historico") {
+    list.innerHTML = "Cargando…";
+  }
 
-  const hoy = new Date().toISOString().split("T")[0];
+  if (modo === "historico") {
+    // Reset al entrar al histórico (primera carga)
+    _historicoOffset  = 0;
+    _historicoAgotado = false;
+    _historicoData    = [];
+    list.innerHTML    = "Cargando…";
+    await _cargarBloqueHistorico(list);
+    return;
+  }
 
-  const query = supabaseClient
+  // ── Viajes activos ──────────────────────────
+  const { data, error } = await supabaseClient
     .from("viajes")
     .select("*")
+    .eq("estado", "activo")
     .order("fecha_salida", { ascending: true });
-
-  const { data, error } = await (
-    modo === "historico"
-      ? query.in("estado", ["completado", "cancelado"])
-      : query.eq("estado", "activo")
-  );
 
   if (error) {
     console.error(error);
@@ -46,13 +60,69 @@ async function loadViajes(modo = "activos") {
     return;
   }
 
-  if (modo === "historico") {
-    renderHistorico(data);
-  } else {
-    list.innerHTML = renderViajeCards(data);
-    // Chequear alertas 48h solo para viajes activos
-    checkAlertasViajes(data);
+  list.innerHTML = renderViajeCards(data);
+  // Chequear alertas 48h solo para viajes activos
+  checkAlertasViajes(data);
+}
+
+/* ── CARGA UN BLOQUE DE 6 MESES DEL HISTÓRICO ─ */
+async function _cargarBloqueHistorico(list) {
+  if (!list) list = document.getElementById("historico-list");
+  if (!list) return;
+
+  const hoy   = new Date();
+  const desde = new Date(hoy);
+  desde.setMonth(desde.getMonth() - (_historicoOffset + 1) * 6);
+  const hasta = new Date(hoy);
+  hasta.setMonth(hasta.getMonth() - _historicoOffset * 6);
+
+  const desdeStr = desde.toISOString().split("T")[0];
+  const hastaStr = hasta.toISOString().split("T")[0];
+
+  const { data, error } = await supabaseClient
+    .from("viajes")
+    .select("*")
+    .in("estado", ["completado", "cancelado"])
+    .gte("fecha_salida", desdeStr)
+    .lt("fecha_salida", hastaStr)
+    .order("fecha_salida", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    list.innerHTML = "Error al cargar histórico";
+    return;
   }
+
+  const nuevos = data || [];
+  _historicoData = [..._historicoData, ...nuevos];
+  allViajes      = _historicoData; // para que filtrarHistorico funcione sobre el acumulado
+
+  // Si vino vacío, marcar como agotado y seguir buscando hacia atrás (puede haber huecos)
+  if (nuevos.length === 0) {
+    // Comprobamos si hay algo más antiguo aún
+    const { count } = await supabaseClient
+      .from("viajes")
+      .select("id", { count: "exact", head: true })
+      .in("estado", ["completado", "cancelado"])
+      .lt("fecha_salida", desdeStr);
+
+    if (!count || count === 0) {
+      _historicoAgotado = true;
+    }
+    _historicoOffset++;
+  } else {
+    _historicoOffset++;
+  }
+
+  renderHistorico(_historicoData);
+}
+
+/* ── BOTÓN VER MÁS DEL HISTÓRICO ──────────── */
+async function cargarMasHistorico() {
+  if (_historicoAgotado) return;
+  const btn = document.getElementById("historico-ver-mas");
+  if (btn) { btn.disabled = true; btn.textContent = "Cargando…"; }
+  await _cargarBloqueHistorico();
 }
 
 function renderViajeCards(data) {
@@ -235,19 +305,44 @@ async function checkAlertasViajes(viajes) {
 function renderHistorico(data) {
   const list = document.getElementById("historico-list");
   if (!list) return;
+
+  // Remover botón anterior si existe
+  const btnAnterior = document.getElementById("historico-ver-mas");
+  if (btnAnterior) btnAnterior.remove();
+
   if (!data || data.length === 0) {
     list.innerHTML = `<div class="users-empty">Sin resultados</div>`;
     return;
   }
+
   list.innerHTML = renderViajeCards(data);
+
+  // Agregar botón "Ver más" si hay más datos para cargar
+  if (!_historicoAgotado) {
+    const btn = document.createElement("button");
+    btn.id        = "historico-ver-mas";
+    btn.className = "btn-ver-mas";
+    btn.textContent = "Ver más";
+    btn.onclick   = cargarMasHistorico;
+    list.insertAdjacentElement("afterend", btn);
+  }
 }
 
 function filtrarHistorico() {
   const q = document.getElementById("historico-search")?.value.toLowerCase().trim() || "";
+  // Filtra sobre el acumulado ya cargado (no hace nueva query)
   const filtrados = q
-    ? allViajes.filter(v => (v.nombre || "").toLowerCase().includes(q))
-    : allViajes;
-  renderHistorico(filtrados);
+    ? _historicoData.filter(v => (v.nombre || "").toLowerCase().includes(q))
+    : _historicoData;
+
+  // Render directo sin tocar el botón "Ver más" (que ya está debajo del list)
+  const list = document.getElementById("historico-list");
+  if (!list) return;
+  if (!filtrados || filtrados.length === 0) {
+    list.innerHTML = `<div class="users-empty">Sin resultados</div>`;
+    return;
+  }
+  list.innerHTML = renderViajeCards(filtrados);
 }
 
 /* ── FORMATEAR FECHA ───────────────────────── */
