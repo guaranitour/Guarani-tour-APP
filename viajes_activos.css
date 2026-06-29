@@ -278,6 +278,7 @@
   font-size: .78rem;
   color: var(--text-muted);
   margin-bottom: .6rem;
+  text-align: center;
 }
 
 /* ── FILA DE PASAJERO EN DETALLE ───────────── */
