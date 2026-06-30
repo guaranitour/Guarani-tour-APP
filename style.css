@@ -39,6 +39,35 @@
 
   --bg-overlay:   rgba(240,237,232,.6);
 
+  /* Alias de compatibilidad usados por módulos (byc, viajes, resumen, etc.) */
+  --card-bg:    var(--surface);
+  --hover:      var(--surface-hover);
+  --primary:    var(--accent);
+  --success:    var(--accent);
+  --text-light: var(--text-muted);
+
+  /* Fondos/textos semánticos para pills, badges y banners de estado */
+  --success-bg:   #e6f4ec;
+  --success-text: #2d6a4f;
+  --warning-bg:   #fff8e1;
+  --warning-text: #b07d00;
+  --danger-bg2:   #fce8e8;
+  --danger-text:  #c0392b;
+  --info-bg:      #e8f0fb;
+  --info-text:    #3b5bdb;
+  --neutral-bg:   #f0f0f0;
+  --neutral-text: #999;
+  --gold-bg:      rgba(201,168,76,.15);
+  --gold-text:    #7a5c10;
+
+  /* Banners de alerta de viaje (riesgo=naranja, cancelación=rojo) */
+  --alert-warn-icon:  #c0392b;
+  --alert-warn-title: #b03010;
+  --alert-warn-text:  #7a3010;
+  --alert-danger-icon:  #a01010;
+  --alert-danger-title: #8b0000;
+  --alert-danger-text:  #6b1010;
+
   color-scheme: light;
 }
 
@@ -77,6 +106,35 @@
   --splash-bar:   #6c7ce0;
 
   --bg-overlay:   rgba(21,23,26,.6);
+
+  /* Alias de compatibilidad */
+  --card-bg:    var(--surface);
+  --hover:      var(--surface-hover);
+  --primary:    var(--accent);
+  --success:    var(--accent);
+  --text-light: var(--text-muted);
+
+  /* Fondos/textos semánticos para pills, badges y banners de estado */
+  --success-bg:   rgba(62,139,103,.2);
+  --success-text: #6fcb9d;
+  --warning-bg:   rgba(216,184,99,.18);
+  --warning-text: #e6c777;
+  --danger-bg2:   rgba(224,88,74,.18);
+  --danger-text:  #f08075;
+  --info-bg:      rgba(108,124,224,.2);
+  --info-text:    #a3b0f5;
+  --neutral-bg:   rgba(255,255,255,.08);
+  --neutral-text: #aaadb3;
+  --gold-bg:      rgba(216,184,99,.18);
+  --gold-text:    #e6c777;
+
+  /* Banners de alerta de viaje — tonos más claros para contraste en oscuro */
+  --alert-warn-icon:  #e0584a;
+  --alert-warn-title: #f0a070;
+  --alert-warn-text:  #d99a78;
+  --alert-danger-icon:  #f08075;
+  --alert-danger-title: #f5a09a;
+  --alert-danger-text:  #e09a96;
 
   color-scheme: dark;
 }

@@ -246,8 +246,8 @@
 
 /* Variante para usar sobre fondo claro (ej: header de detalle de viaje) */
 .viaje-puntos-claro {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--surface-2);
+  color: var(--text-mid);
   font-weight: 500;
   backdrop-filter: none;
 }
@@ -360,7 +360,7 @@
 
 .vp-pill.monto {
   background: rgba(201,168,76,.13);
-  color: #7a5c10;
+  color: var(--gold-text);
 }
 
 .vp-pill.asiste {
@@ -374,8 +374,8 @@
 }
 
 .vp-pill.pts {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--info-bg);
+  color: var(--info-text);
 }
 
 /* ── ALERTAS 48H / DÍA DE SALIDA ─────────────── */
@@ -408,13 +408,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c0392b;
+  color: var(--danger);
 }
 
 .alerta-viajes-banner.cancelar .alerta-banner-icon {
   background: rgba(180,20,20,.18);
   border-color: rgba(180,20,20,.4);
-  color: #a01010;
+  color: var(--alert-danger-icon);
 }
 
 .alerta-banner-texto {
@@ -427,29 +427,29 @@
 .alerta-banner-titulo {
   font-size: .88rem;
   font-weight: 700;
-  color: #b03010;
+  color: var(--alert-warn-title);
 }
 
 .alerta-viajes-banner.cancelar .alerta-banner-titulo {
-  color: #8b0000;
+  color: var(--alert-danger-title);
 }
 
 /* Subtítulo solo en nivel cancelación */
 .alerta-banner-subtitulo {
   font-size: .78rem;
   font-weight: 500;
-  color: #8b0000;
+  color: var(--alert-danger-title);
   opacity: .85;
 }
 
 .alerta-banner-detalle {
   font-size: .8rem;
-  color: #7a3010;
+  color: var(--alert-warn-text);
   line-height: 1.5;
 }
 
 .alerta-viajes-banner.cancelar .alerta-banner-detalle {
-  color: #6b1010;
+  color: var(--alert-danger-text);
 }
 
 .alerta-banner-detalle strong {
@@ -743,7 +743,7 @@
 
 .btn-editar-vp:hover,
 .btn-editar-vp.activo {
-  background: #f0faf4;
+  background: var(--success-bg);
   color: var(--accent);
   border-color: rgba(45,106,79,.3);
 }
@@ -787,17 +787,17 @@
 
 .vp-pill.saldado {
   background: rgba(45,106,79,.12);
-  color: #2d6a4f;
+  color: var(--accent);
 }
 
 .vp-pill.parcial {
   background: rgba(201,168,76,.18);
-  color: #7a5c10;
+  color: var(--gold-text);
 }
 
 .vp-pill.deuda {
   background: rgba(192,57,43,.12);
-  color: #c0392b;
+  color: var(--danger);
 }
 
 /* ── CLUB DESTINO EN RESUMEN DE PAGOS ──────── */
@@ -822,7 +822,7 @@
 
 .pagos-club-badge.miembro {
   background: rgba(201,168,76,.15);
-  color: #7a5c10;
+  color: var(--gold-text);
 }
 
 .pagos-club-badge.no-miembro {
@@ -850,11 +850,11 @@
   display: inline-flex; align-items: center; gap: .35rem;
   padding: .3rem .75rem;
   font-size: .78rem; font-family: inherit;
-  background: #f0faf4; color: #2d6a4f;
+  background: var(--success-bg); color: var(--success-text);
   border: 1px solid rgba(45,106,79,.25); border-radius: 6px;
   cursor: pointer; transition: background .15s;
 }
-.btn-editar-detalle:hover { background: #dff2e8; }
+.btn-editar-detalle:hover { background: var(--success-active-bg); }
 
 /* ── TABS VIAJE ─────────────────────────────── */
 
@@ -894,11 +894,11 @@
 }
 .viaje-tab svg { opacity: .7; }
 .viaje-tab.active {
-  color: #2d6a4f;
-  border-bottom-color: #2d6a4f;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 .viaje-tab.active svg { opacity: 1; }
-.viaje-tab:hover:not(.active) { color: #444; }
+.viaje-tab:hover:not(.active) { color: var(--text-mid); }
 
 /* Contenedor de paneles: permite scroll vertical normal pero deja que JS
    gestione el gesto horizontal para cambiar de tab */
@@ -911,13 +911,13 @@
 .egresos-total-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: .6rem .75rem;
-  background: #f0faf4;
+  background: var(--success-bg);
   border-radius: 8px;
   margin-bottom: .75rem;
   font-size: .85rem;
 }
-.egresos-total-label { color: #2d6a4f; font-weight: 500; }
-.egresos-total-valor { font-weight: 700; color: #1a3a2a; }
+.egresos-total-label { color: var(--success-text); font-weight: 500; }
+.egresos-total-valor { font-weight: 700; color: var(--success-text); }
 
 .egreso-row {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -932,7 +932,7 @@
 .egreso-fecha { font-size: .75rem; color: var(--text-muted, #888); margin-top: .2rem; }
 .egreso-monto {
   font-size: .88rem; font-weight: 700;
-  color: #c0392b;
+  color: var(--danger);
   white-space: nowrap;
 }
 
@@ -948,11 +948,11 @@
   text-align: center;
 }
 .egreso-det-monto-label {
-  font-size: .75rem; font-weight: 600; color: #c0392b;
+  font-size: .75rem; font-weight: 600; color: var(--danger);
   text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem;
 }
 .egreso-det-monto-valor {
-  font-size: 1.8rem; font-weight: 800; color: #c0392b; line-height: 1;
+  font-size: 1.8rem; font-weight: 800; color: var(--danger); line-height: 1;
 }
 .egreso-det-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: .85rem;
@@ -988,12 +988,12 @@
 }
 .presupuesto-advertencia {
   display: flex; flex-direction: column; gap: .6rem;
-  background: #fffbeb;
+  background: var(--gold-bg);
   border: 1px solid rgba(201,168,76,.35);
   border-radius: 10px;
   padding: .85rem 1rem;
   font-size: .82rem;
-  color: #7a5c10;
+  color: var(--gold-text);
   margin-top: .75rem;
   line-height: 1.5;
 }
@@ -1034,13 +1034,13 @@
 }
 
 .btn-filtro-vp:hover {
-  background: #f0faf4;
+  background: var(--success-bg);
   color: var(--accent);
   border-color: rgba(45,106,79,.3);
 }
 
 .btn-filtro-vp.filtro-activo {
-  background: #e8f5ee;
+  background: var(--success-active-bg);
   color: var(--accent);
   border-color: rgba(45,106,79,.4);
 }
@@ -1117,7 +1117,7 @@
   transition: background .15s;
 }
 
-.btn-filtro-limpiar:hover { background: #f5f5f0; }
+.btn-filtro-limpiar:hover { background: var(--surface-2); }
 
 .btn-filtro-aplicar {
   padding: .4rem .85rem;
@@ -1188,8 +1188,8 @@
 }
 
 .btn-pdf-vp:hover {
-  background: #f0f4fa;
-  color: #2c5f8a;
+  background: var(--info-bg);
+  color: var(--info-text);
   border-color: rgba(44,95,138,.3);
 }
 

@@ -7,10 +7,10 @@
 .byc-error {
   text-align: center;
   padding: 2rem 1rem;
-  color: var(--text-light, #888);
+  color: var(--text-muted);
   font-size: .9rem;
 }
-.byc-error { color: #c0392b; }
+.byc-error { color: var(--danger); }
 
 .byc-empty {
   display: flex;
@@ -18,7 +18,7 @@
   align-items: center;
   gap: .75rem;
   padding: 3rem 1rem;
-  color: var(--text-light, #aaa);
+  color: var(--text-muted);
 }
 .byc-empty svg { opacity: .3; }
 .byc-empty p   { font-size: .9rem; margin: 0; }
@@ -40,7 +40,7 @@
 
 .byc-count {
   font-size: .8rem;
-  color: var(--text-light, #888);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -62,7 +62,7 @@
   font-family: inherit;
 }
 .byc-filters select:focus {
-  border-color: var(--primary, #2d6a4f);
+  border-color: var(--accent);
 }
 
 /* ── Lista ───────────────────────────────────── */
@@ -113,15 +113,15 @@
 
 .byc-ci {
   font-size: .75rem;
-  color: var(--text-light, #999);
+  color: var(--text-muted);
 }
 
 .byc-fecha-envio {
   font-size: .75rem;
-  color: var(--text-light, #7a9a82);
+  color: var(--text-muted);
 }
 .byc-fecha-envio--vacia {
-  color: var(--text-light, #ccc);
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -142,18 +142,18 @@
 }
 
 /* Estado principal */
-.byc-estado-sin          { background: #f0f0f0; color: #999; }
-.byc-estado-activo       { background: #e6f4ec; color: #2d6a4f; }
-.byc-estado-pendiente    { background: #fff8e1; color: #b07d00; }
-.byc-estado-inactivo     { background: #fce8e8; color: #b33; }
-.byc-estado-completo     { background: #e8f0fb; color: #3b5bdb; }
+.byc-estado-sin          { background: var(--neutral-bg); color: var(--neutral-text); }
+.byc-estado-activo       { background: var(--success-bg); color: var(--success-text); }
+.byc-estado-pendiente    { background: var(--warning-bg); color: var(--warning-text); }
+.byc-estado-inactivo     { background: var(--danger-bg2); color: var(--danger-text); }
+.byc-estado-completo     { background: var(--info-bg); color: var(--info-text); }
 
 /* Estado envío */
-.byc-envio-enviado       { background: #e6f4ec; color: #2d6a4f; }
-.byc-envio-pendiente     { background: #fff8e1; color: #b07d00; }
+.byc-envio-enviado       { background: var(--success-bg); color: var(--success-text); }
+.byc-envio-pendiente     { background: var(--warning-bg); color: var(--warning-text); }
 .byc-envio-no-enviado,
-.byc-envio-no-enviado    { background: #fce8e8; color: #b33; }
-.byc-envio-sin-email     { background: #f0f0f0; color: #999; }
+.byc-envio-no-enviado    { background: var(--danger-bg2); color: var(--danger-text); }
+.byc-envio-sin-email     { background: var(--neutral-bg); color: var(--neutral-text); }
 
 /* ── Botón link ──────────────────────────────── */
 .byc-link-btn {
@@ -162,7 +162,7 @@
   gap: .3rem;
   font-size: .75rem;
   font-weight: 600;
-  color: var(--primary, #2d6a4f);
+  color: var(--accent);
   text-decoration: none;
   padding: .2rem .45rem;
   border-radius: 6px;
@@ -171,7 +171,7 @@
   transition: background .12s;
 }
 .byc-link-btn:hover {
-  background: #d8eee3;
+  background: var(--success-bg);
   text-decoration: none;
 }
 
@@ -203,8 +203,8 @@
 }
 .byc-btn-pendientes:hover {
   background: var(--bg, #f0f5f2);
-  border-color: var(--primary, #2d6a4f);
-  color: var(--primary, #2d6a4f);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ── Lista pendientes ────────────────────────── */
@@ -241,11 +241,11 @@
   font-size: .85rem;
 }
 .byc-paso2-tag strong { color: var(--text, #1a2e1e); }
-.byc-paso2-tag span   { color: var(--text-light, #7a9a82); font-size: .78rem; }
+.byc-paso2-tag span   { color: var(--text-muted); font-size: .78rem; }
 
 .byc-paso2-label {
   font-size: .82rem;
-  color: var(--text-light, #888);
+  color: var(--text-muted);
   margin: 0 0 .4rem;
 }
 
@@ -260,7 +260,7 @@
   background: var(--surface, #fff);
   border: 1px solid var(--border, #d4e4db);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  box-shadow: var(--shadow-md);
   z-index: 200;
   max-height: 200px;
   overflow-y: auto;
@@ -277,8 +277,8 @@
 }
 .byc-dd-item:hover    { background: var(--bg, #f0f5f2); }
 .byc-dd-nombre        { font-size: .88rem; color: var(--text, #1a2e1e); font-weight: 500; }
-.byc-dd-sub           { font-size: .75rem; color: var(--text-light, #7a9a82); }
-.byc-dd-empty         { color: var(--text-light, #aaa); font-style: italic; cursor: default; }
+.byc-dd-sub           { font-size: .75rem; color: var(--text-muted); }
+.byc-dd-empty         { color: var(--text-muted); font-style: italic; cursor: default; }
 
 /* ── Preview del vínculo ─────────────────────── */
 .byc-pasajero-seleccionado { margin-top: .75rem; }
@@ -298,14 +298,14 @@
   border-bottom: 1px solid var(--border, #e8ede9);
 }
 .byc-vp-row:last-child { border-bottom: none; }
-.byc-vp-label   { font-weight: 600; color: var(--text-light, #888); width: 38px; flex-shrink: 0; }
-.byc-vp-actual  { color: var(--text-light, #aaa); flex: 1; text-align: right; }
-.byc-vp-nuevo   { color: var(--primary, #2d6a4f); font-weight: 600; flex: 1; }
+.byc-vp-label   { font-weight: 600; color: var(--text-muted); width: 38px; flex-shrink: 0; }
+.byc-vp-actual  { color: var(--text-muted); flex: 1; text-align: right; }
+.byc-vp-nuevo   { color: var(--accent); font-weight: 600; flex: 1; }
 
 /* ── Acciones modal ──────────────────────────── */
 .byc-vincular-error {
   font-size: .8rem;
-  color: #c0392b;
+  color: var(--danger);
   min-height: 1rem;
   margin: 0;
 }
@@ -332,7 +332,7 @@
 
 .byc-btn-confirmar {
   flex: 1;
-  background: var(--primary, #2d6a4f);
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 9px;

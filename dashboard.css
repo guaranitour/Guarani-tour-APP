@@ -76,12 +76,12 @@
   display: flex; align-items: center; justify-content: center;
   width: 26px; height: 26px;
   border: none; border-radius: 50%;
-  background: rgba(255,255,255,.6);
+  background: var(--surface-hover);
   color: var(--text-muted);
   cursor: pointer;
   transition: background .15s, color .15s;
 }
-.dap-close:hover { background: #fff; color: var(--text); }
+.dap-close:hover { background: var(--surface); color: var(--text); }
 
 /* ── Tarjeta "Dashboard" destacada en el Home (temporal) ── */
 .home-card.dashboard-promo {
@@ -199,8 +199,8 @@
 }
 .dash-chip { font-size: .7rem; color: var(--text-mid); background: var(--bg2); border-radius: 20px; padding: .2rem .6rem; white-space: nowrap; }
 .dash-chip strong { color: var(--text); }
-.dash-chip--warn { background: rgba(192,57,43,.10); color: #c0392b; }
-.dash-chip--warn strong { color: #c0392b; }
+.dash-chip--warn { background: var(--danger-bg2); color: var(--danger); }
+.dash-chip--warn strong { color: var(--danger); }
 
 .dash-bar-track {
   height: 7px; border-radius: 6px;
@@ -217,7 +217,7 @@
 /* ── Viajes activos ─────────────────────────────────────── */
 .dash-viaje-card {
   display: flex; align-items: center; gap: .8rem;
-  background: rgba(255,255,255,.7);
+  background: var(--row-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: .75rem .9rem;
@@ -226,9 +226,9 @@
   transition: background .15s, transform .12s, box-shadow .15s;
 }
 .dash-viaje-card:hover {
-  background: #fff;
+  background: var(--row-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,.07);
+  box-shadow: 0 4px 12px var(--shadow-soft);
 }
 .dash-viaje-card:last-child { margin-bottom: 0; }
 
@@ -261,7 +261,7 @@
 
 /* ── Ranking de pasajeros (puntos) ─────────────────────── */
 .dash-card {
-  background: rgba(255,255,255,.7);
+  background: var(--row-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: .4rem .9rem;
@@ -284,7 +284,7 @@
   width: 30px; height: 30px;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: var(--bg2, #fff);
+  background: var(--bg2);
   color: var(--accent);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
@@ -322,8 +322,8 @@
 
 .dash-rank-pts {
   font-size: .76rem; font-weight: 600;
-  color: #8a6d1a;
-  background: rgba(201,168,76,.16);
+  color: var(--gold-text);
+  background: var(--gold-bg);
   border-radius: 20px;
   padding: .2rem .6rem;
   white-space: nowrap;
@@ -332,7 +332,7 @@
 
 /* ── Comparativo egresos vs ingresos ───────────────────── */
 .dash-comp-card {
-  background: rgba(255,255,255,.7);
+  background: var(--row-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: .9rem 1rem;
@@ -403,7 +403,7 @@
 .dash-vendor-eff { text-align: right; flex-shrink: 0; }
 .dash-vendor-eff-value { font-size: .9rem; font-weight: 700; }
 .dash-vendor-eff-value.alta  { color: var(--accent); }
-.dash-vendor-eff-value.media { color: #8a6d1a; }
+.dash-vendor-eff-value.media { color: var(--gold-text); }
 .dash-vendor-eff-value.baja  { color: var(--danger); }
 .dash-vendor-eff-label {
   font-size: .62rem; color: var(--text-muted);

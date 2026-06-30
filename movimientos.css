@@ -148,16 +148,16 @@
 .mov-filtro-select {
   padding: .5rem .75rem;
   border-radius: 10px;
-  border: 1px solid #dde2e6;
+  border: 1px solid var(--border);
   font-size: .875rem;
-  background: #fff;
-  color: #333;
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
   outline: none;
   flex-shrink: 0;
   transition: border-color .15s;
 }
-.mov-filtro-select:focus { border-color: #2d6a4f; }
+.mov-filtro-select:focus { border-color: var(--accent); }
 
 /* ── Botón nuevo ─────────────────────────────────── */
 .mov-btn-nuevo {
@@ -166,7 +166,7 @@
   justify-content: center;
   gap: .5rem;
   width: 100%;
-  background: #2d6a4f;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -177,7 +177,7 @@
   margin-bottom: 1rem;
   transition: background .15s, transform .1s;
 }
-.mov-btn-nuevo:hover  { background: #1a5235; }
+.mov-btn-nuevo:hover  { background: var(--accent2); }
 .mov-btn-nuevo:active { transform: scale(.98); }
 
 /* ── Agrupadores de fecha ────────────────────────── */
@@ -186,11 +186,11 @@
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: #9aa5ae;
+  color: var(--text-muted);
   padding: .4rem .25rem .3rem;
   margin-top: .6rem;
   margin-bottom: .35rem;
-  border-bottom: 1px solid #eef1f3;
+  border-bottom: 1px solid var(--border);
 }
 
 /* ── Item de movimiento ──────────────────────────── */
@@ -199,14 +199,14 @@
   align-items: flex-start;
   gap: .85rem;
   padding: .85rem .9rem;
-  background: #fff;
+  background: var(--row-hover);
   border-radius: 14px;
   margin-bottom: .5rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  box-shadow: 0 1px 4px var(--shadow-soft);
   transition: box-shadow .15s, transform .1s;
 }
 .mov-item:hover {
-  box-shadow: 0 3px 12px rgba(0,0,0,.10);
+  box-shadow: 0 3px 12px var(--shadow-card);
   transform: translateY(-1px);
 }
 
@@ -218,8 +218,8 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.mov-item__icon.ing { background: #e8f5e9; }
-.mov-item__icon.egr { background: #fce4ec; }
+.mov-item__icon.ing { background: var(--success-bg); }
+.mov-item__icon.egr { background: var(--danger-bg2); }
 
 .mov-item__body {
   flex: 1;
@@ -231,7 +231,7 @@
 .mov-item__categoria {
   font-size: .88rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
 }
 
 .mov-item__monto {
@@ -241,14 +241,14 @@
   white-space: nowrap;
   align-self: center;
 }
-.mov-item__monto.ing { color: #2e7d32; }
-.mov-item__monto.egr { color: #c62828; }
+.mov-item__monto.ing { color: var(--success-text); }
+.mov-item__monto.egr { color: var(--danger); }
 
 /* ── Estado vacío / cargando ─────────────────────── */
 .mov-estado {
   text-align: center;
   padding: 2.5rem 1rem;
-  color: #aab3bb;
+  color: var(--text-muted);
 }
 .mov-estado .icon { font-size: 2rem; margin-bottom: .5rem; }
 .mov-estado p     { font-size: .9rem; margin: 0; }

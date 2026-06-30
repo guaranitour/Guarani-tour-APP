@@ -38,7 +38,7 @@
 }
 
 .pagos-resumen-item.saldado::before {
-  background: linear-gradient(90deg, #2d6a4f, #52b788);
+  background: linear-gradient(90deg, var(--accent), #52b788);
 }
 
 .pagos-resumen-item.pendiente::before {
@@ -66,15 +66,15 @@
 }
 
 .pagos-resumen-item.saldado .pr-value {
-  color: #2d6a4f;
+  color: var(--accent);
 }
 
 .pagos-resumen-item.pendiente .pr-value {
-  color: #9a6c00;
+  color: var(--gold-text);
 }
 
 .pagos-resumen-item.excedente .pr-value {
-  color: #c0392b;
+  color: var(--danger);
 }
 
 /* ── BARRA DE PROGRESO ──────────────────────── */
@@ -89,7 +89,7 @@
 .pagos-progress-bar {
   flex: 1;
   height: 6px;
-  background: rgba(0,0,0,.07);
+  background: var(--bg2);
   border-radius: 99px;
   overflow: hidden;
 }
@@ -102,7 +102,7 @@
 }
 
 .pagos-progress-fill.completo {
-  background: linear-gradient(90deg, #2d6a4f, #52b788);
+  background: linear-gradient(90deg, var(--accent), #52b788);
 }
 
 .pagos-pct {
@@ -188,18 +188,18 @@
 }
 
 .pago-tipo-badge.tipo-pago {
-  background: rgba(45,106,79,.1);
-  color: #2d6a4f;
+  background: var(--success-bg);
+  color: var(--success-text);
 }
 
 .pago-tipo-badge.tipo-devolucion {
-  background: rgba(192,57,43,.09);
-  color: #c0392b;
+  background: var(--danger-bg2);
+  color: var(--danger);
 }
 
 .pago-tipo-badge.tipo-transferencia {
-  background: rgba(52,120,246,.1);
-  color: #1e6fc7;
+  background: var(--info-bg);
+  color: var(--info-text);
 }
 
 /* ── MONTO ──────────────────────────────────── */
@@ -212,9 +212,9 @@
   margin-left: auto;
 }
 
-.pago-monto.tipo-pago          { color: #2d6a4f; }
-.pago-monto.tipo-devolucion    { color: #c0392b; }
-.pago-monto.tipo-transferencia { color: #1e6fc7; }
+.pago-monto.tipo-pago          { color: var(--accent); }
+.pago-monto.tipo-devolucion    { color: var(--danger); }
+.pago-monto.tipo-transferencia { color: var(--info-text); }
 
 
 .pago-fecha {
@@ -226,7 +226,7 @@
 .pago-comp {
   font-size: .72rem;
   color: var(--text-muted);
-  background: rgba(0,0,0,.05);
+  background: var(--bg2);
   padding: .15rem .45rem;
   border-radius: 6px;
   font-family: 'Roboto Mono', monospace;
@@ -290,7 +290,7 @@
   font-weight: 700;
   letter-spacing: .05em;
   text-transform: uppercase;
-  color: #1e6fc7;
+  color: var(--info-text);
   display: flex;
   align-items: center;
   gap: .4rem;
@@ -352,10 +352,10 @@
   position: absolute;
   top: calc(100% + 4px);
   left: 0; right: 0;
-  background: #fff;
+  background: var(--surface);
   border: 1.5px solid rgba(45,106,79,.25);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  box-shadow: 0 8px 24px var(--shadow-card);
   z-index: 100;
   overflow: hidden;
   max-height: 220px;
@@ -367,7 +367,7 @@
   font-size: .85rem;
   color: var(--text);
   cursor: pointer;
-  border-bottom: 1px solid rgba(0,0,0,.05);
+  border-bottom: 1px solid var(--border);
   transition: background .1s;
 }
 
@@ -397,9 +397,9 @@
   margin-top: .25rem;
 }
 
-.pd-monto-valor.tipo-pago          { color: #2d6a4f; }
-.pd-monto-valor.tipo-devolucion    { color: #c0392b; }
-.pd-monto-valor.tipo-transferencia { color: #1e6fc7; }
+.pd-monto-valor.tipo-pago          { color: var(--accent); }
+.pd-monto-valor.tipo-devolucion    { color: var(--danger); }
+.pd-monto-valor.tipo-transferencia { color: var(--info-text); }
 
 .pd-grid {
   box-sizing: border-box;
@@ -456,7 +456,7 @@
   background: rgba(52,120,246,.07);
   border: 1.5px solid rgba(52,120,246,.25);
   border-radius: 14px;
-  color: #1e6fc7;
+  color: var(--info-text);
   font-size: .88rem;
   font-weight: 600;
   cursor: pointer;
@@ -509,12 +509,12 @@
 }
 
 .modal-transferir-card {
-  background: var(--surface, #fff);
+  background: var(--surface);
   border-radius: 20px 20px 0 0;
   padding: 1.5rem 1.25rem 2rem;
   width: 100%;
   max-width: 520px;
-  box-shadow: 0 -8px 32px rgba(0,0,0,.15);
+  box-shadow: 0 -8px 32px var(--shadow-card);
   animation: slideUpModal .22s cubic-bezier(.4,0,.2,1);
 }
 
@@ -536,7 +536,7 @@
   gap: .45rem;
   font-size: 1rem;
   font-weight: 700;
-  color: #1e6fc7;
+  color: var(--info-text);
 }
 
 .modal-transferir-close {
@@ -552,7 +552,7 @@
 }
 
 .modal-transferir-close:hover {
-  background: rgba(0,0,0,.06);
+  background: var(--bg2);
 }
 
 .modal-transferir-desc {
@@ -566,7 +566,7 @@
   font-family: 'Roboto', sans-serif;
   font-size: 1.6rem;
   font-weight: 700;
-  color: #2d6a4f;
+  color: var(--accent);
   margin-bottom: .25rem;
 }
 
@@ -616,7 +616,7 @@
   border-radius: 10px;
   font-size: .85rem;
   font-weight: 600;
-  color: #2d6a4f;
+  color: var(--accent);
 }
 
 .modal-transferir-actions {
