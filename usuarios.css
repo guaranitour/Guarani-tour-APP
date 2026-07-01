@@ -7,8 +7,8 @@
   align-items: center;
   gap: 1rem;
   padding: .9rem 1.1rem;
-  background: rgba(255,255,255,.75);
-  border: 1px solid rgba(0,0,0,.08);
+  background: var(--row-bg);
+  border: 1px solid var(--border);
   border-radius: 14px;
   margin-bottom: .55rem;
   transition: background .15s, box-shadow .15s, transform .12s;
@@ -16,8 +16,8 @@
 }
 
 .user-card:hover {
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(0,0,0,.07);
+  background: var(--row-hover);
+  box-shadow: 0 4px 14px var(--shadow-soft);
   transform: translateY(-1px);
 }
 
@@ -77,7 +77,7 @@
 .user-select {
   appearance: none;
   -webkit-appearance: none;
-  border: 1px solid rgba(0,0,0,.12);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: .3rem .75rem .3rem .6rem;
   font-family: 'Roboto', sans-serif;
@@ -100,25 +100,25 @@
 
 /* Colores semánticos por rol */
 .user-select.select-role {
-  background-color: #edf2ff;
-  border-color: #c5d0fc;
-  color: #3b5bdb;
+  background-color: var(--info-bg);
+  border-color: rgba(59,91,219,.35);
+  color: var(--info-text);
 }
 .user-select.select-role:focus {
-  border-color: #748ffc;
+  border-color: rgba(59,91,219,.6);
   box-shadow: 0 0 0 3px rgba(59,91,219,.1);
 }
 
 /* Colores semánticos por estado */
 .user-select.select-status[data-status="enabled"] {
-  background-color: #ebfbee;
-  border-color: #8ce99a;
-  color: #2f9e44;
+  background-color: var(--success-bg);
+  border-color: rgba(45,106,79,.35);
+  color: var(--success-text);
 }
 .user-select.select-status[data-status="disabled"] {
-  background-color: #fff5f5;
-  border-color: #ffc9c9;
-  color: #c92a2a;
+  background-color: var(--danger-bg2);
+  border-color: rgba(192,57,43,.35);
+  color: var(--danger);
 }
 .user-select.select-status:focus {
   box-shadow: 0 0 0 3px rgba(45,106,79,.1);
@@ -182,8 +182,8 @@
 }
 
 .user-feedback.show { opacity: 1; }
-.user-feedback.ok   { background: #ebfbee; color: #2f9e44; }
-.user-feedback.err  { background: #fff5f5; color: #c92a2a; }
+.user-feedback.ok   { background: var(--success-bg); color: var(--success-text); }
+.user-feedback.err  { background: var(--danger-bg2); color: var(--danger); }
 
 .usuarios-view {
   max-width: 680px;

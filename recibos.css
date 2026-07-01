@@ -10,7 +10,7 @@
   color: var(--text-light, #888);
   font-size: .9rem;
 }
-.recibos-error { color: #c0392b; }
+.recibos-error { color: var(--danger); }
 
 .recibos-empty {
   display: flex;
@@ -189,11 +189,11 @@
   text-transform: uppercase;
 }
 
-.recibo-metodo-efectivo       { background: #e6f4ec; color: #2d6a4f; }
-.recibo-metodo-transferencia  { background: #edf2ff; color: #3b5bdb; }
-.recibo-metodo-tarjeta        { background: #fff3e0; color: #e65100; }
-.recibo-metodo-cheque         { background: #fce4ec; color: #c62828; }
-.recibo-metodo-deposito       { background: #e3f2fd; color: #1565c0; }
+.recibo-metodo-efectivo       { background: var(--success-bg); color: var(--success-text); }
+.recibo-metodo-transferencia  { background: var(--info-bg); color: var(--info-text); }
+.recibo-metodo-tarjeta        { background: var(--warning-bg); color: var(--warning-text); }
+.recibo-metodo-cheque         { background: var(--danger-bg2); color: var(--danger-text); }
+.recibo-metodo-deposito       { background: var(--info-bg); color: var(--info-text); }
 
 .recibo-banco,
 .recibo-comprobante-nro {
@@ -270,10 +270,13 @@
 
 /* ════════════════════════════════════════════════
    DOCUMENTO RECIBO (layout tipo impreso)
+   Nota: esta sección usa colores de "papel" FIJOS a propósito.
+   El recibo se comparte/imprime como documento, así que debe
+   verse igual (blanco, profesional) sin importar el tema de la app.
    ════════════════════════════════════════════════ */
 .recibo-doc {
   background: #fafcfb;
-  border: 1px solid var(--border, #e0e9e4);
+  border: 1px solid #e0e9e4;
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: 1rem;
@@ -296,13 +299,13 @@
   font-family: 'Roboto', sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--primary, #2d6a4f);
+  color: #2d6a4f;
   letter-spacing: -.01em;
 }
 
 .recibo-doc-subtitulo {
   font-size: .72rem;
-  color: var(--text-light, #999);
+  color: #999;
   text-transform: uppercase;
   letter-spacing: .05em;
 }
@@ -317,7 +320,7 @@
 .recibo-doc-nro-label {
   font-size: .65rem;
   font-weight: 700;
-  color: var(--text-light, #aaa);
+  color: #aaa;
   text-transform: uppercase;
   letter-spacing: .08em;
 }
@@ -325,18 +328,18 @@
 .recibo-doc-nro {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text, #1a2e1e);
+  color: #1a2e1e;
   font-family: 'Roboto', sans-serif;
 }
 
 .recibo-doc-fecha {
   font-size: .75rem;
-  color: var(--text-light, #aaa);
+  color: #aaa;
 }
 
 .recibo-doc-sep {
   border: none;
-  border-top: 1px dashed var(--border, #d4e4db);
+  border-top: 1px dashed #d4e4db;
   margin: 1rem 0;
 }
 
@@ -350,7 +353,7 @@
   display: flex;
   flex-direction: column;
   gap: .2rem;
-  background: var(--bg, #f0f5f2);
+  background: #f0f5f2;
   border-radius: 9px;
   padding: .65rem .85rem;
   overflow: hidden;
@@ -366,19 +369,19 @@
   font-size: .65rem;
   text-transform: uppercase;
   letter-spacing: .07em;
-  color: var(--text-light, #aaa);
+  color: #aaa;
   font-weight: 600;
 }
 
 .recibo-doc-parte-nombre {
   font-size: .95rem;
   font-weight: 700;
-  color: var(--text, #1a2e1e);
+  color: #1a2e1e;
 }
 
 .recibo-doc-parte-sub {
   font-size: .74rem;
-  color: var(--text-light, #999);
+  color: #999;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -386,7 +389,7 @@
 
 /* ── Bloque de monto destacado ────────────────── */
 .recibo-doc-monto-bloque {
-  background: var(--primary, #2d6a4f);
+  background: #2d6a4f;
   border-radius: 10px;
   padding: .9rem 1.1rem;
   display: flex;
@@ -417,7 +420,7 @@
   display: flex;
   flex-direction: column;
   gap: .25rem;
-  background: var(--bg, #f0f5f2);
+  background: #f0f5f2;
   border-radius: 8px;
   padding: .65rem .9rem;
   margin-bottom: .25rem;
@@ -427,13 +430,13 @@
   font-size: .68rem;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: var(--text-light, #aaa);
+  color: #aaa;
   font-weight: 600;
 }
 
 .recibo-doc-concepto-val {
   font-size: .88rem;
-  color: var(--text, #1a2e1e);
+  color: #1a2e1e;
   font-style: italic;
 }
 
@@ -453,14 +456,14 @@
 
 .recibo-doc-pago-lbl {
   font-size: .78rem;
-  color: var(--text-light, #888);
+  color: #888;
   flex-shrink: 0;
 }
 
 .recibo-doc-pago-val {
   font-size: .85rem;
   font-weight: 500;
-  color: var(--text, #1a2e1e);
+  color: #1a2e1e;
   text-align: right;
 }
 
@@ -614,7 +617,7 @@
 
 .form-recibo-error {
   font-size: .8rem;
-  color: #c0392b;
+  color: var(--danger);
   min-height: 1.1rem;
 }
 
@@ -738,7 +741,7 @@
   background: var(--surface, #fff);
   border: 1px solid var(--border, #d4e4db);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  box-shadow: var(--shadow-md);
   z-index: 200;
   max-height: 200px;
   overflow-y: auto;
@@ -775,7 +778,7 @@
   background: var(--surface, #fff);
   border: 1px solid var(--border, #d4e4db);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  box-shadow: var(--shadow-md);
   z-index: 200;
   max-height: 220px;
   overflow-y: auto;
