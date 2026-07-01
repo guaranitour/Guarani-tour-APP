@@ -1391,7 +1391,7 @@ async function mostrarFormCrearPasajero(nombre) {
 
       <div class="pcf-row">
         <div class="pcf-field">
-          <label class="pcf-label">Sexo</label>
+          <label class="pcf-label">Sexo <span class="req">*</span></label>
           <select id="pcf-sexo" class="form-input">
             <option value="">— Seleccionar —</option>
             <option value="Masculino">Masculino</option>
@@ -1400,7 +1400,7 @@ async function mostrarFormCrearPasajero(nombre) {
           </select>
         </div>
         <div class="pcf-field">
-          <label class="pcf-label">Vendedor</label>
+          <label class="pcf-label">Vendedor <span class="req">*</span></label>
           <select id="pcf-vendedor" class="form-input">
             <option value="">— Seleccionar —</option>
             ${optsVendedor}
@@ -1422,13 +1422,43 @@ async function mostrarFormCrearPasajero(nombre) {
 }
 
 async function confirmarCrearPasajero() {
-  const nombre   = capitalizarNombre(document.getElementById("pcf-nombre")?.value.trim());
-  const sexo     = document.getElementById("pcf-sexo")?.value || null;
-  const vendedor = document.getElementById("pcf-vendedor")?.value || null;
+  const nombreInput   = document.getElementById("pcf-nombre");
+  const sexoInput     = document.getElementById("pcf-sexo");
+  const vendedorInput = document.getElementById("pcf-vendedor");
+
+  const nombre   = capitalizarNombre(nombreInput?.value.trim());
+  const sexo     = sexoInput?.value || null;
+  const vendedor = vendedorInput?.value || null;
   const cont     = document.getElementById("resultados-pasajero");
 
+  // Limpiar errores previos
+  nombreInput?.classList.remove("error");
+  sexoInput?.classList.remove("error");
+  vendedorInput?.classList.remove("error");
+
+  // Validación: nombre, sexo y vendedor son obligatorios
+  let hayError = false;
   if (!nombre) {
-    document.getElementById("pcf-nombre")?.classList.add("error");
+    nombreInput?.classList.add("error");
+    hayError = true;
+  }
+  if (!sexo) {
+    sexoInput?.classList.add("error");
+    hayError = true;
+  }
+  if (!vendedor) {
+    vendedorInput?.classList.add("error");
+    hayError = true;
+  }
+
+  if (hayError) {
+    let errEl = cont.querySelector(".pcf-error");
+    if (!errEl) {
+      errEl = document.createElement("div");
+      errEl.className = "pcf-error";
+      cont.querySelector(".pasajero-crear-form").appendChild(errEl);
+    }
+    errEl.textContent = "Nombre, sexo y vendedor son obligatorios.";
     return;
   }
 
