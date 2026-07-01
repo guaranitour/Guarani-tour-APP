@@ -79,13 +79,20 @@ async function _cargarBloqueHistorico(list) {
   const desdeStr = desde.toISOString().split("T")[0];
   const hastaStr = hasta.toISOString().split("T")[0];
 
-  const { data, error } = await supabaseClient
+  let query = supabaseClient
     .from("viajes")
     .select("*")
     .in("estado", ["completado", "cancelado"])
-    .gte("fecha_salida", desdeStr)
-    .lt("fecha_salida", hastaStr)
-    .order("fecha_salida", { ascending: false });
+    .gte("fecha_salida", desdeStr);
+
+  // En el primer bloque (offset 0) no ponemos tope superior: así los viajes
+  // cancelados/completados con fecha_salida aún futura (ej. cancelados antes
+  // de su fecha de salida) no quedan huérfanos fuera del rango.
+  if (_historicoOffset > 0) {
+    query = query.lt("fecha_salida", hastaStr);
+  }
+
+  const { data, error } = await query.order("fecha_salida", { ascending: false });
 
   if (error) {
     console.error(error);
