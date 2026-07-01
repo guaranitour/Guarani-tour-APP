@@ -1145,6 +1145,75 @@
   margin: 0;
 }
 
+/* ── BOTÓN Y PANEL DE ALERTAS DEL VIAJE ─────── */
+.btn-alertas-viaje {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .3rem .7rem;
+  background: #fff4e5;
+  border: 1px solid #f2b84b;
+  border-radius: 6px;
+  color: #92610c;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, border-color .15s;
+}
+.btn-alertas-viaje:hover {
+  background: #ffe8c2;
+  border-color: #e0a52f;
+}
+.alertas-badge {
+  background: #d9480f;
+  color: #fff;
+  border-radius: 50%;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  font-size: .65rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.alertas-panel-viaje {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 240px;
+  max-width: 90vw;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--glass-border, #e5e5e5);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  padding: .5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.alertas-panel-item {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .82rem;
+  color: var(--text-main, #1a1a1a);
+  transition: background .15s;
+}
+.alertas-panel-item:hover {
+  background: var(--surface-2, #f5f5f5);
+}
+.alertas-panel-icon {
+  font-size: .95rem;
+  flex-shrink: 0;
+}
+
 /* ── BOTÓN EDITAR VIAJE ─────────────────────── */
 .btn-editar-viaje {
   display: inline-flex;

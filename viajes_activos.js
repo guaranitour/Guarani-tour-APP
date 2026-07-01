@@ -819,6 +819,10 @@ async function loadViajeDetalle(viajeId) {
       _esMiembro : (p.puntos_destino || 0) > 0,
       _pillClass,
       _pagos     : _pgs,
+      _sinByc    : (() => {
+        const ciNorm = (p.pasajeros?.["Documento de Identidad"] || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
+        return !ciNorm || !_bycAceptados.has(ciNorm);
+      })(),
     };
   });
 
@@ -837,7 +841,7 @@ async function loadViajeDetalle(viajeId) {
   // Limpiar buscador y filtros al cargar
   const buscador = document.getElementById("buscador-vp");
   if (buscador) buscador.value = "";
-  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
   const panelF = document.getElementById("filtro-panel-vp");
   if (panelF) panelF.style.display = "none";
 
@@ -848,10 +852,91 @@ async function loadViajeDetalle(viajeId) {
   _initSwipeTabsViaje();
 
   renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
+
+  // Botón/caja flotante de alertas del viaje (deudas + BYC pendiente)
+  _renderAlertasViaje();
+}
+
+/* ── ALERTAS DE VIAJE (deuda + BYC pendiente) ─────────────────────────── */
+function _renderAlertasViaje() {
+  const slot = document.getElementById("detalle-viaje-alertas-btn");
+  if (!slot) return;
+
+  const conDeuda = pasajerosDelViaje.filter(p => p._pillClass === "deuda");
+  const sinByc   = pasajerosDelViaje.filter(p => p._sinByc);
+
+  if (conDeuda.length === 0 && sinByc.length === 0) {
+    slot.innerHTML = "";
+    return;
+  }
+
+  const total = conDeuda.length + sinByc.length;
+
+  slot.innerHTML = `
+    <button class="btn-alertas-viaje" onclick="toggleAlertasPanel(event)" title="Alertas del viaje">
+      ⚠️ Alertas
+      <span class="alertas-badge">${total}</span>
+    </button>
+    <div class="alertas-panel-viaje" id="alertas-panel-viaje" style="display:none">
+      ${conDeuda.length > 0 ? `
+        <div class="alertas-panel-item" onclick="irAAlertaViaje('deuda')">
+          <span class="alertas-panel-icon">🔴</span>
+          <span>${conDeuda.length} pasajero${conDeuda.length === 1 ? "" : "s"} adeuda${conDeuda.length === 1 ? "" : "n"}</span>
+        </div>` : ""}
+      ${sinByc.length > 0 ? `
+        <div class="alertas-panel-item" onclick="irAAlertaViaje('byc')">
+          <span class="alertas-panel-icon">⚠️</span>
+          <span>${sinByc.length} pasajero${sinByc.length === 1 ? "" : "s"} no ${sinByc.length === 1 ? "ha" : "han"} aceptado BYC</span>
+        </div>` : ""}
+    </div>`;
+}
+
+function toggleAlertasPanel(event) {
+  if (event) event.stopPropagation();
+  const panel = document.getElementById("alertas-panel-viaje");
+  if (!panel) return;
+  const abierto = panel.style.display !== "none";
+  panel.style.display = abierto ? "none" : "";
+
+  if (!abierto) {
+    // Cerrar al tocar fuera del panel
+    setTimeout(() => {
+      document.addEventListener("click", _cerrarAlertasPanelFuera, { once: true });
+    }, 0);
+  }
+}
+
+function _cerrarAlertasPanelFuera(e) {
+  const panel = document.getElementById("alertas-panel-viaje");
+  const btn   = document.querySelector(".btn-alertas-viaje");
+  if (!panel) return;
+  if (panel.contains(e.target) || (btn && btn.contains(e.target))) return;
+  panel.style.display = "none";
+}
+
+function irAAlertaViaje(tipo) {
+  const panel = document.getElementById("alertas-panel-viaje");
+  if (panel) panel.style.display = "none";
+
+  // Asegurar que estamos en el tab de pasajeros
+  switchViajeTab("pasajeros");
+
+  // Aplicar filtro correspondiente
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
+  if (tipo === "deuda") {
+    _filtrosVP.pago = "deuda";
+  } else if (tipo === "byc") {
+    _filtrosVP.byc = "pendiente";
+  }
+
+  const buscador = document.getElementById("buscador-vp");
+  if (buscador) buscador.value = "";
+
+  _aplicarFiltrosVP();
 }
 
 // Estado de filtros activos
-let _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
+let _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
 
 function filtrarPasajerosViaje(q) {
   _aplicarFiltrosVP(q);
@@ -895,6 +980,11 @@ function _aplicarFiltrosVP(qOverride) {
   // Filtro estado de pago
   if (_filtrosVP.pago) {
     filtrados = filtrados.filter(p => p._pillClass === _filtrosVP.pago);
+  }
+
+  // Filtro BYC pendiente
+  if (_filtrosVP.byc === "pendiente") {
+    filtrados = filtrados.filter(p => p._sinByc);
   }
 
   const pagosPorVP = {};
@@ -981,6 +1071,13 @@ function _inyectarUIFiltros() {
           <option value="No asiste">❌ No asiste</option>
         </select>
       </div>
+      <div class="form-field">
+        <label class="form-label">Bases y Condiciones</label>
+        <select id="filtro-sel-byc" class="form-input">
+          <option value="">Todos</option>
+          <option value="pendiente">⚠️ No aceptó BYC</option>
+        </select>
+      </div>
     </div>
     <div class="filtro-panel-actions">
       <button class="btn-filtro-limpiar" onclick="limpiarFiltros()">Limpiar</button>
@@ -1016,6 +1113,7 @@ function _renderFiltroPanel() {
   const selMiem  = document.getElementById("filtro-sel-miembro");
   const selPago  = document.getElementById("filtro-sel-pago");
   const selAsist = document.getElementById("filtro-sel-asistencia");
+  const selByc   = document.getElementById("filtro-sel-byc");
 
   if (selVend) {
     selVend.innerHTML = `<option value="">Todos</option>` +
@@ -1030,6 +1128,7 @@ function _renderFiltroPanel() {
         .join("");
   }
   if (selAsist) selAsist.value = _filtrosVP.asistencia;
+  if (selByc) selByc.value = _filtrosVP.byc;
 }
 
 function aplicarFiltros() {
@@ -1037,24 +1136,28 @@ function aplicarFiltros() {
   const selMiem  = document.getElementById("filtro-sel-miembro");
   const selPago  = document.getElementById("filtro-sel-pago");
   const selAsist = document.getElementById("filtro-sel-asistencia");
+  const selByc   = document.getElementById("filtro-sel-byc");
   _filtrosVP.vendedor   = selVend?.value  || "";
   _filtrosVP.miembro    = selMiem?.value  || "";
   _filtrosVP.pago       = selPago?.value  || "";
   _filtrosVP.asistencia = selAsist?.value || "";
+  _filtrosVP.byc        = selByc?.value   || "";
   document.getElementById("filtro-panel-vp").style.display = "none";
   _aplicarFiltrosVP();
 }
 
 function limpiarFiltros() {
-  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "" };
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
   const selVend  = document.getElementById("filtro-sel-vendedor");
   const selMiem  = document.getElementById("filtro-sel-miembro");
   const selPago  = document.getElementById("filtro-sel-pago");
   const selAsist = document.getElementById("filtro-sel-asistencia");
+  const selByc   = document.getElementById("filtro-sel-byc");
   if (selVend)  selVend.value  = "";
   if (selMiem)  selMiem.value  = "";
   if (selPago)  selPago.value  = "";
   if (selAsist) selAsist.value = "";
+  if (selByc)   selByc.value   = "";
   document.getElementById("filtro-panel-vp").style.display = "none";
   _aplicarFiltrosVP();
 }
