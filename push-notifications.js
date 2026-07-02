@@ -5,8 +5,12 @@
 //   4) supabaseClient.js    (define supabaseClient)
 // y luego este archivo.
 
+alert("DEBUG: push-notifications.js CARGADO");
+
 const firebaseApp = firebase.initializeApp(firebaseConfig);
+alert("DEBUG: firebase.initializeApp OK");
 const messaging = firebase.messaging();
+alert("DEBUG: firebase.messaging() OK");
 
 async function initPushNotifications(staffId) {
   try {
