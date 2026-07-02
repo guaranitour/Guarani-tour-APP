@@ -1024,6 +1024,9 @@ function applyTheme(theme) {
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) metaTheme.setAttribute("content", theme === "dark" ? THEME_COLOR_DARK : THEME_COLOR_LIGHT);
 
+  const metaColorScheme = document.getElementById("meta-color-scheme");
+  if (metaColorScheme) metaColorScheme.setAttribute("content", theme === "dark" ? "dark" : "light");
+
   const iconDark = document.getElementById("theme-icon-dark");
   const iconLight = document.getElementById("theme-icon-light");
   const label = document.getElementById("theme-toggle-label");
