@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v39';
+const CACHE_NAME    = 'guarani-tour-v40';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   '/Guarani-tour-APP/app.js',
   '/Guarani-tour-APP/auth.js',
   '/Guarani-tour-APP/supabaseClient.js',
+  '/Guarani-tour-APP/push-notifications.js',
   '/Guarani-tour-APP/viajes_activos.js',
   '/Guarani-tour-APP/usuarios.js',
   '/Guarani-tour-APP/pagos.js',
@@ -84,6 +85,7 @@ self.addEventListener('fetch', event => {
   if (
     url.hostname.includes('fonts.googleapis.com') ||
     url.hostname.includes('fonts.gstatic.com') ||
+    url.hostname.includes('www.gstatic.com') ||
     url.hostname.includes('cdn.jsdelivr.net')
   ) {
     event.respondWith(
