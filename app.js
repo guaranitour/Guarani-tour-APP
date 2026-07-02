@@ -61,7 +61,7 @@ async function enterApp(user) {
   // Verificar si el usuario está en la tabla staff y habilitado
   const { data, error } = await supabaseClient
     .from("staff")
-    .select("role, status, nombre")
+    .select("id, role, status, nombre")
     .eq("email", user.email)
     .single();
 
@@ -75,6 +75,11 @@ async function enterApp(user) {
 
   currentUserRole = data.role;
   currentUserName = data.nombre || user.email.split("@")[0];
+
+  // Pedir permiso de notificaciones y registrar el token (no bloqueante)
+  if (typeof initPushNotifications === "function") {
+    initPushNotifications(data.id);
+  }
 
   hideEl("login-view");
   showEl("app-view");

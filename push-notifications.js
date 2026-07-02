@@ -1,11 +1,17 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging.js";
+// Requiere que en index.html ya estén cargados, en este orden:
+//   1) firebase-app-compat.js
+//   2) firebase-messaging-compat.js
+//   3) firebase-config.js   (define firebaseConfig y FIREBASE_VAPID_KEY)
+//   4) supabaseClient.js    (define supabaseClient)
+// y luego este archivo.
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+const firebaseApp = firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
 
-export async function initPushNotifications(staffId) {
+async function initPushNotifications(staffId) {
   try {
+    if (!("Notification" in window)) return null;
+
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return null;
 
@@ -14,7 +20,7 @@ export async function initPushNotifications(staffId) {
       { scope: '/Guarani-tour-APP/firebase-cloud-messaging-push-scope' }
     );
 
-    const token = await getToken(messaging, {
+    const token = await messaging.getToken({
       vapidKey: FIREBASE_VAPID_KEY,
       serviceWorkerRegistration: registration
     });
@@ -28,7 +34,7 @@ export async function initPushNotifications(staffId) {
 }
 
 async function savePushToken(staffId, token) {
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from("push_tokens")
     .upsert(
       { staff_id: staffId, token, last_used_at: new Date().toISOString() },
@@ -37,7 +43,9 @@ async function savePushToken(staffId, token) {
   if (error) console.error("Error guardando push token:", error);
 }
 
-onMessage(messaging, (payload) => {
+messaging.onMessage((payload) => {
   console.log("Mensaje en foreground:", payload);
-  // acá podés mostrar un toast propio de tu app
+  if (typeof showToast === "function") {
+    showToast(payload.notification?.body || "Nueva notificación", "success");
+  }
 });
