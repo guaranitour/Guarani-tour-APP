@@ -26,13 +26,27 @@ messaging.onBackgroundMessage((payload) => {
       body: data.body || "",
       icon: data.icon || "/Guarani-tour-APP/icons/guaranitour_192.png",
       image: data.image || undefined,
-      data: { link: data.link || "/Guarani-tour-APP/" }
+      data: { link: data.link || "/Guarani-tour-APP/#viajes" }
     }
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/Guarani-tour-APP/";
-  event.waitUntil(clients.openWindow(link));
+  const link = event.notification.data?.link || "/Guarani-tour-APP/#viajes";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // Si ya hay una ventana/pestaña de la PWA abierta, la reutilizamos
+      // y navegamos ahí directo a la vista de viajes.
+      for (const client of windowClients) {
+        if (client.url.includes("/Guarani-tour-APP/") && "focus" in client) {
+          client.navigate(link);
+          return client.focus();
+        }
+      }
+      // Si no hay ninguna abierta, abrimos una nueva ya en esa vista.
+      return clients.openWindow(link);
+    })
+  );
 });
