@@ -19,7 +19,10 @@ function isRunningAsPWA() {
 }
 
 async function initPushNotifications(staffId) {
+  alert("DEBUG 1: inicio initPushNotifications, staffId=" + staffId);
+
   if (!("Notification" in window)) {
+    alert("DEBUG: navegador no soporta Notification API");
     return { ok: false, reason: "unsupported" };
   }
 
@@ -27,34 +30,40 @@ async function initPushNotifications(staffId) {
   // Así evitamos tokens duplicados (uno del navegador, otro de la PWA)
   // que generaban notificaciones repetidas.
   if (!isRunningAsPWA()) {
-    console.log("No es PWA instalada: se omite registro de push.");
+    alert("DEBUG: no está corriendo como PWA instalada, se corta acá");
     return { ok: false, reason: "not_pwa" };
   }
+
+  alert("DEBUG 2: sí es PWA. Notification.permission actual = " + Notification.permission);
 
   // Si ya está bloqueado a nivel navegador, ni intentamos pedir permiso:
   // el navegador no muestra el popup y solo devolvería "denied" de nuevo.
   if (Notification.permission === "denied") {
-    console.warn("Permiso de notificaciones bloqueado por el navegador.");
+    alert("DEBUG: permiso ya está en 'denied' a nivel navegador. Bloqueado.");
     return { ok: false, reason: "blocked" };
   }
 
   let permission;
   try {
     permission = await Notification.requestPermission();
+    alert("DEBUG 3: requestPermission devolvió = " + permission);
   } catch (err) {
-    console.error("Error pidiendo permiso de notificaciones:", err);
+    alert("DEBUG ERROR pidiendo permiso: " + err.message);
     return { ok: false, reason: "error", error: err };
   }
 
   if (permission !== "granted") {
+    alert("DEBUG: permiso no fue 'granted', fue '" + permission + "'. Se corta acá.");
     return { ok: false, reason: "denied" };
   }
 
   try {
+    alert("DEBUG 4: registrando service worker...");
     const registration = await navigator.serviceWorker.register(
       '/Guarani-tour-APP/firebase-messaging-sw.js',
       { scope: '/Guarani-tour-APP/firebase-cloud-messaging-push-scope' }
     );
+    alert("DEBUG 5: service worker registrado OK. Pidiendo token FCM...");
 
     const token = await messaging.getToken({
       vapidKey: FIREBASE_VAPID_KEY,
@@ -62,18 +71,22 @@ async function initPushNotifications(staffId) {
     });
 
     if (!token) {
-      console.warn("getToken no devolvió token.");
+      alert("DEBUG: getToken devolvió vacío/null");
       return { ok: false, reason: "no_token" };
     }
 
+    alert("DEBUG 6: token obtenido (primeros 20 caracteres): " + token.substring(0, 20) + "...");
+
     const saveResult = await savePushToken(staffId, token);
     if (!saveResult.ok) {
+      alert("DEBUG 7: FALLÓ savePushToken. Error: " + JSON.stringify(saveResult.error));
       return { ok: false, reason: "save_failed", error: saveResult.error };
     }
 
+    alert("DEBUG 8: ¡token guardado en Supabase con éxito!");
     return { ok: true, token };
   } catch (err) {
-    console.error("Error al inicializar notificaciones:", err);
+    alert("DEBUG ERROR en el bloque de registro/token: " + err.message);
     return { ok: false, reason: "error", error: err };
   }
 }
@@ -123,6 +136,8 @@ async function retryPushPermission(staffId) {
 }
 
 async function savePushToken(staffId, token) {
+  alert("DEBUG savePushToken: staffId=" + staffId + " | token(20)=" + token.substring(0, 20));
+
   // Guarda/actualiza el token actual
   const { error } = await supabaseClient
     .from("push_tokens")
@@ -131,9 +146,11 @@ async function savePushToken(staffId, token) {
       { onConflict: "token" }
     );
   if (error) {
-    console.error("Error guardando push token:", error);
+    alert("DEBUG upsert FALLÓ: " + error.message + " | code=" + error.code + " | details=" + error.details);
     return { ok: false, error };
   }
+
+  alert("DEBUG upsert OK, limpiando tokens viejos...");
 
   // Limpia tokens viejos del mismo staff (ej. de una pestaña de
   // navegador registrada antes de este cambio) para que no queden
