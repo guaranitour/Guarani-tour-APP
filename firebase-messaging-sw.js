@@ -18,11 +18,21 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
+  const data = payload.data || {};
+
   self.registration.showNotification(
-    payload.notification.title,
+    data.title || "Guaraní Tour",
     {
-      body: payload.notification.body,
-      icon: "/Guarani-tour-APP/icons/guaranitour_192.png"
+      body: data.body || "",
+      icon: data.icon || "/Guarani-tour-APP/icons/guaranitour_192.png",
+      image: data.image || undefined,
+      data: { link: data.link || "/Guarani-tour-APP/" }
     }
   );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const link = event.notification.data?.link || "/Guarani-tour-APP/";
+  event.waitUntil(clients.openWindow(link));
 });
