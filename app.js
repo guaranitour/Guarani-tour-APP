@@ -78,7 +78,16 @@ async function enterApp(user) {
 
   // Pedir permiso de notificaciones y registrar el token (no bloqueante)
   if (typeof initPushNotifications === "function") {
-    initPushNotifications(data.id);
+    initPushNotifications(data.id).then((result) => {
+      console.log("Resultado registro push:", result);
+      const btnActivarPush = document.getElementById("btn-activar-notificaciones");
+      if (btnActivarPush) {
+        // Solo mostramos el botón si no quedó activo y tiene sentido
+        // ofrecer reintentar (no en "not_pwa", ahí no aplica).
+        btnActivarPush.style.display =
+          !result.ok && result.reason !== "not_pwa" ? "" : "none";
+      }
+    });
   }
 
   hideEl("login-view");
