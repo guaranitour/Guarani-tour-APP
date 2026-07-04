@@ -841,7 +841,8 @@ async function loadViajeDetalle(viajeId) {
   const _reemplazadoPorNombre = {};
   pasajeros.forEach(p => {
     if (p.reemplaza_a) {
-      _reemplazadoPorNombre[p.reemplaza_a] = p.pasajeros?.Pasajero || "otro pasajero";
+      const nombreCompleto = p.pasajeros?.Pasajero || "otro pasajero";
+      _reemplazadoPorNombre[p.reemplaza_a] = nombreCompleto.trim().split(/\s+/)[0];
     }
   });
 
@@ -1278,8 +1279,8 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
       <div class="vp-info" style="cursor:pointer;flex:1;min-width:0"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
         <div class="vp-nombre${sinByc ? " byc-pendiente" : ""}">${nombre}</div>
-        ${p.reemplaza_a ? `<span class="vp-tag-reemplazo vp-tag-entrante">🔁 Reemplazo</span>` : ""}
-        ${p._reemplazadoPor ? `<span class="vp-tag-reemplazo vp-tag-cedido">↪️ Cedido a ${p._reemplazadoPor}</span>` : ""}
+        ${p.reemplaza_a ? `<span class="vp-tag-reemplazo vp-tag-entrante">Reemplazo</span>` : ""}
+        ${p._reemplazadoPor ? `<span class="vp-tag-reemplazo vp-tag-cedido">Cedido a ${p._reemplazadoPor}</span>` : ""}
       </div>
       <div class="vp-pills" style="cursor:pointer"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">

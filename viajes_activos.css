@@ -1402,34 +1402,29 @@
 /* ── Etiquetas de reemplazo de pasajero ────────────────────────── */
 
 .vp-tag-reemplazo {
-  display: inline-flex;
-  align-items: center;
-  gap: .25rem;
-  font-size: .68rem;
-  font-weight: 700;
+  display: inline-block;
+  font-size: .64rem;
+  font-weight: 600;
   letter-spacing: .01em;
-  padding: .15rem .5rem;
-  border-radius: 99px;
-  margin-top: .25rem;
+  padding: .08rem .4rem;
+  border-radius: 6px;
+  margin-top: .2rem;
   white-space: nowrap;
 }
 
 /* Pasajero que ENTRÓ reemplazando a otro */
 .vp-tag-entrante {
-  background: rgba(45,106,79,.1);
+  background: rgba(45,106,79,.08);
   color: var(--accent);
-  border: 1px solid rgba(45,106,79,.25);
 }
 
 [data-theme="dark"] .vp-tag-entrante {
-  background: rgba(82,183,136,.12);
+  background: rgba(82,183,136,.1);
   color: var(--accent2);
-  border-color: rgba(82,183,136,.3);
 }
 
 /* Pasajero que CEDIÓ su lugar (No asiste + fue reemplazado) */
 .vp-tag-cedido {
-  background: rgba(201,168,76,.12);
+  background: rgba(201,168,76,.1);
   color: var(--gold-text);
-  border: 1px solid rgba(201,168,76,.3);
 }
