@@ -752,6 +752,7 @@ async function loadViajeDetalle(viajeId) {
         total_a_pagar,
         puntos_destino,
         asistencia,
+        reemplaza_a,
         pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
       `)
       .eq("viaje_id", viajeId),
@@ -836,6 +837,14 @@ async function loadViajeDetalle(viajeId) {
     ? currentUserRole.some(r => ["admin","worker"].includes(r))
     : ["admin","worker"].includes(currentUserRole);
 
+  // Mapa inverso: id de origen → nombre del pasajero que lo reemplazó
+  const _reemplazadoPorNombre = {};
+  pasajeros.forEach(p => {
+    if (p.reemplaza_a) {
+      _reemplazadoPorNombre[p.reemplaza_a] = p.pasajeros?.Pasajero || "otro pasajero";
+    }
+  });
+
   // Guardar para filtrado — incluye campos pre-calculados para los filtros
   pasajerosDelViaje = pasajeros.map(p => {
     const _pgs         = pagosPorVP[p.id] || [];
@@ -864,6 +873,7 @@ async function loadViajeDetalle(viajeId) {
         const ciNorm = (p.pasajeros?.["Documento de Identidad"] || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
         return !ciNorm || !_bycAceptados.has(ciNorm);
       })(),
+      _reemplazadoPor : _reemplazadoPorNombre[p.id] || null, // este pasajero fue cedido a otro
     };
   });
 
@@ -1268,6 +1278,8 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
       <div class="vp-info" style="cursor:pointer;flex:1;min-width:0"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
         <div class="vp-nombre${sinByc ? " byc-pendiente" : ""}">${nombre}</div>
+        ${p.reemplaza_a ? `<span class="vp-tag-reemplazo vp-tag-entrante">🔁 Reemplazo</span>` : ""}
+        ${p._reemplazadoPor ? `<span class="vp-tag-reemplazo vp-tag-cedido">↪️ Cedido a ${p._reemplazadoPor}</span>` : ""}
       </div>
       <div class="vp-pills" style="cursor:pointer"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
