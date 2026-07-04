@@ -641,3 +641,63 @@
   opacity: .45;
   cursor: not-allowed;
 }
+
+/* ══ REEMPLAZO DE PASAJERO ═══════════════════════ */
+
+.btn-reemplazar-pasajero {
+  margin-top: .6rem;
+  background: transparent;
+  border: 1.5px solid rgba(45,106,79,.35);
+  color: var(--accent);
+}
+
+.btn-reemplazar-pasajero:hover {
+  background: rgba(45,106,79,.08);
+}
+
+[data-theme="dark"] .btn-reemplazar-pasajero {
+  border-color: rgba(82,183,136,.4);
+  color: var(--accent2, #52b788);
+}
+
+[data-theme="dark"] .btn-reemplazar-pasajero:hover {
+  background: rgba(82,183,136,.12);
+}
+
+#reemplazo-banner {
+  background: rgba(45,106,79,.06);
+  border: 1px solid rgba(45,106,79,.2);
+  border-radius: 14px;
+}
+
+[data-theme="dark"] #reemplazo-banner {
+  background: rgba(82,183,136,.08);
+  border-color: rgba(82,183,136,.25);
+}
+
+#reemplazo-banner .page-desc {
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+
+#reemplazo-banner strong {
+  color: var(--text);
+}
+
+.form-check-wrap {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-check-wrap input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
