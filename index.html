@@ -738,8 +738,27 @@
 <div id="view-viaje-pasajero-nuevo" style="display:none">
   <div class="main">
     <div class="form-page-header">
-      <h1>Agregar pasajero</h1>
-      <p class="page-desc">Buscá y seleccioná el pasajero a sumar al viaje</p>
+      <h1 id="vpn-titulo">Agregar pasajero</h1>
+      <p class="page-desc" id="vpn-desc">Buscá y seleccioná el pasajero a sumar al viaje</p>
+    </div>
+
+    <!-- Banner de contexto de reemplazo (oculto salvo cuando se entra desde "Reemplazar pasajero") -->
+    <div id="reemplazo-banner" class="detalle-section" style="display:none;">
+      <div class="section-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+        Reemplazo de pasajero
+      </div>
+      <p class="page-desc" style="margin:0 0 10px;">
+        Estás reemplazando a <strong id="reemplazo-nombre-origen"></strong>. Se marcará como "No asiste"
+        y el nuevo pasajero quedará vinculado a este registro.
+      </p>
+      <label class="form-check-wrap">
+        <input type="checkbox" id="reemplazo-transferir-sena" checked />
+        Transferir la seña ya pagada al nuevo pasajero
+      </label>
     </div>
 
     <div class="detalle-section">
@@ -769,10 +788,10 @@
 
     <div class="form-actions">
       <button class="btn-cancel"
-        onclick="navigateTo('viaje-detalle', viajeActualId)">
+        onclick="cancelarAltaPasajero()">
         Cancelar
       </button>
-      <button class="btn-save" onclick="guardarPasajeroEnViaje()">
+      <button class="btn-save" id="btn-guardar-pasajero" onclick="guardarPasajeroEnViaje()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         Guardar
       </button>
@@ -902,6 +921,15 @@
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             Registrar pago
+          </button>
+
+          <!-- Botón reemplazar pasajero -->
+          <button class="btn-agregar-pasajero btn-reemplazar-pasajero" id="btn-reemplazar-pasajero" onclick="iniciarReemplazoPasajero()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+            Reemplazar pasajero
           </button>
 
           <!-- Formulario inline -->

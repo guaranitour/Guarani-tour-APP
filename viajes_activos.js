@@ -2,6 +2,17 @@ let viajeActualId = null;
 let pasajeroSeleccionado = null;
 let viajeActualData = null;
 let pasajerosDelViaje = [];
+
+/* Contexto de "reemplazo de pasajero" (ceder seña a otro).
+   activo=true mientras estemos en el flujo iniciado desde
+   iniciarReemplazoPasajero() en pagos.js. Se resetea al
+   guardar o al cancelar. */
+let reemplazoCtx = {
+  activo: false,
+  viajePasajeroOrigenId: null,
+  viajeId: null,
+  nombreOrigen: null,
+};
 // CIs normalizados presentes en basesycondiciones (aceptaron ByC)
 let _bycAceptados = new Set();
 /* ─────────────────────────────────────────────
@@ -678,6 +689,36 @@ function initFormPasajero(viajeId) {
   if (allPassengers.length === 0) {
     loadPassengers();
   }
+
+  const banner   = document.getElementById("reemplazo-banner");
+  const titulo   = document.getElementById("vpn-titulo");
+  const desc     = document.getElementById("vpn-desc");
+  const nombreEl = document.getElementById("reemplazo-nombre-origen");
+  const btnGuardar = document.getElementById("btn-guardar-pasajero");
+
+  if (reemplazoCtx.activo) {
+    if (banner) banner.style.display = "block";
+    if (titulo) titulo.textContent = "Reemplazar pasajero";
+    if (desc) desc.textContent = "Elegí quién ocupa el lugar cedido";
+    if (nombreEl) nombreEl.textContent = reemplazoCtx.nombreOrigen || "este pasajero";
+    if (btnGuardar) btnGuardar.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Confirmar reemplazo`;
+  } else {
+    if (banner) banner.style.display = "none";
+    if (titulo) titulo.textContent = "Agregar pasajero";
+    if (desc) desc.textContent = "Buscá y seleccioná el pasajero a sumar al viaje";
+    if (btnGuardar) btnGuardar.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Guardar`;
+  }
+}
+
+function cancelarAltaPasajero() {
+  reemplazoCtx.activo = false;
+  reemplazoCtx.viajePasajeroOrigenId = null;
+  reemplazoCtx.nombreOrigen = null;
+  navigateTo("viaje-detalle", viajeActualId);
 }
 
 function openViajeDetalle(viajeId) {
@@ -1354,6 +1395,12 @@ async function guardarPasajeroEnViaje() {
       return;
     }
 
+    // ── Modo reemplazo: delega todo al RPC atómico ──
+    if (reemplazoCtx.activo) {
+      await confirmarReemplazoPasajero(total);
+      return;
+    }
+
     console.log("Guardando...", {
       viaje_id: viajeActualId,
       pasajero_id: pasajeroSeleccionado.id,
@@ -1406,6 +1453,52 @@ const { error } = await supabaseClient
   } catch (e) {
     console.error("ERROR GENERAL:", e);
     showToast("Error inesperado", "error");
+  }
+}
+
+/* ── Confirmar reemplazo de pasajero (modo reemplazo) ──
+   Llama al RPC reemplazar_pasajero(), que hace todo en
+   una transacción: marca "No asiste" al origen, inserta
+   el nuevo con reemplaza_a, y transfiere la seña si se
+   pidió. El trigger de notificación se dispara solo, del
+   lado de la base, sobre el INSERT resultante. */
+async function confirmarReemplazoPasajero(total) {
+  const btnGuardar = document.getElementById("btn-guardar-pasajero");
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = "Procesando…"; }
+
+  try {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const transferirSena = document.getElementById("reemplazo-transferir-sena")?.checked ?? true;
+
+    const { data: nuevoVpId, error } = await supabaseClient.rpc("reemplazar_pasajero", {
+      p_viaje_pasajero_origen_id: reemplazoCtx.viajePasajeroOrigenId,
+      p_pasajero_nuevo_id: pasajeroSeleccionado.id,
+      p_total_a_pagar: total,
+      p_transferir_sena: transferirSena,
+      p_creado_por: user.email,
+    });
+
+    if (error) {
+      console.error("ERROR RPC reemplazar_pasajero:", error);
+      showToast(error.message || "Error al reemplazar pasajero", "error");
+      return;
+    }
+
+    showToast("✅ Pasajero reemplazado correctamente", "success");
+
+    reemplazoCtx.activo = false;
+    reemplazoCtx.viajePasajeroOrigenId = null;
+    reemplazoCtx.nombreOrigen = null;
+
+    navigateTo("viaje-detalle", viajeActualId);
+  } catch (e) {
+    console.error("ERROR GENERAL reemplazo:", e);
+    showToast("Error inesperado al reemplazar", "error");
+  } finally {
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Confirmar reemplazo`;
+    }
   }
 }
 function buscarPasajero() {

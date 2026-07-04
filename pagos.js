@@ -23,6 +23,26 @@ function abrirPagosPasajero(viajePasajeroId, viajeId, pasajeroId, nombrePasajero
   navigateTo("viaje-pasajero-pagos", { viajePasajeroId, viajeId, pasajeroId, nombrePasajero });
 }
 
+/* ── REEMPLAZAR PASAJERO ────────────────────────
+   Lleva a la pantalla de alta de pasajero, pero en
+   "modo reemplazo": el nuevo alta queda vinculado al
+   viaje_pasajero de origen (pagosCtx.viajePasajeroId)
+   vía reemplazoCtx, que lee guardarPasajeroEnViaje().
+─────────────────────────────────────────────── */
+function iniciarReemplazoPasajero() {
+  if (!pagosCtx.viajePasajeroId) {
+    showToast("No hay pasajero seleccionado", "error");
+    return;
+  }
+
+  reemplazoCtx.activo               = true;
+  reemplazoCtx.viajePasajeroOrigenId = pagosCtx.viajePasajeroId;
+  reemplazoCtx.viajeId               = pagosCtx.viajeId;
+  reemplazoCtx.nombreOrigen          = pagosCtx.nombrePasajero;
+
+  navigateTo("viaje-pasajero-nuevo", pagosCtx.viajeId);
+}
+
 /* ── INICIALIZAR VISTA ──────────────────────── */
 async function initPagosView(ctx) {
   Object.assign(pagosCtx, ctx);
