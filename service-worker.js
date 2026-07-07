@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v52';
+const CACHE_NAME    = 'guarani-tour-v53';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -55,6 +55,21 @@ self.addEventListener('activate', event => {
     )
   );
   self.clients.claim();
+});
+
+// Mensaje desde la app: limpiar entradas viejas de una imagen en CACHE_IMAGES
+// (ignora el query string ?t=... para matchear todas las versiones del mismo path)
+self.addEventListener('message', event => {
+  if (event.data?.type === 'CLEAR_IMAGE_CACHE' && event.data?.pathContains) {
+    const needle = event.data.pathContains;
+    event.waitUntil(
+      caches.open(CACHE_IMAGES).then(async cache => {
+        const requests = await cache.keys();
+        const toDelete = requests.filter(req => req.url.includes(needle));
+        await Promise.all(toDelete.map(req => cache.delete(req)));
+      })
+    );
+  }
 });
 
 // Fetch

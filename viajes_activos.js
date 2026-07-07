@@ -371,12 +371,12 @@ function formatFecha(val) {
 }
 
 /* ── SUBIR IMAGEN ─────────────────────────── */
-async function uploadViajeImage(file) {
-  const fileName = `${Date.now()}_${file.name}`;
+async function uploadViajeImage(file, fixedName = null) {
+  const fileName = fixedName || `${Date.now()}_${file.name}`;
 
   const { error } = await supabaseClient.storage
     .from("viajes")
-    .upload(fileName, file);
+    .upload(fileName, file, { upsert: !!fixedName });
 
   if (error) throw error;
 
@@ -384,7 +384,7 @@ async function uploadViajeImage(file) {
     .from("viajes")
     .getPublicUrl(fileName);
 
-  return data.publicUrl;
+  return fixedName ? `${data.publicUrl}?t=${Date.now()}` : data.publicUrl;
 }
 async function uploadEgresoFile(file) {
   const fileName = `${viajeActualId}/${Date.now()}_${file.name}`;
@@ -597,10 +597,16 @@ async function guardarEditarViaje() {
 
   if (file) {
     try {
-      imagen_url = await uploadViajeImage(file);
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "CLEAR_IMAGE_CACHE",
+          pathContains: `viaje_${viajeActualId}`
+        });
+      }
+      imagen_url = await uploadViajeImage(file, `viaje_${viajeActualId}`);
     } catch (e) {
       console.error(e);
-      alert("Error subiendo imagen");
+      alert("Error subiendo imagen: " + (e?.message || JSON.stringify(e)));
       if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
       return;
     }
