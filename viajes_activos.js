@@ -861,11 +861,13 @@ async function loadViajeDetalle(viajeId) {
     const total  = p.total_a_pagar || 0;
     const neto   = _pagado - _devuelto - _transferido;
     const esCanje = total === 0;
+    const noAsiste = (p.asistencia || "Asiste") === "No asiste";
     let _pillClass;
     if (esCanje && neto > 0)       _pillClass = "excedente";
     else if (esCanje)              _pillClass = "canje";
     else if (neto > total)         _pillClass = "excedente";
     else if (total > 0 && neto >= total) _pillClass = "saldado";
+    else if (noAsiste)             _pillClass = "no-asiste";
     else if (neto / (total || 1) >= 0.5) _pillClass = "parcial";
     else                           _pillClass = "deuda";
 
@@ -899,7 +901,7 @@ async function loadViajeDetalle(viajeId) {
   // Limpiar buscador y filtros al cargar
   const buscador = document.getElementById("buscador-vp");
   if (buscador) buscador.value = "";
-  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
   const panelF = document.getElementById("filtro-panel-vp");
   if (panelF) panelF.style.display = "none";
 
@@ -920,15 +922,16 @@ function _renderAlertasViaje() {
   const slot = document.getElementById("detalle-viaje-alertas-btn");
   if (!slot) return;
 
-  const conDeuda = pasajerosDelViaje.filter(p => p._pillClass === "deuda");
-  const sinByc   = pasajerosDelViaje.filter(p => p._sinByc);
+  const conDeuda   = pasajerosDelViaje.filter(p => p._pillClass === "deuda");
+  const sinByc     = pasajerosDelViaje.filter(p => p._sinByc);
+  const reservados = pasajerosDelViaje.filter(p => /reservado/i.test(p._nombre || ""));
 
-  if (conDeuda.length === 0 && sinByc.length === 0) {
+  if (conDeuda.length === 0 && sinByc.length === 0 && reservados.length === 0) {
     slot.innerHTML = "";
     return;
   }
 
-  const total = conDeuda.length + sinByc.length;
+  const total = conDeuda.length + sinByc.length + reservados.length;
 
   slot.innerHTML = `
     <button class="btn-alertas-viaje" onclick="toggleAlertasPanel(event)" title="Alertas del viaje">
@@ -945,6 +948,11 @@ function _renderAlertasViaje() {
         <div class="alertas-panel-item" onclick="irAAlertaViaje('byc')">
           <span class="alertas-panel-icon">⚠️</span>
           <span>${sinByc.length} pasajero${sinByc.length === 1 ? "" : "s"} no ${sinByc.length === 1 ? "ha" : "han"} aceptado BYC</span>
+        </div>` : ""}
+      ${reservados.length > 0 ? `
+        <div class="alertas-panel-item" onclick="irAAlertaViaje('reservado')">
+          <span class="alertas-panel-icon">📌</span>
+          <span>${reservados.length} pasajero${reservados.length === 1 ? "" : "s"} marcado${reservados.length === 1 ? "" : "s"} como reservado${reservados.length === 1 ? "" : "s"}</span>
         </div>` : ""}
     </div>`;
 }
@@ -980,11 +988,13 @@ function irAAlertaViaje(tipo) {
   switchViajeTab("pasajeros");
 
   // Aplicar filtro correspondiente
-  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
   if (tipo === "deuda") {
     _filtrosVP.pago = "deuda";
   } else if (tipo === "byc") {
     _filtrosVP.byc = "pendiente";
+  } else if (tipo === "reservado") {
+    _filtrosVP.reservado = "si";
   }
 
   const buscador = document.getElementById("buscador-vp");
@@ -994,7 +1004,7 @@ function irAAlertaViaje(tipo) {
 }
 
 // Estado de filtros activos
-let _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
+let _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
 
 function filtrarPasajerosViaje(q) {
   _aplicarFiltrosVP(q);
@@ -1043,6 +1053,11 @@ function _aplicarFiltrosVP(qOverride) {
   // Filtro BYC pendiente
   if (_filtrosVP.byc === "pendiente") {
     filtrados = filtrados.filter(p => p._sinByc);
+  }
+
+  // Filtro reservados (nombre contiene "Reservado")
+  if (_filtrosVP.reservado === "si") {
+    filtrados = filtrados.filter(p => /reservado/i.test(p._nombre || ""));
   }
 
   const pagosPorVP = {};
@@ -1205,7 +1220,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "" };
+  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
   const selVend  = document.getElementById("filtro-sel-vendedor");
   const selMiem  = document.getElementById("filtro-sel-miembro");
   const selPago  = document.getElementById("filtro-sel-pago");
@@ -1261,6 +1276,8 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     const saldado      = !esCanje && restante === 0 && total > 0;
     const hayExcedente = !esCanje && neto > total;
 
+    const noAsiste = (p.asistencia || "Asiste") === "No asiste";
+
     const pct = total > 0 ? neto / total : 0;
     let pillClass, pillLabel;
     if (esCanje && neto > 0) {
@@ -1290,7 +1307,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
       </div>
       <div class="vp-pills" style="cursor:pointer"
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
-        <span class="vp-pill ${pillClass}">${pillLabel}</span>
+        ${noAsiste ? "" : `<span class="vp-pill ${pillClass}">${pillLabel}</span>`}
       </div>
       ${esAdmin ? `
       <button class="btn-editar-vp" title="Editar"
