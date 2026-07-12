@@ -179,7 +179,16 @@
   transform: rotate(90deg);
   color: var(--accent);
 }
-.dash-section-body { overflow: hidden; }
+.dash-section-body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height .32s cubic-bezier(.4,0,.2,1), opacity .28s ease, margin-top .32s ease;
+}
+.dash-section-body.open {
+  opacity: 1;
+  margin-top: .1rem;
+}
 .dash-section-divider {
   border: none; border-top: 1px solid var(--border);
   margin: 1.6rem 0;

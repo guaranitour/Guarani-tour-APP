@@ -34,8 +34,27 @@ function dismissDashboardPill() {
 function toggleDashSection(bodyId, titleEl) {
   const body = document.getElementById(bodyId);
   if (!body) return;
-  const abierto = body.style.display !== "none";
-  body.style.display = abierto ? "none" : "";
+  const abierto = body.classList.contains("open");
+
+  if (abierto) {
+    // Cerrar: fijar altura actual y luego animar a 0
+    body.style.maxHeight = body.scrollHeight + "px";
+    requestAnimationFrame(() => {
+      body.classList.remove("open");
+      body.style.maxHeight = "0px";
+    });
+  } else {
+    // Abrir: animar de 0 a la altura real, luego liberar (por si el contenido cambia)
+    body.classList.add("open");
+    body.style.maxHeight = body.scrollHeight + "px";
+    body.addEventListener("transitionend", function onEnd(e) {
+      if (e.propertyName === "max-height" && body.classList.contains("open")) {
+        body.style.maxHeight = "none";
+      }
+      body.removeEventListener("transitionend", onEnd);
+    });
+  }
+
   if (titleEl) titleEl.classList.toggle("expanded", !abierto);
 }
 
@@ -76,8 +95,8 @@ async function loadDashboard() {
 
     let html = "";
     html += renderKpisPasajeros(pasajerosData || [], vpData || []);
-    html += renderKpisByc(bycData || [], pasajerosData || []);
     html += renderViajesActivos(viajesData || [], vpData || []);
+    html += renderKpisByc(bycData || [], pasajerosData || []);
     html += renderTopPuntos2026(vpData || [], viajesMap);
 
     if (esWorkerOAdmin) {
@@ -151,7 +170,7 @@ function renderKpisPasajeros(pasajerosData, vpData) {
       Pasajeros
       <span class="dash-chevron">${_dashIcons.flecha}</span>
     </div>
-    <div class="dash-section-body" id="dash-body-pasajeros" style="display:none">
+    <div class="dash-section-body" id="dash-body-pasajeros">
       <div class="dash-kpi-grid">
         <div class="dash-kpi-card clickable" onclick="navigateTo('clientes')" style="cursor:pointer">
           <div class="dash-kpi-label">Total de pasajeros</div>
@@ -198,7 +217,7 @@ function renderKpisByc(bycData, pasajerosData) {
       Bases y condiciones
       <span class="dash-chevron">${_dashIcons.flecha}</span>
     </div>
-    <div class="dash-section-body" id="dash-body-byc" style="display:none">
+    <div class="dash-section-body" id="dash-body-byc">
       <div class="dash-kpi-grid">
         <div class="dash-kpi-card">
           <div class="dash-kpi-label">Total en ByC</div>
