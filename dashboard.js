@@ -30,6 +30,15 @@ function dismissDashboardPill() {
   if (pill) pill.style.display = "none";
 }
 
+// ── Colapsar/expandir secciones del panel (Pasajeros, ByC) ──
+function toggleDashSection(bodyId, titleEl) {
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+  const abierto = body.style.display !== "none";
+  body.style.display = abierto ? "none" : "";
+  if (titleEl) titleEl.classList.toggle("expanded", !abierto);
+}
+
 // ── Carga principal del panel ───────────────────────────────
 async function loadDashboard() {
   const root = document.getElementById("dashboard-content");
@@ -137,23 +146,26 @@ function renderKpisPasajeros(pasajerosData, vpData) {
 
   return `
   <div class="dash-section">
-    <div class="dash-section-title">
+    <div class="dash-section-title dash-collapsible" onclick="toggleDashSection('dash-body-pasajeros', this)">
       <span class="dash-icon">${_dashIcons.pasajeros}</span>
       Pasajeros
+      <span class="dash-chevron">${_dashIcons.flecha}</span>
     </div>
-    <div class="dash-kpi-grid">
-      <div class="dash-kpi-card">
-        <div class="dash-kpi-label">Total de pasajeros</div>
-        <div class="dash-kpi-value">${total}</div>
-        <div class="dash-kpi-breakdown">${chipsSexo}</div>
-      </div>
-      <div class="dash-kpi-card">
-        <div class="dash-kpi-label">Club Destino</div>
-        <div class="dash-kpi-value">${miembros}</div>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctMiembros}%"></div></div>
-        <div class="dash-kpi-breakdown">
-          <span class="dash-chip">⭐ Miembros: <strong>${miembros}</strong></span>
-          <span class="dash-chip">No miembros: <strong>${noMiembros}</strong></span>
+    <div class="dash-section-body" id="dash-body-pasajeros" style="display:none">
+      <div class="dash-kpi-grid">
+        <div class="dash-kpi-card clickable" onclick="navigateTo('clientes')" style="cursor:pointer">
+          <div class="dash-kpi-label">Total de pasajeros</div>
+          <div class="dash-kpi-value">${total}</div>
+          <div class="dash-kpi-breakdown">${chipsSexo}</div>
+        </div>
+        <div class="dash-kpi-card clickable" onclick="navigateTo('club-destino')" style="cursor:pointer">
+          <div class="dash-kpi-label">Club Destino</div>
+          <div class="dash-kpi-value">${miembros}</div>
+          <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctMiembros}%"></div></div>
+          <div class="dash-kpi-breakdown">
+            <span class="dash-chip">⭐ Miembros: <strong>${miembros}</strong></span>
+            <span class="dash-chip">No miembros: <strong>${noMiembros}</strong></span>
+          </div>
         </div>
       </div>
     </div>
@@ -181,29 +193,32 @@ function renderKpisByc(bycData, pasajerosData) {
 
   return `
   <div class="dash-section">
-    <div class="dash-section-title">
+    <div class="dash-section-title dash-collapsible" onclick="toggleDashSection('dash-body-byc', this)">
       <span class="dash-icon">${_dashIcons.byc}</span>
       Bases y condiciones
+      <span class="dash-chevron">${_dashIcons.flecha}</span>
     </div>
-    <div class="dash-kpi-grid">
-      <div class="dash-kpi-card">
-        <div class="dash-kpi-label">Total en ByC</div>
-        <div class="dash-kpi-value">${totalByc}</div>
-        <div class="dash-kpi-breakdown">
-          <span class="dash-chip">🔗 Vinculados: <strong>${vinculados}</strong></span>
-          <span class="dash-chip dash-chip--warn">⚠️ Sin vincular: <strong>${faltantes}</strong></span>
+    <div class="dash-section-body" id="dash-body-byc" style="display:none">
+      <div class="dash-kpi-grid">
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-label">Total en ByC</div>
+          <div class="dash-kpi-value">${totalByc}</div>
+          <div class="dash-kpi-breakdown">
+            <span class="dash-chip">🔗 Vinculados: <strong>${vinculados}</strong></span>
+            <span class="dash-chip dash-chip--warn">⚠️ Sin vincular: <strong>${faltantes}</strong></span>
+          </div>
         </div>
-      </div>
-      <div class="dash-kpi-card clickable" onclick="navigateTo('byc-vincular')" style="cursor:pointer">
-        <div class="dash-kpi-label">Faltan vincular</div>
-        <div class="dash-kpi-value" style="color:${faltantes > 0 ? '#c9a84c' : '#2d6a4f'}">${faltantes}</div>
-        <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctVinc}%"></div></div>
-        <div class="dash-kpi-breakdown">
-          <span class="dash-chip">${pctVinc}% ya en base de clientes</span>
-        </div>
-        <div style="margin-top:.6rem; font-size:.75rem; color:#3949ab; font-weight:500; display:flex; align-items:center; gap:.3rem;">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          Ir a pendientes
+        <div class="dash-kpi-card clickable" onclick="event.stopPropagation(); navigateTo('byc-vincular')" style="cursor:pointer">
+          <div class="dash-kpi-label">Faltan vincular</div>
+          <div class="dash-kpi-value" style="color:${faltantes > 0 ? '#c9a84c' : '#2d6a4f'}">${faltantes}</div>
+          <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctVinc}%"></div></div>
+          <div class="dash-kpi-breakdown">
+            <span class="dash-chip">${pctVinc}% ya en base de clientes</span>
+          </div>
+          <div style="margin-top:.6rem; font-size:.75rem; color:#3949ab; font-weight:500; display:flex; align-items:center; gap:.3rem;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Ir a pendientes
+          </div>
         </div>
       </div>
     </div>
@@ -342,6 +357,89 @@ async function irADashPasajero(pasajeroId) {
   }
   const p = allPassengers.find(x => x.id === pasajeroId);
   if (p) navigateTo("detalle", p._idx);
+}
+
+// ── Vista de Club Destino: lista completa de miembros ────────
+// Guarda la lista completa para reutilizar en el filtro de búsqueda.
+let _clubDestinoCompleto = [];
+
+function _renderClubDestinoRows(lista) {
+  if (lista.length === 0) {
+    return `<div class="dash-state">Sin miembros de Club Destino todavía.</div>`;
+  }
+  return lista.map(p => `
+    <div class="dash-rank-row">
+      <div class="dash-rank-avatar" onclick="irADashPasajero(${p.pasajeroId})">${getInitials(p.nombre)}</div>
+      <div class="dash-rank-name" onclick="irADashPasajero(${p.pasajeroId})">${p.nombre}</div>
+      <span class="dash-rank-pts" onclick="irADashPasajero(${p.pasajeroId})">${p.viajesAsistidos} viaje${p.viajesAsistidos !== 1 ? "s" : ""}</span>
+    </div>`).join("");
+}
+
+async function loadClubDestino() {
+  const root = document.getElementById("club-destino-list");
+  if (!root) return;
+
+  const searchEl = document.getElementById("club-destino-search");
+  if (searchEl) searchEl.value = "";
+
+  root.innerHTML = `<div class="dash-state">⏳ Cargando miembros…</div>`;
+
+  try {
+    const [
+      { data: pasajerosData, error: errPas },
+      { data: vpData,        error: errVp },
+    ] = await Promise.all([
+      supabaseClient.from("pasajeros").select("id, Pasajero"),
+      supabaseClient.from("viaje_pasajeros").select("id, pasajero_id, asistencia"),
+    ]);
+
+    if (errPas || errVp) {
+      console.error("Error cargando Club Destino:", errPas || errVp);
+      root.innerHTML = `<div class="dash-state">⚠️ Error al cargar Club Destino.</div>`;
+      return;
+    }
+
+    const asistenciasPorPasajero = {};
+    (vpData || []).forEach(vp => {
+      if (vp.asistencia === "Asiste") {
+        asistenciasPorPasajero[vp.pasajero_id] = (asistenciasPorPasajero[vp.pasajero_id] || 0) + 1;
+      }
+    });
+
+    _clubDestinoCompleto = (pasajerosData || [])
+      .map(p => ({
+        pasajeroId: p.id,
+        nombre: p.Pasajero || "Sin nombre",
+        viajesAsistidos: asistenciasPorPasajero[p.id] || 0,
+      }))
+      .filter(p => p.viajesAsistidos >= 3)
+      .sort((a, b) => b.viajesAsistidos - a.viajesAsistidos);
+
+  } catch (e) {
+    console.error("Error inesperado cargando Club Destino:", e);
+    root.innerHTML = `<div class="dash-state">⚠️ Error al cargar Club Destino.</div>`;
+    return;
+  }
+
+  root.innerHTML = _renderClubDestinoRows(_clubDestinoCompleto);
+}
+
+// Filtro en vivo por nombre dentro de Club Destino
+let _clubDestinoSearchTimer = null;
+function filtrarClubDestino() {
+  clearTimeout(_clubDestinoSearchTimer);
+  _clubDestinoSearchTimer = setTimeout(() => {
+    const root = document.getElementById("club-destino-list");
+    const q = document.getElementById("club-destino-search")?.value.toLowerCase().trim() || "";
+    if (!root) return;
+
+    if (!q) {
+      root.innerHTML = _renderClubDestinoRows(_clubDestinoCompleto);
+      return;
+    }
+    const filtrado = _clubDestinoCompleto.filter(p => (p.nombre || "").toLowerCase().includes(q));
+    root.innerHTML = _renderClubDestinoRows(filtrado);
+  }, 200);
 }
 
 // ── Vista de ranking completo de puntos (1ro al último) ──────

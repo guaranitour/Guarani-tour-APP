@@ -162,6 +162,24 @@
   font-size: .76rem; color: var(--text-muted);
   margin: -.35rem 0 .7rem;
 }
+
+/* ── Secciones colapsables (Pasajeros, Bases y condiciones) ─ */
+.dash-section-title.dash-collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+.dash-chevron {
+  margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  transition: transform .18s ease;
+  flex-shrink: 0;
+}
+.dash-section-title.dash-collapsible.expanded .dash-chevron {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+.dash-section-body { overflow: hidden; }
 .dash-section-divider {
   border: none; border-top: 1px solid var(--border);
   margin: 1.6rem 0;
