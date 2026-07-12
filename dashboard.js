@@ -64,6 +64,10 @@ function _dashAvatarHtml(pasajeroId, nombre) {
 }
 
 // ── Colapsar/expandir secciones del panel (Pasajeros, ByC) ──
+// Se recuerda qué secciones quedaron desplegadas para reaplicarlo
+// cada vez que el panel se vuelve a renderizar (ej. al volver con "atrás").
+let _dashSeccionesAbiertas = {};
+
 function toggleDashSection(bodyId, titleEl) {
   const body = document.getElementById(bodyId);
   if (!body) return;
@@ -89,6 +93,24 @@ function toggleDashSection(bodyId, titleEl) {
   }
 
   if (titleEl) titleEl.classList.toggle("expanded", !abierto);
+  _dashSeccionesAbiertas[bodyId] = !abierto;
+}
+
+// Aplica sin animar el estado guardado de una sección colapsable,
+// recién insertada en el DOM (usado justo después de pintar el panel).
+function _aplicarEstadoDashSection(bodyId) {
+  if (!_dashSeccionesAbiertas[bodyId]) return;
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+  body.classList.add("open");
+  body.style.maxHeight = "none";
+  const titleEl = document.querySelector(`[onclick*="${bodyId}"]`);
+  if (titleEl) titleEl.classList.add("expanded");
+  // Si había un scroll pendiente de restaurar (volviendo con "atrás"),
+  // este cambio de altura puede haberlo dejado corto; reintentamos.
+  if (typeof _pendingScrollY === "number" && typeof _restoreScroll === "function") {
+    _restoreScroll(_pendingScrollY);
+  }
 }
 
 // ── Carga principal del panel ───────────────────────────────
@@ -157,6 +179,8 @@ async function loadDashboard() {
     }
 
     root.innerHTML = html;
+    _aplicarEstadoDashSection("dash-body-pasajeros");
+    _aplicarEstadoDashSection("dash-body-byc");
 
   } catch (e) {
     console.error("Error inesperado en dashboard:", e);

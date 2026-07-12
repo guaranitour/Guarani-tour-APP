@@ -175,7 +175,10 @@ function _buildHash(view, idx) {
 function _setHash(view, idx) {
   const hash = _buildHash(view, idx);
   if (location.hash !== hash) {
-    history.pushState(null, "", hash);
+    // Antes de avanzar, guardamos el scroll de la vista que dejamos atrás
+    // en su propia entrada del historial, para poder restaurarlo al volver.
+    history.replaceState({ scrollY: window.scrollY }, "", location.hash);
+    history.pushState({ scrollY: 0 }, "", hash);
   }
 }
 
@@ -190,9 +193,11 @@ function _parseHash(hash) {
   return { view, idx };
 }
 
-window.addEventListener("popstate", () => {
+window.addEventListener("popstate", (event) => {
   if (!appReady) return;
   const { view, idx } = _parseHash(location.hash);
+  // Scroll guardado para esta entrada del historial (si existe)
+  _pendingScrollY = (event.state && typeof event.state.scrollY === "number") ? event.state.scrollY : null;
   // Vistas con idx objeto no se pueden restaurar desde hash → ir al padre
   const objectIdxViews = ["viaje-pasajero-pagos","egreso-detalle"];
   if (objectIdxViews.includes(view)) {
@@ -216,6 +221,23 @@ window.addEventListener("popstate", () => {
 });
 
 // ── Navegación ─────────────────────────────────────────────
+// Scroll pendiente de restaurar al volver con "atrás" (popstate).
+let _pendingScrollY = null;
+
+// Reintenta restaurar el scroll mientras el contenido async (Supabase)
+// todavía está pintándose y la página no alcanza esa altura todavía.
+function _restoreScroll(targetY, intentos = 20) {
+  if (targetY == null) return;
+  if (document.body.scrollHeight >= targetY + window.innerHeight || intentos <= 0) {
+    window.scrollTo(0, targetY);
+    // Un segundo ajuste por si el contenido siguió creciendo justo después
+    requestAnimationFrame(() => window.scrollTo(0, targetY));
+    return;
+  }
+  window.scrollTo(0, targetY);
+  setTimeout(() => _restoreScroll(targetY, intentos - 1), 60);
+}
+
 function getSaludo() {
   const h = new Date().getHours();
   if (h < 12) return "Buenos días";
@@ -636,6 +658,18 @@ function navigateTo(view, idx = null, _fromHash = false) {
     ]);
     iniciarFormMovimiento();
 
+  }
+
+  // Restaurar scroll (volviendo con "atrás") o arrancar arriba (navegación nueva)
+  if (_fromHash && _pendingScrollY != null) {
+    _restoreScroll(_pendingScrollY);
+    // Se limpia con demora: si una vista termina de cargar contenido async
+    // (ej. el panel reabriendo secciones colapsables) puede reajustar el
+    // scroll una vez más antes de que se descarte el valor guardado.
+    setTimeout(() => { _pendingScrollY = null; }, 1500);
+  } else if (!_fromHash) {
+    _pendingScrollY = null;
+    window.scrollTo(0, 0);
   }
 }
 
