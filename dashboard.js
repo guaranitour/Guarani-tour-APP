@@ -30,6 +30,39 @@ function dismissDashboardPill() {
   if (pill) pill.style.display = "none";
 }
 
+// ── Avatares de pasajeros en el panel (Top puntos, Club Destino) ──
+// Cache indexado por pasajero_id (id de la tabla `pasajeros`), separado
+// del avatarCache de app.js (que usa el índice interno _idx de la lista).
+let _dashAvatarCache = {};
+
+async function _cargarDashAvatares(pasajeroIds) {
+  const idsFaltantes = [...new Set(pasajeroIds)].filter(id => !(id in _dashAvatarCache));
+  if (idsFaltantes.length === 0) return;
+
+  const { data, error } = await supabaseClient
+    .from("pasajeros")
+    .select("id, avatar_path")
+    .in("id", idsFaltantes);
+
+  if (error) { console.warn("No se pudieron cargar avatares del panel:", error); return; }
+
+  (data || []).forEach(p => {
+    if (p.avatar_path) {
+      const { data: urlData } = supabaseClient.storage.from("avatars").getPublicUrl(p.avatar_path);
+      _dashAvatarCache[p.id] = urlData?.publicUrl || null;
+    } else {
+      _dashAvatarCache[p.id] = null;
+    }
+  });
+}
+
+function _dashAvatarHtml(pasajeroId, nombre) {
+  const url = _dashAvatarCache[pasajeroId];
+  return url
+    ? `<img src="${url}" alt="${nombre}" />`
+    : `<span>${getInitials(nombre)}</span>`;
+}
+
 // ── Colapsar/expandir secciones del panel (Pasajeros, ByC) ──
 function toggleDashSection(bodyId, titleEl) {
   const body = document.getElementById(bodyId);
@@ -97,7 +130,7 @@ async function loadDashboard() {
     html += renderKpisPasajeros(pasajerosData || [], vpData || []);
     html += renderViajesActivos(viajesData || [], vpData || []);
     html += renderKpisByc(bycData || [], pasajerosData || []);
-    html += renderTopPuntos2026(vpData || [], viajesMap);
+    html += await renderTopPuntos2026(vpData || [], viajesMap);
 
     if (esWorkerOAdmin) {
       // Últimos 3 viajes (activos o completados), ya vienen ordenados por fecha_salida desc
@@ -340,7 +373,7 @@ function _renderRankRows(ranking) {
     return `
     <div class="dash-rank-row">
       <div class="dash-rank-num ${cls}" onclick="irADashPasajero(${r.pasajeroId})">${pos}</div>
-      <div class="dash-rank-avatar" onclick="irADashPasajero(${r.pasajeroId})">${getInitials(r.nombre)}</div>
+      <div class="dash-rank-avatar" onclick="irADashPasajero(${r.pasajeroId})">${_dashAvatarHtml(r.pasajeroId, r.nombre)}</div>
       <div class="dash-rank-name" onclick="irADashPasajero(${r.pasajeroId})">${r.nombre}</div>
       <span class="dash-rank-pts" onclick="irADashPasajero(${r.pasajeroId})">⭐ ${r.puntos} pts</span>
       <button class="dash-rank-share-btn" title="Compartir" onclick="event.stopPropagation(); compartirPuntosPasajero(${r.pasajeroId})">
@@ -350,9 +383,10 @@ function _renderRankRows(ranking) {
   }).join("");
 }
 
-function renderTopPuntos2026(vpData, viajesMap) {
+async function renderTopPuntos2026(vpData, viajesMap) {
   _rankingPuntosCompleto = _calcularRankingPuntos2026(vpData, viajesMap);
   const top10 = _rankingPuntosCompleto.slice(0, 10);
+  await _cargarDashAvatares(top10.map(r => r.pasajeroId));
   const body  = _renderRankRows(top10);
 
   return `
@@ -360,6 +394,7 @@ function renderTopPuntos2026(vpData, viajesMap) {
     <div class="dash-section-title">
       <span class="dash-icon">${_dashIcons.puntos}</span>
       Top pasajeros · puntos 2026
+      <span class="dash-section-count">${_rankingPuntosCompleto.length}</span>
       ${_rankingPuntosCompleto.length > 10 ? `
       <button class="dash-ver-todos-btn" onclick="navigateTo('ranking-puntos')">
         Ver todos ${_dashIcons.flecha}
@@ -388,7 +423,7 @@ function _renderClubDestinoRows(lista) {
   }
   return lista.map(p => `
     <div class="dash-rank-row">
-      <div class="dash-rank-avatar" onclick="irADashPasajero(${p.pasajeroId})">${getInitials(p.nombre)}</div>
+      <div class="dash-rank-avatar" onclick="irADashPasajero(${p.pasajeroId})">${_dashAvatarHtml(p.pasajeroId, p.nombre)}</div>
       <div class="dash-rank-name" onclick="irADashPasajero(${p.pasajeroId})">${p.nombre}</div>
       <span class="dash-rank-pts" onclick="irADashPasajero(${p.pasajeroId})">${p.viajesAsistidos} viaje${p.viajesAsistidos !== 1 ? "s" : ""}</span>
     </div>`).join("");
@@ -434,11 +469,16 @@ async function loadClubDestino() {
       .filter(p => p.viajesAsistidos >= 3)
       .sort((a, b) => b.viajesAsistidos - a.viajesAsistidos);
 
+    await _cargarDashAvatares(_clubDestinoCompleto.map(p => p.pasajeroId));
+
   } catch (e) {
     console.error("Error inesperado cargando Club Destino:", e);
     root.innerHTML = `<div class="dash-state">⚠️ Error al cargar Club Destino.</div>`;
     return;
   }
+
+  const countEl = document.getElementById("club-destino-count");
+  if (countEl) countEl.textContent = `${_clubDestinoCompleto.length} miembro${_clubDestinoCompleto.length !== 1 ? "s" : ""}`;
 
   root.innerHTML = _renderClubDestinoRows(_clubDestinoCompleto);
 }
@@ -501,6 +541,8 @@ async function loadRankingPuntos() {
     }
   }
 
+  root.innerHTML = `<div class="dash-state">⏳ Cargando avatares…</div>`;
+  await _cargarDashAvatares(_rankingPuntosCompleto.map(r => r.pasajeroId));
   root.innerHTML = _renderRankRows(_rankingPuntosCompleto);
 }
 
@@ -534,7 +576,7 @@ function filtrarRankingPuntos() {
       return `
       <div class="dash-rank-row">
         <div class="dash-rank-num ${cls}" onclick="irADashPasajero(${r.pasajeroId})">${posOriginal}</div>
-        <div class="dash-rank-avatar" onclick="irADashPasajero(${r.pasajeroId})">${getInitials(r.nombre)}</div>
+        <div class="dash-rank-avatar" onclick="irADashPasajero(${r.pasajeroId})">${_dashAvatarHtml(r.pasajeroId, r.nombre)}</div>
         <div class="dash-rank-name" onclick="irADashPasajero(${r.pasajeroId})">${r.nombre}</div>
         <span class="dash-rank-pts" onclick="irADashPasajero(${r.pasajeroId})">⭐ ${r.puntos} pts</span>
         <button class="dash-rank-share-btn" title="Compartir" onclick="event.stopPropagation(); compartirPuntosPasajero(${r.pasajeroId})">

@@ -162,6 +162,7 @@
   font-size: .76rem; color: var(--text-muted);
   margin: -.35rem 0 .7rem;
 }
+.dash-section-count + .dash-ver-todos-btn { margin-left: .5rem; }
 
 /* ── Secciones colapsables (Pasajeros, Bases y condiciones) ─ */
 .dash-section-title.dash-collapsible {
@@ -339,6 +340,10 @@
   color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: .68rem; font-weight: 600;
+}
+.dash-rank-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover;
 }
 
 .dash-rank-name {
