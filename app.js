@@ -65,11 +65,19 @@ async function enterApp(user) {
     .eq("email", user.email)
     .single();
 
-  if (error || !data || data.status !== "enabled") {
-    // No está en staff o está deshabilitado
+  if (error || !data) {
+    // No está en la tabla staff
     await supabaseClient.auth.signOut();
     showLogin();
-    showAccessDenied(error || data?.status === "disabled");
+    showAccessDenied("not_staff");
+    return;
+  }
+
+  if (data.status !== "enabled") {
+    // Está en staff pero deshabilitado
+    await supabaseClient.auth.signOut();
+    showLogin();
+    showAccessDenied("disabled");
     return;
   }
 
@@ -119,7 +127,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   }
 }
 
-function showAccessDenied(isDisabled) {
+function showAccessDenied(reason) {
   const card = document.querySelector(".login-card");
   const existing = document.getElementById("access-denied-msg");
   if (existing) existing.remove();
@@ -127,9 +135,9 @@ function showAccessDenied(isDisabled) {
   const msg = document.createElement("div");
   msg.id = "access-denied-msg";
   msg.style.cssText = "margin-top:1rem; padding:.75rem 1rem; background:#fff0f0; border:1px solid rgba(192,57,43,.2); border-radius:10px; font-size:.85rem; color:#c0392b; text-align:center;";
-  msg.textContent = isDisabled
+  msg.textContent = reason === "disabled"
     ? "Tu acceso está deshabilitado. Contactá al administrador."
-    : "Tu cuenta no tiene acceso a este portal.";
+    : "Tu cuenta no pertenece al staff. Contactá al administrador si creés que es un error.";
   card.appendChild(msg);
 }
 
