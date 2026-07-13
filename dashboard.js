@@ -148,11 +148,12 @@ async function loadDashboard() {
     const viajesMap = {};
     (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
 
+    const rankingPuntos = await calcularYCachearRankingPuntos2026(vpData || [], viajesMap);
+
     let html = "";
-    html += renderKpisPasajeros(pasajerosData || [], vpData || []);
+    html += renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
     html += renderViajesActivos(viajesData || [], vpData || []);
     html += renderKpisByc(bycData || [], pasajerosData || []);
-    html += await renderTopPuntos2026(vpData || [], viajesMap);
 
     if (esWorkerOAdmin) {
       // Últimos 3 viajes (activos o completados), ya vienen ordenados por fecha_salida desc
@@ -179,7 +180,6 @@ async function loadDashboard() {
     }
 
     root.innerHTML = html;
-    _aplicarEstadoDashSection("dash-body-pasajeros");
     _aplicarEstadoDashSection("dash-body-byc");
 
   } catch (e) {
@@ -188,22 +188,13 @@ async function loadDashboard() {
   }
 }
 
-// ── KPIs de pasajeros ────────────────────────────────────────
-function renderKpisPasajeros(pasajerosData, vpData) {
+// ── Club Destino (KPIs + top 3 con más puntos) ───────────────
+// Reemplaza a la antigua sección "Pasajeros": ahora todo vive bajo
+// una sola tarjeta de Club Destino (total / miembros / no miembros +
+// barra % + top 3 con más puntos). Recibe el ranking ya calculado
+// (rankingPuntos) para no repetir el cálculo.
+function renderClubDestino(pasajerosData, vpData, rankingPuntos) {
   const total = pasajerosData.length;
-
-  // Conteo por sexo
-  const porSexo = {};
-  pasajerosData.forEach(p => {
-    const s = p.Sexo || "Sin dato";
-    porSexo[s] = (porSexo[s] || 0) + 1;
-  });
-  const ordenSexo = ["Masculino", "Femenino", "Otro", "Sin dato"];
-  const iconoSexo = { Masculino: "♂", Femenino: "♀", Otro: "⚧", "Sin dato": "•" };
-  const chipsSexo = Object.keys(porSexo)
-    .sort((a, b) => ordenSexo.indexOf(a) - ordenSexo.indexOf(b))
-    .map(s => `<span class="dash-chip">${iconoSexo[s] || "•"} ${s}: <strong>${porSexo[s]}</strong></span>`)
-    .join("");
 
   // Asistencias por pasajero → membresía Club Destino (>= 3 viajes asistidos)
   const asistenciasPorPasajero = {};
@@ -220,30 +211,41 @@ function renderKpisPasajeros(pasajerosData, vpData) {
   const noMiembros = total - miembros;
   const pctMiembros = total > 0 ? Math.round((miembros / total) * 100) : 0;
 
+  const top3 = (rankingPuntos || []).slice(0, 3);
+  const bodyTop3 = _renderRankRows(top3);
+  const hayMas = (rankingPuntos || []).length > 3;
+
   return `
   <div class="dash-section">
-    <div class="dash-section-title dash-collapsible" onclick="toggleDashSection('dash-body-pasajeros', this)">
+    <div class="dash-section-title">
       <span class="dash-icon">${_dashIcons.pasajeros}</span>
-      Pasajeros
-      <span class="dash-chevron">${_dashIcons.flecha}</span>
+      Club Destino
     </div>
-    <div class="dash-section-body" id="dash-body-pasajeros">
-      <div class="dash-kpi-grid">
-        <div class="dash-kpi-card clickable" onclick="navigateTo('clientes')" style="cursor:pointer">
-          <div class="dash-kpi-label">Total de pasajeros</div>
+    <div class="dash-card dash-club-card">
+      <div class="dash-club-stats">
+        <div class="dash-club-stat clickable" onclick="navigateTo('clientes')" style="cursor:pointer">
+          <div class="dash-kpi-label">Total pasajeros</div>
           <div class="dash-kpi-value">${total}</div>
-          <div class="dash-kpi-breakdown">${chipsSexo}</div>
         </div>
-        <div class="dash-kpi-card clickable" onclick="navigateTo('club-destino')" style="cursor:pointer">
-          <div class="dash-kpi-label">Club Destino</div>
+        <div class="dash-club-stat clickable" onclick="navigateTo('club-destino')" style="cursor:pointer">
+          <div class="dash-kpi-label">Miembros</div>
           <div class="dash-kpi-value">${miembros}</div>
-          <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctMiembros}%"></div></div>
-          <div class="dash-kpi-breakdown">
-            <span class="dash-chip">⭐ Miembros: <strong>${miembros}</strong></span>
-            <span class="dash-chip">No miembros: <strong>${noMiembros}</strong></span>
-          </div>
+        </div>
+        <div class="dash-club-stat clickable" onclick="navigateTo('club-destino')" style="cursor:pointer">
+          <div class="dash-kpi-label">No miembros</div>
+          <div class="dash-kpi-value">${noMiembros}</div>
         </div>
       </div>
+      <div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pctMiembros}%"></div></div>
+      <div class="dash-club-bar-caption">${pctMiembros}% de la base son miembros del club</div>
+
+      <div class="dash-club-top-title">Top 3 · más puntos</div>
+      <div class="dash-club-top-rows">${bodyTop3}</div>
+
+      ${hayMas ? `
+      <button class="dash-ver-todos-btn dash-ver-todos-btn--block" onclick="navigateTo('ranking-puntos')">
+        Ver más ${_dashIcons.flecha}
+      </button>` : ""}
     </div>
   </div>`;
 }
@@ -407,25 +409,15 @@ function _renderRankRows(ranking) {
   }).join("");
 }
 
-async function renderTopPuntos2026(vpData, viajesMap) {
+// Sigue calculando el ranking completo (usado por la vista de detalle
+// "ranking-puntos" y por la tarjeta de Club Destino en el panel), pero
+// ya no pinta su propia sección en el dashboard: el top 3 ahora vive
+// dentro de la tarjeta de Club Destino (ver renderClubDestino).
+async function calcularYCachearRankingPuntos2026(vpData, viajesMap) {
   _rankingPuntosCompleto = _calcularRankingPuntos2026(vpData, viajesMap);
   const top10 = _rankingPuntosCompleto.slice(0, 10);
   await _cargarDashAvatares(top10.map(r => r.pasajeroId));
-  const body  = _renderRankRows(top10);
-
-  return `
-  <div class="dash-section">
-    <div class="dash-section-title">
-      <span class="dash-icon">${_dashIcons.puntos}</span>
-      Top pasajeros · puntos 2026
-      <span class="dash-section-count">${_rankingPuntosCompleto.length}</span>
-      ${_rankingPuntosCompleto.length > 10 ? `
-      <button class="dash-ver-todos-btn" onclick="navigateTo('ranking-puntos')">
-        Ver todos ${_dashIcons.flecha}
-      </button>` : ""}
-    </div>
-    <div class="dash-card">${body}</div>
-  </div>`;
+  return _rankingPuntosCompleto;
 }
 
 // Navega al detalle de un pasajero desde el ranking del dashboard

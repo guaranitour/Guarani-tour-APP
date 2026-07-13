@@ -242,6 +242,47 @@
   transition: width .4s ease;
 }
 
+/* ── Tarjeta unificada de Club Destino ─────────────────── */
+.dash-club-card {
+  padding: 1rem 1rem 1.1rem;
+}
+.dash-club-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5rem;
+}
+.dash-club-stat {
+  text-align: center;
+  padding: .3rem .2rem;
+  border-radius: 10px;
+}
+.dash-club-stat.clickable { transition: background .12s; }
+.dash-club-stat.clickable:active { background: var(--bg2); }
+.dash-club-stat .dash-kpi-label {
+  margin-bottom: .2rem;
+}
+.dash-club-stat .dash-kpi-value {
+  font-size: 1.35rem;
+}
+.dash-club-bar-caption {
+  font-size: .72rem; color: var(--text-muted);
+  margin-top: .4rem;
+  text-align: right;
+}
+.dash-club-top-title {
+  font-size: .76rem; font-weight: 600;
+  color: var(--text-mid);
+  margin: 1rem 0 .2rem;
+  padding-top: .8rem;
+  border-top: 1px solid var(--border);
+}
+.dash-club-top-rows .dash-rank-row:last-child { border-bottom: none; }
+.dash-ver-todos-btn--block {
+  margin: .7rem auto 0;
+  width: 100%;
+  justify-content: center;
+}
+
 /* ── Viajes activos ─────────────────────────────────────── */
 .dash-viaje-card {
   display: flex; align-items: center; gap: .8rem;
