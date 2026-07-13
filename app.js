@@ -116,6 +116,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     // query param (?goto=viajes) como respaldo más confiable.
     const params = new URLSearchParams(location.search);
     const gotoParam = params.get("goto");
+    const idxParam = params.get("idx");
 
     const restorableViews = [
       "home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
@@ -125,7 +126,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     if (gotoParam && restorableViews.includes(gotoParam)) {
       // Limpiar el query param de la URL para que no quede pegado
       history.replaceState({}, "", location.pathname + location.hash);
-      navigateTo(gotoParam);
+      navigateTo(gotoParam, idxParam || null);
     } else {
       // Si hay un hash en la URL al cargar, intentar restaurar esa vista
       const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
