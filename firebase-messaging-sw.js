@@ -25,6 +25,7 @@ messaging.onBackgroundMessage((payload) => {
     {
       body: data.body || "",
       icon: data.icon || "/Guarani-tour-APP/icons/guaranitour_192.png",
+      badge: "/Guarani-tour-APP/icons/badge_96.png",
       image: data.image || undefined,
       data: { link: data.link || "/Guarani-tour-APP/#viajes" }
     }
