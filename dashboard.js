@@ -63,56 +63,6 @@ function _dashAvatarHtml(pasajeroId, nombre) {
     : `<span>${getInitials(nombre)}</span>`;
 }
 
-// ── Colapsar/expandir secciones del panel (Pasajeros, ByC) ──
-// Se recuerda qué secciones quedaron desplegadas para reaplicarlo
-// cada vez que el panel se vuelve a renderizar (ej. al volver con "atrás").
-let _dashSeccionesAbiertas = {};
-
-function toggleDashSection(bodyId, titleEl) {
-  const body = document.getElementById(bodyId);
-  if (!body) return;
-  const abierto = body.classList.contains("open");
-
-  if (abierto) {
-    // Cerrar: fijar altura actual y luego animar a 0
-    body.style.maxHeight = body.scrollHeight + "px";
-    requestAnimationFrame(() => {
-      body.classList.remove("open");
-      body.style.maxHeight = "0px";
-    });
-  } else {
-    // Abrir: animar de 0 a la altura real, luego liberar (por si el contenido cambia)
-    body.classList.add("open");
-    body.style.maxHeight = body.scrollHeight + "px";
-    body.addEventListener("transitionend", function onEnd(e) {
-      if (e.propertyName === "max-height" && body.classList.contains("open")) {
-        body.style.maxHeight = "none";
-      }
-      body.removeEventListener("transitionend", onEnd);
-    });
-  }
-
-  if (titleEl) titleEl.classList.toggle("expanded", !abierto);
-  _dashSeccionesAbiertas[bodyId] = !abierto;
-}
-
-// Aplica sin animar el estado guardado de una sección colapsable,
-// recién insertada en el DOM (usado justo después de pintar el panel).
-function _aplicarEstadoDashSection(bodyId) {
-  if (!_dashSeccionesAbiertas[bodyId]) return;
-  const body = document.getElementById(bodyId);
-  if (!body) return;
-  body.classList.add("open");
-  body.style.maxHeight = "none";
-  const titleEl = document.querySelector(`[onclick*="${bodyId}"]`);
-  if (titleEl) titleEl.classList.add("expanded");
-  // Si había un scroll pendiente de restaurar (volviendo con "atrás"),
-  // este cambio de altura puede haberlo dejado corto; reintentamos.
-  if (typeof _pendingScrollY === "number" && typeof _restoreScroll === "function") {
-    _restoreScroll(_pendingScrollY);
-  }
-}
-
 // ── Carga principal del panel ───────────────────────────────
 async function loadDashboard() {
   const root = document.getElementById("dashboard-content");
@@ -151,9 +101,8 @@ async function loadDashboard() {
     const rankingPuntos = await calcularYCachearRankingPuntos2026(vpData || [], viajesMap);
 
     let html = "";
-    html += renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
-    html += renderViajesActivos(viajesData || [], vpData || []);
     html += renderKpisByc(bycData || [], pasajerosData || []);
+    html += renderViajesActivos(viajesData || [], vpData || []);
 
     if (esWorkerOAdmin) {
       // Últimos 3 viajes (activos o completados), ya vienen ordenados por fecha_salida desc
@@ -179,8 +128,9 @@ async function loadDashboard() {
       html += renderRankingVendedores(last3, vpLast3);
     }
 
+    html += renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
+
     root.innerHTML = html;
-    _aplicarEstadoDashSection("dash-body-byc");
 
   } catch (e) {
     console.error("Error inesperado en dashboard:", e);
@@ -271,12 +221,11 @@ function renderKpisByc(bycData, pasajerosData) {
 
   return `
   <div class="dash-section">
-    <div class="dash-section-title dash-collapsible" onclick="toggleDashSection('dash-body-byc', this)">
+    <div class="dash-section-title">
       <span class="dash-icon">${_dashIcons.byc}</span>
       Bases y condiciones
-      <span class="dash-chevron">${_dashIcons.flecha}</span>
     </div>
-    <div class="dash-section-body" id="dash-body-byc">
+    <div class="dash-section-body dash-section-body--static" id="dash-body-byc">
       <div class="dash-kpi-grid">
         <div class="dash-kpi-card">
           <div class="dash-kpi-label">Total en ByC</div>
@@ -989,7 +938,7 @@ function renderComparativo(last3, vpLast3, egresosData, pagosData) {
       const estado   = v.estado || "activo";
 
       return `
-      <div class="dash-comp-card">
+      <div class="dash-comp-card" onclick="openViajeDetalle('${v.id}')" style="cursor:pointer">
         <div class="dash-comp-header">
           <span class="dash-comp-nombre">${v.nombre || "Viaje sin nombre"}</span>
           <span class="dash-comp-estado ${estado}">${estado}</span>

@@ -164,29 +164,9 @@
 }
 .dash-section-count + .dash-ver-todos-btn { margin-left: .5rem; }
 
-/* ── Secciones colapsables (Pasajeros, Bases y condiciones) ─ */
-.dash-section-title.dash-collapsible {
-  cursor: pointer;
-  user-select: none;
-}
-.dash-chevron {
-  margin-left: auto;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted);
-  transition: transform .18s ease;
-  flex-shrink: 0;
-}
-.dash-section-title.dash-collapsible.expanded .dash-chevron {
-  transform: rotate(90deg);
-  color: var(--accent);
-}
-.dash-section-body {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height .32s cubic-bezier(.4,0,.2,1), opacity .28s ease, margin-top .32s ease;
-}
-.dash-section-body.open {
+/* ── Bases y condiciones: siempre desplegado ── */
+.dash-section-body--static {
+  max-height: none;
   opacity: 1;
   margin-top: .1rem;
 }
@@ -410,8 +390,11 @@
   border-radius: 12px;
   padding: .9rem 1rem;
   margin-bottom: .6rem;
+  transition: background .15s, transform .12s;
 }
 .dash-comp-card:last-child { margin-bottom: 0; }
+.dash-comp-card:hover { background: rgba(45,106,79,.08); }
+.dash-comp-card:active { transform: translateY(1px); }
 
 .dash-comp-header {
   display: flex; align-items: center; justify-content: space-between;
