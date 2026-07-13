@@ -111,21 +111,48 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (menuEmail) menuEmail.textContent = user.email;
   if (!appReady) {
     appReady = true;
-    // Si hay un hash en la URL al cargar, intentar restaurar esa vista
-    const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
+    // Si venimos de una notificación push, Android suele ignorar el hash
+    // del link y abre por el start_url del manifest. Por eso usamos un
+    // query param (?goto=viajes) como respaldo más confiable.
+    const params = new URLSearchParams(location.search);
+    const gotoParam = params.get("goto");
+
     const restorableViews = [
       "home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
       "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
     ];
-    if (hashView && hashView !== "home" && restorableViews.includes(hashView)) {
-      navigateTo(hashView, hashIdx);
+
+    if (gotoParam && restorableViews.includes(gotoParam)) {
+      // Limpiar el query param de la URL para que no quede pegado
+      history.replaceState({}, "", location.pathname + location.hash);
+      navigateTo(gotoParam);
     } else {
-      navigateTo("home");
+      // Si hay un hash en la URL al cargar, intentar restaurar esa vista
+      const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
+      if (hashView && hashView !== "home" && restorableViews.includes(hashView)) {
+        navigateTo(hashView, hashIdx);
+      } else {
+        navigateTo("home");
+      }
     }
     // Mostrar novedades si el usuario no las vio aún
     checkNovedades(user.email, currentUserRole);
   }
 }
+
+// Reacciona cuando el hash cambia estando la app ya abierta (por ejemplo,
+// al tocar una notificación push que navega a #viajes con la PWA en
+// segundo plano). Sin esto, la SPA solo lee el hash una vez al cargar.
+window.addEventListener("hashchange", () => {
+  const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
+  const restorableViews = [
+    "home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
+    "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
+  ];
+  if (hashView && restorableViews.includes(hashView)) {
+    navigateTo(hashView, hashIdx, true);
+  }
+});
 
 function showAccessDenied(reason) {
   const card = document.querySelector(".login-card");

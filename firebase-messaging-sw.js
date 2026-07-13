@@ -27,14 +27,14 @@ messaging.onBackgroundMessage((payload) => {
       icon: data.icon || "/Guarani-tour-APP/icons/guaranitour_192.png",
       badge: "/Guarani-tour-APP/icons/badge_96.png",
       image: data.image || undefined,
-      data: { link: data.link || "/Guarani-tour-APP/#viajes" }
+      data: { link: data.link || "/Guarani-tour-APP/?goto=viajes" }
     }
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/Guarani-tour-APP/#viajes";
+  const link = event.notification.data?.link || "/Guarani-tour-APP/?goto=viajes";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
