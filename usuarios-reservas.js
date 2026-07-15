@@ -172,6 +172,10 @@ async function createUserReservas() {
     // Duplicado (email ya existe): mensaje más claro.
     if (error.code === "23505") {
       showToast?.("Ese correo ya tiene acceso asignado.");
+    } else if (error.code === "42501") {
+      showToast?.("No tenés permiso para dar acceso (política de seguridad).");
+    } else {
+      showToast?.(`Error al guardar: ${error.message || error.code || "desconocido"}`);
     }
     return;
   }
