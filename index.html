@@ -1316,6 +1316,39 @@
       </div>
     </div>
 
+    <div class="detalle-section">
+      <div class="section-title">Acceso a Destino Guaraní (selección de asientos)</div>
+      <div id="users-reservas-list"></div>
+    </div>
+
+    <div class="detalle-section">
+      <div class="section-title">Dar acceso</div>
+
+      <div class="detail-grid">
+        <div class="form-field full">
+          <label class="form-label">Correo</label>
+          <input type="email" id="ur-email" class="form-input" placeholder="correo@gmail.com">
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Rol</label>
+          <select id="ur-role" class="form-input">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="page-desc" style="margin-top:.4rem">
+        Se autoriza por correo. La persona debe iniciar sesión con esa cuenta
+        de Google en la web de selección de asientos para activar el acceso.
+      </p>
+
+      <div class="form-actions">
+        <button class="btn-save" onclick="createUserReservas()">Dar acceso</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1755,6 +1788,7 @@
   <script src="app.js"></script>
   <script src="viajes_activos.js"></script>
   <script src="usuarios.js"></script>
+  <script src="usuarios-reservas.js"></script>
   <script src="pagos.js"></script>
   <script src="resumen.js"></script>
   <script src="recibos.js"></script>

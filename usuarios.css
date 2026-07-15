@@ -124,6 +124,34 @@
   box-shadow: 0 0 0 3px rgba(45,106,79,.1);
 }
 
+/* ── Staff de Destino Guaraní (reservas.staff) ──────────────────────────── */
+.user-status-dot {
+  font-size: .55rem;
+  margin-left: .35rem;
+  vertical-align: middle;
+}
+
+.btn-icon-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(192,57,43,.35);
+  background: var(--danger-bg2);
+  color: var(--danger);
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.btn-icon-danger:hover {
+  background: rgba(192,57,43,.18);
+}
+.btn-icon-danger:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
 /* ── Sección "Nuevo usuario" — header mejorado ───────────────────────────── */
 #view-usuarios .section-title {
   font-size: .72rem;

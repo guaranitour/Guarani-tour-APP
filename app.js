@@ -441,6 +441,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Usuarios" }
     ]);
     loadUsers();
+    loadUsersReservas();
 
   }
 
