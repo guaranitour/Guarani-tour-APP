@@ -218,3 +218,43 @@
   width: 100%;
   margin: 0 auto;
 }
+
+/* ── Tabs: App / Selección de asientos ───────────────────────────────────── */
+.usuarios-tabs {
+  display: flex;
+  gap: .3rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .3rem;
+  margin-bottom: 1.25rem;
+}
+
+.usuarios-tab {
+  flex: 1;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Roboto', sans-serif;
+  font-size: .82rem;
+  font-weight: 600;
+  padding: .55rem .8rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background .18s, color .18s, box-shadow .18s;
+}
+
+.usuarios-tab:hover {
+  color: var(--text);
+}
+
+.usuarios-tab.active {
+  background: var(--row-bg);
+  color: var(--accent);
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+.usuarios-tab-panel {
+  animation: rowIn .25s both;
+}

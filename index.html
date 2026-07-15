@@ -1274,79 +1274,110 @@
       <p class="page-desc">Administrá accesos del sistema</p>
     </div>
 
-    <div class="detalle-section">
-      <div class="section-title">Listado</div>
-      <div id="users-list"></div>
+    <div class="usuarios-tabs" role="tablist">
+      <button
+        type="button"
+        class="usuarios-tab active"
+        id="tab-btn-app"
+        role="tab"
+        aria-selected="true"
+        aria-controls="tab-panel-app"
+        onclick="switchUsuariosTab('app')">
+        App
+      </button>
+      <button
+        type="button"
+        class="usuarios-tab"
+        id="tab-btn-reservas"
+        role="tab"
+        aria-selected="false"
+        aria-controls="tab-panel-reservas"
+        onclick="switchUsuariosTab('reservas')">
+        Selección de asientos
+      </button>
     </div>
 
-    <div class="detalle-section">
-      <div class="section-title">Nuevo usuario</div>
+    <div id="tab-panel-app" class="usuarios-tab-panel" role="tabpanel" aria-labelledby="tab-btn-app">
 
-      <div class="detail-grid">
-        <div class="form-field full">
-          <label class="form-label">Nombre</label>
-          <input type="text" id="u-nombre" class="form-input" placeholder="Nombre completo">
+      <div class="detalle-section">
+        <div class="section-title">Listado</div>
+        <div id="users-list"></div>
+      </div>
+
+      <div class="detalle-section">
+        <div class="section-title">Nuevo usuario</div>
+
+        <div class="detail-grid">
+          <div class="form-field full">
+            <label class="form-label">Nombre</label>
+            <input type="text" id="u-nombre" class="form-input" placeholder="Nombre completo">
+          </div>
+
+          <div class="form-field full">
+            <label class="form-label">Correo</label>
+            <input type="email" id="u-email" class="form-input">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Rol</label>
+            <select id="u-role" class="form-input">
+              <option value="viewer">Viewer</option>
+              <option value="worker">Worker</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Estado</label>
+            <select id="u-status" class="form-input">
+              <option value="enabled">Activo</option>
+              <option value="disabled">Inactivo</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-field full">
-          <label class="form-label">Correo</label>
-          <input type="email" id="u-email" class="form-input">
-        </div>
-
-        <div class="form-field">
-          <label class="form-label">Rol</label>
-          <select id="u-role" class="form-input">
-            <option value="viewer">Viewer</option>
-            <option value="worker">Worker</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-
-        <div class="form-field">
-          <label class="form-label">Estado</label>
-          <select id="u-status" class="form-input">
-            <option value="enabled">Activo</option>
-            <option value="disabled">Inactivo</option>
-          </select>
+        <div class="form-actions">
+          <button class="btn-save" onclick="createUser()">Agregar usuario</button>
         </div>
       </div>
 
-      <div class="form-actions">
-        <button class="btn-save" onclick="createUser()">Agregar usuario</button>
-      </div>
     </div>
 
-    <div class="detalle-section">
-      <div class="section-title">Acceso a Destino Guaraní (selección de asientos)</div>
-      <div id="users-reservas-list"></div>
-    </div>
+    <div id="tab-panel-reservas" class="usuarios-tab-panel" role="tabpanel" aria-labelledby="tab-btn-reservas" style="display:none">
 
-    <div class="detalle-section">
-      <div class="section-title">Dar acceso</div>
+      <div class="detalle-section">
+        <div class="section-title">Acceso a Destino Guaraní (selección de asientos)</div>
+        <div id="users-reservas-list"></div>
+      </div>
 
-      <div class="detail-grid">
-        <div class="form-field full">
-          <label class="form-label">Correo</label>
-          <input type="email" id="ur-email" class="form-input" placeholder="correo@gmail.com">
+      <div class="detalle-section">
+        <div class="section-title">Dar acceso</div>
+
+        <div class="detail-grid">
+          <div class="form-field full">
+            <label class="form-label">Correo</label>
+            <input type="email" id="ur-email" class="form-input" placeholder="correo@gmail.com">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Rol</label>
+            <select id="ur-role" class="form-input">
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-field">
-          <label class="form-label">Rol</label>
-          <select id="ur-role" class="form-input">
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
-          </select>
+        <p class="page-desc" style="margin-top:.4rem">
+          Se autoriza por correo. La persona debe iniciar sesión con esa cuenta
+          de Google en la web de selección de asientos para activar el acceso.
+        </p>
+
+        <div class="form-actions">
+          <button class="btn-save" onclick="createUserReservas()">Dar acceso</button>
         </div>
       </div>
 
-      <p class="page-desc" style="margin-top:.4rem">
-        Se autoriza por correo. La persona debe iniciar sesión con esa cuenta
-        de Google en la web de selección de asientos para activar el acceso.
-      </p>
-
-      <div class="form-actions">
-        <button class="btn-save" onclick="createUserReservas()">Dar acceso</button>
-      </div>
     </div>
 
   </div>
