@@ -813,6 +813,21 @@ async function loadViajeDetalle(viajeId) {
   const btnAgregarEarly = document.getElementById("btn-agregar-vp");
   if (btnAgregarEarly) btnAgregarEarly.style.display = "";
 
+  // Rol del usuario actual (se necesita para los tabs, incluso sin pasajeros)
+  const esWorkerOAdminEarly = Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
+    : ["admin", "worker"].includes(currentUserRole);
+
+  // Mostrar tabs según rol — antes del return temprano, para que
+  // Egresos/Presupuesto/Resumen queden disponibles aunque el viaje
+  // todavía no tenga pasajeros cargados.
+  const tabEgresosEarly = document.getElementById("tab-egresos");
+  if (tabEgresosEarly) tabEgresosEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  const tabPresEarly = document.getElementById("tab-presupuesto");
+  if (tabPresEarly) tabPresEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  const tabResEarly = document.getElementById("tab-resumen");
+  if (tabResEarly) tabResEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
       <div class="viaje-pasajeros-empty">
@@ -890,13 +905,8 @@ async function loadViajeDetalle(viajeId) {
   const btnAgregar = document.getElementById("btn-agregar-vp");
   if (btnAgregar) btnAgregar.style.display = "";
 
-  // Mostrar tabs según rol
-  const tabEgresos = document.getElementById("tab-egresos");
-  if (tabEgresos) tabEgresos.style.display = esWorkerOAdmin ? "" : "none";
-  const tabPres = document.getElementById("tab-presupuesto");
-  if (tabPres) tabPres.style.display = esWorkerOAdmin ? "" : "none";
-  const tabRes = document.getElementById("tab-resumen");
-  if (tabRes) tabRes.style.display = esWorkerOAdmin ? "" : "none";
+  // (Tabs Egresos/Presupuesto/Resumen ya se muestran/ocultan más arriba,
+  // antes del return temprano por "sin pasajeros")
 
   // Limpiar buscador y filtros al cargar
   const buscador = document.getElementById("buscador-vp");

@@ -149,7 +149,7 @@ function _renderMovItem(m) {
   const cat = m.categoria || (esIng ? "Ingreso" : "Egreso");
 
   return `
-    <div class="mov-item">
+    <div class="mov-item" onclick="abrirDetalleMovimiento('${m.id}')">
       <div class="mov-item__icon ${cls}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2">${icon}</svg>
       </div>
@@ -261,6 +261,61 @@ function iniciarFormMovimiento() {
   if (errEl) errEl.textContent = "";
   const btn = document.getElementById("btn-guardar-movimiento");
   if (btn) { btn.disabled = false; btn.textContent = "Guardar"; }
+}
+
+// ── Detalle de movimiento (modal) ───────────────────
+function abrirDetalleMovimiento(id) {
+  const m = _todosMovimientos.find(x => String(x.id) === String(id));
+  if (!m) return;
+
+  const esIng = m.tipo === "ingreso";
+  const cls   = esIng ? "tipo-ingreso" : "tipo-egreso";
+  const signo = esIng ? "+" : "−";
+
+  let fecha = "—";
+  if (m.fecha) {
+    const [y, mo, d] = m.fecha.split("-").map(Number);
+    fecha = new Date(y, mo - 1, d).toLocaleDateString("es-PY", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-transferir-overlay";
+  overlay.id = "mov-detalle-overlay";
+  overlay.onclick = (e) => { if (e.target === overlay) cerrarDetalleMovimiento(); };
+
+  overlay.innerHTML = `
+    <div class="modal-transferir-card">
+      <div class="modal-transferir-header">
+        <div class="modal-transferir-titulo">
+          <span>Detalle del movimiento</span>
+        </div>
+        <button class="modal-transferir-close" onclick="cerrarDetalleMovimiento()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="pd-monto-valor ${cls}">${signo} ${formatMonto(m.monto)}</div>
+
+      <div class="pd-grid">
+        <div class="pd-row"><span class="pd-label">Fecha</span><span class="pd-value">${fecha}</span></div>
+        <div class="pd-row"><span class="pd-label">Tipo</span><span class="pd-value">${esIng ? "Ingreso" : "Egreso"}</span></div>
+        <div class="pd-row"><span class="pd-label">Categoría</span><span class="pd-value">${m.categoria || "—"}</span></div>
+        <div class="pd-row"><span class="pd-label">Descripción</span><span class="pd-value">${m.descripcion || "—"}</span></div>
+        <div class="pd-row"><span class="pd-label">Cuenta emisora</span><span class="pd-value">${m.cuenta_emisora || "—"}</span></div>
+        <div class="pd-row"><span class="pd-label">Cuenta beneficiaria</span><span class="pd-value">${m.cuenta_beneficiaria || "—"}</span></div>
+        <div class="pd-row"><span class="pd-label">Registrado por</span><span class="pd-value">${m.usuario || "—"}</span></div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function cerrarDetalleMovimiento() {
+  document.getElementById("mov-detalle-overlay")?.remove();
 }
 
 async function guardarMovimiento() {

@@ -259,3 +259,9 @@
   .banco-card__saldo-monto { font-size: 1.1rem; }
   .banco-card__nombre { font-size: .92rem; }
 }
+
+/* ── Colores para modal de detalle (reutiliza .pd-monto-valor / .pd-grid de pagos.css) ── */
+.pd-monto-valor.tipo-ingreso { color: var(--success-text, #2e7d52); }
+.pd-monto-valor.tipo-egreso  { color: var(--danger, #c62828); }
+
+.mov-item { cursor: pointer; }
