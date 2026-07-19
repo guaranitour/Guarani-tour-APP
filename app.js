@@ -808,16 +808,49 @@ function setListState(type) {
 
 // ── Buscador ───────────────────────────────────────────────
 let searchTimer = null;
+let searchToken = 0; // evita que una respuesta vieja pise a una más nueva
+
 function filterPassengers() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    const q = document.getElementById("search-input").value.toLowerCase().trim();
-    renderList(q
-      ? allPassengers.filter(p =>
-          (p.Pasajero || "").toLowerCase().includes(q) ||
-          (p["Documento de Identidad"] || "").toLowerCase().includes(q) ||
-          (p["E-mail"] || "").toLowerCase().includes(q))
-      : allPassengers);
+  searchTimer = setTimeout(async () => {
+    const q = document.getElementById("search-input").value.trim();
+
+    // Caja vacía: se mantiene el comportamiento actual (lista completa local)
+    if (!q) {
+      renderList(allPassengers);
+      return;
+    }
+
+    const myToken = ++searchToken;
+    setListState("loading");
+
+    const { data, error } = await supabaseClient
+      .rpc("buscar_pasajeros", { busqueda: q });
+
+    if (myToken !== searchToken) return; // llegó tarde, se descarta
+
+    if (error) { console.error(error); setListState("error"); return; }
+
+    // Se fusionan los resultados dentro de allPassengers para conservar
+    // _idx estable (usado por navigateTo("detalle", ...) y avatarCache)
+    const results = (data || []).map(p => {
+      let existing = allPassengers.find(x =>
+        x.id != null && x.id === p.id);
+      if (existing) return Object.assign(existing, p);
+
+      const withIdx = { ...p, _idx: allPassengers.length };
+      allPassengers.push(withIdx);
+
+      if (withIdx.avatar_path && avatarCache[withIdx._idx] === undefined) {
+        const { data: urlData } = supabaseClient.storage
+          .from("avatars")
+          .getPublicUrl(withIdx.avatar_path);
+        if (urlData?.publicUrl) avatarCache[withIdx._idx] = urlData.publicUrl;
+      }
+      return withIdx;
+    });
+
+    renderList(results);
   }, 160);
 }
 
