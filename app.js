@@ -464,7 +464,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Selección de asiento" }
     ]);
     // Abrir automáticamente en nueva pestaña
-    window.open("https://guaranitour.github.io/reservas/#/Inicio", "_blank", "noopener,noreferrer");
+    window.open("https://guaranitour.github.io/Seleccion-de-asientos/#/Inicio", "_blank", "noopener,noreferrer");
 
   }
 
