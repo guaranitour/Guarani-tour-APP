@@ -324,11 +324,14 @@ async function guardarMovimiento() {
 
   const fecha       = document.getElementById("mnv-fecha")?.value;
   const tipo        = document.getElementById("mnv-tipo")?.value;
+  const categoria   = document.getElementById("mnv-categoria")?.value.trim();
   const descripcion = document.getElementById("mnv-descripcion")?.value.trim();
   const monto       = document.getElementById("mnv-monto")?.value;
+  const cuentaEmisora      = document.getElementById("mnv-cuenta-emisora")?.value.trim();
+  const cuentaBeneficiaria = document.getElementById("mnv-cuenta-beneficiaria")?.value.trim();
 
-  if (!fecha || !tipo || !descripcion || !monto) {
-    if (errEl) errEl.textContent = "Completá los campos obligatorios (fecha, tipo, descripción y monto).";
+  if (!fecha || !tipo || !categoria || !descripcion || !monto || !cuentaEmisora || !cuentaBeneficiaria) {
+    if (errEl) errEl.textContent = "Completá todos los campos obligatorios.";
     return;
   }
 
@@ -340,11 +343,11 @@ async function guardarMovimiento() {
     .insert([{
       fecha,
       tipo,
-      categoria:           document.getElementById("mnv-categoria")?.value.trim() || null,
+      categoria,
       descripcion,
       monto:               Number(monto),
-      cuenta_emisora:      document.getElementById("mnv-cuenta-emisora")?.value.trim() || null,
-      cuenta_beneficiaria: document.getElementById("mnv-cuenta-beneficiaria")?.value.trim() || null,
+      cuenta_emisora:      cuentaEmisora,
+      cuenta_beneficiaria: cuentaBeneficiaria,
       usuario:             document.getElementById("user-email")?.textContent || null,
     }]);
 
