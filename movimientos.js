@@ -67,6 +67,35 @@ function _renderTarjetaBanco(totalIng, totalEgr, balance) {
     </div>`;
 }
 
+// ── Tarjeta desglose Club Destino vs E.A.S. ─────────
+// Club Destino usa la misma caja física pero es un fondo de socios
+// (compra de artículos), no dinero de la compañía. Se muestra aparte
+// para no mezclarlo con el saldo operativo real de E.A.S.
+function _renderTarjetaDesglose(lista) {
+  const el = document.getElementById("mov-desglose-card");
+  if (!el) return;
+
+  const { destino, eas } = lista.reduce((acc, m) => {
+    const monto = m.monto || 0;
+    const signo = m.tipo === "ingreso" ? 1 : -1;
+    if (m.categoria === "Club Destino") acc.destino += signo * monto;
+    else acc.eas += signo * monto;
+    return acc;
+  }, { destino: 0, eas: 0 });
+
+  el.innerHTML = `
+    <div class="desglose-card">
+      <div class="desglose-card__item desglose-card__item--destino">
+        <span class="desglose-card__label">Club Destino</span>
+        <span class="desglose-card__monto">${formatMonto(destino)}</span>
+      </div>
+      <div class="desglose-card__item desglose-card__item--eas">
+        <span class="desglose-card__label">E.A.S.</span>
+        <span class="desglose-card__monto">${formatMonto(eas)}</span>
+      </div>
+    </div>`;
+}
+
 // ── Carga desde Supabase ────────────────────────────
 async function cargarMovimientos() {
   const listEl = document.getElementById("mov-list");
@@ -108,6 +137,7 @@ function renderMovimientos(lista) {
   const totalIng = _todosMovimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (m.monto || 0), 0);
   const totalEgr = _todosMovimientos.filter(m => m.tipo === "egreso").reduce((s, m)  => s + (m.monto || 0), 0);
   _renderTarjetaBanco(totalIng, totalEgr, totalIng - totalEgr);
+  _renderTarjetaDesglose(_todosMovimientos);
 
   const resEl = document.getElementById("mov-resumen");
   if (resEl) resEl.style.display = "none";
