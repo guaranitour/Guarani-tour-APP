@@ -2,10 +2,10 @@
    custom-select.js — Select con diseño propio
    • ≤ 6 opciones → Dropdown animado
    • >  6 opciones → Bottom sheet con buscador
-   
+
    USO:
      initCustomSelect("mi-select-id")
-   
+
    Compatible con:
      - select.value  (sigue funcionando igual)
      - onchange=     (se dispara el evento 'change' nativo)
@@ -18,6 +18,9 @@ const CUSTOM_SELECT_THRESHOLD = 6; // ≤ este número → dropdown, > → botto
 
 // Registro de instancias para poder refrescarlas
 const _csInstances = {};
+
+// Contador de sheets abiertos para manejar el historial del SPA
+let _csSheetOpen = false;
 
 /**
  * Inicializa el custom select para un <select> existente por su ID.
@@ -94,7 +97,7 @@ function initCustomSelect(selectId, opts = {}) {
     const options = Array.from(sel.options);
     const useSheet = options.length > CUSTOM_SELECT_THRESHOLD;
     activePopup = useSheet
-      ? _openSheet(sel, trigger, options, onSelect)
+      ? _openSheet(sel, trigger, options, onSelect, closeSelect)
       : _openDropdown(sel, trigger, options, onSelect);
     trigger.classList.add("cs-open");
     trigger.setAttribute("aria-expanded", "true");
@@ -132,7 +135,7 @@ function initCustomSelect(selectId, opts = {}) {
   // Sincronizar si el valor del select cambia desde JS externo
   sel.addEventListener("change", syncTrigger);
 
-  // Guardar instancia
+  // Guardar instancia (incluyendo closeSelect para popstate)
   _csInstances[selectId] = { sel, trigger, syncTrigger, closeSelect };
 }
 
@@ -147,7 +150,6 @@ function refreshCustomSelect(selectId) {
 
 /* ── Dropdown (≤ 6 opciones) ─────────────────────────────── */
 function _openDropdown(sel, trigger, options, onSelect) {
-  // Posicionar relativo al trigger
   const rect = trigger.getBoundingClientRect();
 
   const dropdown = document.createElement("div");
@@ -200,7 +202,6 @@ function _openDropdown(sel, trigger, options, onSelect) {
 
   document.body.appendChild(dropdown);
 
-  // Cerrar al clickear afuera
   function onOutsideClick(e) {
     if (!dropdown.contains(e.target) && e.target !== trigger) {
       close();
@@ -217,7 +218,7 @@ function _openDropdown(sel, trigger, options, onSelect) {
 }
 
 /* ── Bottom Sheet (> 6 opciones) ─────────────────────────── */
-function _openSheet(sel, trigger, options, onSelect) {
+function _openSheet(sel, trigger, options, onSelect, onClose) {
   // Label del campo para el título del sheet
   const label = trigger.closest(".form-field")?.querySelector(".form-label")?.textContent?.trim()
     || trigger.closest("div")?.previousElementSibling?.textContent?.trim()
@@ -241,7 +242,8 @@ function _openSheet(sel, trigger, options, onSelect) {
       </button>
     </div>
     <div class="cs-sheet-search-wrap">
-      <input class="cs-sheet-search" type="text" placeholder="Buscar…" autocomplete="off" />
+      <input class="cs-sheet-search" type="text" placeholder="Buscar…" autocomplete="off"
+             readonly onfocus="this.removeAttribute('readonly')" />
     </div>
     <div class="cs-sheet-list"></div>
   `;
@@ -252,6 +254,10 @@ function _openSheet(sel, trigger, options, onSelect) {
   const listEl   = sheet.querySelector(".cs-sheet-list");
   const searchEl = sheet.querySelector(".cs-sheet-search");
   const closeBtn = sheet.querySelector(".cs-sheet-close");
+
+  // FIX 2: Pushear estado falso al historial para interceptar el botón atrás
+  _csSheetOpen = true;
+  history.pushState({ csSheet: true }, "");
 
   // Render opciones filtradas
   function renderOptions(query = "") {
@@ -293,8 +299,8 @@ function _openSheet(sel, trigger, options, onSelect) {
 
   renderOptions();
 
-  // Focus al buscador con pequeño delay (esperar animación)
-  setTimeout(() => searchEl.focus(), 220);
+  // FIX 1: NO hacer focus automático — el usuario toca el campo si quiere buscar
+  // Solo quitar readonly al tocar, para que el teclado aparezca cuando el usuario lo pide
 
   searchEl.addEventListener("input", () => renderOptions(searchEl.value));
 
@@ -305,19 +311,42 @@ function _openSheet(sel, trigger, options, onSelect) {
   });
 
   function close() {
+    if (!overlay.isConnected) return;
     sheet.classList.add("cs-closing");
     overlay.classList.add("cs-closing");
+    _csSheetOpen = false;
     setTimeout(() => overlay.remove(), 200);
+    document.removeEventListener("keydown", onKey);
+    window.removeEventListener("popstate", onPopState);
+    if (onClose) onClose();
   }
 
-  closeBtn.addEventListener("click", close);
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) close();
+  // FIX 2: Interceptar botón atrás del navegador/SPA
+  function onPopState(e) {
+    if (_csSheetOpen) {
+      close();
+      // No dejar que el popstate llegue al SPA — ya consumimos la entrada del historial
+      e.stopImmediatePropagation();
+    }
+  }
+  window.addEventListener("popstate", onPopState);
+
+  closeBtn.addEventListener("click", () => {
+    // Si cerramos con el botón, limpiar la entrada del historial que pusheamos
+    if (_csSheetOpen) history.back();
+    // El close real lo dispara onPopState
   });
 
-  // Cerrar con Escape
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) {
+      if (_csSheetOpen) history.back();
+    }
+  });
+
   function onKey(e) {
-    if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey); }
+    if (e.key === "Escape") {
+      if (_csSheetOpen) history.back();
+    }
   }
   document.addEventListener("keydown", onKey);
 
