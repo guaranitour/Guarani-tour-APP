@@ -67,6 +67,8 @@ async function initPagosView(ctx) {
     selMetodo.removeEventListener("change", onMetodoChange);
     selMetodo.addEventListener("change", onMetodoChange);
     onMetodoChange();
+    initCustomSelect("pago-metodo");
+    initCustomSelect("pago-tipo");
   }
 
   // Bancos: se manejan via filtrarBancos(), solo limpiar input
@@ -332,7 +334,7 @@ function mostrarFormPago() {
   const fechaEl = document.getElementById("pago-fecha");
   if (fechaEl) fechaEl.value = new Date().toISOString().split("T")[0];
   const tipoEl  = document.getElementById("pago-tipo");
-  if (tipoEl) { tipoEl.value = "Pago"; onTipoChange(); }
+  if (tipoEl) { tipoEl.value = "Pago"; onTipoChange(); refreshCustomSelect("pago-tipo"); }
   onMetodoChange();
   document.getElementById("form-nuevo-pago").style.display = "";
   document.getElementById("btn-nuevo-pago").style.display  = "none";

@@ -1,0 +1,296 @@
+/* ═══════════════════════════════════════════════════════════
+   custom-select.css — Dropdown propio + Bottom Sheet
+   Integrado al sistema de variables de Guaraní Tour APP
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Wrapper que reemplaza visualmente al <select> ───────── */
+.cs-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .65rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Roboto', sans-serif;
+  font-size: .92rem;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color .2s, box-shadow .2s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cs-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45,106,79,.1);
+}
+
+.cs-trigger.cs-open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45,106,79,.1);
+}
+
+.cs-trigger.cs-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+}
+
+.cs-trigger-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-trigger-text.cs-placeholder {
+  color: var(--text-muted);
+}
+
+.cs-chevron {
+  flex-shrink: 0;
+  margin-left: .5rem;
+  color: var(--text-muted);
+  transition: transform .2s cubic-bezier(.32,1,.23,1);
+}
+
+.cs-open .cs-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown (≤ 6 opciones) ─────────────────────────────── */
+.cs-dropdown {
+  position: absolute;
+  z-index: 9000;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.14);
+  overflow: hidden;
+  min-width: 100%;
+  animation: csDropIn .15s cubic-bezier(.32,1,.23,1);
+  transform-origin: top center;
+}
+
+@keyframes csDropIn {
+  from { opacity: 0; transform: scaleY(.92) translateY(-4px); }
+  to   { opacity: 1; transform: scaleY(1)   translateY(0); }
+}
+
+.cs-dropdown-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  font-size: .92rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background .12s;
+  gap: .5rem;
+}
+
+.cs-dropdown-option:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.cs-dropdown-option:active,
+.cs-dropdown-option:hover {
+  background: var(--surface-hover);
+}
+
+.cs-dropdown-option.cs-selected {
+  color: var(--accent);
+  font-weight: 500;
+  background: var(--accent-light);
+}
+
+.cs-option-check {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Overlay de bottom sheet ─────────────────────────────── */
+.cs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8900;
+  background: var(--overlay-bg);
+  animation: csOverlayIn .2s ease;
+}
+
+@keyframes csOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cs-overlay.cs-closing {
+  animation: csOverlayOut .2s ease forwards;
+}
+
+@keyframes csOverlayOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Bottom Sheet (> 6 opciones) ─────────────────────────── */
+.cs-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  animation: csSheetUp .25s cubic-bezier(.32,1,.23,1);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+@keyframes csSheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.cs-sheet.cs-closing {
+  animation: csSheetDown .2s cubic-bezier(.32,1,.23,1) forwards;
+}
+
+@keyframes csSheetDown {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+/* Handle decorativo */
+.cs-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+/* Header del sheet */
+.cs-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem .5rem;
+  flex-shrink: 0;
+}
+
+.cs-sheet-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cs-sheet-close {
+  background: var(--bg2);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-mid);
+  flex-shrink: 0;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cs-sheet-close:active { background: var(--border); }
+
+/* Buscador */
+.cs-sheet-search-wrap {
+  padding: .5rem 1rem;
+  flex-shrink: 0;
+}
+
+.cs-sheet-search {
+  width: 100%;
+  padding: .6rem .85rem .6rem 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Roboto', sans-serif;
+  font-size: .9rem;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: .65rem center;
+  transition: border-color .2s;
+}
+
+.cs-sheet-search:focus {
+  border-color: var(--accent);
+}
+
+/* Lista de opciones del sheet */
+.cs-sheet-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: .25rem 0 env(safe-area-inset-bottom, 12px);
+}
+
+.cs-sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1rem;
+  cursor: pointer;
+  transition: background .12s;
+  gap: .5rem;
+}
+
+.cs-sheet-option:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.cs-sheet-option:active {
+  background: var(--surface-hover);
+}
+
+.cs-sheet-option.cs-selected {
+  background: var(--accent-light);
+}
+
+.cs-sheet-option-label {
+  font-size: .95rem;
+  color: var(--text);
+  flex: 1;
+}
+
+.cs-sheet-option.cs-selected .cs-sheet-option-label {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.cs-sheet-option-check {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.cs-sheet-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-size: .9rem;
+}
+
+/* ── El <select> nativo queda oculto pero funcional ──────── */
+.cs-native-hidden {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}

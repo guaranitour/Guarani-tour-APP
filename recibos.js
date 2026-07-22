@@ -274,6 +274,9 @@ async function initReciboNuevoView() {
 
   // Cargar datos
   await Promise.all([cargarViajesActivosEnSelect(), cargarBancosEnSelect(), cargarClientesCache()]);
+
+  initCustomSelect("frec-forma-pago");
+  initCustomSelect("frec-abona-por");
 }
 
 function toggleCamposTransferencia() {
@@ -436,6 +439,7 @@ async function cargarViajesActivosEnSelect() {
 
   sel.innerHTML = '<option value="">— Seleccionar viaje —</option>' +
     data.map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join('');
+  refreshCustomSelect('frec-abona-por');
 }
 
 async function cargarBancosEnSelect() {

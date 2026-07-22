@@ -223,6 +223,7 @@ function actualizarCategoriasMovimiento() {
   sel.innerHTML = opciones.length
     ? `<option value="">— Seleccionar —</option>` + opciones.map(c => `<option value="${c}">${c}</option>`).join("")
     : `<option value="">— Seleccionar tipo primero —</option>`;
+  refreshCustomSelect("mnv-categoria");
 }
 
 function actualizarCuentasPorTipo() {
@@ -262,6 +263,8 @@ function actualizarCuentasPorTipo() {
     benef.innerHTML  = `<option value="">— Seleccionar tipo primero —</option>`;
     benef.disabled   = false;
   }
+  refreshCustomSelect("mnv-cuenta-emisora");
+  refreshCustomSelect("mnv-cuenta-beneficiaria");
 }
 
 function iniciarFormMovimiento() {
@@ -286,6 +289,12 @@ function iniciarFormMovimiento() {
       actualizarCuentasPorTipo();
     };
   }
+
+  // Custom selects — se inicializan aquí; los dependientes se refrescan en sus funciones
+  initCustomSelect("mnv-tipo");
+  initCustomSelect("mnv-categoria");
+  initCustomSelect("mnv-cuenta-emisora");
+  initCustomSelect("mnv-cuenta-beneficiaria");
 
   const errEl = document.getElementById("mnv-error");
   if (errEl) errEl.textContent = "";

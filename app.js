@@ -415,6 +415,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: "Nuevo cliente" }
     ]);
+    initCustomSelect("f-sexo");
+    initCustomSelect("f-vendedor");
 
   }
 
@@ -442,6 +444,9 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Usuarios" }
     ]);
     switchUsuariosTab("app", { force: true });
+    initCustomSelect("u-role");
+    initCustomSelect("u-status");
+    initCustomSelect("ur-role");
 
   }
 
@@ -531,6 +536,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Viajes", action: () => navigateTo("viajes") },
       { label: "Nuevo viaje" }
     ]);
+    initCustomSelect("v-estado");
 
   }
 
@@ -670,6 +676,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
       { label: "Movimientos bancarios" }
     ]);
     cargarMovimientos();
+    initCustomSelect("mov-filtro-tipo");
 
   }
 
@@ -950,6 +957,8 @@ async function activarEdicionDetalle() {
   document.getElementById("e-sexo").value    = p.Sexo || "";
   document.getElementById("e-fecha").value   = p["Fecha de nacimiento"] || "";
   document.getElementById("e-email").value   = p["E-mail"] || "";
+  initCustomSelect("e-sexo");
+  refreshCustomSelect("e-sexo");
 
   // Deshabilitar guardado mientras se carga el select de vendedor,
   // para evitar guardar con el campo vacío si se hace click antes de tiempo.
@@ -1229,6 +1238,8 @@ async function cargarVendedores(selectId, valorActual = "") {
   // Asignar con sel.value es más robusto que confiar solo en el atributo "selected"
   // (evita fallos por display:none, encoding de acentos u orden del DOM)
   if (val) sel.value = val;
+  // Sincronizar el trigger visual si este select ya fue inicializado como custom select
+  refreshCustomSelect(selectId);
 }
 
 // ── Formulario nuevo cliente ───────────────────────────────

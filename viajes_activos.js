@@ -496,6 +496,8 @@ async function initFormEditarViaje(viajeId) {
   document.getElementById("ve-estado").value  = viaje.estado || "activo";
   document.getElementById("ve-puntos").value  = viaje.puntos_destino || 0;
 
+  initCustomSelect("ve-estado");
+
   // Mostrar imagen actual si existe
   const preview = document.querySelector("#view-viaje-editar .viaje-imagen-preview");
   const overlay = document.getElementById("ve-img-overlay");
@@ -2007,6 +2009,10 @@ async function _cargarOpcionesFormEgreso() {
     selCaja.innerHTML = `<option value="">— Seleccionar caja —</option>` +
       _egresosMetodos.map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`).join("");
   }
+
+  // Inicializar custom selects (idempotente: se refresca si ya existe)
+  initCustomSelect("egreso-categoria");
+  initCustomSelect("egreso-caja");
 }
 
 function _toggleNuevaCategoriaInput(mostrar) {
