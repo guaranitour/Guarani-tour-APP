@@ -365,22 +365,31 @@ h2 {
 .topbar-brand {
   grid-column: 2;
   justify-self: center;
-  display: flex; align-items: center; gap: .5rem;
+  display: flex; flex-direction: column; align-items: center;
   background: none; border: none; padding: 0; margin: 0;
   cursor: pointer;
   max-width: 100%;
   min-width: 0;
+  line-height: 1.1;
 }
-.topbar-brand span {
+.topbar-brand-title {
   font-family: 'Roboto', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  line-height: 1;
   color: var(--accent2);
   letter-spacing: .01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+}
+.topbar-brand-subtitle {
+  font-family: 'Roboto', sans-serif;
+  font-size: .6rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: .18em;
+  margin-top: 1px;
 }
 
 /* ── MENÚ HAMBURGUESA ────────────────────────────────────── */
