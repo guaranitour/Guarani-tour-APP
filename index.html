@@ -153,15 +153,11 @@
   <div id="app-view">
 
     <header class="topbar">
-      <div class="topbar-brand" onclick="navigateTo('home')" style="cursor:pointer">
-        <img src="icons/guaranitour_512.png" alt="logo" class="topbar-logo-img" />
-        <span>GUARANI TOUR</span>
-      </div>
       <div class="hamburger-wrap">
-        <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Menú">
+        <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Abrir menú" aria-haspopup="true" aria-expanded="false" aria-controls="hamburger-menu">
           <span></span><span></span><span></span>
         </button>
-        <div class="hamburger-menu" id="hamburger-menu">
+        <div class="hamburger-menu" id="hamburger-menu" role="menu">
           <div class="menu-user" id="user-email"></div>
           <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -198,6 +194,14 @@
           </button>
         </div>
       </div>
+
+      <button class="topbar-brand" onclick="navigateTo('home')" aria-label="Ir al inicio">
+        <span>GUARANI TOUR</span>
+      </button>
+
+      <button class="topbar-profile" onclick="toggleMenu()" aria-label="Abrir menú de usuario" aria-haspopup="true" aria-expanded="false" aria-controls="hamburger-menu">
+        <span>--</span>
+      </button>
     </header>
 
     <div class="breadcrumb-bar">

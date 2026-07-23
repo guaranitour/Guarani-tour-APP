@@ -56,12 +56,23 @@ function showLogin() {
 
 let currentUserRole = null;
 let currentUserName = null;
+let currentUserAvatar = null;
+
+function renderTopbarProfile() {
+  const btn = document.querySelector(".topbar-profile");
+  if (!btn) return;
+  if (currentUserAvatar) {
+    btn.innerHTML = `<img src="${currentUserAvatar}" alt="${currentUserName || "Perfil"}" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<span>${getInitials(currentUserName)}</span>'" />`;
+  } else {
+    btn.innerHTML = `<span>${getInitials(currentUserName)}</span>`;
+  }
+}
 
 async function enterApp(user) {
   // Verificar si el usuario está en la tabla staff y habilitado
   const { data, error } = await supabaseClient
     .from("staff")
-    .select("id, role, status, nombre")
+    .select("id, role, status, nombre, avatar_url")
     .eq("email", user.email)
     .single();
 
@@ -84,6 +95,19 @@ async function enterApp(user) {
   currentUserRole = data.role;
   currentUserName = data.nombre || user.email.split("@")[0];
 
+  // Sincronizar foto de perfil de Google (si vino y cambió respecto a la guardada)
+  const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+  currentUserAvatar = data.avatar_url || googleAvatar || null;
+  if (googleAvatar && googleAvatar !== data.avatar_url) {
+    supabaseClient
+      .from("staff")
+      .update({ avatar_url: googleAvatar })
+      .eq("id", data.id)
+      .then(({ error: updErr }) => {
+        if (updErr) console.warn("No se pudo actualizar avatar_url:", updErr);
+      });
+  }
+
   // Pedir permiso de notificaciones y registrar el token (no bloqueante)
   if (typeof initPushNotifications === "function") {
     initPushNotifications(data.id).then((result) => {
@@ -101,6 +125,7 @@ async function enterApp(user) {
   hideEl("login-view");
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
+  renderTopbarProfile();
  // 👇 OCULTAR USUARIOS SI NO ES ADMIN
 const card = document.getElementById("card-usuarios");
 if (card) card.style.display = data.role === "admin" ? "" : "none";
@@ -1116,7 +1141,8 @@ async function handleAvatarUpload(event) {
 
 // ── Helpers ────────────────────────────────────────────────
 function getInitials(name) {
-  return name.split(" ").slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
+  if (!name) return "?";
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
 }
 
 function formatDate(val) {
