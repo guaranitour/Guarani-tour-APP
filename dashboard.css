@@ -573,9 +573,13 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: .75rem;
   margin-bottom: 1.4rem;
+}
+
+.dash-greet-text {
+  min-width: 0; /* permite que el título truncable no empuje la fecha fuera de vista */
+  flex: 1 1 auto;
 }
 
 .dash-greet-text h1 {
@@ -597,7 +601,7 @@
 }
 
 .dash-greet-date {
-  flex-shrink: 0;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: .4rem;
@@ -608,12 +612,16 @@
   font-size: .78rem;
   font-weight: 500;
   white-space: nowrap;
-  margin-top: .2rem;
+  margin-top: .3rem;
 }
 .dash-greet-date svg { flex-shrink: 0; color: var(--text-muted); }
 
-@media (max-width: 380px) {
-  .dash-greet-date { margin-top: 0; }
+/* En pantallas muy angostas el título ya viene achicado por su propio
+   font-size responsivo del proyecto; si igual no entra, achicamos la
+   fecha en vez de tirarla abajo, para que se mantenga siempre al costado. */
+@media (max-width: 340px) {
+  .dash-greet-text h1 { font-size: 1.35rem; }
+  .dash-greet-date { font-size: .7rem; padding: .3rem .55rem; }
 }
 
 /* ══════════════════════════════════════════════════════════
