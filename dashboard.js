@@ -215,10 +215,49 @@ function _dashboardSkeletonHtml() {
   `;
 }
 
+// ── Saludo + fecha del header del dashboard ───────────────────
+// Réplica de la lógica de getSaludo()/setHomeGreeting() de app.js,
+// pero autocontenida acá: usa las mismas variables globales
+// (currentUserName) sin depender del módulo de inicio, que puede
+// desaparecer más adelante sin romper este header.
+function _dashGetSaludo() {
+  const h = new Date().getHours();
+  if (h < 12) return "Buenos días";
+  if (h < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+const _DASH_MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+function _dashFechaCorta(d = new Date()) {
+  const dia = d.getDate();
+  const mes = _DASH_MESES[d.getMonth()];
+  const anio = d.getFullYear();
+  return `${dia} ${mes.charAt(0).toUpperCase()}${mes.slice(1)} ${anio}`;
+}
+
+function setDashboardGreeting() {
+  const elTitulo = document.getElementById("dash-greeting");
+  const elSub    = document.getElementById("dash-greeting-sub");
+  const elFecha  = document.getElementById("dash-greeting-date-text");
+
+  const primerNombre = (typeof currentUserName === "string" ? currentUserName : "").split(" ")[0];
+  if (elTitulo) {
+    elTitulo.textContent = primerNombre
+      ? `¡${_dashGetSaludo()}, ${primerNombre}!`
+      : "Panel de control";
+  }
+  if (elSub) elSub.textContent = "Aquí tienes un resumen de tu operación";
+  if (elFecha) elFecha.textContent = _dashFechaCorta();
+}
+
 // ── Carga principal del panel ───────────────────────────────
 async function loadDashboard() {
   const root = document.getElementById("dashboard-content");
   if (!root) return;
+
+  // Saludo y fecha se resuelven en el mismo instante en que se pinta
+  // el panel (con o sin caché): no dependen de ninguna consulta a red.
+  setDashboardGreeting();
 
   const esWorkerOAdmin = ["admin", "worker"].includes(currentUserRole);
   const teniaCache = _dashCacheReady();
