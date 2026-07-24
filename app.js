@@ -324,8 +324,18 @@ function navigateTo(view, idx = null, _fromHash = false) {
     return;
   }
 
+  // El nombre de transición del avatar se asigna solo al elemento
+  // involucrado (idx destino al entrar a detalle, o selectedIdx actual
+  // al volver a la lista) justo antes de disparar la transición.
+  // Tenerlo en las 300+ rows a la vez es lo que causaba el lag severo.
+  const idxParaMorph = (view === "detalle") ? idx : selectedIdx;
+  const rowEl = document.querySelector(`.passenger-row[data-idx="${idxParaMorph}"] .p-avatar`);
+  if (rowEl) rowEl.style.viewTransitionName = `avatar-${idxParaMorph}`;
+
   document.startViewTransition(() => {
     _navigateToImpl(view, idx, _fromHash);
+  }).finished.finally(() => {
+    if (rowEl) rowEl.style.viewTransitionName = "";
   });
 }
 
@@ -848,7 +858,7 @@ function createRow(p, i) {
     : `<span>${getInitials(name)}</span>`;
 
   row.innerHTML = `
-    <div class="p-avatar" style="view-transition-name: avatar-${p._idx}">${avatarInner}</div>
+    <div class="p-avatar">${avatarInner}</div>
     <div class="p-name">${name}</div>
     <span class="p-pill">CI ${ci}</span>
     <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
