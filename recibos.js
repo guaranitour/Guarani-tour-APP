@@ -124,7 +124,7 @@ function initReciboDetalleView(id) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               Abrir
             </a>
-            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}')">
+            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}', this)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               Compartir
             </button>
@@ -146,7 +146,7 @@ function initReciboDetalleView(id) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               Abrir
             </a>
-            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}')">
+            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}', this)">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               Compartir
             </button>
@@ -645,16 +645,28 @@ function extraerFileIdDrive(url) {
   return match ? match[1] : null;
 }
 
-async function compartirComprobante(url) {
+async function compartirComprobante(url, btn) {
   const esDrive = url.includes('drive.google.com') || url.includes('docs.google.com');
   const fileId  = esDrive ? extraerFileIdDrive(url) : null;
-  console.log('[compartir] url:', url, '| esDrive:', esDrive, '| fileId:', fileId);
+
+  const textoOriginal = btn ? btn.innerHTML : null;
+  function ponerCargando() {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.classList.add('recibo-btn-compartir--cargando');
+    btn.innerHTML = '<span class="recibo-spinner" aria-hidden="true"></span> Preparando…';
+  }
+  function restaurarBoton() {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.classList.remove('recibo-btn-compartir--cargando');
+    btn.innerHTML = textoOriginal;
+  }
 
   // Intentar compartir como archivo real (PDF/imagen) vía Web Share API
   if (fileId && navigator.share && navigator.canShare) {
     try {
-      mostrarToastRecibo('Preparando comprobante…');
-      console.log('[compartir] llamando a Apps Script…');
+      ponerCargando();
 
       const gsRes = await fetch(APPSCRIPT_URL, {
         method:  'POST',
@@ -662,30 +674,24 @@ async function compartirComprobante(url) {
         body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
       });
 
-      console.log('[compartir] status HTTP:', gsRes.status);
       const gsData = await gsRes.json();
-      console.log('[compartir] respuesta Apps Script:', gsData.ok, gsData.error || '(sin error)', gsData.data ? `base64 len=${gsData.data.base64?.length}` : '');
       if (!gsData.ok) throw new Error(gsData.error || 'No se pudo obtener el archivo');
 
       const { base64, mimeType, nombre } = gsData.data;
       const blob    = base64ToBlob(base64, mimeType || 'application/pdf');
       const archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
-      console.log('[compartir] blob creado:', blob.size, 'bytes, tipo:', blob.type);
 
-      const puedeCompartirArchivo = navigator.canShare({ files: [archivo] });
-      console.log('[compartir] canShare({files}):', puedeCompartirArchivo);
-
-      if (puedeCompartirArchivo) {
+      if (navigator.canShare({ files: [archivo] })) {
+        restaurarBoton();
         await navigator.share({ files: [archivo], title: 'Comprobante' });
         return;
       }
     } catch (e) {
-      console.error('[compartir] ERROR en el bloque de archivo:', e.name, e.message, e);
-      if (e.name === 'AbortError') return; // usuario canceló el share sheet
+      if (e.name === 'AbortError') { restaurarBoton(); return; } // usuario canceló el share sheet
       // Cualquier otro error (Apps Script caído, sin permiso, archivo muy grande, etc.): caer al fallback de link
+    } finally {
+      restaurarBoton();
     }
-  } else {
-    console.log('[compartir] no entró al bloque de archivo. fileId:', fileId, '| navigator.share:', !!navigator.share, '| navigator.canShare:', !!navigator.canShare);
   }
 
   // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive)
