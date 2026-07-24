@@ -563,36 +563,35 @@
 
 /* ══════════════════════════════════════════════════════════
    HEADER DE SALUDO — reemplaza al page-header genérico
-   Tarjeta oscura con degradado, saludo dinámico + fecha actual.
-   Vive acá (no en style.css/app.js) para no depender del módulo
-   de inicio, que puede desaparecer más adelante.
+   Integrado al fondo de la página (sin tarjeta ni color propio):
+   usa las mismas variables de tema que el resto de la app, así
+   que se adapta solo entre modo claro y oscuro. Saludo dinámico
+   + fecha actual. Vive acá (no en style.css/app.js) para no
+   depender del módulo de inicio, que puede desaparecer más adelante.
 ═══════════════════════════════════════════════════════════ */
 .dash-greet-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.1rem 1.2rem;
-  margin-bottom: 1.1rem;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #1a2f28 0%, #0f2019 100%);
-  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
 }
 
 .dash-greet-text h1 {
   font-family: 'Roboto', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   letter-spacing: -.01em;
-  margin: 0 0 .25rem;
+  margin: 0 0 .3rem;
   line-height: 1.25;
 }
 
 .dash-greet-text p {
   font-family: 'Roboto', sans-serif;
-  font-size: .82rem;
-  color: rgba(255,255,255,.65);
+  font-size: .85rem;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.3;
 }
@@ -602,19 +601,19 @@
   display: inline-flex;
   align-items: center;
   gap: .4rem;
-  padding: .4rem .7rem;
-  border-radius: 10px;
-  background: rgba(255,255,255,.1);
-  color: rgba(255,255,255,.85);
-  font-size: .75rem;
+  padding: .35rem .7rem;
+  border-radius: 20px;
+  background: var(--bg2);
+  color: var(--text-mid);
+  font-size: .78rem;
   font-weight: 500;
   white-space: nowrap;
+  margin-top: .2rem;
 }
-.dash-greet-date svg { flex-shrink: 0; opacity: .85; }
+.dash-greet-date svg { flex-shrink: 0; color: var(--text-muted); }
 
 @media (max-width: 380px) {
-  .dash-greet-header { flex-direction: column; align-items: stretch; }
-  .dash-greet-date { align-self: flex-start; }
+  .dash-greet-date { margin-top: 0; }
 }
 
 /* ══════════════════════════════════════════════════════════
