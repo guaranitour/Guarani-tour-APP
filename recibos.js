@@ -624,49 +624,71 @@ function slugMetodo(m) {
 }
 
 // ── Compartir comprobante ─────────────────────
+
+// Convierte base64 → Blob por chunks, más eficiente para archivos grandes que atob() directo a un solo array
+function base64ToBlob(base64, mimeType) {
+  const byteChars = atob(base64);
+  const byteArrays = [];
+
+  for (let offset = 0; offset < byteChars.length; offset += 512) {
+    const slice = byteChars.slice(offset, offset + 512);
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
+    byteArrays.push(new Uint8Array(byteNumbers));
+  }
+
+  return new Blob(byteArrays, { type: mimeType });
+}
+
+function extraerFileIdDrive(url) {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
 async function compartirComprobante(url) {
   const esDrive = url.includes('drive.google.com') || url.includes('docs.google.com');
+  const fileId  = esDrive ? extraerFileIdDrive(url) : null;
+  console.log('[compartir] url:', url, '| esDrive:', esDrive, '| fileId:', fileId);
 
-  // Intentar compartir como archivo PDF
-  if (navigator.share && navigator.canShare) {
+  // Intentar compartir como archivo real (PDF/imagen) vía Web Share API
+  if (fileId && navigator.share && navigator.canShare) {
     try {
-      mostrarToastRecibo('Descargando archivo…');
+      mostrarToastRecibo('Preparando comprobante…');
+      console.log('[compartir] llamando a Apps Script…');
 
-      // Obtener el ID del archivo de Drive y construir URL de descarga directa
-      let fetchUrl = url;
-      if (esDrive) {
-        const matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if (matchId) {
-          const fileId = matchId[1];
-          // Usar proxy CORS para evitar el bloqueo de Google Drive
-          const driveDownload = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          fetchUrl = `https://corsproxy.io/?${encodeURIComponent(driveDownload)}`;
-        }
-      }
+      const gsRes = await fetch(APPSCRIPT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' }, // evita preflight CORS en Apps Script
+        body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
+      });
 
-      const response = await fetch(fetchUrl);
-      if (!response.ok) throw new Error('Descarga fallida');
+      console.log('[compartir] status HTTP:', gsRes.status);
+      const gsData = await gsRes.json();
+      console.log('[compartir] respuesta Apps Script:', gsData.ok, gsData.error || '(sin error)', gsData.data ? `base64 len=${gsData.data.base64?.length}` : '');
+      if (!gsData.ok) throw new Error(gsData.error || 'No se pudo obtener el archivo');
 
-      const blob = await response.blob();
-      // Google a veces devuelve HTML de confirmación para archivos grandes;
-      // verificar que sea realmente un PDF o imagen
-      if (blob.type.includes('text/html')) throw new Error('Respuesta inesperada de Drive');
+      const { base64, mimeType, nombre } = gsData.data;
+      const blob    = base64ToBlob(base64, mimeType || 'application/pdf');
+      const archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
+      console.log('[compartir] blob creado:', blob.size, 'bytes, tipo:', blob.type);
 
-      const tipo = blob.type || 'application/pdf';
-      const extension = tipo.includes('pdf') ? '.pdf' : tipo.includes('image') ? '.jpg' : '.pdf';
-      const archivo = new File([blob], `comprobante${extension}`, { type: tipo });
+      const puedeCompartirArchivo = navigator.canShare({ files: [archivo] });
+      console.log('[compartir] canShare({files}):', puedeCompartirArchivo);
 
-      if (navigator.canShare({ files: [archivo] })) {
+      if (puedeCompartirArchivo) {
         await navigator.share({ files: [archivo], title: 'Comprobante' });
         return;
       }
     } catch (e) {
-      if (e.name === 'AbortError') return; // usuario canceló
-      // Cualquier otro error: caer al fallback de link
+      console.error('[compartir] ERROR en el bloque de archivo:', e.name, e.message, e);
+      if (e.name === 'AbortError') return; // usuario canceló el share sheet
+      // Cualquier otro error (Apps Script caído, sin permiso, archivo muy grande, etc.): caer al fallback de link
     }
+  } else {
+    console.log('[compartir] no entró al bloque de archivo. fileId:', fileId, '| navigator.share:', !!navigator.share, '| navigator.canShare:', !!navigator.canShare);
   }
 
-  // Fallback 1: compartir link
+  // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive)
   if (navigator.share) {
     try {
       await navigator.share({ url, title: 'Comprobante' });
