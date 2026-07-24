@@ -330,8 +330,15 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // Así nunca hay dos elementos con el mismo nombre vivos a la vez
   // (eso hace que el navegador aborte la transición con AbortError).
   document.startViewTransition(() => {
-    _navigateToImpl(view, idx, _fromHash);
-  }).finished.catch(() => {}); // ignorar aborts esporádicos (p. ej. navegación muy rápida)
+    try {
+      _navigateToImpl(view, idx, _fromHash);
+    } catch (err) {
+      console.error('[VT] EXCEPCIÓN dentro del callback:', err);
+      throw err;
+    }
+  }).finished.catch((err) => {
+    console.error('[VT] transición abortada:', err);
+  });
 }
 
 function _navigateToImpl(view, idx = null, _fromHash = false) {
