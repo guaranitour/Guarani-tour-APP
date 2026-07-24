@@ -1000,3 +1000,28 @@ select.form-input { cursor: pointer; }
   80%  { stroke-dashoffset: 0; }
   100% { stroke-dashoffset: 0; }
 }
+
+/* ── View Transitions API — piloto en Base de clientes ────────
+   Solo aplica en navegadores compatibles (Chrome/Edge/Android);
+   en el resto se ignora sin afectar la navegación normal. */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .28s;
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* El avatar tiene su propio nombre de transición (avatar-N, asignado
+   por JS), así que lo excluimos del crossfade genérico de "root"
+   para que se vea el morph limpio en vez de un doble fundido. */
+::view-transition-group(*) {
+  animation-duration: .32s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: .01ms !important;
+  }
+}

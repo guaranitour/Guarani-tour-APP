@@ -307,7 +307,29 @@ function setHomeGreeting() {
     : "Panel de inicio";
 }
 
+// Vistas donde probamos la View Transitions API (piloto: Base de clientes).
+// El navegador la soporta o no según el caso; si no existe, cae al comportamiento normal sin romper nada.
+const _vistasConTransicion = new Set(["clientes", "detalle"]);
+
 function navigateTo(view, idx = null, _fromHash = false) {
+  const soportaVT = typeof document.startViewTransition === "function";
+  const aplicaTransicion =
+    soportaVT &&
+    _vistasConTransicion.has(view) &&
+    _vistasConTransicion.has(currentView) &&
+    view !== currentView; // no disparar transición si no cambia la vista real
+
+  if (!aplicaTransicion) {
+    _navigateToImpl(view, idx, _fromHash);
+    return;
+  }
+
+  document.startViewTransition(() => {
+    _navigateToImpl(view, idx, _fromHash);
+  });
+}
+
+function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   currentView = view;
   selectedIdx = idx;
@@ -419,6 +441,11 @@ function navigateTo(view, idx = null, _fromHash = false) {
   }
 
   else if (view === "clientes") {
+
+    // Limpiar el nombre de transición dejado por el detalle anterior,
+    // para que no colisione con el de la próxima card que se abra.
+    const _detAv = document.getElementById("detalle-avatar");
+    if (_detAv) _detAv.style.viewTransitionName = "";
 
     showEl("view-clientes");
     updateBreadcrumb([
@@ -821,7 +848,7 @@ function createRow(p, i) {
     : `<span>${getInitials(name)}</span>`;
 
   row.innerHTML = `
-    <div class="p-avatar">${avatarInner}</div>
+    <div class="p-avatar" style="view-transition-name: avatar-${p._idx}">${avatarInner}</div>
     <div class="p-name">${name}</div>
     <span class="p-pill">CI ${ci}</span>
     <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -896,6 +923,7 @@ async function renderDetalle(idx) {
   const wrapEl   = avatarEl.closest(".detalle-avatar-wrap") || avatarEl.parentElement;
   const imgEl    = avatarEl.querySelector("img");
   const initEl   = avatarEl.querySelector(".d-initials");
+  avatarEl.style.viewTransitionName = `avatar-${idx}`;
   wrapEl.dataset.idx   = idx;
   avatarEl.dataset.idx = idx;
 
