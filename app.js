@@ -324,20 +324,14 @@ function navigateTo(view, idx = null, _fromHash = false) {
     return;
   }
 
-  // El nombre de transición del avatar se asigna solo al elemento
-  // involucrado (idx destino al entrar a detalle, o selectedIdx actual
-  // al volver a la lista) justo antes de disparar la transición.
-  // Tenerlo en las 300+ rows a la vez es lo que causaba el lag severo.
-  const idxParaMorph = (view === "detalle") ? idx : selectedIdx;
-  const rowEl = document.querySelector(`.passenger-row[data-idx="${idxParaMorph}"] .p-avatar`);
-  console.log('[VT] view:', view, '| currentView:', currentView, '| idxParaMorph:', idxParaMorph, '| rowEl encontrado:', !!rowEl);
-  if (rowEl) rowEl.style.viewTransitionName = `avatar-${idxParaMorph}`;
-
+  // La asignación de view-transition-name vive dentro de _navigateToImpl
+  // (renderDetalle al entrar, el bloque "clientes" al volver), siempre
+  // en el mismo callback síncrono en que se quita del elemento anterior.
+  // Así nunca hay dos elementos con el mismo nombre vivos a la vez
+  // (eso hace que el navegador aborte la transición con AbortError).
   document.startViewTransition(() => {
     _navigateToImpl(view, idx, _fromHash);
-  }).finished.finally(() => {
-    if (rowEl) rowEl.style.viewTransitionName = "";
-  });
+  }).finished.catch(() => {}); // ignorar aborts esporádicos (p. ej. navegación muy rápida)
 }
 
 function _navigateToImpl(view, idx = null, _fromHash = false) {
@@ -453,8 +447,9 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "clientes") {
 
-    // Limpiar el nombre de transición dejado por el detalle anterior,
-    // para que no colisione con el de la próxima card que se abra.
+    // Al volver: el detalle (origen) tiene el nombre puesto desde que
+    // se abrió — lo quitamos de ahí y lo ponemos en la row de destino
+    // en la lista, en el mismo tick, para que el navegador arme el par.
     const _detAv = document.getElementById("detalle-avatar");
     if (_detAv) _detAv.style.viewTransitionName = "";
 
@@ -465,6 +460,11 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     ]);
     if (allPassengers.length === 0) loadPassengers();
     else renderList(allPassengers);
+
+    if (selectedIdx !== null) {
+      const rowEl = document.querySelector(`.passenger-row[data-idx="${selectedIdx}"] .p-avatar`);
+      if (rowEl) rowEl.style.viewTransitionName = `avatar-${selectedIdx}`;
+    }
 
   }
 
@@ -934,6 +934,13 @@ async function renderDetalle(idx) {
   const wrapEl   = avatarEl.closest(".detalle-avatar-wrap") || avatarEl.parentElement;
   const imgEl    = avatarEl.querySelector("img");
   const initEl   = avatarEl.querySelector(".d-initials");
+
+  // El avatar de origen (row en la lista) trae el nombre puesto por
+  // navigateTo. Lo retiramos de ahí en el mismo instante en que lo
+  // ponemos acá, para que nunca haya dos elementos con el mismo
+  // view-transition-name vivos a la vez (eso aborta la transición).
+  const rowOrigenEl = document.querySelector(`.passenger-row[data-idx="${idx}"] .p-avatar`);
+  if (rowOrigenEl) rowOrigenEl.style.viewTransitionName = "";
   avatarEl.style.viewTransitionName = `avatar-${idx}`;
   wrapEl.dataset.idx   = idx;
   avatarEl.dataset.idx = idx;
