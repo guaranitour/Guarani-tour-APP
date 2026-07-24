@@ -330,6 +330,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // Tenerlo en las 300+ rows a la vez es lo que causaba el lag severo.
   const idxParaMorph = (view === "detalle") ? idx : selectedIdx;
   const rowEl = document.querySelector(`.passenger-row[data-idx="${idxParaMorph}"] .p-avatar`);
+  console.log('[VT] view:', view, '| currentView:', currentView, '| idxParaMorph:', idxParaMorph, '| rowEl encontrado:', !!rowEl);
   if (rowEl) rowEl.style.viewTransitionName = `avatar-${idxParaMorph}`;
 
   document.startViewTransition(() => {
