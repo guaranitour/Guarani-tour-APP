@@ -91,6 +91,40 @@ function renderReciboCard(r) {
     </div>`;
 }
 
+// ── Precarga de comprobantes (Samsung Internet fix) ──────────
+// navigator.share() con archivos exige que el llamado ocurra dentro
+// del "user activation" del click, sin awaits previos. Algunos
+// navegadores (Samsung Internet) son estrictos y lo invalidan si pasa
+// tiempo/await de por medio → NotAllowedError. Por eso descargamos el
+// PDF en segundo plano apenas se abre el recibo, así al presionar
+// "Compartir" el share sale sin ningún await antes.
+const _cacheArchivosCompartir = new Map(); // fileId -> Promise<File>
+
+function precargarComprobante(fileId) {
+  if (!fileId || _cacheArchivosCompartir.has(fileId)) return;
+
+  const promesa = fetch(APPSCRIPT_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.ok) throw new Error(data.error || 'No se pudo precargar el archivo');
+      const { base64, mimeType, nombre } = data.data;
+      const blob = base64ToBlob(base64, mimeType || 'application/pdf');
+      return new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
+    })
+    .catch(() => {
+      // Si falla la precarga, no pasa nada: compartirComprobante hace
+      // su propio fetch al momento de compartir, como respaldo.
+      _cacheArchivosCompartir.delete(fileId);
+      return null;
+    });
+
+  _cacheArchivosCompartir.set(fileId, promesa);
+}
+
 // ── Vista detalle (página completa) ──────────
 function initReciboDetalleView(id) {
   const recibo = todosLosRecibos.find(r => r.id === id);
@@ -160,6 +194,13 @@ function initReciboDetalleView(id) {
             Ver comprobante
           </a>
         </div>`;
+    }
+
+    // Precarga en segundo plano (Samsung Internet fix): así el botón
+    // "Compartir" puede llamar a navigator.share() sin awaits previos.
+    if (esDrive) {
+      const fileIdPrecarga = extraerFileIdDrive(url);
+      if (fileIdPrecarga) precargarComprobante(fileIdPrecarga);
     }
   }
 
@@ -649,9 +690,6 @@ async function compartirComprobante(url, btn) {
   const esDrive = url.includes('drive.google.com') || url.includes('docs.google.com');
   const fileId  = esDrive ? extraerFileIdDrive(url) : null;
 
-  console.log('[compartir] UA:', navigator.userAgent);
-  console.log('[compartir] fileId:', fileId, '| navigator.share existe:', !!navigator.share, '| navigator.canShare existe:', !!navigator.canShare);
-
   const textoOriginal = btn ? btn.innerHTML : null;
   function ponerCargando() {
     if (!btn) return;
@@ -669,45 +707,46 @@ async function compartirComprobante(url, btn) {
   // Intentar compartir como archivo real (PDF/imagen) vía Web Share API
   if (fileId && navigator.share && navigator.canShare) {
     try {
-      ponerCargando();
-      console.log('[compartir] llamando a Apps Script…');
+      // Camino feliz: el archivo ya se precargó al abrir el detalle
+      // (ver precargarComprobante), así que acá solo esperamos esa
+      // promesa — que normalmente ya está resuelta. Esto es clave en
+      // Samsung Internet: navigator.share() con archivos exige poco
+      // o ningún await entre el click y el share, o descarta el
+      // "user activation" y tira NotAllowedError.
+      let archivo = null;
+      const cacheado = _cacheArchivosCompartir.get(fileId);
+      if (cacheado) archivo = await cacheado;
 
-      const gsRes = await fetch(APPSCRIPT_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'text/plain' }, // evita preflight CORS en Apps Script
-        body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
-      });
+      if (!archivo) {
+        // Respaldo: no hubo precarga a tiempo (recibo viejo abierto
+        // hace rato, o la precarga falló). Pedimos el archivo ahora,
+        // mostrando el estado de carga — en este caso puede fallar en
+        // Samsung Internet por el mismo motivo, pero sigue funcionando
+        // en Chrome y cae al fallback de link de forma segura en todos.
+        ponerCargando();
+        const gsRes = await fetch(APPSCRIPT_URL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
+        });
+        const gsData = await gsRes.json();
+        if (!gsData.ok) throw new Error(gsData.error || 'No se pudo obtener el archivo');
+        const { base64, mimeType, nombre } = gsData.data;
+        const blob = base64ToBlob(base64, mimeType || 'application/pdf');
+        archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
+      }
 
-      console.log('[compartir] status HTTP:', gsRes.status);
-      const gsData = await gsRes.json();
-      console.log('[compartir] ok:', gsData.ok, '| base64 len:', gsData.data?.base64?.length, '| mimeType:', gsData.data?.mimeType);
-      if (!gsData.ok) throw new Error(gsData.error || 'No se pudo obtener el archivo');
-
-      const { base64, mimeType, nombre } = gsData.data;
-      const blob    = base64ToBlob(base64, mimeType || 'application/pdf');
-      const archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
-      console.log('[compartir] blob size:', blob.size, '| archivo type:', archivo.type);
-
-      const puedeCompartir = navigator.canShare({ files: [archivo] });
-      console.log('[compartir] canShare({files}):', puedeCompartir);
-
-      if (puedeCompartir) {
+      if (navigator.canShare({ files: [archivo] })) {
         restaurarBoton();
         await navigator.share({ files: [archivo], title: 'Comprobante' });
-        console.log('[compartir] share con archivo EXITOSO');
         return;
-      } else {
-        console.warn('[compartir] canShare devolvió false — este navegador no soporta compartir este tipo de archivo');
       }
     } catch (e) {
-      console.error('[compartir] ERROR:', e.name, '-', e.message);
       if (e.name === 'AbortError') { restaurarBoton(); return; } // usuario canceló el share sheet
       // Cualquier otro error (Apps Script caído, sin permiso, archivo muy grande, etc.): caer al fallback de link
     } finally {
       restaurarBoton();
     }
-  } else {
-    console.log('[compartir] NO entró al bloque de archivo — falta fileId, navigator.share o navigator.canShare');
   }
 
   // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive)
