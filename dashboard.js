@@ -63,6 +63,55 @@ function _dashAvatarHtml(pasajeroId, nombre) {
     : `<span>${getInitials(nombre)}</span>`;
 }
 
+// ── Caché en memoria del panel (stale-while-revalidate) ──────
+// Vive mientras dure la sesión de la SPA (se pierde al recargar la
+// página, que es exactamente lo que queremos: no es caché de red,
+// es "no volver a mostrar un skeleton si el usuario ya vio esto").
+//
+// Guarda el HTML ya renderizado de cada slot. Al reingresar al panel:
+//   1) se pinta lo cacheado tal cual, al instante, sin skeleton
+//   2) se dispara la recarga de datos en segundo plano
+//   3) si el HTML resultante difiere del cacheado, se reemplaza con
+//      un fade corto; si es igual, no se toca nada (evita parpadeo)
+// En ambos casos, mientras dura la revalidación se ve el indicador
+// de puntos junto al título de cada sección.
+let _dashCache = null; // { byc, viajes, extra, club } | null
+
+function _dashCacheReady() {
+  return !!_dashCache;
+}
+
+// Inserta/retira el indicador de puntos junto al título de un slot ya
+// pintado (con contenido real, no skeleton), sin tocar el resto del HTML.
+function _setSlotRevalidating(slotEl, on) {
+  if (!slotEl) return;
+  const title = slotEl.querySelector(".dash-section-title");
+  if (!title) return;
+  let tag = title.querySelector(".dash-loading-tag");
+  if (on) {
+    if (!tag) {
+      title.insertAdjacentHTML("beforeend", `<span class="dash-loading-tag dash-loading-tag--revalidate" aria-hidden="true"><span class="dash-dot"></span><span class="dash-dot"></span><span class="dash-dot"></span></span>`);
+    }
+  } else if (tag) {
+    tag.remove();
+  }
+}
+
+// Reemplaza el contenido de un slot solo si cambió respecto al HTML
+// cacheado, con un fade corto para que el cambio no se sienta abrupto.
+// Si es idéntico, no toca el DOM (evita parpadeo/pérdida de scroll).
+function _swapSlotIfChanged(slotEl, newHtml, cacheKey) {
+  if (!slotEl) return;
+  const prev = _dashCache ? _dashCache[cacheKey] : undefined;
+  _setSlotRevalidating(slotEl, false);
+  if (prev === newHtml) return; // sin cambios: no re-renderizamos nada
+  slotEl.innerHTML = newHtml;
+  slotEl.classList.remove("dash-slot-updating");
+  // Forzamos reflow para que la animación se reinicie si se dispara seguido
+  void slotEl.offsetWidth;
+  slotEl.classList.add("dash-slot-updating");
+}
+
 // ── Skeletons (placeholders de carga) ────────────────────────
 // Se pintan de forma SÍNCRONA al entrar al panel, antes de que
 // cualquier fetch resuelva. Cada sección real reemplaza su propio
@@ -171,27 +220,53 @@ async function loadDashboard() {
   const root = document.getElementById("dashboard-content");
   if (!root) return;
 
-  // 1) Pintado INSTANTÁNEO del esqueleto (sin esperar red).
-  //    Esto es lo que el usuario ve en el primer frame al entrar al panel.
-  root.innerHTML = _dashboardSkeletonHtml();
-
   const esWorkerOAdmin = ["admin", "worker"].includes(currentUserRole);
+  const teniaCache = _dashCacheReady();
+
+  if (teniaCache) {
+    // 1a) YA hay algo cacheado de una visita anterior: lo pintamos TAL
+    //     CUAL, al instante, sin skeleton. El usuario ve el panel completo
+    //     desde el primer frame como si nunca se hubiera ido.
+    root.innerHTML = `
+      <div id="dash-slot-byc">${_dashCache.byc}</div>
+      <div id="dash-slot-viajes">${_dashCache.viajes}</div>
+      <div id="dash-slot-extra">${_dashCache.extra || ""}</div>
+      <div id="dash-slot-club">${_dashCache.club}</div>
+    `;
+  } else {
+    // 1b) Primera vez en esta sesión: mostramos el esqueleto de carga.
+    root.innerHTML = _dashboardSkeletonHtml();
+  }
+
   const slotByc    = document.getElementById("dash-slot-byc");
   const slotViajes = document.getElementById("dash-slot-viajes");
   const slotExtra  = document.getElementById("dash-slot-extra");
   const slotClub   = document.getElementById("dash-slot-club");
 
+  if (teniaCache) {
+    // Revalidación pasiva: el contenido ya está a la vista, solo
+    // marcamos con los tres puntos junto a cada título que se está
+    // refrescando en segundo plano. La app sigue 100% usable.
+    _setSlotRevalidating(slotByc, true);
+    _setSlotRevalidating(slotViajes, true);
+    _setSlotRevalidating(slotClub, true);
+    if (esWorkerOAdmin && _dashCache.extra) _setSlotRevalidating(slotExtra, true);
+  }
+
   // Si algo falla feo, un pequeño helper para pintar error en un slot puntual
   // sin tumbar el resto de las secciones que sí cargaron bien.
+  // En revalidación pasiva, un error de red no debe destruir lo que ya
+  // se estaba mostrando: solo quitamos el indicador de "cargando".
   const marcarError = (slotEl, texto) => {
-    if (slotEl) slotEl.innerHTML = `<div class="dash-section"><div class="dash-card"><div class="dash-state">⚠️ ${texto}</div></div></div>`;
+    if (!slotEl) return;
+    if (teniaCache) { _setSlotRevalidating(slotEl, false); return; }
+    slotEl.innerHTML = `<div class="dash-section"><div class="dash-card"><div class="dash-state">⚠️ ${texto}</div></div></div>`;
   };
 
   try {
-    // 2) Disparamos TODAS las queries base en paralelo. No usamos await
-    //    conjunto con Promise.all esperando a todas por igual para pintar:
-    //    en cambio encadenamos .then() por separado en el paso 3 para que
-    //    cada sección se resuelva y reemplace su skeleton ni bien esté lista.
+    // 2) Disparamos TODAS las queries base en paralelo, haya o no caché.
+    //    Si hay caché esto ES la revalidación en segundo plano; si no,
+    //    es la carga inicial detrás del skeleton.
     const qPasajeros = supabaseClient.from("pasajeros").select(`id, Sexo, "Documento de Identidad"`);
     const qViajes = supabaseClient.from("viajes")
       .select("id, nombre, fecha_salida, fecha_regreso, estado, puntos_destino")
@@ -200,10 +275,6 @@ async function loadDashboard() {
       .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero, Vendedor )");
     const qByc = supabaseClient.from("basesycondiciones").select("id, ci, estado");
 
-    // Necesitamos pasajeros + viajes + vp + byc juntos para varias secciones,
-    // así que esperamos el conjunto base una sola vez (suele resolver rápido
-    // porque las 4 queries van en paralelo), pero el usuario YA está viendo
-    // el skeleton completo mientras tanto — nada se siente "congelado".
     const [
       { data: pasajerosData, error: errPas },
       { data: viajesData,    error: errViajes },
@@ -213,29 +284,48 @@ async function loadDashboard() {
 
     if (errPas || errViajes || errVp) {
       console.error("Error cargando dashboard:", errPas || errViajes || errVp);
-      root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el panel.</div>`;
+      if (!teniaCache) root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el panel.</div>`;
+      else {
+        // Falló la revalidación: dejamos lo cacheado tal cual, solo
+        // quitamos los indicadores de carga.
+        _setSlotRevalidating(slotByc, false);
+        _setSlotRevalidating(slotViajes, false);
+        _setSlotRevalidating(slotClub, false);
+        _setSlotRevalidating(slotExtra, false);
+      }
       return;
     }
     if (errByc) console.warn("No se pudo cargar BYC:", errByc);
 
+    // Si no había caché aún, inicializamos el objeto para ir completándolo.
+    if (!_dashCache) _dashCache = { byc: "", viajes: "", extra: "", club: "" };
+
     // 3) A partir de acá, cada sección se resuelve y pinta de forma
     //    independiente. Si una tarda o falla, no bloquea a las demás.
+    //    Si veníamos de caché, _swapSlotIfChanged compara con lo anterior
+    //    y solo toca el DOM si el HTML realmente cambió.
 
-    // Bases y condiciones — no depende de nada más, se pinta primero.
-    if (slotByc) slotByc.innerHTML = renderKpisByc(bycData || [], pasajerosData || []);
+    const htmlByc = renderKpisByc(bycData || [], pasajerosData || []);
+    if (teniaCache) _swapSlotIfChanged(slotByc, htmlByc, "byc");
+    else if (slotByc) slotByc.innerHTML = htmlByc;
+    _dashCache.byc = htmlByc;
 
-    // Viajes activos — idem.
-    if (slotViajes) slotViajes.innerHTML = renderViajesActivos(viajesData || [], vpData || []);
+    const htmlViajes = renderViajesActivos(viajesData || [], vpData || []);
+    if (teniaCache) _swapSlotIfChanged(slotViajes, htmlViajes, "viajes");
+    else if (slotViajes) slotViajes.innerHTML = htmlViajes;
+    _dashCache.viajes = htmlViajes;
 
     const viajesMap = {};
     (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
 
     // Club Destino depende del ranking de puntos (incluye carga de avatares),
-    // que puede tardar un poco más: se resuelve aparte y no frena a byc/viajes,
-    // que el usuario ya está viendo resueltos arriba.
+    // que puede tardar un poco más: se resuelve aparte y no frena a byc/viajes.
     const clubDestinoPromise = calcularYCachearRankingPuntos2026(vpData || [], viajesMap)
       .then(rankingPuntos => {
-        if (slotClub) slotClub.innerHTML = renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
+        const htmlClub = renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
+        if (teniaCache) _swapSlotIfChanged(slotClub, htmlClub, "club");
+        else if (slotClub) slotClub.innerHTML = htmlClub;
+        _dashCache.club = htmlClub;
       })
       .catch(e => {
         console.error("Error cargando Club Destino:", e);
@@ -247,7 +337,7 @@ async function loadDashboard() {
     // a Club Destino, cada una reemplazando su propio slot al terminar.
     let extraPromise = Promise.resolve();
     if (esWorkerOAdmin) {
-      if (slotExtra) {
+      if (!teniaCache && slotExtra) {
         slotExtra.innerHTML = `<hr class="dash-section-divider" />` + _skelComparativo();
       }
 
@@ -268,16 +358,20 @@ async function loadDashboard() {
           : Promise.resolve({ data: [] }),
       ])
         .then(([{ data: egresosData }, { data: pagosData }]) => {
-          if (!slotExtra) return;
-          slotExtra.innerHTML =
+          const htmlExtra =
             `<hr class="dash-section-divider" />` +
             renderComparativo(last3, vpLast3, egresosData || [], pagosData || []) +
             renderRankingVendedores(last3, vpLast3);
+          if (teniaCache) _swapSlotIfChanged(slotExtra, htmlExtra, "extra");
+          else if (slotExtra) slotExtra.innerHTML = htmlExtra;
+          _dashCache.extra = htmlExtra;
         })
         .catch(e => {
           console.error("Error cargando comparativo/ranking:", e);
           marcarError(slotExtra, "No se pudo cargar el comparativo de viajes.");
         });
+    } else {
+      _dashCache.extra = "";
     }
 
     // No es necesario await acá: cada promesa pinta su slot por su cuenta
@@ -286,7 +380,13 @@ async function loadDashboard() {
 
   } catch (e) {
     console.error("Error inesperado en dashboard:", e);
-    root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el panel.</div>`;
+    if (!teniaCache) root.innerHTML = `<div class="dash-state">⚠️ Error al cargar el panel.</div>`;
+    else {
+      _setSlotRevalidating(slotByc, false);
+      _setSlotRevalidating(slotViajes, false);
+      _setSlotRevalidating(slotClub, false);
+      _setSlotRevalidating(slotExtra, false);
+    }
   }
 }
 

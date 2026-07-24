@@ -561,7 +561,27 @@
 .dash-skel-club-stats .dash-skel { height: 2rem; }
 .dash-skel-bar { height: 7px; border-radius: 6px; margin-bottom: 1rem; }
 
-/* Skeleton: card comparativo */
+/* ══════════════════════════════════════════════════════════
+   CACHÉ EN MEMORIA — revalidación pasiva (stale-while-revalidate)
+   Cuando se muestra contenido cacheado mientras se revalida en
+   segundo plano, solo se ve el indicador de puntos junto al título;
+   no hay skeleton ni bloqueo, porque el contenido ya está a la vista.
+═══════════════════════════════════════════════════════════ */
+.dash-section-title .dash-loading-tag.dash-loading-tag--revalidate {
+  color: var(--accent);
+}
+
+/* Fade corto al reemplazar un slot con datos frescos post-revalidación */
+.dash-slot-updating {
+  animation: dashSlotFadeSwap .35s ease;
+}
+@keyframes dashSlotFadeSwap {
+  0%   { opacity: .4; }
+  100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-slot-updating { animation: none; }
+}
 .dash-skel-comp-card {
   border: 1px solid var(--border);
   border-radius: 12px;
