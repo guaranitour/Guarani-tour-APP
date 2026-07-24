@@ -471,3 +471,103 @@
   text-align: center; padding: 2rem 1rem;
   color: var(--text-muted); font-size: .85rem;
 }
+
+/* ══════════════════════════════════════════════════════════
+   SKELETON LOADING — placeholders con shimmer
+   Cada bloque de sección se reemplaza de forma independiente
+   apenas su fetch resuelve, sin bloquear el resto de la UI.
+═══════════════════════════════════════════════════════════ */
+.dash-skel-block { min-height: 40px; }
+
+.dash-skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg2);
+  border-radius: 8px;
+  isolation: isolate;
+}
+.dash-skel::after {
+  content: "";
+  position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-border, rgba(255,255,255,.35)) 45%,
+    var(--glass-border, rgba(255,255,255,.35)) 55%,
+    transparent
+  );
+  animation: dashSkelShimmer 1.4s ease-in-out infinite;
+}
+@keyframes dashSkelShimmer {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-skel::after { animation: none; }
+}
+
+/* Etiqueta "cargando…" bajo el rótulo de cada sección */
+.dash-section-title .dash-loading-tag {
+  margin-left: auto;
+  font-size: .7rem; font-weight: 500;
+  color: var(--text-muted);
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.dash-loading-tag .dash-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  animation: dashDotPulse 1s ease-in-out infinite;
+}
+.dash-loading-tag .dash-dot:nth-child(2) { animation-delay: .15s; }
+.dash-loading-tag .dash-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes dashDotPulse {
+  0%, 80%, 100% { opacity: .25; transform: scale(.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* Skeleton: tarjetas KPI (grid 2 col) */
+.dash-skel-kpi-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .7rem;
+}
+.dash-skel-kpi-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: .9rem 1rem;
+}
+.dash-skel-kpi-card .dash-skel { height: .65rem; width: 60%; margin-bottom: .5rem; }
+.dash-skel-kpi-card .dash-skel.dash-skel-value { height: 1.5rem; width: 45%; margin-bottom: 0; }
+
+/* Skeleton: fila tipo "viaje" / lista */
+.dash-skel-row {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.dash-skel-row:last-child { border-bottom: none; }
+.dash-skel-row .dash-skel-icon {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+}
+.dash-skel-row .dash-skel-lines { flex: 1; min-width: 0; }
+.dash-skel-row .dash-skel-lines .dash-skel { height: .8rem; margin-bottom: .4rem; }
+.dash-skel-row .dash-skel-lines .dash-skel:last-child { margin-bottom: 0; width: 55%; height: .65rem; }
+.dash-skel-row .dash-skel-tail { width: 70px; height: .8rem; flex-shrink: 0; }
+
+/* Skeleton: tarjeta de club destino (3 stats + barra + top rows) */
+.dash-skel-club-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5rem;
+  margin-bottom: .8rem;
+}
+.dash-skel-club-stats .dash-skel { height: 2rem; }
+.dash-skel-bar { height: 7px; border-radius: 6px; margin-bottom: 1rem; }
+
+/* Skeleton: card comparativo */
+.dash-skel-comp-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: .9rem 1rem;
+  margin-bottom: .7rem;
+}
+.dash-skel-comp-card .dash-skel-line-lg { height: .85rem; width: 50%; margin-bottom: .7rem; }
+.dash-skel-comp-card .dash-skel-bar-row { height: 7px; margin-bottom: .6rem; }
+.dash-skel-comp-card .dash-skel-bar-row:last-of-type { margin-bottom: 0; }

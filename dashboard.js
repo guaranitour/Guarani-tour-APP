@@ -63,30 +63,153 @@ function _dashAvatarHtml(pasajeroId, nombre) {
     : `<span>${getInitials(nombre)}</span>`;
 }
 
+// ── Skeletons (placeholders de carga) ────────────────────────
+// Se pintan de forma SÍNCRONA al entrar al panel, antes de que
+// cualquier fetch resuelva. Cada sección real reemplaza su propio
+// nodo (#dash-slot-*) apenas sus datos están listos, así que el
+// usuario ve la maqueta completa desde el primer frame y las partes
+// van "aterrizando" sin bloquear scroll ni clicks en el resto.
+
+function _skelTag() {
+  return `<span class="dash-loading-tag" aria-hidden="true"><span class="dash-dot"></span><span class="dash-dot"></span><span class="dash-dot"></span></span>`;
+}
+
+function _skelKpiSection(titulo, icono, filas = 2) {
+  return `
+  <div class="dash-section">
+    <div class="dash-section-title">
+      <span class="dash-icon">${icono}</span>
+      ${titulo}
+      ${_skelTag()}
+    </div>
+    <div class="dash-skel-kpi-grid">
+      ${Array.from({ length: filas }).map(() => `
+        <div class="dash-skel-kpi-card">
+          <div class="dash-skel"></div>
+          <div class="dash-skel dash-skel-value"></div>
+        </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function _skelListSection(titulo, icono, filas = 3) {
+  return `
+  <div class="dash-section">
+    <div class="dash-section-title">
+      <span class="dash-icon">${icono}</span>
+      ${titulo}
+      ${_skelTag()}
+    </div>
+    <div class="dash-card">
+      ${Array.from({ length: filas }).map(() => `
+        <div class="dash-skel-row">
+          <div class="dash-skel dash-skel-icon"></div>
+          <div class="dash-skel-lines">
+            <div class="dash-skel"></div>
+            <div class="dash-skel"></div>
+          </div>
+          <div class="dash-skel dash-skel-tail"></div>
+        </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function _skelClubDestino() {
+  return `
+  <div class="dash-section">
+    <div class="dash-section-title">
+      <span class="dash-icon">${_dashIcons.pasajeros}</span>
+      Club Destino
+      ${_skelTag()}
+    </div>
+    <div class="dash-card dash-club-card">
+      <div class="dash-skel-club-stats">
+        <div class="dash-skel"></div>
+        <div class="dash-skel"></div>
+        <div class="dash-skel"></div>
+      </div>
+      <div class="dash-skel dash-skel-bar"></div>
+      ${Array.from({ length: 3 }).map(() => `
+        <div class="dash-skel-row">
+          <div class="dash-skel dash-skel-icon" style="width:32px;height:32px;border-radius:50%"></div>
+          <div class="dash-skel-lines"><div class="dash-skel"></div></div>
+          <div class="dash-skel dash-skel-tail" style="width:50px"></div>
+        </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function _skelComparativo() {
+  return `
+  <div class="dash-section">
+    <div class="dash-section-title">
+      <span class="dash-icon">${_dashIcons.balance}</span>
+      Egresos vs ingresos · últimos 3 viajes
+      ${_skelTag()}
+    </div>
+    ${Array.from({ length: 3 }).map(() => `
+      <div class="dash-skel-comp-card">
+        <div class="dash-skel dash-skel-line-lg"></div>
+        <div class="dash-skel dash-skel-bar-row"></div>
+        <div class="dash-skel dash-skel-bar-row"></div>
+      </div>`).join("")}
+  </div>`;
+}
+
+// Maqueta completa del panel: se inyecta en el primer frame.
+function _dashboardSkeletonHtml() {
+  return `
+    <div id="dash-slot-byc">${_skelKpiSection("Bases y condiciones", _dashIcons.byc, 2)}</div>
+    <div id="dash-slot-viajes">${_skelListSection("Viajes activos", _dashIcons.viajes, 3)}</div>
+    <div id="dash-slot-extra"></div>
+    <div id="dash-slot-club">${_skelClubDestino()}</div>
+  `;
+}
+
 // ── Carga principal del panel ───────────────────────────────
 async function loadDashboard() {
   const root = document.getElementById("dashboard-content");
   if (!root) return;
 
-  root.innerHTML = `<div class="dash-state">⏳ Cargando panel…</div>`;
+  // 1) Pintado INSTANTÁNEO del esqueleto (sin esperar red).
+  //    Esto es lo que el usuario ve en el primer frame al entrar al panel.
+  root.innerHTML = _dashboardSkeletonHtml();
 
   const esWorkerOAdmin = ["admin", "worker"].includes(currentUserRole);
+  const slotByc    = document.getElementById("dash-slot-byc");
+  const slotViajes = document.getElementById("dash-slot-viajes");
+  const slotExtra  = document.getElementById("dash-slot-extra");
+  const slotClub   = document.getElementById("dash-slot-club");
+
+  // Si algo falla feo, un pequeño helper para pintar error en un slot puntual
+  // sin tumbar el resto de las secciones que sí cargaron bien.
+  const marcarError = (slotEl, texto) => {
+    if (slotEl) slotEl.innerHTML = `<div class="dash-section"><div class="dash-card"><div class="dash-state">⚠️ ${texto}</div></div></div>`;
+  };
 
   try {
+    // 2) Disparamos TODAS las queries base en paralelo. No usamos await
+    //    conjunto con Promise.all esperando a todas por igual para pintar:
+    //    en cambio encadenamos .then() por separado en el paso 3 para que
+    //    cada sección se resuelva y reemplace su skeleton ni bien esté lista.
+    const qPasajeros = supabaseClient.from("pasajeros").select(`id, Sexo, "Documento de Identidad"`);
+    const qViajes = supabaseClient.from("viajes")
+      .select("id, nombre, fecha_salida, fecha_regreso, estado, puntos_destino")
+      .order("fecha_salida", { ascending: false });
+    const qVp = supabaseClient.from("viaje_pasajeros")
+      .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero, Vendedor )");
+    const qByc = supabaseClient.from("basesycondiciones").select("id, ci, estado");
+
+    // Necesitamos pasajeros + viajes + vp + byc juntos para varias secciones,
+    // así que esperamos el conjunto base una sola vez (suele resolver rápido
+    // porque las 4 queries van en paralelo), pero el usuario YA está viendo
+    // el skeleton completo mientras tanto — nada se siente "congelado".
     const [
       { data: pasajerosData, error: errPas },
       { data: viajesData,    error: errViajes },
       { data: vpData,        error: errVp },
       { data: bycData,       error: errByc },
-    ] = await Promise.all([
-      supabaseClient.from("pasajeros").select(`id, Sexo, "Documento de Identidad"`),
-      supabaseClient.from("viajes")
-        .select("id, nombre, fecha_salida, fecha_regreso, estado, puntos_destino")
-        .order("fecha_salida", { ascending: false }),
-      supabaseClient.from("viaje_pasajeros")
-        .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero, Vendedor )"),
-      supabaseClient.from("basesycondiciones").select("id, ci, estado"),
-    ]);
+    ] = await Promise.all([qPasajeros, qViajes, qVp, qByc]);
 
     if (errPas || errViajes || errVp) {
       console.error("Error cargando dashboard:", errPas || errViajes || errVp);
@@ -95,17 +218,39 @@ async function loadDashboard() {
     }
     if (errByc) console.warn("No se pudo cargar BYC:", errByc);
 
+    // 3) A partir de acá, cada sección se resuelve y pinta de forma
+    //    independiente. Si una tarda o falla, no bloquea a las demás.
+
+    // Bases y condiciones — no depende de nada más, se pinta primero.
+    if (slotByc) slotByc.innerHTML = renderKpisByc(bycData || [], pasajerosData || []);
+
+    // Viajes activos — idem.
+    if (slotViajes) slotViajes.innerHTML = renderViajesActivos(viajesData || [], vpData || []);
+
     const viajesMap = {};
     (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
 
-    const rankingPuntos = await calcularYCachearRankingPuntos2026(vpData || [], viajesMap);
+    // Club Destino depende del ranking de puntos (incluye carga de avatares),
+    // que puede tardar un poco más: se resuelve aparte y no frena a byc/viajes,
+    // que el usuario ya está viendo resueltos arriba.
+    const clubDestinoPromise = calcularYCachearRankingPuntos2026(vpData || [], viajesMap)
+      .then(rankingPuntos => {
+        if (slotClub) slotClub.innerHTML = renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
+      })
+      .catch(e => {
+        console.error("Error cargando Club Destino:", e);
+        marcarError(slotClub, "No se pudo cargar Club Destino.");
+      });
 
-    let html = "";
-    html += renderKpisByc(bycData || [], pasajerosData || []);
-    html += renderViajesActivos(viajesData || [], vpData || []);
-
+    // Comparativo + ranking de vendedores (solo admin/worker) requieren
+    // dos queries adicionales (egresos, pagos): se resuelven en paralelo
+    // a Club Destino, cada una reemplazando su propio slot al terminar.
+    let extraPromise = Promise.resolve();
     if (esWorkerOAdmin) {
-      // Últimos 3 viajes (activos o completados), ya vienen ordenados por fecha_salida desc
+      if (slotExtra) {
+        slotExtra.innerHTML = `<hr class="dash-section-divider" />` + _skelComparativo();
+      }
+
       const last3 = (viajesData || [])
         .filter(v => ["activo", "completado"].includes(v.estado || "activo"))
         .slice(0, 3);
@@ -114,23 +259,30 @@ async function loadDashboard() {
       const vpLast3    = (vpData || []).filter(vp => last3Ids.includes(vp.viaje_id));
       const vpLast3Ids = vpLast3.map(vp => vp.id);
 
-      const [{ data: egresosData }, { data: pagosData }] = await Promise.all([
+      extraPromise = Promise.all([
         last3Ids.length
           ? supabaseClient.from("egresos").select("viaje_id, monto").in("viaje_id", last3Ids)
           : Promise.resolve({ data: [] }),
         vpLast3Ids.length
           ? supabaseClient.from("pagos").select("viaje_pasajero_id, monto, tipo").in("viaje_pasajero_id", vpLast3Ids)
           : Promise.resolve({ data: [] }),
-      ]);
-
-      html += `<hr class="dash-section-divider" />`;
-      html += renderComparativo(last3, vpLast3, egresosData || [], pagosData || []);
-      html += renderRankingVendedores(last3, vpLast3);
+      ])
+        .then(([{ data: egresosData }, { data: pagosData }]) => {
+          if (!slotExtra) return;
+          slotExtra.innerHTML =
+            `<hr class="dash-section-divider" />` +
+            renderComparativo(last3, vpLast3, egresosData || [], pagosData || []) +
+            renderRankingVendedores(last3, vpLast3);
+        })
+        .catch(e => {
+          console.error("Error cargando comparativo/ranking:", e);
+          marcarError(slotExtra, "No se pudo cargar el comparativo de viajes.");
+        });
     }
 
-    html += renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
-
-    root.innerHTML = html;
+    // No es necesario await acá: cada promesa pinta su slot por su cuenta
+    // apenas resuelve, en el orden en que vayan llegando.
+    await Promise.allSettled([clubDestinoPromise, extraPromise]);
 
   } catch (e) {
     console.error("Error inesperado en dashboard:", e);
