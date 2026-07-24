@@ -649,6 +649,9 @@ async function compartirComprobante(url, btn) {
   const esDrive = url.includes('drive.google.com') || url.includes('docs.google.com');
   const fileId  = esDrive ? extraerFileIdDrive(url) : null;
 
+  console.log('[compartir] UA:', navigator.userAgent);
+  console.log('[compartir] fileId:', fileId, '| navigator.share existe:', !!navigator.share, '| navigator.canShare existe:', !!navigator.canShare);
+
   const textoOriginal = btn ? btn.innerHTML : null;
   function ponerCargando() {
     if (!btn) return;
@@ -667,6 +670,7 @@ async function compartirComprobante(url, btn) {
   if (fileId && navigator.share && navigator.canShare) {
     try {
       ponerCargando();
+      console.log('[compartir] llamando a Apps Script…');
 
       const gsRes = await fetch(APPSCRIPT_URL, {
         method:  'POST',
@@ -674,24 +678,36 @@ async function compartirComprobante(url, btn) {
         body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
       });
 
+      console.log('[compartir] status HTTP:', gsRes.status);
       const gsData = await gsRes.json();
+      console.log('[compartir] ok:', gsData.ok, '| base64 len:', gsData.data?.base64?.length, '| mimeType:', gsData.data?.mimeType);
       if (!gsData.ok) throw new Error(gsData.error || 'No se pudo obtener el archivo');
 
       const { base64, mimeType, nombre } = gsData.data;
       const blob    = base64ToBlob(base64, mimeType || 'application/pdf');
       const archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
+      console.log('[compartir] blob size:', blob.size, '| archivo type:', archivo.type);
 
-      if (navigator.canShare({ files: [archivo] })) {
+      const puedeCompartir = navigator.canShare({ files: [archivo] });
+      console.log('[compartir] canShare({files}):', puedeCompartir);
+
+      if (puedeCompartir) {
         restaurarBoton();
         await navigator.share({ files: [archivo], title: 'Comprobante' });
+        console.log('[compartir] share con archivo EXITOSO');
         return;
+      } else {
+        console.warn('[compartir] canShare devolvió false — este navegador no soporta compartir este tipo de archivo');
       }
     } catch (e) {
+      console.error('[compartir] ERROR:', e.name, '-', e.message);
       if (e.name === 'AbortError') { restaurarBoton(); return; } // usuario canceló el share sheet
       // Cualquier otro error (Apps Script caído, sin permiso, archivo muy grande, etc.): caer al fallback de link
     } finally {
       restaurarBoton();
     }
+  } else {
+    console.log('[compartir] NO entró al bloque de archivo — falta fileId, navigator.share o navigator.canShare');
   }
 
   // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive)
