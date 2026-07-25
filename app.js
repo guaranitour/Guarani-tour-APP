@@ -1,7 +1,7 @@
 // ── Estado global ──────────────────────────────────────────
 let allPassengers = [];
 let avatarCache = {};
-let currentView = "home";
+let currentView = "dashboard";
 let selectedIdx = null;
 let appReady = false;
 
@@ -161,7 +161,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     const idxParam = params.get("idx");
 
     const restorableViews = [
-      "home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
+      "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
       "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
     ];
 
@@ -171,11 +171,12 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
       navigateTo(gotoParam, idxParam || null);
     } else {
       // Si hay un hash en la URL al cargar, intentar restaurar esa vista
+      // (hash vacío se parsea como "dashboard", que ya es el destino por defecto)
       const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
-      if (hashView && hashView !== "home" && restorableViews.includes(hashView)) {
+      if (hashView && restorableViews.includes(hashView)) {
         navigateTo(hashView, hashIdx);
       } else {
-        navigateTo("home");
+        navigateTo("dashboard");
       }
     }
     // Mostrar novedades si el usuario no las vio aún
@@ -189,7 +190,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
 window.addEventListener("hashchange", () => {
   const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
   const restorableViews = [
-    "home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
+    "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
     "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
   ];
   if (hashView && restorableViews.includes(hashView)) {
@@ -232,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Navegación por hash ────────────────────────────────────
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
-const _hashSimpleViews = ["home","dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino"];
+const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
 
 function _buildHash(view, idx) {
@@ -254,7 +255,7 @@ function _setHash(view, idx) {
 
 function _parseHash(hash) {
   const raw = (hash || "").replace(/^#/, "");
-  if (!raw) return { view: "home", idx: null };
+  if (!raw) return { view: "dashboard", idx: null };
   const slashIdx = raw.indexOf("/");
   if (slashIdx === -1) return { view: raw, idx: null };
   const view = raw.slice(0, slashIdx);
@@ -265,6 +266,14 @@ function _parseHash(hash) {
 
 window.addEventListener("popstate", (event) => {
   if (!appReady) return;
+  // Si el sheet de módulos está abierto, "atrás" lo cierra en vez de
+  // navegar en el SPA: consumimos esta entrada del historial (la que
+  // agregamos al abrirlo en toggleModulosSheet) y listo.
+  if (_modulosSheetHistoryEntryOpen) {
+    _modulosSheetHistoryEntryOpen = false;
+    _closeModulosSheetUI();
+    return;
+  }
   const { view, idx } = _parseHash(location.hash);
   // Scroll guardado para esta entrada del historial (si existe)
   _pendingScrollY = (event.state && typeof event.state.scrollY === "number") ? event.state.scrollY : null;
@@ -315,15 +324,6 @@ function getSaludo() {
   return "Buenas noches";
 }
 
-function setHomeGreeting() {
-  const el = document.getElementById("home-greeting");
-  if (!el) return;
-  const primerNombre = (currentUserName || "").split(" ")[0];
-  el.textContent = primerNombre
-    ? `${getSaludo()}, ${primerNombre}`
-    : "Panel de inicio";
-}
-
 // Vistas donde probamos la View Transitions API (piloto: Base de clientes).
 // El navegador la soporta o no según el caso; si no existe, cae al comportamiento normal sin romper nada.
 const _vistasConTransicion = new Set(["clientes", "detalle"]);
@@ -367,7 +367,6 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (!_fromHash) _setHash(view, idx);
 
   // Ocultar todas las vistas
-  hideEl("view-home");
   hideEl("view-clientes");
   hideEl("view-detalle");
   hideEl("view-nuevo");
@@ -429,19 +428,10 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   _updateBottomNavActiveState(view);
   closeModulosSheet();
 
-  if (view === "home") {
-
-    showEl("view-home");
-    setHomeGreeting();
-    updateBreadcrumb([{ label: "Inicio" }]);
-
-  }
-
-  else if (view === "dashboard") {
+  if (view === "dashboard") {
 
     showEl("view-dashboard");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
       { label: "Panel de control" }
     ]);
     loadDashboard();
@@ -452,7 +442,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-ranking-puntos");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Panel de control", action: () => navigateTo("dashboard") },
       { label: "Ranking de puntos" }
     ]);
@@ -464,7 +454,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-club-destino");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Panel de control", action: () => navigateTo("dashboard") },
       { label: "Club Destino" }
     ]);
@@ -482,7 +472,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-clientes");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Base de clientes" }
     ]);
     if (allPassengers.length === 0) loadPassengers();
@@ -501,7 +491,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     limpiarFormulario();
     cargarVendedores("f-vendedor");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: "Nuevo cliente" }
     ]);
@@ -516,7 +506,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     renderDetalle(idx);
     const p = allPassengers.find(x => x._idx === idx);
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: p?.Pasajero || "Detalle" }
     ]);
@@ -530,7 +520,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     if (currentUserRole !== "admin") return;
     showEl("view-usuarios");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Usuarios" }
     ]);
     switchUsuariosTab("app", { force: true });
@@ -544,7 +534,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-viajes");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Viajes activos" }
     ]);
     loadViajes("activos");
@@ -555,7 +545,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-seleccion-asiento");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Selección de asiento" }
     ]);
     // Abrir automáticamente en nueva pestaña
@@ -567,7 +557,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-historico");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Histórico de viajes" }
     ]);
     const _hs = document.getElementById("historico-search");
@@ -580,7 +570,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-byc");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Estado ByC" }
     ]);
     initBycView();
@@ -591,7 +581,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-byc-vincular");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Estado ByC", action: () => navigateTo("byc") },
       { label: "Pendientes de vincular" }
     ]);
@@ -608,7 +598,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     document.getElementById("historial-titulo").textContent = nombre;
     document.getElementById("historial-subtitulo").textContent = "Viajes asistidos como protagonista";
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
       { label: nombre, action: () => navigateTo("detalle", idx) },
       { label: "Historial de viajes" }
@@ -622,7 +612,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     if (currentUserRole !== "admin") return;
     showEl("view-viaje-nuevo");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Viajes", action: () => navigateTo("viajes") },
       { label: "Nuevo viaje" }
     ]);
@@ -635,7 +625,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     if (currentUserRole !== "admin") return;
     showEl("view-viaje-editar");
     updateBreadcrumb([
-      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
       { label: "Viajes",  action: () => navigateTo("viajes") },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
       { label: "Editar viaje" }
@@ -648,7 +638,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-viaje-detalle");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Viajes", action: () => navigateTo("viajes") },
       { label: "Detalle" }
     ]);
@@ -660,7 +650,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-viaje-pasajero-nuevo");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Viajes", action: () => navigateTo("viajes") },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
       { label: "Agregar pasajero" }
@@ -674,7 +664,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     const { viajePasajeroId, viajeId, pasajeroId, nombrePasajero } = idx || {};
     showEl("view-viaje-pasajero-pagos");
     updateBreadcrumb([
-      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
       { label: "Viajes",  action: () => navigateTo("viajes") },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", viajeId) },
       { label: nombrePasajero || "Pagos" }
@@ -687,7 +677,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-pago-detalle");
     updateBreadcrumb([
-      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
       { label: "Viajes",  action: () => navigateTo("viajes") },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
       { label: idx?.nombrePasajero || "Pagos", action: () => navigateTo("viaje-pasajero-pagos", pagosCtx) },
@@ -701,7 +691,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-egreso-detalle");
     updateBreadcrumb([
-      { label: "Inicio",  action: () => navigateTo("home") },
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
       { label: "Viajes",  action: () => navigateTo("viajes") },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
       { label: "Egreso" }
@@ -714,7 +704,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-recibos");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Recibos" }
     ]);
     // Ocultar botón "Nuevo" para viewer
@@ -730,7 +720,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-recibo-detalle");
     updateBreadcrumb([
-      { label: "Inicio",   action: () => navigateTo("home") },
+      { label: "Inicio",   action: () => navigateTo("dashboard") },
       { label: "Recibos", action: () => navigateTo("recibos") },
       { label: "Detalle" }
     ]);
@@ -746,7 +736,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     }
     showEl("view-recibo-nuevo");
     updateBreadcrumb([
-      { label: "Inicio",   action: () => navigateTo("home") },
+      { label: "Inicio",   action: () => navigateTo("dashboard") },
       { label: "Recibos", action: () => navigateTo("recibos") },
       { label: "Nuevo recibo" }
     ]);
@@ -757,12 +747,12 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   else if (view === "movimientos") {
 
     if (!["admin", "worker"].includes(currentUserRole)) {
-      navigateTo("home");
+      navigateTo("dashboard");
       return;
     }
     showEl("view-movimientos");
     updateBreadcrumb([
-      { label: "Inicio", action: () => navigateTo("home") },
+      { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Movimientos bancarios" }
     ]);
     cargarMovimientos();
@@ -778,7 +768,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     }
     showEl("view-movimiento-nuevo");
     updateBreadcrumb([
-      { label: "Inicio",                  action: () => navigateTo("home") },
+      { label: "Inicio",                  action: () => navigateTo("dashboard") },
       { label: "Movimientos bancarios",   action: () => navigateTo("movimientos") },
       { label: "Nuevo movimiento" }
     ]);
@@ -1234,11 +1224,10 @@ function setField(id, value) {
 
 // ══════════════════════════════════════════════════════════
 // BOTTOM NAVBAR — Inicio / Módulos / Más
-// El sheet de "Módulos" replica el inventario de accesos que hoy
-// vive en #view-home (mismos slugs, íconos y reglas de visibilidad
-// por rol), pero con nombres cortos, sin descripción y en grid de 3.
-// No depende de #view-home: si ese módulo se elimina más adelante,
-// esta lista sigue funcionando sola.
+// El sheet de "Módulos" es el inventario de accesos a los módulos
+// de la app (mismos slugs, íconos y reglas de visibilidad por rol
+// que antes tenía la vista de inicio, ya eliminada), con nombres
+// cortos, sin descripción y en grid de 3.
 // ══════════════════════════════════════════════════════════
 const MODULOS_MENU = [
   { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)" },
@@ -1265,20 +1254,12 @@ function _renderModulosSheet() {
   `).join("");
 }
 
-function toggleModulosSheet() {
-  const sheet = document.getElementById("modulos-sheet");
-  const overlay = document.getElementById("modulos-overlay");
-  const btn = document.getElementById("bn-modulos");
-  if (!sheet || !overlay) return;
-  const abrir = !sheet.classList.contains("open");
-  if (abrir) _renderModulosSheet();
-  sheet.classList.toggle("open", abrir);
-  overlay.classList.toggle("open", abrir);
-  if (btn) { btn.classList.toggle("active", abrir); btn.setAttribute("aria-expanded", String(abrir)); }
-  document.body.style.overflow = abrir ? "hidden" : "";
-}
+// Marca si hay una entrada de historial "de más" agregada al abrir el
+// sheet, específicamente para que el botón/gesto atrás lo cierre en vez
+// de navegar en el SPA. La consume el listener de popstate de arriba.
+let _modulosSheetHistoryEntryOpen = false;
 
-function closeModulosSheet() {
+function _closeModulosSheetUI() {
   const sheet = document.getElementById("modulos-sheet");
   const overlay = document.getElementById("modulos-overlay");
   const btn = document.getElementById("bn-modulos");
@@ -1286,6 +1267,38 @@ function closeModulosSheet() {
   if (overlay) overlay.classList.remove("open");
   if (btn) { btn.classList.remove("active"); btn.setAttribute("aria-expanded", "false"); }
   document.body.style.overflow = "";
+}
+
+function toggleModulosSheet() {
+  const sheet = document.getElementById("modulos-sheet");
+  const overlay = document.getElementById("modulos-overlay");
+  const btn = document.getElementById("bn-modulos");
+  if (!sheet || !overlay) return;
+  const abrir = !sheet.classList.contains("open");
+  if (abrir) {
+    _renderModulosSheet();
+    // Entrada extra en el historial: así "atrás" cierra el sheet en vez
+    // de navegar a la vista anterior del SPA (ver popstate más arriba).
+    history.pushState({ modulosSheet: true }, "", location.hash);
+    _modulosSheetHistoryEntryOpen = true;
+  }
+  sheet.classList.toggle("open", abrir);
+  overlay.classList.toggle("open", abrir);
+  if (btn) { btn.classList.toggle("active", abrir); btn.setAttribute("aria-expanded", String(abrir)); }
+  document.body.style.overflow = abrir ? "hidden" : "";
+}
+
+function closeModulosSheet() {
+  // Si el cierre viene de tocar la X, el overlay, o elegir un módulo (no
+  // del botón atrás), todavía queda pendiente la entrada de historial
+  // que agregamos al abrir: la consumimos con un back silencioso para
+  // no dejar una entrada fantasma que el usuario tendría que "gastar"
+  // después con otro atrás.
+  if (_modulosSheetHistoryEntryOpen) {
+    _modulosSheetHistoryEntryOpen = false;
+    history.back();
+  }
+  _closeModulosSheetUI();
 }
 
 // Resalta "Inicio" cuando la vista activa es el dashboard (que ahora
