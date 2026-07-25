@@ -584,7 +584,12 @@
 
 .dash-greet-text h1 {
   font-family: 'Roboto', sans-serif;
-  font-size: 1.6rem;
+  /* Escala fluida calibrada para que un saludo típico
+     ("¡Buenas tardes, Nombre!") entre en una sola línea junto a la
+     fecha desde ~340px de ancho. Con nombres muy largos en pantallas
+     extremadamente angostas puede pasar a 2 líneas, pero de forma
+     prolija (word-wrap normal) en vez de competir por espacio con la pill. */
+  font-size: clamp(1rem, 5.6vw, 1.6rem);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -.01em;
@@ -616,11 +621,10 @@
 }
 .dash-greet-date svg { flex-shrink: 0; color: var(--text-muted); }
 
-/* En pantallas muy angostas el título ya viene achicado por su propio
-   font-size responsivo del proyecto; si igual no entra, achicamos la
-   fecha en vez de tirarla abajo, para que se mantenga siempre al costado. */
+/* Caso extremo (pantallas muy angostas, ~320px): además de que el
+   título ya se achicó con clamp(), reducimos un poco la pill de fecha
+   para asegurar que ambos entren cómodos en una sola fila. */
 @media (max-width: 340px) {
-  .dash-greet-text h1 { font-size: 1.35rem; }
   .dash-greet-date { font-size: .7rem; padding: .3rem .55rem; }
 }
 
