@@ -1291,12 +1291,15 @@ function toggleModulosSheet() {
 function closeModulosSheet() {
   // Si el cierre viene de tocar la X, el overlay, o elegir un módulo (no
   // del botón atrás), todavía queda pendiente la entrada de historial
-  // que agregamos al abrir: la consumimos con un back silencioso para
-  // no dejar una entrada fantasma que el usuario tendría que "gastar"
-  // después con otro atrás.
+  // que agregamos al abrir. La colapsamos con replaceState (en vez de
+  // history.back()) para no competir con una navegación que pueda
+  // haber ocurrido en el mismo gesto (ej. elegir un módulo hace
+  // navigateTo(slug) justo antes de este cierre, lo que ya empujó el
+  // hash del destino): replaceState toma el hash actual tal cual esté
+  // en ese momento y solo descarta la entrada extra, sin retroceder.
   if (_modulosSheetHistoryEntryOpen) {
     _modulosSheetHistoryEntryOpen = false;
-    history.back();
+    history.replaceState({ scrollY: window.scrollY }, "", location.hash);
   }
   _closeModulosSheetUI();
 }
