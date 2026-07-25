@@ -1,43 +1,36 @@
 /* ─────────────────────────────────────────────
-   novedades.js — Inauguración Guaraní Tour App
-   Slide narrativo: Antes → Transición → Hoy
+   novedades.js — Novedades Guaraní Tour App
+   Slide narrativo con los últimos cambios de la app
 ───────────────────────────────────────────── */
 
-const _NOV_VERSION = "inaug-v1";
+const _NOV_VERSION = "navbar-v1";
 
-// ── Slides de inauguración (visibles para todos los roles) ──
+// ── Slides de novedades (visibles para todos los roles) ──
 const _NOV_SLIDES_INAUG = [
   {
-    tipo: "pasado",
-    etiqueta: "Antes",
-    titulo: "Así empezamos",
-    texto: "Los viajes se controlaban en Excel. Los datos dependían de carga manual y de una sola persona.",
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/>
-      <line x1="8" y1="13" x2="16" y2="13"/>
-      <line x1="8" y1="17" x2="16" y2="17"/>
-      <line x1="8" y1="9" x2="10" y2="9"/>
-    </svg>`,
-  },
-  {
-    tipo: "transicion",
-    etiqueta: "El cambio",
-    titulo: "Construimos algo propio",
-    texto: "Empezamos a ordenar la información y a construir una herramienta pensada para el equipo, paso a paso.",
+    tipo: "hoy",
+    etiqueta: "Novedad",
+    titulo: "Guaraní Tour App sigue evolucionando",
+    texto: "Seguimos mejorando la app todo el tiempo. Estos son los últimos cambios que ya podés usar.",
     icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
     </svg>`,
   },
   {
     tipo: "hoy",
-    etiqueta: "Hoy",
-    titulo: "Guaraní Tour App",
-    texto: "Viajes, pasajeros y pagos en tiempo real. Más claro, más rápido y más confiable.\n\nY esto es solo el comienzo.",
+    etiqueta: "Nuevo inicio",
+    titulo: "El Dashboard es ahora tu inicio",
+    texto: "Al entrar a la app ya vas directo al Panel de control, con los KPIs y el resumen de la operación a la vista.",
     icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
+      <path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>
     </svg>`,
+  },
+  {
+    tipo: "hoy",
+    etiqueta: "Barra de navegación",
+    titulo: "Menú y acceso directo configurable",
+    texto: "Abajo tenés todo más a mano: el botón Menú te muestra todos los módulos en un solo toque, y el botón de la derecha lo configurás vos con el módulo que más usás.\n\nY esto es solo el comienzo: seguirán llegando grandes cambios.",
+    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
   },
 ];
 
@@ -68,10 +61,10 @@ function _renderInaugModal() {
   }
 
   overlay.innerHTML = `
-    <div class="nov-sheet" role="dialog" aria-modal="true" aria-label="Inauguración">
+    <div class="nov-sheet" role="dialog" aria-modal="true" aria-label="Novedades">
 
       <div class="nov-header">
-        <div class="nov-header-label">🎉 Inauguración</div>
+        <div class="nov-header-label">🎉 Novedades</div>
         <button class="nov-close" onclick="_cerrarNovedades()" aria-label="Cerrar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
