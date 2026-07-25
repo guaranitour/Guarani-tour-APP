@@ -52,6 +52,7 @@ function showEl(id) {
   if (id === "app-view") {
     const nav = document.getElementById("bottom-nav");
     if (nav) nav.style.display = "";
+    if (typeof _renderShortcutButton === "function") _renderShortcutButton();
   }
 }
 function hideEl(id) {
@@ -59,7 +60,8 @@ function hideEl(id) {
   if (id === "app-view") {
     const nav = document.getElementById("bottom-nav");
     if (nav) nav.style.display = "none";
-    closeModulosSheet();
+    if (typeof closeModulosSheet === "function") closeModulosSheet();
+    if (typeof closeShortcutPicker === "function") closeShortcutPicker();
   }
 }
 
@@ -1287,10 +1289,114 @@ function closeModulosSheet() {
 }
 
 // Resalta "Inicio" cuando la vista activa es el dashboard (que ahora
-// hace las veces de pantalla principal de la app).
+// hace las veces de pantalla principal de la app), y el acceso directo
+// cuando la vista activa coincide con el módulo elegido para él.
 function _updateBottomNavActiveState(view) {
   const btnInicio = document.getElementById("bn-inicio");
   if (btnInicio) btnInicio.classList.toggle("active", view === "dashboard");
+
+  const btnShortcut = document.getElementById("bn-shortcut");
+  if (btnShortcut) btnShortcut.classList.toggle("active", view !== "dashboard" && view === getShortcutSlug());
+}
+
+// ══════════════════════════════════════════════════════════
+// ACCESO DIRECTO (3er botón del navbar) — configurable
+// El usuario elige, de entre los mismos módulos del Menú, cuál quiere
+// tener a un toque en el navbar. Se guarda en localStorage (mismo
+// mecanismo que el tema claro/oscuro), por dispositivo/navegador.
+// ══════════════════════════════════════════════════════════
+const SHORTCUT_KEY = "gt-bn-shortcut";
+
+// Íconos lineales propios para pintar dentro del botón del navbar
+// (no dependemos de que la imagen PNG remota cargue rápido ahí).
+const SHORTCUT_ICONS = {
+  clientes:            `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  viajes:               `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`,
+  recibos:              `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  movimientos:          `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`,
+  byc:                  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>`,
+  historico:            `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+  "seleccion-asiento":  `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="10" rx="2"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/></svg>`,
+  usuarios:             `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>`,
+};
+const SHORTCUT_ICON_DEFAULT = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+function getShortcutSlug() {
+  try { return localStorage.getItem(SHORTCUT_KEY); } catch (e) { return null; }
+}
+
+function setShortcutSlug(slug) {
+  try { localStorage.setItem(SHORTCUT_KEY, slug); } catch (e) {}
+  _renderShortcutButton();
+}
+
+// Pinta el botón del navbar según el módulo elegido (o el estado
+// "sin elegir" por defecto, invitando a tocarlo).
+function _renderShortcutButton() {
+  const btn   = document.getElementById("bn-shortcut");
+  const icon  = document.getElementById("bn-shortcut-icon");
+  const label = document.getElementById("bn-shortcut-label");
+  if (!btn || !icon || !label) return;
+
+  const slug = getShortcutSlug();
+  const modulo = MODULOS_MENU.find(m => m.slug === slug);
+  const visibleParaRol = modulo && (!modulo.roles || modulo.roles.includes(currentUserRole));
+
+  if (visibleParaRol) {
+    icon.outerHTML = (SHORTCUT_ICONS[modulo.slug] || SHORTCUT_ICON_DEFAULT).replace("<svg ", '<svg id="bn-shortcut-icon" ');
+    label.textContent = modulo.label;
+    btn.classList.add("has-shortcut");
+  } else {
+    // Sin elegir todavía, o el rol actual ya no tiene acceso a lo elegido
+    document.getElementById("bn-shortcut-icon").outerHTML = SHORTCUT_ICON_DEFAULT.replace("<svg ", '<svg id="bn-shortcut-icon" ');
+    label.textContent = "Elegir";
+    btn.classList.remove("has-shortcut");
+  }
+}
+
+// Tap corto en el botón: si ya hay un acceso directo elegido, navega
+// directo; si no, abre el selector (mismo destino que tocar el lápiz).
+function onShortcutTap(evt) {
+  if (evt && evt.target.closest("#bn-shortcut-edit")) return; // ya manejado aparte
+  const slug = getShortcutSlug();
+  const modulo = MODULOS_MENU.find(m => m.slug === slug);
+  const visibleParaRol = modulo && (!modulo.roles || modulo.roles.includes(currentUserRole));
+  if (visibleParaRol) navigateTo(modulo.slug);
+  else openShortcutPicker();
+}
+
+function _renderShortcutSheet() {
+  const grid = document.getElementById("shortcut-sheet-grid");
+  if (!grid) return;
+  const seleccionado = getShortcutSlug();
+  const visibles = MODULOS_MENU.filter(m => !m.roles || m.roles.includes(currentUserRole));
+  grid.innerHTML = visibles.map(m => `
+    <button type="button" class="modulo-item ${m.slug === seleccionado ? "is-selected" : ""}" style="--modulo-icon-bg:${m.bg}" onclick="setShortcutSlug('${m.slug}'); closeShortcutPicker();">
+      <span class="modulo-item-icon">
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/img/${m.img}" alt="" width="24" height="24">
+      </span>
+      <span class="modulo-item-label">${m.label}</span>
+    </button>
+  `).join("");
+}
+
+function openShortcutPicker() {
+  closeModulosSheet();
+  const sheet = document.getElementById("shortcut-sheet");
+  const overlay = document.getElementById("shortcut-overlay");
+  if (!sheet || !overlay) return;
+  _renderShortcutSheet();
+  sheet.classList.add("open");
+  overlay.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeShortcutPicker() {
+  const sheet = document.getElementById("shortcut-sheet");
+  const overlay = document.getElementById("shortcut-overlay");
+  if (sheet) sheet.classList.remove("open");
+  if (overlay) overlay.classList.remove("open");
+  document.body.style.overflow = "";
 }
 
 // ── Menú hamburguesa ───────────────────────────────────────
