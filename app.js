@@ -409,6 +409,9 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     fabViaje.style.display = (view === "viajes" && currentUserRole === "admin") ? "" : "none";
   }
 
+  _updateBottomNavActiveState(view);
+  closeModulosSheet();
+
   if (view === "home") {
 
     showEl("view-home");
@@ -1210,6 +1213,69 @@ function setField(id, value) {
   if (!el) return;
   if (value) { el.textContent = value; el.classList.remove("empty"); }
   else       { el.textContent = "No registrado"; el.classList.add("empty"); }
+}
+
+// ══════════════════════════════════════════════════════════
+// BOTTOM NAVBAR — Inicio / Módulos / Más
+// El sheet de "Módulos" replica el inventario de accesos que hoy
+// vive en #view-home (mismos slugs, íconos y reglas de visibilidad
+// por rol), pero con nombres cortos, sin descripción y en grid de 3.
+// No depende de #view-home: si ese módulo se elimina más adelante,
+// esta lista sigue funcionando sola.
+// ══════════════════════════════════════════════════════════
+const MODULOS_MENU = [
+  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)" },
+  { slug: "viajes",             label: "Viajes",      img: "viajes.png",    bg: "rgba(45,106,79,.12)" },
+  { slug: "recibos",            label: "Recibos",     img: "recibo.png",    bg: "rgba(201,168,76,.18)" },
+  { slug: "movimientos",        label: "Movimientos", img: "bancario.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker"] },
+  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)" },
+  { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)" },
+  { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
+  { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
+];
+
+function _renderModulosSheet() {
+  const grid = document.getElementById("modulos-sheet-grid");
+  if (!grid) return;
+  const visibles = MODULOS_MENU.filter(m => !m.roles || m.roles.includes(currentUserRole));
+  grid.innerHTML = visibles.map(m => `
+    <button type="button" class="modulo-item" style="--modulo-icon-bg:${m.bg}" onclick="navigateTo('${m.slug}'); closeModulosSheet();">
+      <span class="modulo-item-icon">
+        <img src="https://guaranitour.github.io/Guarani-tour-APP/img/${m.img}" alt="" width="24" height="24">
+      </span>
+      <span class="modulo-item-label">${m.label}</span>
+    </button>
+  `).join("");
+}
+
+function toggleModulosSheet() {
+  const sheet = document.getElementById("modulos-sheet");
+  const overlay = document.getElementById("modulos-overlay");
+  const btn = document.getElementById("bn-modulos");
+  if (!sheet || !overlay) return;
+  const abrir = !sheet.classList.contains("open");
+  if (abrir) _renderModulosSheet();
+  sheet.classList.toggle("open", abrir);
+  overlay.classList.toggle("open", abrir);
+  if (btn) { btn.classList.toggle("active", abrir); btn.setAttribute("aria-expanded", String(abrir)); }
+  document.body.style.overflow = abrir ? "hidden" : "";
+}
+
+function closeModulosSheet() {
+  const sheet = document.getElementById("modulos-sheet");
+  const overlay = document.getElementById("modulos-overlay");
+  const btn = document.getElementById("bn-modulos");
+  if (sheet) sheet.classList.remove("open");
+  if (overlay) overlay.classList.remove("open");
+  if (btn) { btn.classList.remove("active"); btn.setAttribute("aria-expanded", "false"); }
+  document.body.style.overflow = "";
+}
+
+// Resalta "Inicio" cuando la vista activa es el dashboard (que ahora
+// hace las veces de pantalla principal de la app).
+function _updateBottomNavActiveState(view) {
+  const btnInicio = document.getElementById("bn-inicio");
+  if (btnInicio) btnInicio.classList.toggle("active", view === "dashboard");
 }
 
 // ── Menú hamburguesa ───────────────────────────────────────
