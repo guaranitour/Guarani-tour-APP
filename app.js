@@ -45,8 +45,23 @@ async function getBancos() {
 }
 
 // ── Visibilidad ────────────────────────────────────────────
-function showEl(id)  { document.getElementById(id).style.display = ""; }
-function hideEl(id)  { document.getElementById(id).style.display = "none"; }
+function showEl(id) {
+  document.getElementById(id).style.display = "";
+  // El bottom navbar vive fuera de #app-view a propósito (ver comentario
+  // en el HTML), así que su visibilidad se sincroniza a mano acá.
+  if (id === "app-view") {
+    const nav = document.getElementById("bottom-nav");
+    if (nav) nav.style.display = "";
+  }
+}
+function hideEl(id) {
+  document.getElementById(id).style.display = "none";
+  if (id === "app-view") {
+    const nav = document.getElementById("bottom-nav");
+    if (nav) nav.style.display = "none";
+    closeModulosSheet();
+  }
+}
 
 function showLogin() {
   appReady = false;

@@ -1767,8 +1767,16 @@
   </div>
 </div>
 
+  </div><!-- /app-view -->
+
   <!-- ── BOTTOM NAVBAR (Inicio / Módulos / Más) ───────────────── -->
-  <nav class="bottom-nav" id="bottom-nav" aria-label="Navegación principal">
+  <!-- Vive FUERA de #app-view a propósito: #app-view tiene una animación
+       de entrada (cardIn) con transform, y cualquier transform en un
+       ancestro convierte a ese ancestro en containing block para los
+       hijos position:fixed — el navbar quedaría anclado al final del
+       contenido en vez de pegado a la ventana. Como hermano de
+       #app-view, queda fijo respecto al viewport real. -->
+  <nav class="bottom-nav" id="bottom-nav" aria-label="Navegación principal" style="display:none">
     <button type="button" class="bn-item" id="bn-inicio" onclick="navigateTo('dashboard')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
       <span>Inicio</span>
@@ -1797,8 +1805,6 @@
     </div>
     <div class="modulos-sheet-grid" id="modulos-sheet-grid"></div>
   </div>
-
-  </div><!-- /app-view -->
 
   <!-- ── MODAL: ACERCA DE ── -->
   <div id="modal-acerca" class="acerca-overlay" style="display:none" onclick="cerrarAcercaDe(event)">
