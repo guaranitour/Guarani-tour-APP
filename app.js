@@ -278,10 +278,21 @@ window.addEventListener("popstate", (event) => {
   const { view, idx } = _parseHash(location.hash);
   // Scroll guardado para esta entrada del historial (si existe)
   _pendingScrollY = (event.state && typeof event.state.scrollY === "number") ? event.state.scrollY : null;
-  // Vistas con idx objeto no se pueden restaurar desde hash → ir al padre
-  const objectIdxViews = ["viaje-pasajero-pagos","egreso-detalle"];
+  // Vistas con idx objeto no se pueden restaurar solo desde el hash (no
+  // guarda datos); egreso-detalle no tiene contexto en memoria para
+  // reconstruirse, así que va al padre. viaje-pasajero-pagos sí lo tiene
+  // (pagosCtx), así que se resuelve más abajo, junto con pago-detalle.
+  const objectIdxViews = ["egreso-detalle"];
   if (objectIdxViews.includes(view)) {
     navigateTo("viajes");
+    return;
+  }
+  if (view === "viaje-pasajero-pagos") {
+    if (pagosCtx?.viajeId) {
+      navigateTo("viaje-detalle", pagosCtx.viajeId);
+    } else {
+      navigateTo("viajes");
+    }
     return;
   }
   if (view === "pago-detalle") {
