@@ -934,7 +934,7 @@ function _renderAlertasViaje() {
   const slot = document.getElementById("detalle-viaje-alertas-btn");
   if (!slot) return;
 
-  const conDeuda   = pasajerosDelViaje.filter(p => p._pillClass === "deuda");
+  const conDeuda   = pasajerosDelViaje.filter(p => p._pillClass === "deuda" || p._pillClass === "parcial");
   const sinByc     = pasajerosDelViaje.filter(p => p._sinByc);
   const reservados = pasajerosDelViaje.filter(p => /reservado/i.test(p._nombre || ""));
 
@@ -1002,7 +1002,7 @@ function irAAlertaViaje(tipo) {
   // Aplicar filtro correspondiente
   _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
   if (tipo === "deuda") {
-    _filtrosVP.pago = "deuda";
+    _filtrosVP.pago = ["deuda", "parcial"];
   } else if (tipo === "byc") {
     _filtrosVP.byc = "pendiente";
   } else if (tipo === "reservado") {
@@ -1059,7 +1059,8 @@ function _aplicarFiltrosVP(qOverride) {
 
   // Filtro estado de pago
   if (_filtrosVP.pago) {
-    filtrados = filtrados.filter(p => p._pillClass === _filtrosVP.pago);
+    const pagoFiltro = Array.isArray(_filtrosVP.pago) ? _filtrosVP.pago : [_filtrosVP.pago];
+    filtrados = filtrados.filter(p => pagoFiltro.includes(p._pillClass));
   }
 
   // Filtro BYC pendiente
