@@ -1880,9 +1880,25 @@ function switchViajeTab(tab) {
   const panelRes = document.getElementById("panel-resumen");
   if (panelRes) panelRes.style.display = tab === "resumen" ? "" : "none";
 
+  if (tab === "pasajeros")   _refrescarPasajerosSiCorresponde();
   if (tab === "egresos")     loadEgresos(viajeActualId);
   if (tab === "presupuesto") loadPresupuesto(viajeActualId);
   if (tab === "resumen")     loadResumen(viajeActualId);
+}
+
+// Al volver al tab Pasajeros desde otro tab (egresos/presupuesto/resumen),
+// la lista ya está pintada desde loadViajeDetalle, pero pudo quedar
+// desactualizada si se hizo algo en otro tab (ej. un pago). Refresca en
+// silencio, igual que el refresco de fondo que ya corre al reentrar a la
+// vista de viaje-detalle desde afuera.
+async function _refrescarPasajerosSiCorresponde() {
+  if (!viajeActualId) return;
+  try {
+    await _cargarYPintarViajeDetalle(viajeActualId, { silencioso: true });
+  } catch (err) {
+    console.error("Error refrescando pasajeros al volver del tab:", err);
+    _setRefrescandoIndicador(false);
+  }
 }
 
 /* ── SWIPE HORIZONTAL ENTRE TABS (desde las cards) ─── */
