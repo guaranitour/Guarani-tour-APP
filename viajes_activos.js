@@ -1960,8 +1960,10 @@ function _cambiarTabViajePorSwipe(direccion) {
 // Caché para los selects del form
 let _egresosCategorias = [];
 let _egresosMetodos    = [];
+let _egresosLoadToken  = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
 
 async function loadEgresos(viajeId) {
+  const miToken = ++_egresosLoadToken;
   const listEl = document.getElementById("egresos-list");
   const btnAdd = document.getElementById("btn-agregar-egreso");
   if (!listEl) return;
@@ -1981,6 +1983,12 @@ async function loadEgresos(viajeId) {
     .eq("viaje_id", viajeId)
     .order("fecha", { ascending: false });
 
+  // Si mientras esperábamos esta respuesta el usuario ya cambió de viaje
+  // (o volvió a entrar a este mismo tab, dos veces seguidas), esta
+  // respuesta quedó obsoleta: no pisar la vista con datos de otro viaje.
+  if (miToken !== _egresosLoadToken) return;
+  if (viajeId !== viajeActualId) return;
+
   if (error) {
     console.error("Error cargando egresos:", error);
     listEl.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar egresos</div>`;
@@ -1992,6 +2000,10 @@ async function loadEgresos(viajeId) {
     supabaseClient.from("categorias").select("id, nombre"),
     getMetodosPago()
   ]);
+
+  if (miToken !== _egresosLoadToken) return;
+  if (viajeId !== viajeActualId) return;
+
   const catMap = Object.fromEntries((catData || []).map(c => [c.id, c.nombre]));
   const metMap = Object.fromEntries(metDataRaw.map(m => [m.id, m.metodo_de_pago]));
 
@@ -2392,7 +2404,10 @@ let _presupuestoCategorias = [];   // caché de categorías globales
 let _presupuestoOriginal   = {};   // { categoria_id: monto } al cargar para detectar cambios
 let _presupuestoModoEdicion = false;
 
+let _presupuestoLoadToken = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
+
 async function loadPresupuesto(viajeId) {
+  const miToken = ++_presupuestoLoadToken;
   const listEl  = document.getElementById("presupuesto-list");
   const btnReg  = document.getElementById("btn-registrar-presupuesto");
   const btnEdit = document.getElementById("btn-editar-presupuesto");
@@ -2428,6 +2443,10 @@ async function loadPresupuesto(viajeId) {
       .eq("scope", parseInt(viajeId))
       .order("nombre", { ascending: true })
   ]);
+
+  // Respuesta obsoleta: el usuario ya cambió de viaje o de tab dos veces.
+  if (miToken !== _presupuestoLoadToken) return;
+  if (viajeId !== viajeActualId) return;
 
   if (error) {
     listEl.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar presupuesto.</div>`;
