@@ -9,34 +9,33 @@ async function loadResumen(viajeId) {
 
   cont.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
-  /* ── Queries en paralelo ─────────────────────── */
+  /* ── Pasajeros del viaje (se necesita antes para filtrar pagos) ── */
+  const { data: vpRows } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select(`
+      id, total_a_pagar, asistencia, puntos_destino,
+      pasajeros ( Vendedor, Sexo )
+    `)
+    .eq("viaje_id", viajeId);
+
+  // Ids de este viaje, para filtrar pagos directo por viajeId
+  // (no se usa la variable global pasajerosDelViaje: puede no
+  // corresponder todavía al viaje que se está cargando).
+  const vpIds = (vpRows || []).map(v => v.id);
+
+  /* ── Resto de queries en paralelo ────────────── */
   const [
-    { data: vpRows },
     { data: pagosRows },
     { data: egresosRows },
     { data: presRows },
     { data: catRows },
     { data: metodosRows }
   ] = await Promise.all([
-    // Pasajeros del viaje + join a pasajeros para Vendedor y Sexo
-    supabaseClient
-      .from("viaje_pasajeros")
-      .select(`
-        id, total_a_pagar, asistencia, puntos_destino,
-        pasajeros ( Vendedor, Sexo )
-      `)
-      .eq("viaje_id", viajeId),
-
-    // Todos los pagos: monto, tipo y método
+    // Todos los pagos de este viaje: monto, tipo y método
     supabaseClient
       .from("pagos")
       .select("viaje_pasajero_id, monto, tipo, metodo_pago_id")
-      .in(
-        "viaje_pasajero_id",
-        (pasajerosDelViaje && pasajerosDelViaje.length > 0)
-          ? pasajerosDelViaje.map(p => p.id)
-          : ["__none__"]
-      ),
+      .in("viaje_pasajero_id", vpIds.length > 0 ? vpIds : ["__none__"]),
 
     // Egresos: monto, categoría y caja_saliente (método de pago)
     supabaseClient
