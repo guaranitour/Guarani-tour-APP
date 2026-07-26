@@ -836,6 +836,19 @@ async function loadViajeDetalle(viajeId) {
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
         Sin pasajeros aún
       </div>`;
+
+    // Resetear estado del viaje anterior: sin esto, el badge de alertas
+    // y los filtros quedaban pegados al cambiar a un viaje sin pasajeros.
+    pasajerosDelViaje = [];
+    _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
+    const buscadorVacio = document.getElementById("buscador-vp");
+    if (buscadorVacio) buscadorVacio.value = "";
+    const panelFVacio = document.getElementById("filtro-panel-vp");
+    if (panelFVacio) panelFVacio.style.display = "none";
+    const counterVacio = document.getElementById("vp-asistencia-counter");
+    if (counterVacio) counterVacio.style.display = "none";
+    _renderAlertasViaje();
+
     return;
   }
 
