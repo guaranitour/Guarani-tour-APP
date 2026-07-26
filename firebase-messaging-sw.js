@@ -27,22 +27,27 @@ messaging.onBackgroundMessage((payload) => {
       icon: data.icon || "/Guarani-tour-APP/icons/guaranitour_192.png",
       badge: "/Guarani-tour-APP/icons/badge_96.png",
       image: data.image || undefined,
-      data: { link: data.link || "/Guarani-tour-APP/?goto=viajes" }
+      data: { link: data.link || "/Guarani-tour-APP/#viajes" }
     }
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/Guarani-tour-APP/?goto=viajes";
+  const link = event.notification.data?.link || "/Guarani-tour-APP/#viajes";
+  const [targetPath, targetHash = ""] = link.split("#");
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      // Si ya hay una ventana/pestaña de la PWA abierta, la reutilizamos
-      // y navegamos ahí directo a la vista de viajes.
+      // Si ya hay una ventana/pestaña de la PWA abierta, la reutilizamos.
       for (const client of windowClients) {
         if (client.url.includes("/Guarani-tour-APP/") && "focus" in client) {
-          client.navigate(link);
+          // client.navigate() con solo un cambio de hash no siempre dispara
+          // el router de la SPA (algunos navegadores no consideran eso una
+          // "navegación" real). Mandamos un postMessage para que la app
+          // navegue explícitamente vía su router, y navigate() como respaldo.
+          client.postMessage({ type: "PUSH_NAVIGATE", hash: targetHash });
+          client.navigate(link).catch(() => {});
           return client.focus();
         }
       }
