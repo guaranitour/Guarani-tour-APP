@@ -236,10 +236,22 @@ document.addEventListener("DOMContentLoaded", () => {
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
 const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino","byc","byc-vincular"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
+// Vistas con idx objeto, pero que SÍ necesitan un hash distinto por
+// instancia (si no, dos pantallas distintas comparten el mismo hash
+// plano, _setHash no pushea una entrada nueva, y "atrás" se salta un
+// nivel). Se identifican con un campo puntual del objeto idx.
+const _hashObjectViews = {
+  "viaje-pasajero-pagos": (idx) => idx?.viajePasajeroId,
+  "pago-detalle"        : (idx) => idx?.id,
+};
 
 function _buildHash(view, idx) {
   if (_hashNumericViews.includes(view) && idx !== null && typeof idx === "number") {
     return `#${view}/${idx}`;
+  }
+  if (_hashObjectViews[view]) {
+    const key = _hashObjectViews[view](idx);
+    if (key !== null && key !== undefined) return `#${view}/${key}`;
   }
   return `#${view}`;
 }
@@ -691,8 +703,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     updateBreadcrumb([
       { label: "Inicio",  action: () => navigateTo("dashboard") },
       { label: "Viajes",  action: () => navigateTo("viajes") },
-      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
-      { label: idx?.nombrePasajero || "Pagos", action: () => navigateTo("viaje-pasajero-pagos", pagosCtx) },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", pagosCtx?.viajeId) },
+      { label: pagosCtx?.nombrePasajero || "Pagos", action: () => navigateTo("viaje-pasajero-pagos", pagosCtx) },
       { label: "Detalle pago" }
     ]);
     initPagoDetalleView(idx);
