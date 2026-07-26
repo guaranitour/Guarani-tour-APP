@@ -545,7 +545,16 @@ function renderKpisByc(bycData, pasajerosData) {
 
 // ── Viajes activos y total de pasajeros ──────────────────────
 function renderViajesActivos(viajesData, vpData) {
-  const activos = viajesData.filter(v => (v.estado || "activo") === "activo");
+  const activos = viajesData
+    .filter(v => (v.estado || "activo") === "activo")
+    .sort((a, b) => {
+      // Los que no tienen fecha_salida quedan al final, sin alterar
+      // el orden entre sí.
+      if (!a.fecha_salida && !b.fecha_salida) return 0;
+      if (!a.fecha_salida) return 1;
+      if (!b.fecha_salida) return -1;
+      return a.fecha_salida.localeCompare(b.fecha_salida);
+    });
 
   const countsByViaje = {};
   vpData.forEach(vp => {
