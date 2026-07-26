@@ -854,6 +854,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   const listEl = document.getElementById("viaje-pasajeros-list");
 
 
+
   // ✅ AHORA SÍ existe
   viajeActualData = viaje;
 
