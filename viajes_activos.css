@@ -281,6 +281,20 @@
   text-align: center;
 }
 
+/* Refresco de fondo: mientras se revalida el detalle del viaje en
+   segundo plano (ej. al volver de un pasajero/pago), el texto del
+   contador se reemplaza por puntos con un parpadeo suave, sin
+   remover ni desplazar el elemento de la vista. */
+#vp-asistencia-counter.vp-counter-refrescando {
+  letter-spacing: .15em;
+  animation: vp-counter-pulse 1s ease-in-out infinite;
+}
+
+@keyframes vp-counter-pulse {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: .9; }
+}
+
 /* ── FILA DE PASAJERO EN DETALLE ───────────── */
 
 .viaje-pasajero-row {

@@ -15,6 +15,12 @@ let reemplazoCtx = {
 };
 // CIs normalizados presentes en basesycondiciones (aceptaron ByC)
 let _bycAceptados = new Set();
+
+// Cache en memoria del detalle de viaje, por viajeId. Vive solo mientras
+// la app sigue abierta (se pierde al recargar). Permite pintar la vista
+// al instante al volver de un pasajero/pago, mientras se refresca de
+// fondo en silencio.
+const _viajeDetalleCache = new Map();
 /* ─────────────────────────────────────────────
    viajes_activos.js — Gestión de viajes
 ───────────────────────────────────────────── */
@@ -639,6 +645,10 @@ async function guardarEditarViaje() {
   }
   // ────────────────────────────────────────────────────────────────────────
 
+  // El viaje acaba de cambiar: invalidamos cache para traer datos frescos
+  // en primer plano al volver, en vez de repintar lo viejo por un instante.
+  _viajeDetalleCache.delete(viajeActualId);
+
   navigateTo("viaje-detalle", viajeActualId);
 }
 
@@ -735,11 +745,53 @@ function openViajeDetalle(viajeId) {
 async function loadViajeDetalle(viajeId) {
   viajeActualId = parseInt(viajeId, 10);
 
-  const nombreEl = document.getElementById("detalle-viaje-nombre");
-  const infoEl = document.getElementById("detalle-viaje-info");
+  const cacheado = _viajeDetalleCache.get(viajeActualId);
+
+  if (cacheado) {
+    // Pintado instantáneo con lo último que vimos de este viaje.
+    _pintarDetalleViaje(cacheado, { refrescando: true });
+    // Refresco de fondo, silencioso: sin "Cargando...", sin tocar el
+    // scroll ni los filtros ya aplicados. Si falla, nos quedamos con
+    // lo cacheado (no rompemos la vista por un refresco fallido).
+    try {
+      await _cargarYPintarViajeDetalle(viajeActualId, { silencioso: true });
+    } catch (err) {
+      console.error("Error refrescando detalle de viaje en segundo plano:", err);
+      _setRefrescandoIndicador(false);
+    }
+    return;
+  }
+
+  await _cargarYPintarViajeDetalle(viajeActualId, { silencioso: false });
+}
+
+// Indicador sutil de refresco de fondo: mientras carga, el contador de
+// asistencia (ej. "13 de 13 asisten") se reemplaza por puntos animados
+// en vez de desaparecer o mostrar "Cargando...", así la lista no salta.
+function _setRefrescandoIndicador(activo) {
+  const counterEl = document.getElementById("vp-asistencia-counter");
+  if (!counterEl) return;
+  if (activo) {
+    counterEl.dataset.textoPrevio = counterEl.textContent;
+    counterEl.classList.add("vp-counter-refrescando");
+    counterEl.textContent = "•••";
+  } else {
+    counterEl.classList.remove("vp-counter-refrescando");
+    if (counterEl.dataset.textoPrevio) {
+      counterEl.textContent = counterEl.dataset.textoPrevio;
+      delete counterEl.dataset.textoPrevio;
+    }
+  }
+}
+
+async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
   const listEl = document.getElementById("viaje-pasajeros-list");
 
-  listEl.innerHTML = "Cargando...";
+  if (silencioso) {
+    _setRefrescandoIndicador(true);
+  } else {
+    listEl.innerHTML = "Cargando...";
+  }
 
   // Etapa 1: viaje, lista de pasajeros y BYC no dependen entre sí → en paralelo
   const [
@@ -769,7 +821,38 @@ async function loadViajeDetalle(viajeId) {
       .select("ci"),
   ]);
 
-  if (!viaje) return;
+  // Si el usuario ya navegó a otro viaje mientras esta carga estaba en
+  // vuelo, descartamos: no pisar la vista de un viaje distinto.
+  if (viajeId !== viajeActualId) return;
+
+  if (!viaje) {
+    if (!silencioso) return;
+    _setRefrescandoIndicador(false);
+    return;
+  }
+
+  let todosPagos = null;
+  if (pasajeros && pasajeros.length > 0) {
+    const vpIds = pasajeros.map(p => p.id);
+    ({ data: todosPagos } = await supabaseClient
+      .from("pagos")
+      .select("viaje_pasajero_id, monto, tipo")
+      .in("viaje_pasajero_id", vpIds));
+    if (viajeId !== viajeActualId) return;
+  }
+
+  const datos = { viaje, pasajeros, errPasajeros, bycData, todosPagos };
+  _viajeDetalleCache.set(viajeId, datos);
+  _pintarDetalleViaje(datos, { refrescando: false });
+}
+
+function _pintarDetalleViaje(datos, { refrescando }) {
+  const { viaje, pasajeros, errPasajeros, bycData, todosPagos } = datos;
+
+  const nombreEl = document.getElementById("detalle-viaje-nombre");
+  const infoEl = document.getElementById("detalle-viaje-info");
+  const listEl = document.getElementById("viaje-pasajeros-list");
+
 
   // ✅ AHORA SÍ existe
   viajeActualData = viaje;
@@ -837,27 +920,22 @@ async function loadViajeDetalle(viajeId) {
         Sin pasajeros aún
       </div>`;
 
-    // Resetear estado del viaje anterior: sin esto, el badge de alertas
-    // y los filtros quedaban pegados al cambiar a un viaje sin pasajeros.
     pasajerosDelViaje = [];
-    _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
-    const buscadorVacio = document.getElementById("buscador-vp");
-    if (buscadorVacio) buscadorVacio.value = "";
-    const panelFVacio = document.getElementById("filtro-panel-vp");
-    if (panelFVacio) panelFVacio.style.display = "none";
+    // Al refrescar en silencio no reiniciamos buscador/filtros: el usuario
+    // pudo haber dejado un filtro aplicado antes de entrar a un pasajero.
+    if (!refrescando) {
+      _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
+      const buscadorVacio = document.getElementById("buscador-vp");
+      if (buscadorVacio) buscadorVacio.value = "";
+      const panelFVacio = document.getElementById("filtro-panel-vp");
+      if (panelFVacio) panelFVacio.style.display = "none";
+    }
     const counterVacio = document.getElementById("vp-asistencia-counter");
     if (counterVacio) counterVacio.style.display = "none";
     _renderAlertasViaje();
-
+    _setRefrescandoIndicador(false);
     return;
   }
-
-  // Traer pagos por separado para calcular restante
-  const vpIds = pasajeros.map(p => p.id);
-  const { data: todosPagos } = await supabaseClient
-    .from("pagos")
-    .select("viaje_pasajero_id, monto, tipo")
-    .in("viaje_pasajero_id", vpIds);
 
   const pagosPorVP = {};
   (todosPagos || []).forEach(pg => {
@@ -923,12 +1001,15 @@ async function loadViajeDetalle(viajeId) {
   // (Tabs Egresos/Presupuesto/Resumen ya se muestran/ocultan más arriba,
   // antes del return temprano por "sin pasajeros")
 
-  // Limpiar buscador y filtros al cargar
-  const buscador = document.getElementById("buscador-vp");
-  if (buscador) buscador.value = "";
-  _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
-  const panelF = document.getElementById("filtro-panel-vp");
-  if (panelF) panelF.style.display = "none";
+  // Limpiar buscador y filtros solo al entrar de cero al viaje (no en un
+  // refresco de fondo, para no perder lo que el usuario ya tenía filtrado).
+  if (!refrescando) {
+    const buscador = document.getElementById("buscador-vp");
+    if (buscador) buscador.value = "";
+    _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
+    const panelF = document.getElementById("filtro-panel-vp");
+    if (panelF) panelF.style.display = "none";
+  }
 
   // Inyectar botón filtro junto al buscador (solo una vez)
   _inyectarUIFiltros();
@@ -940,6 +1021,8 @@ async function loadViajeDetalle(viajeId) {
 
   // Botón/caja flotante de alertas del viaje (deudas + BYC pendiente)
   _renderAlertasViaje();
+
+  _setRefrescandoIndicador(false);
 }
 
 /* ── ALERTAS DE VIAJE (deuda + BYC pendiente) ─────────────────────────── */
@@ -1511,6 +1594,10 @@ const { error } = await supabaseClient
 
     showToast("✅ Pasajero agregado correctamente", "success");
 
+    // Se agregó un pasajero: invalidar cache para no repintar la lista
+    // vieja (sin el nuevo) al volver al detalle.
+    _viajeDetalleCache.delete(viajeActualId);
+
     navigateTo("viaje-detalle", viajeActualId);
   } catch (e) {
     console.error("ERROR GENERAL:", e);
@@ -1551,6 +1638,9 @@ async function confirmarReemplazoPasajero(total) {
     reemplazoCtx.activo = false;
     reemplazoCtx.viajePasajeroOrigenId = null;
     reemplazoCtx.nombreOrigen = null;
+
+    // Reemplazo cambió la composición de pasajeros: invalidar cache.
+    _viajeDetalleCache.delete(viajeActualId);
 
     navigateTo("viaje-detalle", viajeActualId);
   } catch (e) {
