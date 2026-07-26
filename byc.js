@@ -4,6 +4,7 @@
 
 let todosLosRegistrosByc = [];
 let bycFiltrados = [];
+let _bycLoadToken = 0; // Descarta respuestas tardías de Supabase si ya salimos de la vista
 
 // ── Inicializar vista ─────────────────────────
 function initBycView() {
@@ -14,6 +15,7 @@ function initBycView() {
 
 // ── Cargar datos ──────────────────────────────
 async function cargarByc() {
+  const miToken = ++_bycLoadToken;
   const cont = document.getElementById('byc-cont');
   cont.innerHTML = '<p class="byc-loading">Cargando registros…</p>';
 
@@ -21,6 +23,11 @@ async function cargarByc() {
     .from('basesycondiciones')
     .select('id, nombre, ci, estado, email, email_disponible, correo_duplicado, link, estado_envio')
     .order('nombre', { ascending: true });
+
+  // Si mientras esperábamos la respuesta el usuario navegó (atrás, u otra
+  // pestaña de módulo), este resultado ya es obsoleto: no tocar el DOM.
+  if (miToken !== _bycLoadToken) return;
+  if (currentView !== 'byc') return;
 
   if (error) {
     cont.innerHTML = `<p class="byc-error">Error al cargar: ${error.message}</p>`;
@@ -108,6 +115,7 @@ let _pendienteSeleccionado = null;
 let _pasajeroSeleccionado = null;
 let _pasajerosCache = [];
 let _bycTouchBlocked = false; // Bloquea toques accidentales durante transiciones
+let _bycPendientesLoadToken = 0; // Descarta respuestas tardías si ya salimos de la vista
 
 // ── Abrir vista ───────────────────────────────
 function abrirPendientesVincular() {
@@ -129,6 +137,7 @@ function _cerrarModalVincular() {
 
 // ── Paso 1: cargar pendientes ─────────────────
 async function cargarPendientes() {
+  const miToken = ++_bycPendientesLoadToken;
   const cont = document.getElementById('byc-pendientes-cont');
   cont.innerHTML = '<p class="byc-loading">Cargando…</p>';
 
@@ -137,6 +146,9 @@ async function cargarPendientes() {
     supabaseClient.from('basesycondiciones').select('id, nombre, ci, email').order('nombre'),
     supabaseClient.from('pasajeros').select('"Documento de Identidad"')
   ]);
+
+  if (miToken !== _bycPendientesLoadToken) return;
+  if (currentView !== 'byc-vincular') return;
 
   if (bycRes.error || pasRes.error) {
     cont.innerHTML = '<p class="byc-error">Error al cargar datos.</p>';

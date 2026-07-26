@@ -191,7 +191,8 @@ window.addEventListener("hashchange", () => {
   const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
   const restorableViews = [
     "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
-    "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
+    "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
+    "byc","byc-vincular"
   ];
   if (hashView && restorableViews.includes(hashView)) {
     navigateTo(hashView, hashIdx, true);
@@ -233,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Navegación por hash ────────────────────────────────────
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
-const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino"];
+const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino","byc","byc-vincular"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
 
 function _buildHash(view, idx) {
