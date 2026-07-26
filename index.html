@@ -1803,6 +1803,21 @@
         .then(reg => console.log('SW registrado:', reg.scope))
         .catch(err => console.error('SW error:', err));
     });
+
+    // Navegación al tocar una notificación push: el SW (firebase-messaging-sw.js)
+    // manda { type: 'PUSH_NAVIGATE', hash } en lugar de depender solo de
+    // client.navigate(), porque un cambio de hash puro no siempre dispara
+    // el router de la SPA si el navegador no lo cuenta como navegación real.
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'PUSH_NAVIGATE' && event.data.hash) {
+        const nuevoHash = '#' + event.data.hash;
+        if (location.hash === nuevoHash) {
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } else {
+          location.hash = nuevoHash;
+        }
+      }
+    });
   }
 </script>
 
