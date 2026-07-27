@@ -541,6 +541,13 @@ h2 {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; overflow: hidden;
   font-size: .78rem; font-weight: 600; color: #fff;
+  /* Mismo border/box-shadow que .detalle-avatar (transparente/nulo acá).
+     Si el navegador tiene que animar border+shadow apareciendo de la
+     nada durante el morph (View Transitions), lo hace de golpe al
+     final en vez de interpolarlo — por eso mantenemos la misma
+     "forma" en ambos extremos y solo cambia tamaño/posición. */
+  border: 3px solid rgba(255,255,255,0);
+  box-shadow: 0 4px 16px rgba(45,106,79,0);
 }
 .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
