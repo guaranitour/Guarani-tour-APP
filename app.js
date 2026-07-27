@@ -3,6 +3,11 @@ let allPassengers = [];
 let avatarCache = {};
 let currentView = "dashboard";
 let selectedIdx = null;
+// Recuerda el idx del pasajero visto en "detalle", para poder re-nombrar
+// su avatar en la lista al volver. No se puede usar selectedIdx para esto:
+// _navigateToImpl lo pisa con el idx de la vista destino (null para
+// "clientes") antes de que el bloque "clientes" llegue a leerlo.
+let _ultimoDetalleIdx = null;
 let appReady = false;
 
 // ── Caches de tablas estáticas ─────────────────────────────
@@ -509,9 +514,10 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     ]);
 
     const _asignarNombreAvatar = () => {
-      if (selectedIdx !== null) {
-        const rowEl = document.querySelector(`.passenger-row[data-idx="${selectedIdx}"] .p-avatar`);
-        if (rowEl) rowEl.style.viewTransitionName = `avatar-${selectedIdx}`;
+      if (_ultimoDetalleIdx !== null) {
+        const rowEl = document.querySelector(`.passenger-row[data-idx="${_ultimoDetalleIdx}"] .p-avatar`);
+        if (rowEl) rowEl.style.viewTransitionName = `avatar-${_ultimoDetalleIdx}`;
+        _ultimoDetalleIdx = null;
       }
     };
 
@@ -998,6 +1004,8 @@ async function renderDetalle(idx) {
   const p = allPassengers.find(x => x._idx === idx);
   if (!p) return;
   const name = p.Pasajero || "Sin nombre";
+
+  _ultimoDetalleIdx = idx;
 
   const avatarEl = document.getElementById("detalle-avatar");
   const wrapEl   = avatarEl.closest(".detalle-avatar-wrap") || avatarEl.parentElement;
