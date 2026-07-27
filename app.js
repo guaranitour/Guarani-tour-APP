@@ -348,9 +348,17 @@ function getSaludo() {
   return "Buenas noches";
 }
 
-// Vistas donde probamos la View Transitions API (piloto: Base de clientes).
-// El navegador la soporta o no según el caso; si no existe, cae al comportamiento normal sin romper nada.
-const _vistasConTransicion = new Set(["clientes", "detalle"]);
+// Transición global: aplica a todas las vistas de la SPA. El navegador la
+// soporta o no según el caso; si no existe, cae al comportamiento normal
+// sin romper nada (ver soportaVT en navigateTo).
+const _vistasConTransicion = new Set([
+  "byc", "byc-vincular", "clientes", "club-destino", "dashboard", "detalle",
+  "egreso-detalle", "historial-viajes", "historico", "movimiento-nuevo",
+  "movimientos", "nuevo", "pago-detalle", "ranking-puntos", "recibo-detalle",
+  "recibo-nuevo", "recibos", "seleccion-asiento", "usuarios", "viaje-detalle",
+  "viaje-editar", "viaje-nuevo", "viaje-pasajero-nuevo", "viaje-pasajero-pagos",
+  "viajes",
+]);
 
 function navigateTo(view, idx = null, _fromHash = false) {
   const soportaVT = typeof document.startViewTransition === "function";
