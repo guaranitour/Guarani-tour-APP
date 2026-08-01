@@ -590,22 +590,15 @@ function aplicarSpeech(speechId) {
   _abrirModalCompletarSpeech(speech, marcadores);
 }
 
-// Encuentra cada marcador de entrada de datos {algo} en el texto, en
-// orden de aparición, sin duplicar nombres repetidos (si el mismo
-// marcador aparece dos veces, se pide una sola vez y se reemplaza en
-// ambos lugares). Los marcadores de pluralización {var?sing/plural} NO
-// se piden como campo aparte: se resuelven solos a partir del valor
-// que el usuario cargue para {var}.
+// Encuentra cada marcador {algo} en el texto, en orden de aparición, sin
+// duplicar nombres repetidos (si el mismo marcador aparece dos veces, se
+// pide una sola vez y se reemplaza en ambos lugares).
 function _extraerMarcadores(texto) {
   const vistos = new Set();
   const encontrados = [];
-  // Primero "tapamos" los marcadores de pluralización para que su
-  // variable base no se cuente dos veces ni se confunda con un campo
-  // de texto libre.
-  const sinPlurales = texto.replace(/\{([^{}?]+)\?[^{}]*\/[^{}]*\}/g, '');
   const regex = /\{([^{}]+)\}/g;
   let m;
-  while ((m = regex.exec(sinPlurales)) !== null) {
+  while ((m = regex.exec(texto)) !== null) {
     if (!vistos.has(m[1])) {
       vistos.add(m[1]);
       encontrados.push(m[1]);
@@ -666,20 +659,26 @@ function confirmarCompletarSpeech() {
 
   let textoFinal = _speechPendienteDeCompletar.texto;
 
-  // 1) Resolver primero los marcadores de pluralización {var?singular/plural}
-  //    usando el valor que el usuario cargó para {var}. Si ese valor no es
-  //    un número reconocible, usamos el plural por defecto (más seguro).
-  textoFinal = textoFinal.replace(/\{([^{}?]+)\?([^{}]*)\/([^{}]*)\}/g, (match, variable, singular, plural) => {
-    const valor = valores[variable];
-    const esUno = valor !== undefined && parseFloat(valor.replace(',', '.')) === 1;
-    return esUno ? singular : plural;
-  });
-
-  // 2) Resolver los marcadores simples {var} con el valor cargado
+  // Reemplazamos cada marcador {var} por el valor cargado. Si ese valor
+  // es exactamente 1, además singularizamos la palabra que viene justo
+  // después (ej. "pasajes" -> "pasaje"), para que el admin pueda escribir
+  // la frase directamente en plural sin sintaxis extra.
   Object.keys(valores).forEach(marcador => {
+    const valor = valores[marcador];
+    const esUno = parseFloat(valor.replace(',', '.')) === 1;
     // Escapamos el marcador para usarlo en una regex literal
     const escapado = marcador.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    textoFinal = textoFinal.replace(new RegExp(`\\{${escapado}\\}`, 'g'), valores[marcador]);
+
+    if (esUno) {
+      // Capturamos el número + el espacio + la siguiente palabra juntos,
+      // para poder singularizar esa palabra en el mismo reemplazo.
+      const regexConPalabra = new RegExp(`\\{${escapado}\\}(\\s+)(\\S+)`, 'g');
+      textoFinal = textoFinal.replace(regexConPalabra, (match, espacio, palabra) => {
+        return valor + espacio + _singularizar(palabra);
+      });
+    } else {
+      textoFinal = textoFinal.replace(new RegExp(`\\{${escapado}\\}`, 'g'), valor);
+    }
   });
 
   const textarea = document.getElementById('frec-concepto');
@@ -689,6 +688,50 @@ function confirmarCompletarSpeech() {
 }
 
 let _speechPendienteDeCompletar = null;
+
+// Palabras que pluralizan agregando "es" completo (no solo "s") y que
+// aparecen habitualmente en conceptos de recibos/viajes. Sin diccionario
+// completo del español, cubrimos estos casos por lista; lo que no está
+// acá simplemente no se toca (mejor dejarlo en plural que singularizarlo mal).
+const _EXCEPCIONES_SINGULAR_ES = [
+  'mes', 'avion', 'camion', 'color', 'autobus', 'tren', 'pais',
+  'anden', 'frances', 'ingles', 'autocar', 'furgon',
+];
+
+// Singularización básica en español para la palabra que sigue a un
+// {n}=1 (ej. "pasajes" -> "pasaje", "veces" -> "vez", "meses" -> "mes").
+// No es un analizador lingüístico completo: cubre el caso mayoritario
+// (vocal + "s") y una lista corta de excepciones conocidas; para todo lo
+// demás no toca la palabra, priorizando no romper el texto por sobre
+// singularizar perfecto en cualquier caso posible. Preserva mayúscula
+// inicial y signos pegados al final (paréntesis, punto, coma).
+function _singularizar(palabra) {
+  const match = palabra.match(/^(\p{L}+)(.*)$/u);
+  if (!match) return palabra;
+  const [, letras, resto] = match;
+  const esMayuscula = letras[0] === letras[0].toUpperCase();
+  const minusc = letras.toLowerCase();
+
+  let singular = null;
+
+  // 1) Excepciones conocidas: raíz + "es" (mes+es, avion+es, etc.)
+  for (const raiz of _EXCEPCIONES_SINGULAR_ES) {
+    if (minusc === raiz + 'es') { singular = raiz; break; }
+  }
+
+  if (singular === null) {
+    if (/ces$/.test(minusc) && minusc.length > 4) {
+      singular = minusc.slice(0, -3) + 'z';   // veces -> vez, luces -> luz
+    } else if (/[aeiou]s$/.test(minusc)) {
+      singular = minusc.slice(0, -1);          // pasajes -> pasaje, cuotas -> cuota, boletos -> boleto
+    }
+  }
+
+  if (singular === null) return palabra; // caso no reconocido: no tocar
+
+  if (esMayuscula) singular = singular.charAt(0).toUpperCase() + singular.slice(1);
+  return singular + resto;
+}
 
 function _escapeHtmlRecibo(str) {
   const div = document.createElement('div');

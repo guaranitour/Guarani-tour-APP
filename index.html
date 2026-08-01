@@ -1584,18 +1584,18 @@
 
     <p class="modal-transferir-desc">
       Estas frases aparecen como opciones rápidas al elegir este viaje en un recibo nuevo.
-      Usá <code>{n}</code> (o cualquier nombre, ej. <code>{cantidad}</code>) como marcador
-      — al aplicar la frase se va a preguntar qué valor va ahí. Para singular/plural
-      automático, agregá <code>{n?singular/plural}</code> justo después: si cargás
-      <code>1</code> usa la forma singular, con cualquier otro valor usa la plural.<br>
-      Ej: <code>Pago parcial por {n} {n?viaje/viajes} a Encarnación</code> → con
-      n=1 queda "1 viaje", con n=3 queda "3 viajes".
+      Escribí la frase en plural, normal, y marcá dónde va el número con <code>{n}</code>
+      (o el nombre que prefieras, ej. <code>{cantidad}</code>) — al aplicarla se va a
+      preguntar el valor, y si es 1 el sistema ajusta la palabra siguiente al singular
+      automáticamente.<br>
+      Ej: <code>Pago parcial por {n} viajes a Encarnación</code> → con n=1 queda
+      "1 viaje", con n=3 queda "3 viajes".
     </p>
 
     <div id="modal-speeches-lista" class="modal-speeches-lista"></div>
 
     <div class="modal-speeches-nuevo">
-      <textarea id="modal-speeches-input" rows="2" placeholder="Nueva frase… ej: Pago parcial por {n} {n?viaje/viajes} a Encarnación"></textarea>
+      <textarea id="modal-speeches-input" rows="2" placeholder="Nueva frase… ej: Pago parcial por {n} viajes a Encarnación"></textarea>
       <button type="button" class="btn-save modal-speeches-agregar" onclick="agregarSpeech()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Agregar frase
