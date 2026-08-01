@@ -1343,19 +1343,68 @@ function _expandirContacto() {
       // recién ahí), re-medimos una vez más ya con overflow visible.
       _syncContactoCollapseHeight();
       // La sección recién revelada puede terminar más abajo de lo que
-      // se ve en pantalla (el navbar inferior fijo tapa esa zona si no
-      // hay scroll). Llevamos el FINAL de la sección (los botones
-      // Guardar/Cancelar cuando se está editando) al borde visible, en
-      // vez del inicio, para que el usuario no tenga que adivinar que
-      // hace falta seguir scrolleando para poder guardar.
-      const scrollTarget = document.getElementById("contacto-edit-actions");
-      const targetEl = (scrollTarget && scrollTarget.style.display !== "none")
-        ? scrollTarget
-        : toggle;
-      targetEl.scrollIntoView({ behavior: "smooth", block: "end" });
+      // se ve en pantalla. NO usamos scrollIntoView acá: ese método
+      // considera "visible" cualquier punto dentro del viewport, pero
+      // el navbar inferior es position:fixed y tapa una franja del
+      // viewport sin que el navegador lo sepa — scrollIntoView podía
+      // dejar los botones justo detrás del navbar, mostrando como
+      // "ya scrolleado" algo que en realidad seguía tapado. Calculamos
+      // el scroll a mano, restando la altura real del navbar.
+      _scrollParaMostrarFinalContacto();
     };
     _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
   });
+}
+
+// Scrollea lo necesario para que el final de la sección de contacto
+// (los botones Guardar/Cancelar si se está editando, o el final del
+// contenido si no) quede realmente visible por encima del navbar
+// inferior fijo, no solo dentro del viewport en teoría.
+function _scrollParaMostrarFinalContacto() {
+  const { body } = _contactoEls();
+  if (!body) return;
+
+  const scrollActionsEl = document.getElementById("contacto-edit-actions");
+  const targetEl = (scrollActionsEl && scrollActionsEl.style.display !== "none")
+    ? scrollActionsEl
+    : body;
+
+  const navbar = document.getElementById("bottom-nav");
+  const navbarAltura = (navbar && navbar.style.display !== "none")
+    ? navbar.getBoundingClientRect().height
+    : 0;
+
+  // window.innerHeight no baja cuando el teclado virtual está abierto
+  // en la mayoría de navegadores móviles (el layout viewport no
+  // cambia); visualViewport.height sí refleja el espacio realmente
+  // visible. Sin esto, con el teclado abierto el cálculo asumía más
+  // espacio libre del que había, y el scroll se quedaba corto.
+  const alturaVisible = window.visualViewport
+    ? window.visualViewport.height
+    : window.innerHeight;
+
+  const rect = targetEl.getBoundingClientRect();
+  const margenExtra = 16; // aire entre el contenido y el borde del navbar
+  const espacioLibreDebajo = alturaVisible - navbarAltura;
+
+  // Si el borde inferior del elemento ya está por encima del navbar,
+  // no hace falta scrollear más.
+  const desborde = rect.bottom - espacioLibreDebajo + margenExtra;
+  if (desborde <= 0) return;
+
+  window.scrollBy({ top: desborde, behavior: "smooth" });
+
+  // Reintento: si el teclado virtual se abre/cierra o termina de
+  // ajustar el viewport después de este cálculo (común justo después
+  // de un cambio de foco), un solo scroll puede quedar corto. Volvemos
+  // a medir una vez más una vez asentado el layout.
+  setTimeout(() => {
+    const rect2 = targetEl.getBoundingClientRect();
+    const alturaVisible2 = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const espacioLibreDebajo2 = alturaVisible2 - navbarAltura;
+    const desborde2 = rect2.bottom - espacioLibreDebajo2 + margenExtra;
+    if (desborde2 > 0) window.scrollBy({ top: desborde2, behavior: "smooth" });
+  }, 400);
 }
 
 function _colapsarContacto() {
