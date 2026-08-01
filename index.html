@@ -1506,6 +1506,24 @@
         </div>
 
         <div class="form-recibo-field">
+          <label for="frec-abona-por">Abona por (viaje) *</label>
+          <select id="frec-abona-por" onchange="onCambioViajeRecibo(this.value)">
+            <option value="">— Cargando… —</option>
+          </select>
+        </div>
+
+        <div id="frec-speeches-wrap" class="frec-speeches-wrap" style="display:none">
+          <div class="frec-speeches-header">
+            <span class="frec-speeches-label">Frases rápidas para este viaje</span>
+            <button type="button" class="frec-speeches-gestionar" id="btn-gestionar-speeches"
+                    onclick="abrirModalSpeeches()" style="display:none">
+              ⚙️ Gestionar
+            </button>
+          </div>
+          <div id="frec-speeches-chips" class="frec-speeches-chips"></div>
+        </div>
+
+        <div class="form-recibo-field">
           <label for="frec-concepto">Concepto *</label>
           <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
         </div>
@@ -1513,19 +1531,13 @@
         <hr class="form-recibo-sep" />
 
         <div class="form-recibo-row">
-          <div class="form-recibo-field">
+          <div class="form-recibo-field" style="grid-column:1/3">
             <label for="frec-forma-pago">Forma de pago *</label>
             <select id="frec-forma-pago" onchange="toggleCamposTransferencia()">
               <option value="">— Seleccionar —</option>
               <option value="Efectivo">Efectivo</option>
               <option value="Transferencia">Transferencia</option>
               <option value="Tigo Money">Tigo Money</option>
-            </select>
-          </div>
-          <div class="form-recibo-field">
-            <label for="frec-abona-por">Abona por (viaje) *</label>
-            <select id="frec-abona-por">
-              <option value="">— Cargando… —</option>
             </select>
           </div>
         </div>
@@ -1554,6 +1566,69 @@
 
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL: GESTIONAR SPEECHES DE RECIBO POR VIAJE -->
+<div id="modal-speeches" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalSpeeches(event)">
+  <div class="modal-transferir-card" onclick="event.stopPropagation()">
+    <div class="modal-transferir-header">
+      <div class="modal-transferir-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Frases rápidas — <span id="modal-speeches-viaje-nombre"></span>
+      </div>
+      <button class="modal-transferir-close" onclick="cerrarModalSpeeches()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <p class="modal-transferir-desc">
+      Estas frases aparecen como opciones rápidas al elegir este viaje en un recibo nuevo.
+      Usá <code>{n}</code> (o cualquier nombre entre llaves, ej. <code>{cantidad}</code>) como
+      marcador — al aplicar la frase se va a preguntar qué valor va ahí antes de insertarla
+      en el Concepto. Ej: "Pago parcial por {n} viajes a Encarnación".
+    </p>
+
+    <div id="modal-speeches-lista" class="modal-speeches-lista"></div>
+
+    <div class="modal-speeches-nuevo">
+      <textarea id="modal-speeches-input" rows="2" placeholder="Nueva frase… ej: Pago parcial por {n} viajes a Encarnación"></textarea>
+      <button type="button" class="btn-save modal-speeches-agregar" onclick="agregarSpeech()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar frase
+      </button>
+    </div>
+
+    <p class="form-recibo-error" id="modal-speeches-error"></p>
+  </div>
+</div>
+
+<!-- MODAL: COMPLETAR VALORES DE UN SPEECH ANTES DE INSERTARLO -->
+<div id="modal-completar-speech" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalCompletarSpeech(event)">
+  <div class="modal-transferir-card" onclick="event.stopPropagation()">
+    <div class="modal-transferir-header">
+      <div class="modal-transferir-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Completar frase
+      </div>
+      <button class="modal-transferir-close" onclick="cerrarModalCompletarSpeech()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <p class="modal-transferir-desc">Completá los valores antes de insertar la frase en el Concepto.</p>
+
+    <div id="modal-completar-campos" class="modal-completar-campos"></div>
+
+    <p class="form-recibo-error" id="modal-completar-error"></p>
+
+    <div class="modal-transferir-actions">
+      <button class="btn-cancel" onclick="cerrarModalCompletarSpeech()">Cancelar</button>
+      <button class="btn-save" onclick="confirmarCompletarSpeech()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Insertar en Concepto
+      </button>
+    </div>
   </div>
 </div>
 

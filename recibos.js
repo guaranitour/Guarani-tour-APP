@@ -290,7 +290,21 @@ async function initReciboNuevoView() {
   if (selForma) selForma.value = '';
 
   const selViaje = document.getElementById('frec-abona-por');
-  if (selViaje) selViaje.value = '';
+  if (selViaje) {
+    selViaje.value = '';
+    // Enganchamos el listener acá (además del onchange inline) para
+    // asegurarnos de que dispare sin importar cómo el custom select
+    // termine sincronizando el <select> nativo subyacente.
+    selViaje.removeEventListener('change', _onCambioViajeRecibo_listener);
+    selViaje.addEventListener('change', _onCambioViajeRecibo_listener);
+  }
+
+  // Ocultar/limpiar el bloque de frases rápidas al abrir el form de cero
+  const speechesWrap = document.getElementById('frec-speeches-wrap');
+  if (speechesWrap) speechesWrap.style.display = 'none';
+  const chipsCont = document.getElementById('frec-speeches-chips');
+  if (chipsCont) chipsCont.innerHTML = '';
+  _viajeIdSeleccionadoRecibo = null;
 
   // Ocultar grupo transferencia explícitamente
   const grupo = document.getElementById('frec-grupo-transferencia');
@@ -459,6 +473,11 @@ function seleccionarBanco(nombre) {
   if (dd)     dd.style.display = 'none';
 }
 
+// Mapa nombre de viaje -> id real (el <select> usa el nombre como value
+// porque así se guarda "abona_por" en el recibo; los speeches en cambio
+// se asocian por id, así que necesitamos este mapa para resolverlo).
+let _viajesRecibosPorNombre = {};
+
 async function cargarViajesActivosEnSelect() {
   const sel = document.getElementById('frec-abona-por');
   if (!sel) return;
@@ -474,9 +493,281 @@ async function cargarViajesActivosEnSelect() {
     return;
   }
 
+  _viajesRecibosPorNombre = {};
+  data.forEach(v => { _viajesRecibosPorNombre[v.nombre] = v.id; });
+
   sel.innerHTML = '<option value="">— Seleccionar viaje —</option>' +
     data.map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join('');
   refreshCustomSelect('frec-abona-por');
+}
+
+/* ── FRASES RÁPIDAS (SPEECHES) POR VIAJE ──────────────────────────────
+ * Tabla Supabase: recibo_speeches (id, viaje_id, texto, created_at)
+ * Solo admin puede crear/editar/eliminar. Al elegir un viaje en el
+ * formulario de recibo, se muestran como chips debajo del select; al
+ * tocar uno, reemplaza por completo el contenido del campo Concepto.
+ * ────────────────────────────────────────────────────────────────── */
+let _viajeIdSeleccionadoRecibo = null;
+let _speechesDelViajeCache = [];
+
+function _esAdminRecibos() {
+  return Array.isArray(currentUserRole)
+    ? currentUserRole.includes('admin')
+    : currentUserRole === 'admin';
+}
+
+// Wrapper con nombre estable para poder hacer removeEventListener antes
+// de volver a engancharlo (evita duplicar el listener entre aperturas
+// del formulario).
+function _onCambioViajeRecibo_listener(ev) {
+  onCambioViajeRecibo(ev.target.value);
+}
+
+async function onCambioViajeRecibo(nombreViaje) {
+  const wrap  = document.getElementById('frec-speeches-wrap');
+  const chips = document.getElementById('frec-speeches-chips');
+  const btnGestionar = document.getElementById('btn-gestionar-speeches');
+  if (!wrap || !chips) return;
+
+  const viajeId = nombreViaje ? _viajesRecibosPorNombre[nombreViaje] : null;
+  _viajeIdSeleccionadoRecibo = viajeId || null;
+
+  if (!viajeId) {
+    wrap.style.display = 'none';
+    chips.innerHTML = '';
+    return;
+  }
+
+  if (btnGestionar) btnGestionar.style.display = _esAdminRecibos() ? '' : 'none';
+  wrap.style.display = '';
+  chips.innerHTML = '<span class="frec-speeches-vacio">Cargando…</span>';
+
+  await _cargarYRenderSpeechesChips(viajeId);
+}
+
+async function _cargarYRenderSpeechesChips(viajeId) {
+  const chips = document.getElementById('frec-speeches-chips');
+  if (!chips) return;
+
+  const { data, error } = await supabaseClient
+    .from('recibo_speeches')
+    .select('id, texto')
+    .eq('viaje_id', viajeId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    chips.innerHTML = '<span class="frec-speeches-vacio">Error al cargar frases.</span>';
+    return;
+  }
+
+  _speechesDelViajeCache = data || [];
+
+  if (_speechesDelViajeCache.length === 0) {
+    chips.innerHTML = _esAdminRecibos()
+      ? '<span class="frec-speeches-vacio">Sin frases guardadas. Tocá "Gestionar" para crear una.</span>'
+      : '<span class="frec-speeches-vacio">Sin frases guardadas para este viaje.</span>';
+    return;
+  }
+
+  chips.innerHTML = _speechesDelViajeCache.map(s => `
+    <button type="button" class="frec-speech-chip" onclick="aplicarSpeech(${s.id})">
+      ${_escapeHtmlRecibo(s.texto)}
+    </button>
+  `).join('');
+}
+
+function aplicarSpeech(speechId) {
+  const speech = _speechesDelViajeCache.find(s => s.id === speechId);
+  if (!speech) return;
+
+  const marcadores = _extraerMarcadores(speech.texto);
+  if (marcadores.length === 0) {
+    const textarea = document.getElementById('frec-concepto');
+    if (textarea) textarea.value = speech.texto;
+    return;
+  }
+
+  _abrirModalCompletarSpeech(speech, marcadores);
+}
+
+// Encuentra cada {algo} en el texto, en orden de aparición, sin duplicar
+// nombres repetidos (si el mismo marcador aparece dos veces, se pide una
+// sola vez y se reemplaza en ambos lugares).
+function _extraerMarcadores(texto) {
+  const vistos = new Set();
+  const encontrados = [];
+  const regex = /\{([^{}]+)\}/g;
+  let m;
+  while ((m = regex.exec(texto)) !== null) {
+    if (!vistos.has(m[1])) {
+      vistos.add(m[1]);
+      encontrados.push(m[1]);
+    }
+  }
+  return encontrados;
+}
+
+function _abrirModalCompletarSpeech(speech, marcadores) {
+  const modal = document.getElementById('modal-completar-speech');
+  const camposWrap = document.getElementById('modal-completar-campos');
+  const errEl = document.getElementById('modal-completar-error');
+  if (!modal || !camposWrap) return;
+
+  _speechPendienteDeCompletar = speech;
+
+  if (errEl) errEl.textContent = '';
+  camposWrap.innerHTML = marcadores.map((marcador, i) => `
+    <div class="form-recibo-field">
+      <label for="modal-completar-campo-${i}">${_escapeHtmlRecibo(marcador)}</label>
+      <input type="text" id="modal-completar-campo-${i}" data-marcador="${_escapeHtmlRecibo(marcador)}"
+             placeholder="Valor para «${_escapeHtmlRecibo(marcador)}»" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarCompletarSpeech();}" />
+    </div>
+  `).join('');
+
+  modal.style.display = '';
+  // Foco en el primer campo para completar rápido
+  setTimeout(() => {
+    const primero = document.getElementById('modal-completar-campo-0');
+    if (primero) primero.focus();
+  }, 50);
+}
+
+function cerrarModalCompletarSpeech(event) {
+  if (event && event.target.id !== 'modal-completar-speech') return;
+  const modal = document.getElementById('modal-completar-speech');
+  if (modal) modal.style.display = 'none';
+  _speechPendienteDeCompletar = null;
+}
+
+function confirmarCompletarSpeech() {
+  const errEl = document.getElementById('modal-completar-error');
+  const camposWrap = document.getElementById('modal-completar-campos');
+  if (!_speechPendienteDeCompletar || !camposWrap) return;
+
+  const inputs = camposWrap.querySelectorAll('input[data-marcador]');
+  const valores = {};
+  for (const input of inputs) {
+    const val = input.value.trim();
+    if (!val) {
+      if (errEl) errEl.textContent = `Completá el valor para «${input.dataset.marcador}».`;
+      input.focus();
+      return;
+    }
+    valores[input.dataset.marcador] = val;
+  }
+
+  let textoFinal = _speechPendienteDeCompletar.texto;
+  Object.keys(valores).forEach(marcador => {
+    // Escapamos el marcador para usarlo en una regex literal
+    const escapado = marcador.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    textoFinal = textoFinal.replace(new RegExp(`\\{${escapado}\\}`, 'g'), valores[marcador]);
+  });
+
+  const textarea = document.getElementById('frec-concepto');
+  if (textarea) textarea.value = textoFinal;
+
+  cerrarModalCompletarSpeech();
+}
+
+let _speechPendienteDeCompletar = null;
+
+function _escapeHtmlRecibo(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+/* ── MODAL: GESTIONAR SPEECHES ────────────────────────────────────────── */
+function abrirModalSpeeches() {
+  if (!_viajeIdSeleccionadoRecibo || !_esAdminRecibos()) return;
+
+  const modal = document.getElementById('modal-speeches');
+  const nombreEl = document.getElementById('modal-speeches-viaje-nombre');
+  const errEl = document.getElementById('modal-speeches-error');
+  const inputEl = document.getElementById('modal-speeches-input');
+  if (!modal) return;
+
+  const nombreViaje = document.getElementById('frec-abona-por')?.value || '';
+  if (nombreEl) nombreEl.textContent = nombreViaje;
+  if (errEl) errEl.textContent = '';
+  if (inputEl) inputEl.value = '';
+
+  _renderListaSpeechesModal();
+  modal.style.display = '';
+}
+
+function cerrarModalSpeeches(event) {
+  if (event && event.target.id !== 'modal-speeches') return;
+  const modal = document.getElementById('modal-speeches');
+  if (modal) modal.style.display = 'none';
+}
+
+function _renderListaSpeechesModal() {
+  const lista = document.getElementById('modal-speeches-lista');
+  if (!lista) return;
+
+  if (_speechesDelViajeCache.length === 0) {
+    lista.innerHTML = '<p class="modal-speeches-vacio">Todavía no hay frases para este viaje.</p>';
+    return;
+  }
+
+  lista.innerHTML = _speechesDelViajeCache.map(s => `
+    <div class="modal-speech-item">
+      <span class="modal-speech-texto">${_escapeHtmlRecibo(s.texto)}</span>
+      <button type="button" class="modal-speech-borrar" onclick="borrarSpeech(${s.id})" title="Eliminar frase">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function agregarSpeech() {
+  const errEl = document.getElementById('modal-speeches-error');
+  const inputEl = document.getElementById('modal-speeches-input');
+  if (errEl) errEl.textContent = '';
+
+  const texto = (inputEl?.value || '').trim();
+  if (!texto) {
+    if (errEl) errEl.textContent = 'Escribí el texto de la frase.';
+    return;
+  }
+  if (!_viajeIdSeleccionadoRecibo) return;
+
+  const { data, error } = await supabaseClient
+    .from('recibo_speeches')
+    .insert({ viaje_id: _viajeIdSeleccionadoRecibo, texto })
+    .select('id, texto')
+    .single();
+
+  if (error) {
+    if (errEl) errEl.textContent = 'No se pudo guardar la frase. Intentá de nuevo.';
+    return;
+  }
+
+  _speechesDelViajeCache.push(data);
+  if (inputEl) inputEl.value = '';
+  _renderListaSpeechesModal();
+  await _cargarYRenderSpeechesChips(_viajeIdSeleccionadoRecibo);
+}
+
+async function borrarSpeech(speechId) {
+  if (!confirm('¿Eliminar esta frase para este viaje?')) return;
+
+  const { error } = await supabaseClient
+    .from('recibo_speeches')
+    .delete()
+    .eq('id', speechId);
+
+  if (error) {
+    const errEl = document.getElementById('modal-speeches-error');
+    if (errEl) errEl.textContent = 'No se pudo eliminar. Intentá de nuevo.';
+    return;
+  }
+
+  _speechesDelViajeCache = _speechesDelViajeCache.filter(s => s.id !== speechId);
+  _renderListaSpeechesModal();
+  await _cargarYRenderSpeechesChips(_viajeIdSeleccionadoRecibo);
 }
 
 async function cargarBancosEnSelect() {
