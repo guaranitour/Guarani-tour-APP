@@ -843,7 +843,14 @@ async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
 
   const datos = { viaje, pasajeros, errPasajeros, bycData, todosPagos };
   _viajeDetalleCache.set(viajeId, datos);
-  _pintarDetalleViaje(datos, { refrescando: false });
+  // Si esta carga fue un refresco silencioso de fondo (silencioso=true),
+  // NO tratamos este pintado como "entrada de cero" al viaje: el usuario
+  // pudo haber aplicado un filtro (buscador, panel de filtros, o clic en
+  // una alerta de deuda/BYC) mientras los datos frescos viajaban desde el
+  // servidor. Repintar con refrescando:false en ese caso reseteaba
+  // _filtrosVP y volvía a mostrar la lista completa, deshaciendo el
+  // filtro casi al instante.
+  _pintarDetalleViaje(datos, { refrescando: silencioso });
 }
 
 function _pintarDetalleViaje(datos, { refrescando }) {
@@ -1018,7 +1025,19 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   // Habilitar swipe horizontal entre tabs (solo una vez)
   _initSwipeTabsViaje();
 
-  renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
+  // Si hay un filtro (texto o de panel) activo -por ejemplo, el usuario
+  // tocó una alerta de deuda/BYC justo cuando llegó este refresco de
+  // fondo- lo reaplicamos sobre los datos frescos en vez de pintar la
+  // lista completa sin filtrar.
+  const hayFiltroActivo =
+    (document.getElementById("buscador-vp")?.value || "").trim() !== "" ||
+    Object.values(_filtrosVP).some(Boolean);
+
+  if (hayFiltroActivo) {
+    _aplicarFiltrosVP();
+  } else {
+    renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
+  }
 
   // Botón/caja flotante de alertas del viaje (deudas + BYC pendiente)
   _renderAlertasViaje();
