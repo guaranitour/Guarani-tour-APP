@@ -1435,7 +1435,14 @@ function activarEdicionContacto() {
   document.getElementById("contacto-edit-actions").style.display = "";
   document.getElementById("btn-editar-contacto").style.display   = "none";
   document.getElementById("contacto-edit-feedback").style.display = "none";
-  _syncContactoCollapseHeight();
+
+  // Si la sección está plegada, la desplegamos DESPUÉS de haber
+  // cambiado el contenido a modo edición: así _expandirContacto() mide
+  // la altura real del formulario (más alto que la vista de lectura) y
+  // no la del contenido anterior. Si ya estaba expandida, solo
+  // re-medimos con el ajuste instantáneo de siempre.
+  if (!_contactoExpandido) _expandirContacto();
+  else _syncContactoCollapseHeight();
 }
 
 function cancelarEdicionContacto() {

@@ -870,6 +870,21 @@
 }
 .btn-editar-detalle:hover { background: var(--success-active-bg); }
 
+/* Variante del botón "Editar" cuando vive DENTRO de una fila de toggle
+   plegable (ej. Contacto de emergencia), junto al ícono, el texto en
+   mayúsculas y el chevron. Achicamos tipografía/padding para que no
+   compita en tamaño con esa fila más compacta, y quitamos el
+   margin-left:auto (ya no hace falta: .section-title-text con flex:1
+   empuja todo lo que sigue hacia la derecha). */
+.section-title--toggle .btn-editar-detalle {
+  margin-left: 0;
+  flex-shrink: 0;
+  padding: .22rem .55rem;
+  font-size: .68rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* ── TABS VIAJE ─────────────────────────────── */
 
 .viaje-tabs-scroll {
