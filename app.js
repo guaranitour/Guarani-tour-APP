@@ -1306,25 +1306,56 @@ function _expandirContacto() {
   if (_contactoAnimando) _contactoAnimando.cancel();
 
   const startHeight = body.getBoundingClientRect().height;
-  body.style.height = "auto";
-  const endHeight = body.getBoundingClientRect().height;
-  body.style.height = `${startHeight}px`;
-  body.style.overflow = "hidden";
 
   _contactoExpandido = true;
   toggle.setAttribute("aria-expanded", "true");
 
-  _contactoAnimando = body.animate(
-    [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
-    { duration: CONTACTO_ANIM_MS, easing: CONTACTO_ANIM_EASING, fill: "forwards" }
-  );
+  // Medimos la altura final en el próximo frame, no en este mismo tick:
+  // si algo (ej. initCustomSelect() sobre el <select> de parentesco)
+  // termina de ajustar su propio layout de forma asíncrona, queremos
+  // que ya haya corrido antes de fijar cuánto debe medir la sección.
+  // Medir en el mismo tick que se dispara ese ajuste podía dejar la
+  // altura corta y tapar los botones de Guardar/Cancelar. Mientras
+  // esperamos el frame, la sección se ve exactamente igual que antes
+  // (seguimos en startHeight/hidden), así que no hay salto visual.
+  requestAnimationFrame(() => {
+    if (!_contactoExpandido) return; // se colapsó de nuevo mientras esperábamos el frame
 
-  _contactoAnimando.onfinish = () => {
+    const prevHeight = body.style.height;
+    const prevOverflow = body.style.overflow;
     body.style.height = "auto";
     body.style.overflow = "visible";
-    _contactoAnimando = null;
-  };
-  _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
+    const endHeight = body.getBoundingClientRect().height;
+    body.style.height = prevHeight || `${startHeight}px`;
+    body.style.overflow = prevOverflow || "hidden";
+
+    _contactoAnimando = body.animate(
+      [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
+      { duration: CONTACTO_ANIM_MS, easing: CONTACTO_ANIM_EASING, fill: "forwards" }
+    );
+
+    _contactoAnimando.onfinish = () => {
+      body.style.height = "auto";
+      body.style.overflow = "visible";
+      _contactoAnimando = null;
+      // Última red de seguridad: si el contenido cambió de tamaño
+      // mientras la animación corría (ej. un dropdown que se infló
+      // recién ahí), re-medimos una vez más ya con overflow visible.
+      _syncContactoCollapseHeight();
+      // La sección recién revelada puede terminar más abajo de lo que
+      // se ve en pantalla (el navbar inferior fijo tapa esa zona si no
+      // hay scroll). Llevamos el FINAL de la sección (los botones
+      // Guardar/Cancelar cuando se está editando) al borde visible, en
+      // vez del inicio, para que el usuario no tenga que adivinar que
+      // hace falta seguir scrolleando para poder guardar.
+      const scrollTarget = document.getElementById("contacto-edit-actions");
+      const targetEl = (scrollTarget && scrollTarget.style.display !== "none")
+        ? scrollTarget
+        : toggle;
+      targetEl.scrollIntoView({ behavior: "smooth", block: "end" });
+    };
+    _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
+  });
 }
 
 function _colapsarContacto() {
