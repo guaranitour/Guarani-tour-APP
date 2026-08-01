@@ -590,15 +590,22 @@ function aplicarSpeech(speechId) {
   _abrirModalCompletarSpeech(speech, marcadores);
 }
 
-// Encuentra cada {algo} en el texto, en orden de aparición, sin duplicar
-// nombres repetidos (si el mismo marcador aparece dos veces, se pide una
-// sola vez y se reemplaza en ambos lugares).
+// Encuentra cada marcador de entrada de datos {algo} en el texto, en
+// orden de aparición, sin duplicar nombres repetidos (si el mismo
+// marcador aparece dos veces, se pide una sola vez y se reemplaza en
+// ambos lugares). Los marcadores de pluralización {var?sing/plural} NO
+// se piden como campo aparte: se resuelven solos a partir del valor
+// que el usuario cargue para {var}.
 function _extraerMarcadores(texto) {
   const vistos = new Set();
   const encontrados = [];
+  // Primero "tapamos" los marcadores de pluralización para que su
+  // variable base no se cuente dos veces ni se confunda con un campo
+  // de texto libre.
+  const sinPlurales = texto.replace(/\{([^{}?]+)\?[^{}]*\/[^{}]*\}/g, '');
   const regex = /\{([^{}]+)\}/g;
   let m;
-  while ((m = regex.exec(texto)) !== null) {
+  while ((m = regex.exec(sinPlurales)) !== null) {
     if (!vistos.has(m[1])) {
       vistos.add(m[1]);
       encontrados.push(m[1]);
@@ -658,6 +665,17 @@ function confirmarCompletarSpeech() {
   }
 
   let textoFinal = _speechPendienteDeCompletar.texto;
+
+  // 1) Resolver primero los marcadores de pluralización {var?singular/plural}
+  //    usando el valor que el usuario cargó para {var}. Si ese valor no es
+  //    un número reconocible, usamos el plural por defecto (más seguro).
+  textoFinal = textoFinal.replace(/\{([^{}?]+)\?([^{}]*)\/([^{}]*)\}/g, (match, variable, singular, plural) => {
+    const valor = valores[variable];
+    const esUno = valor !== undefined && parseFloat(valor.replace(',', '.')) === 1;
+    return esUno ? singular : plural;
+  });
+
+  // 2) Resolver los marcadores simples {var} con el valor cargado
   Object.keys(valores).forEach(marcador => {
     // Escapamos el marcador para usarlo en una regex literal
     const escapado = marcador.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
