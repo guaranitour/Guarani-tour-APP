@@ -21,6 +21,15 @@ let _bycAceptados = new Set();
 // al instante al volver de un pasajero/pago, mientras se refresca de
 // fondo en silencio.
 const _viajeDetalleCache = new Map();
+
+// Caché en memoria (stale-while-revalidate) del HTML ya renderizado de
+// la lista de viajes ACTIVOS (no el histórico, que ya pagina aparte).
+// Igual que _dashCache en dashboard.js: vive mientras dure la sesión de
+// la SPA. Al reingresar a "Viajes activos" se pinta esto al instante,
+// sin skeleton, y se revalida en segundo plano; si el HTML resultante
+// difiere, se reemplaza con un fade corto.
+let _viajesListaCache = null; // string HTML | null
+
 /* ─────────────────────────────────────────────
    viajes_activos.js — Gestión de viajes
 ───────────────────────────────────────────── */
@@ -43,10 +52,6 @@ async function loadViajes(modo = "activos") {
   const list = document.getElementById(listId);
   if (!list) return;
 
-  if (modo !== "historico") {
-    list.innerHTML = "Cargando…";
-  }
-
   if (modo === "historico") {
     // Reset al entrar al histórico (primera carga)
     _historicoOffset  = 0;
@@ -57,7 +62,19 @@ async function loadViajes(modo = "activos") {
     return;
   }
 
-  // ── Viajes activos ──────────────────────────
+  // ── Viajes activos: stale-while-revalidate ──────────────────
+  const teniaCache = _viajesListaCache !== null;
+
+  if (teniaCache) {
+    // 1a) Ya hay algo cacheado de una visita anterior: lo pintamos tal
+    //     cual, al instante, sin skeleton.
+    list.innerHTML = _viajesListaCache;
+    _setListaRevalidando(true);
+  } else {
+    // 1b) Primera vez en esta sesión: mostramos el esqueleto de carga.
+    list.innerHTML = _viajesListaSkeletonHtml();
+  }
+
   const { data, error } = await supabaseClient
     .from("viajes")
     .select("*")
@@ -66,20 +83,89 @@ async function loadViajes(modo = "activos") {
 
   if (error) {
     console.error(error);
-    list.innerHTML = "Error al cargar viajes";
+    if (teniaCache) {
+      // Falló la revalidación: dejamos lo cacheado tal cual a la vista,
+      // solo quitamos el indicador de "actualizando".
+      _setListaRevalidando(false);
+    } else {
+      list.innerHTML = "Error al cargar viajes";
+    }
     return;
   }
 
   allViajes = data;
 
   if (!data || data.length === 0) {
-    list.innerHTML = `<div class="users-empty">Sin viajes registrados</div>`;
+    const htmlVacio = `<div class="users-empty">Sin viajes registrados</div>`;
+    if (teniaCache) _swapListaIfChanged(list, htmlVacio);
+    else list.innerHTML = htmlVacio;
+    _viajesListaCache = htmlVacio;
     return;
   }
 
-  list.innerHTML = renderViajeCards(data);
+  const htmlNuevo = renderViajeCards(data);
+
+  if (teniaCache) {
+    // Reemplaza solo si cambió respecto a lo cacheado, con un fade corto;
+    // si es idéntico, no toca el DOM (evita parpadeo/pérdida de scroll).
+    _swapListaIfChanged(list, htmlNuevo);
+  } else {
+    list.innerHTML = htmlNuevo;
+  }
+  _viajesListaCache = htmlNuevo;
+
   // Chequear alertas 48h solo para viajes activos
   checkAlertasViajes(data);
+}
+
+// Muestra/quita el indicador de "actualizando…" arriba de la grilla,
+// sin tocar el resto del contenido ya pintado (igual que
+// _setSlotRevalidating en dashboard.js, pero para un contenedor simple
+// en vez de un slot con título propio).
+function _setListaRevalidando(on) {
+  const cont = document.getElementById("viajes-list");
+  if (!cont) return;
+  let tag = document.getElementById("viajes-lista-revalidando");
+  if (on) {
+    if (!tag) {
+      cont.insertAdjacentHTML("beforebegin",
+        `<div id="viajes-lista-revalidando" class="viajes-lista-loading-tag" aria-hidden="true"><span class="viajes-lista-dot"></span><span class="viajes-lista-dot"></span><span class="viajes-lista-dot"></span></div>`);
+    }
+  } else if (tag) {
+    tag.remove();
+  }
+}
+
+// Reemplaza el contenido de la grilla solo si el HTML nuevo difiere del
+// cacheado, con un breve fade. Si es idéntico, no toca el DOM.
+function _swapListaIfChanged(listEl, newHtml) {
+  _setListaRevalidando(false);
+  if (_viajesListaCache === newHtml) return; // sin cambios: no re-renderizamos nada
+  listEl.innerHTML = newHtml;
+  listEl.classList.remove("viajes-lista-updating");
+  // Forzamos reflow para que la animación se reinicie si se dispara seguido
+  void listEl.offsetWidth;
+  listEl.classList.add("viajes-lista-updating");
+}
+
+// Skeleton de la grilla de viajes activos: mismo tamaño/forma que las
+// tarjetas reales (imagen + overlay), para que el "aterrizaje" de los
+// datos reales no salte de tamaño.
+function _viajesListaSkeletonHtml(cantidad = 6) {
+  return Array.from({ length: cantidad }).map(() => `
+    <div class="viaje-card viaje-card-skel">
+      <div class="viaje-card-media">
+        <div class="viajes-skel viajes-skel-media"></div>
+        <div class="viaje-card-overlay">
+          <div class="viajes-skel viajes-skel-line viajes-skel-line-nombre"></div>
+          <div class="viaje-card-meta">
+            <div class="viajes-skel viajes-skel-pill"></div>
+            <div class="viajes-skel viajes-skel-fecha"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join("");
 }
 
 /* ── CARGA UN BLOQUE DE 6 MESES DEL HISTÓRICO ─ */
@@ -467,6 +553,9 @@ async function crearViaje() {
     return;
   }
 
+  // Viaje nuevo: invalidamos el caché de la lista para que al volver se
+  // vea reflejado de una, en vez de mostrar la lista vieja un instante.
+  _viajesListaCache = null;
   navigateTo("viajes");
 }
 
@@ -648,6 +737,9 @@ async function guardarEditarViaje() {
   // El viaje acaba de cambiar: invalidamos cache para traer datos frescos
   // en primer plano al volver, en vez de repintar lo viejo por un instante.
   _viajeDetalleCache.delete(viajeActualId);
+  // También invalidamos la lista: nombre/imagen/fecha/estado son
+  // justo los campos que se ven en la tarjeta de la grilla.
+  _viajesListaCache = null;
 
   navigateTo("viaje-detalle", viajeActualId);
 }

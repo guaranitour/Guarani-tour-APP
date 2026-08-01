@@ -1442,3 +1442,113 @@
   background: rgba(201,168,76,.1);
   color: var(--gold-text);
 }
+
+/* ══════════════════════════════════════════════════════════
+   CACHÉ EN MEMORIA DE LA LISTA — stale-while-revalidate
+   Mismo patrón que dashboard.js/dashboard.css: al reingresar a
+   "Viajes activos" con algo ya cacheado, se pinta al instante y
+   se revalida en segundo plano; solo se ve un indicador de
+   puntos arriba de la grilla mientras dura la revalidación.
+═══════════════════════════════════════════════════════════ */
+
+.viajes-lista-loading-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: .7rem;
+}
+.viajes-lista-loading-tag .viajes-lista-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: viajesListaDotPulse 1s ease-in-out infinite;
+}
+.viajes-lista-loading-tag .viajes-lista-dot:nth-child(2) { animation-delay: .15s; }
+.viajes-lista-loading-tag .viajes-lista-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes viajesListaDotPulse {
+  0%, 80%, 100% { opacity: .25; transform: scale(.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* Fade corto al reemplazar la grilla con datos frescos post-revalidación */
+.viajes-lista-updating {
+  animation: viajesListaFadeSwap .35s ease;
+}
+@keyframes viajesListaFadeSwap {
+  0%   { opacity: .4; }
+  100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viajes-lista-updating { animation: none; }
+}
+
+/* ── SKELETON: tarjetas de viaje (primera carga, sin caché) ─── */
+.viajes-skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg2);
+  isolation: isolate;
+}
+.viajes-skel::after {
+  content: "";
+  position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--glass-border, rgba(255,255,255,.35)) 45%,
+    var(--glass-border, rgba(255,255,255,.35)) 55%,
+    transparent
+  );
+  animation: viajesSkelShimmer 1.4s ease-in-out infinite;
+}
+@keyframes viajesSkelShimmer {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viajes-skel::after { animation: none; }
+}
+
+.viaje-card-skel {
+  cursor: default;
+  pointer-events: none;
+}
+
+.viajes-skel-media {
+  width: 100%;
+  height: 100%;
+}
+
+.viajes-skel-line {
+  height: .95rem;
+  border-radius: 6px;
+}
+.viajes-skel-line-nombre {
+  width: 65%;
+  margin-bottom: .6rem;
+  /* Sobre la imagen de fondo (que en skeleton es --bg2), usamos un tono
+     translúcido claro para simular texto blanco en vez del shimmer
+     genérico, ya que este bloque va dentro del overlay oscuro. */
+  background: rgba(255,255,255,.25);
+}
+.viajes-skel-line-nombre::after { display: none; }
+
+.viajes-skel-pill {
+  width: 64px;
+  height: 1.3rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.2);
+}
+.viajes-skel-pill::after { display: none; }
+
+.viajes-skel-fecha {
+  width: 84px;
+  height: .95rem;
+  border-radius: 6px;
+  background: rgba(255,255,255,.2);
+}
+.viajes-skel-fecha::after { display: none; }
