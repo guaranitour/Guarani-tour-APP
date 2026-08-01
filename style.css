@@ -703,6 +703,27 @@ h2 {
 }
 .detail-value.empty { color: var(--text-muted); font-style: italic; font-size: .82rem; }
 
+/* ── Contacto de emergencia ──────────────────────────────── */
+.detalle-empty-state {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .7rem;
+  padding: .9rem 1rem;
+  background: var(--glass-bg);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+.detalle-empty-state p {
+  font-size: .85rem; color: var(--text-muted); margin: 0;
+}
+.btn-agregar-pasajero {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .5rem 1rem; border: none;
+  border-radius: 10px; background: var(--accent); color: #fff;
+  font-family: 'Roboto', sans-serif; font-size: .85rem; font-weight: 500;
+  cursor: pointer; transition: background .15s, transform .12s;
+}
+.btn-agregar-pasajero:hover { background: #235a3f; }
+.btn-agregar-pasajero:active { transform: scale(.97); }
+
 /* ── FAB ─────────────────────────────────────────────────── */
 .fab {
   position: fixed; bottom: 1.8rem; right: 1.8rem; z-index: 150;
