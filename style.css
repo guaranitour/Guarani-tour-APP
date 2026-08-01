@@ -703,6 +703,38 @@ h2 {
 }
 .detail-value.empty { color: var(--text-muted); font-style: italic; font-size: .82rem; }
 
+/* ── Contacto de emergencia (sección plegable) ───────────── */
+.detalle-section--collapsible { padding-bottom: .3rem; }
+
+.section-title--toggle {
+  width: 100%;
+  background: none; border: none; padding: 0;
+  margin-bottom: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.section-title--toggle:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px;
+}
+.section-title-text { flex: 1; }
+
+.section-title-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+.section-title--toggle[aria-expanded="true"] .section-title-chevron {
+  transform: rotate(180deg);
+}
+
+.detalle-collapse-body {
+  will-change: height;
+}
+.detalle-collapse-inner {
+  padding-top: .9rem;
+}
+
 /* ── Contacto de emergencia ──────────────────────────────── */
 .detalle-empty-state {
   display: flex; flex-direction: column; align-items: flex-start; gap: .7rem;

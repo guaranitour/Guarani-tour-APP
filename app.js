@@ -1052,6 +1052,7 @@ async function renderDetalle(idx) {
   cancelarEdicionDetalle(true);
 
   // ── Contacto de emergencia ────────────────────────
+  resetContactoCollapse();
   cargarContactoEmergencia(p.id);
 
   // ── Datos de viajes del pasajero ──────────────────
@@ -1214,6 +1215,93 @@ function mostrarFeedbackDetalle(msg, ok) {
 
 // ── Contacto de emergencia ───────────────────────────────────
 let _contactoActual = null; // fila actual en memoria, o null si no existe
+let _contactoExpandido = false;
+let _contactoAnimando = null; // Animation en curso, si hay
+
+const CONTACTO_ANIM_MS = 320;
+const CONTACTO_ANIM_EASING = "cubic-bezier(.4,0,.2,1)";
+
+function _contactoEls() {
+  return {
+    body:    document.getElementById("contacto-collapse"),
+    toggle:  document.getElementById("contacto-toggle"),
+  };
+}
+
+// Fija el estado inicial (colapsado) sin animar — se llama al entrar al detalle.
+function resetContactoCollapse() {
+  const { body, toggle } = _contactoEls();
+  if (!body || !toggle) return;
+  if (_contactoAnimando) { _contactoAnimando.cancel(); _contactoAnimando = null; }
+  _contactoExpandido = false;
+  body.style.height = "0px";
+  body.style.overflow = "hidden";
+  toggle.setAttribute("aria-expanded", "false");
+}
+
+function toggleContactoCollapse() {
+  _contactoExpandido ? _colapsarContacto() : _expandirContacto();
+}
+
+function _expandirContacto() {
+  const { body, toggle } = _contactoEls();
+  if (!body || !toggle) return;
+  if (_contactoAnimando) _contactoAnimando.cancel();
+
+  const startHeight = body.getBoundingClientRect().height;
+  body.style.height = "auto";
+  const endHeight = body.getBoundingClientRect().height;
+  body.style.height = `${startHeight}px`;
+  body.style.overflow = "hidden";
+
+  _contactoExpandido = true;
+  toggle.setAttribute("aria-expanded", "true");
+
+  _contactoAnimando = body.animate(
+    [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
+    { duration: CONTACTO_ANIM_MS, easing: CONTACTO_ANIM_EASING, fill: "forwards" }
+  );
+
+  _contactoAnimando.onfinish = () => {
+    body.style.height = "auto";
+    body.style.overflow = "visible";
+    _contactoAnimando = null;
+  };
+  _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
+}
+
+function _colapsarContacto() {
+  const { body, toggle } = _contactoEls();
+  if (!body || !toggle) return;
+  if (_contactoAnimando) _contactoAnimando.cancel();
+
+  const startHeight = body.getBoundingClientRect().height;
+  body.style.overflow = "hidden";
+
+  _contactoExpandido = false;
+  toggle.setAttribute("aria-expanded", "false");
+
+  _contactoAnimando = body.animate(
+    [{ height: `${startHeight}px` }, { height: "0px" }],
+    { duration: CONTACTO_ANIM_MS, easing: CONTACTO_ANIM_EASING, fill: "forwards" }
+  );
+
+  _contactoAnimando.onfinish = () => {
+    body.style.height = "0px";
+    _contactoAnimando = null;
+  };
+  _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
+}
+
+// Re-mide la altura cuando el contenido interno cambia mientras está
+// expandido (view↔edit, feedback, estado vacío). Sin animar: es un ajuste
+// instantáneo de una sección ya abierta, no una apertura/cierre.
+function _syncContactoCollapseHeight() {
+  if (!_contactoExpandido || _contactoAnimando) return;
+  const { body } = _contactoEls();
+  if (!body) return;
+  body.style.height = "auto";
+}
 
 function _puedeEditarContacto() {
   return ["admin", "worker"].some(r =>
@@ -1268,6 +1356,8 @@ async function cargarContactoEmergencia(pasajeroId) {
     if (btnEditar)  btnEditar.style.display  = "none";
     if (btnAgregar) btnAgregar.style.display = puede ? "" : "none";
   }
+
+  _syncContactoCollapseHeight();
 }
 
 function activarEdicionContacto() {
@@ -1288,6 +1378,7 @@ function activarEdicionContacto() {
   document.getElementById("contacto-edit-actions").style.display = "";
   document.getElementById("btn-editar-contacto").style.display   = "none";
   document.getElementById("contacto-edit-feedback").style.display = "none";
+  _syncContactoCollapseHeight();
 }
 
 function cancelarEdicionContacto() {
@@ -1305,6 +1396,7 @@ function cancelarEdicionContacto() {
     const btnAgregar = document.getElementById("btn-agregar-contacto");
     if (btnAgregar) btnAgregar.style.display = puede ? "" : "none";
   }
+  _syncContactoCollapseHeight();
 }
 
 async function guardarContactoEmergencia() {
@@ -1364,7 +1456,11 @@ function mostrarFeedbackContacto(msg, ok) {
   el.style.background = ok ? "#f0faf4" : "#fff0f0";
   el.style.color      = ok ? "#2d6a4f" : "#c0392b";
   el.style.border     = ok ? "1px solid rgba(45,106,79,.2)" : "1px solid rgba(192,57,43,.2)";
-  if (ok) setTimeout(() => { el.style.display = "none"; }, 3000);
+  _syncContactoCollapseHeight();
+  if (ok) setTimeout(() => {
+    el.style.display = "none";
+    _syncContactoCollapseHeight();
+  }, 3000);
 }
 
 // ── Avatar ─────────────────────────────────────────────────

@@ -1096,84 +1096,89 @@
         </div>
         <div id="detalle-edit-feedback" style="display:none; margin: 0 1rem 1rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
 
-        <!-- Contacto de emergencia -->
-        <div class="detalle-section">
-          <div class="section-title">
+        <!-- Contacto de emergencia (plegable) -->
+        <div class="detalle-section detalle-section--collapsible">
+          <button type="button" class="section-title section-title--toggle" id="contacto-toggle" onclick="toggleContactoCollapse()" aria-expanded="false" aria-controls="contacto-collapse">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Contacto de emergencia
-            <button class="btn-editar-detalle" id="btn-editar-contacto" onclick="activarEdicionContacto()" style="display:none">
+            <span class="section-title-text">Contacto de emergencia</span>
+            <span class="btn-editar-detalle" id="btn-editar-contacto" onclick="event.stopPropagation(); activarEdicionContacto()" style="display:none">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Editar
-            </button>
-          </div>
+            </span>
+            <svg class="section-title-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
 
-          <!-- Vista lectura -->
-          <div class="detail-grid" id="contacto-fields-view">
-            <div class="detail-field">
-              <span class="detail-label">Nombre</span>
-              <span class="detail-value" id="c-nombre"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Celular</span>
-              <span class="detail-value" id="c-telefono"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Parentesco</span>
-              <span class="detail-value" id="c-parentesco"></span>
-            </div>
-            <div class="detail-field full" id="c-observaciones-wrap" style="display:none">
-              <span class="detail-label">Observaciones</span>
-              <span class="detail-value" id="c-observaciones"></span>
-            </div>
-          </div>
+          <div class="detalle-collapse-body" id="contacto-collapse" style="height:0; overflow:hidden">
+            <div class="detalle-collapse-inner">
+              <!-- Vista lectura -->
+              <div class="detail-grid" id="contacto-fields-view">
+                <div class="detail-field">
+                  <span class="detail-label">Nombre</span>
+                  <span class="detail-value" id="c-nombre"></span>
+                </div>
+                <div class="detail-field">
+                  <span class="detail-label">Celular</span>
+                  <span class="detail-value" id="c-telefono"></span>
+                </div>
+                <div class="detail-field">
+                  <span class="detail-label">Parentesco</span>
+                  <span class="detail-value" id="c-parentesco"></span>
+                </div>
+                <div class="detail-field full" id="c-observaciones-wrap" style="display:none">
+                  <span class="detail-label">Observaciones</span>
+                  <span class="detail-value" id="c-observaciones"></span>
+                </div>
+              </div>
 
-          <!-- Formulario edición (oculto por defecto) -->
-          <div class="detail-grid" id="contacto-fields-edit" style="display:none">
-            <div class="form-field full">
-              <label class="form-label">Nombre <span class="req">*</span></label>
-              <input type="text" id="ce-nombre" class="form-input" placeholder="Nombre completo" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Celular <span class="req">*</span></label>
-              <input type="tel" id="ce-telefono" class="form-input" placeholder="09xx xxx xxx" inputmode="tel" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Parentesco</label>
-              <select id="ce-parentesco" class="form-input">
-                <option value="">— Seleccionar —</option>
-                <option value="Padre/Madre">Padre/Madre</option>
-                <option value="Hijo/a">Hijo/a</option>
-                <option value="Cónyuge">Cónyuge</option>
-                <option value="Hermano/a">Hermano/a</option>
-                <option value="Otro familiar">Otro familiar</option>
-                <option value="Amigo/a">Amigo/a</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-            <div class="form-field full">
-              <label class="form-label">Observaciones</label>
-              <textarea id="ce-observaciones" class="form-input" rows="2" placeholder="Ej: alergias, condición médica, disponibilidad horaria…"></textarea>
-            </div>
-          </div>
+              <!-- Formulario edición (oculto por defecto) -->
+              <div class="detail-grid" id="contacto-fields-edit" style="display:none">
+                <div class="form-field full">
+                  <label class="form-label">Nombre <span class="req">*</span></label>
+                  <input type="text" id="ce-nombre" class="form-input" placeholder="Nombre completo" />
+                </div>
+                <div class="form-field">
+                  <label class="form-label">Celular <span class="req">*</span></label>
+                  <input type="tel" id="ce-telefono" class="form-input" placeholder="09xx xxx xxx" inputmode="tel" />
+                </div>
+                <div class="form-field">
+                  <label class="form-label">Parentesco</label>
+                  <select id="ce-parentesco" class="form-input">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Padre/Madre">Padre/Madre</option>
+                    <option value="Hijo/a">Hijo/a</option>
+                    <option value="Cónyuge">Cónyuge</option>
+                    <option value="Hermano/a">Hermano/a</option>
+                    <option value="Otro familiar">Otro familiar</option>
+                    <option value="Amigo/a">Amigo/a</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div class="form-field full">
+                  <label class="form-label">Observaciones</label>
+                  <textarea id="ce-observaciones" class="form-input" rows="2" placeholder="Ej: alergias, condición médica, disponibilidad horaria…"></textarea>
+                </div>
+              </div>
 
-          <!-- Estado vacío -->
-          <div id="contacto-empty" class="detalle-empty-state" style="display:none">
-            <p>No hay contacto de emergencia registrado.</p>
-            <button class="btn-agregar-pasajero" id="btn-agregar-contacto" onclick="activarEdicionContacto()" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-              Agregar contacto
-            </button>
-          </div>
+              <!-- Estado vacío -->
+              <div id="contacto-empty" class="detalle-empty-state" style="display:none">
+                <p>No hay contacto de emergencia registrado.</p>
+                <button class="btn-agregar-pasajero" id="btn-agregar-contacto" onclick="activarEdicionContacto()" style="display:none">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  Agregar contacto
+                </button>
+              </div>
 
-          <!-- Acciones edición -->
-          <div class="form-actions" id="contacto-edit-actions" style="display:none">
-            <button class="btn-cancel" onclick="cancelarEdicionContacto()">Cancelar</button>
-            <button class="btn-save" id="btn-guardar-contacto" onclick="guardarContactoEmergencia()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Guardar contacto
-            </button>
+              <!-- Acciones edición -->
+              <div class="form-actions" id="contacto-edit-actions" style="display:none">
+                <button class="btn-cancel" onclick="cancelarEdicionContacto()">Cancelar</button>
+                <button class="btn-save" id="btn-guardar-contacto" onclick="guardarContactoEmergencia()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Guardar contacto
+                </button>
+              </div>
+              <div id="contacto-edit-feedback" style="display:none; margin-top:.8rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
+            </div>
           </div>
-          <div id="contacto-edit-feedback" style="display:none; margin-top:.8rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
         </div>
       </div>
     </div>
