@@ -9,6 +9,11 @@ let selectedIdx = null;
 // "clientes") antes de que el bloque "clientes" llegue a leerlo.
 let _ultimoDetalleIdx = null;
 let appReady = false;
+// Promesa de la carga de allPassengers en curso, si hay una. Permite que
+// varias vistas que dependan de la lista (detalle, historial-viajes) esperen
+// la misma carga en vez de disparar loadPassengers() por duplicado — por
+// ejemplo al recargar la página directo en #detalle/17.
+let _loadPassengersPromise = null;
 
 // ── Caches de tablas estáticas ─────────────────────────────
 // Se cargan una sola vez por sesión y se reutilizan en todos los módulos
@@ -173,7 +178,9 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     if (gotoParam && restorableViews.includes(gotoParam)) {
       // Limpiar el query param de la URL para que no quede pegado
       history.replaceState({}, "", location.pathname + location.hash);
-      navigateTo(gotoParam, idxParam || null);
+      const idxValue = idxParam === null ? null
+        : (isNaN(idxParam) ? idxParam : parseInt(idxParam, 10));
+      navigateTo(gotoParam, idxValue);
     } else {
       // Si hay un hash en la URL al cargar, intentar restaurar esa vista
       // (hash vacío se parsea como "dashboard", que ya es el destino por defecto)
@@ -553,7 +560,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
     showEl("view-detalle");
     renderDetalle(idx);
-    const p = allPassengers.find(x => x._idx === idx);
+    const p = allPassengers.find(x => x.id === idx);
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
@@ -642,14 +649,11 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   else if (view === "historial-viajes") {
 
     showEl("view-historial-viajes");
-    const p = allPassengers.find(x => x._idx === idx);
-    const nombre = p?.Pasajero || "Pasajero";
-    document.getElementById("historial-titulo").textContent = nombre;
+    document.getElementById("historial-titulo").textContent = "Pasajero";
     document.getElementById("historial-subtitulo").textContent = "Viajes asistidos como protagonista";
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Base de clientes", action: () => navigateTo("clientes") },
-      { label: nombre, action: () => navigateTo("detalle", idx) },
       { label: "Historial de viajes" }
     ]);
     loadHistorialViajes(idx);
@@ -864,6 +868,23 @@ function updateBreadcrumb(items) {
 
 // ── Carga ──────────────────────────────────────────────────
 async function loadPassengers() {
+  if (_loadPassengersPromise) return _loadPassengersPromise;
+  _loadPassengersPromise = _loadPassengersImpl().finally(() => {
+    _loadPassengersPromise = null;
+  });
+  return _loadPassengersPromise;
+}
+
+// Garantiza que allPassengers esté poblado antes de continuar. Necesario
+// cuando se entra directo a una vista que depende de la lista (detalle,
+// historial-viajes) sin haber pasado antes por "clientes" — típicamente
+// al recargar la página con ese hash en la URL.
+async function garantizarPassengersCargados() {
+  if (allPassengers.length > 0) return;
+  await loadPassengers();
+}
+
+async function _loadPassengersImpl() {
   setListState("loading");
   const { data, error } = await supabaseClient
     .from("pasajeros")
@@ -926,7 +947,9 @@ function createRow(p, i) {
     // la transición hacia el detalle.
     const avatarEl = row.querySelector(".p-avatar");
     if (avatarEl) avatarEl.style.viewTransitionName = `avatar-${p._idx}`;
-    navigateTo("detalle", p._idx);
+    // navigateTo recibe el id real (estable en la URL), no _idx (posición
+    // en el array, que puede cambiar de sesión a sesión).
+    navigateTo("detalle", p.id);
   };
 
   const avatarInner = avatarCache[p._idx]
@@ -999,10 +1022,37 @@ function filterPassengers() {
   }, 160);
 }
 
+// Se muestra cuando renderDetalle no logra resolver el pasajero (id
+// inexistente, o un enlace/hash inválido). Evita dejar la pantalla en
+// blanco con los campos de la última vista renderizada.
+function mostrarDetalleNoEncontrado() {
+  const contenidoEl = document.getElementById("detalle-contenido");
+  const noEncontradoEl = document.getElementById("detalle-no-encontrado");
+  if (contenidoEl) contenidoEl.style.display = "none";
+  if (noEncontradoEl) noEncontradoEl.style.display = "";
+}
+
 // ── Detalle ────────────────────────────────────────────────
-async function renderDetalle(idx) {
-  const p = allPassengers.find(x => x._idx === idx);
-  if (!p) return;
+// pasajeroId es el id real de la tabla "pasajeros" (estable en la URL).
+// Internamente seguimos usando p._idx para todo lo que ya dependía de él
+// (avatar cache, dataset del DOM, view-transition-name).
+async function renderDetalle(pasajeroId) {
+  await garantizarPassengersCargados();
+
+  const p = allPassengers.find(x => x.id === pasajeroId);
+  if (!p) {
+    mostrarDetalleNoEncontrado();
+    return;
+  }
+
+  // Encontrado: asegurar que el contenido normal esté visible (por si
+  // quedó oculto de un intento previo con un id inválido).
+  const contenidoEl = document.getElementById("detalle-contenido");
+  const noEncontradoEl = document.getElementById("detalle-no-encontrado");
+  if (contenidoEl) contenidoEl.style.display = "";
+  if (noEncontradoEl) noEncontradoEl.style.display = "none";
+
+  const idx = p._idx;
   const name = p.Pasajero || "Sin nombre";
 
   _ultimoDetalleIdx = idx;
@@ -1033,6 +1083,13 @@ async function renderDetalle(idx) {
   }
 
   document.getElementById("detalle-name").textContent = name;
+  if (currentView === "detalle" && selectedIdx === pasajeroId) {
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Base de clientes", action: () => navigateTo("clientes") },
+      { label: name }
+    ]);
+  }
   setField("d-nombre-full", p.Pasajero);
   setField("d-ci",          p["Documento de Identidad"]);
   setField("d-fecha",       formatDate(p["Fecha de nacimiento"]));
@@ -1091,12 +1148,12 @@ async function renderDetalle(idx) {
     : `<span style="color:var(--text-muted)">No miembro</span>`;
   document.getElementById("d-total-viajes").textContent = totalViajes;
   const cardViajes = document.getElementById("card-total-viajes");
-  if (cardViajes) cardViajes.onclick = () => irAHistorialViajes(idx);
+  if (cardViajes) cardViajes.onclick = () => irAHistorialViajes(p.id);
   document.getElementById("d-ultimo-viaje").textContent = ultimoNombre;
 }
 
 async function activarEdicionDetalle() {
-  const p = allPassengers.find(x => x._idx === selectedIdx);
+  const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
   const esAdmin = Array.isArray(currentUserRole)
@@ -1150,7 +1207,7 @@ function cancelarEdicionDetalle(silencioso = false) {
 }
 
 async function guardarEdicionDetalle() {
-  const p = allPassengers.find(x => x._idx === selectedIdx);
+  const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
   const nombre = document.getElementById("e-nombre").value.trim();
@@ -1400,7 +1457,7 @@ function cancelarEdicionContacto() {
 }
 
 async function guardarContactoEmergencia() {
-  const p = allPassengers.find(x => x._idx === selectedIdx);
+  const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
   const nombre   = document.getElementById("ce-nombre").value.trim();
@@ -1480,7 +1537,7 @@ async function handleAvatarUpload(event) {
   const reader = new FileReader();
   reader.onload = e => {
     avatarCache[idx] = e.target.result;
-    renderDetalle(idx);
+    renderDetalle(p.id);
     const row = document.querySelector(`.passenger-row[data-idx="${idx}"]`);
     if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
   };
@@ -1916,21 +1973,35 @@ async function guardarNuevoCliente() {
 }
 
 // ── Historial de viajes del pasajero ───────────────────────
-function irAHistorialViajes(pasajeroIdx) {
-  const idxToUse = (pasajeroIdx !== undefined) ? pasajeroIdx : selectedIdx;
-  const p = allPassengers.find(x => x._idx === idxToUse);
+// pasajeroId es el id real de la tabla "pasajeros" (mismo criterio que
+// navigateTo("detalle", id)), para que el hash resultante sea estable.
+function irAHistorialViajes(pasajeroId) {
+  const idToUse = (pasajeroId !== undefined) ? pasajeroId : selectedIdx;
+  const p = allPassengers.find(x => x.id === idToUse);
   if (!p) return;
   const total = document.getElementById("d-total-viajes")?.textContent;
   if (total === "0" || total === "…" || total === "—") return;
-  navigateTo("historial-viajes", idxToUse);
+  navigateTo("historial-viajes", idToUse);
 }
 
-async function loadHistorialViajes(idx) {
+async function loadHistorialViajes(pasajeroId) {
   const listEl = document.getElementById("historial-list");
   listEl.innerHTML = `<div class="list-state"><div class="icon">⏳</div>Cargando viajes…</div>`;
 
-  const p = allPassengers.find(x => x._idx === idx);
+  await garantizarPassengersCargados();
+  const p = allPassengers.find(x => x.id === pasajeroId);
   if (!p) { listEl.innerHTML = `<div class="list-state"><div class="icon">⚠️</div>Pasajero no encontrado.</div>`; return; }
+
+  const nombre = p.Pasajero || "Pasajero";
+  document.getElementById("historial-titulo").textContent = nombre;
+  if (currentView === "historial-viajes" && selectedIdx === pasajeroId) {
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Base de clientes", action: () => navigateTo("clientes") },
+      { label: nombre, action: () => navigateTo("detalle", pasajeroId) },
+      { label: "Historial de viajes" }
+    ]);
+  }
 
   const { data, error } = await supabaseClient
     .from("viaje_pasajeros")

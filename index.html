@@ -958,6 +958,16 @@
     <!-- DETALLE PASAJERO -->
     <div id="view-detalle" style="display:none">
       <div class="main detalle-main">
+
+        <!-- Estado: pasajero no encontrado (oculto por defecto) -->
+        <div id="detalle-no-encontrado" class="detalle-empty-state" style="display:none; margin: 2rem 0;">
+          <p>No se pudo cargar este pasajero. Puede que ya no exista o que el enlace sea incorrecto.</p>
+          <button class="btn-agregar-pasajero" onclick="navigateTo('clientes')">
+            Volver a la base de clientes
+          </button>
+        </div>
+
+        <div id="detalle-contenido">
         <div class="detalle-profile">
           <div class="detalle-avatar-wrap">
             <div class="detalle-avatar" id="detalle-avatar">
@@ -1179,6 +1189,7 @@
               <div id="contacto-edit-feedback" style="display:none; margin-top:.8rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
