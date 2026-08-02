@@ -965,6 +965,40 @@
   white-space: nowrap;
 }
 
+/* ── EXTRA (servicios_extra) ─────────────────── */
+
+.extra-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--border, #e8ede9);
+  gap: .75rem;
+  cursor: pointer;
+}
+.extra-row:last-child { border-bottom: none; }
+.extra-info { flex: 1; min-width: 0; }
+.extra-nombre { font-size: .88rem; font-weight: 600; color: var(--text, #1a1a1a); }
+.extra-desc { font-size: .78rem; color: var(--text-muted, #888); margin-top: .1rem; }
+.extra-costos { font-size: .75rem; color: var(--text-muted, #888); margin-top: .2rem; }
+.extra-precio {
+  font-size: .88rem; font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.extra-row-actions {
+  display: flex; align-items: center; gap: .4rem;
+  flex-shrink: 0;
+}
+.extra-btn-icon {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted);
+  padding: .3rem;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s, color .12s;
+}
+.extra-btn-icon:hover { background: var(--bg2); }
+.extra-btn-icon.danger:hover { color: var(--danger); background: var(--danger-bg2, rgba(192,57,43,.08)); }
+
 /* ── EGRESO DETALLE ──────────────────────────── */
 
 .egreso-det-monto-hero {

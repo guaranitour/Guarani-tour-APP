@@ -501,6 +501,7 @@ async function crearViaje() {
   const regreso  = document.getElementById("v-regreso").value;
   const estado   = document.getElementById("v-estado").value;
   const puntos_destino = parseInt(document.getElementById("v-puntos").value) || 0;
+  const extras_habilitados = document.getElementById("v-extras-habilitados").checked;
   const file     = document.getElementById("v-imagen").files[0];
 
   if (!nombre) {
@@ -540,7 +541,8 @@ async function crearViaje() {
       fecha_regreso: regreso,
       estado,
       imagen_url,
-      puntos_destino
+      puntos_destino,
+      extras_habilitados
     }]);
 
   if (error) {
@@ -590,6 +592,7 @@ async function initFormEditarViaje(viajeId) {
   document.getElementById("ve-regreso").value = viaje.fecha_regreso || "";
   document.getElementById("ve-estado").value  = viaje.estado || "activo";
   document.getElementById("ve-puntos").value  = viaje.puntos_destino || 0;
+  document.getElementById("ve-extras-habilitados").checked = !!viaje.extras_habilitados;
 
   initCustomSelect("ve-estado");
 
@@ -683,6 +686,7 @@ async function guardarEditarViaje() {
   const regreso = document.getElementById("ve-regreso").value;
   const estado  = document.getElementById("ve-estado").value;
   const puntos_destino = parseInt(document.getElementById("ve-puntos").value) || 0;
+  const extras_habilitados = document.getElementById("ve-extras-habilitados").checked;
   const file    = document.getElementById("ve-imagen").files[0];
 
   if (!nombre) { alert("El nombre es obligatorio"); return; }
@@ -711,7 +715,7 @@ async function guardarEditarViaje() {
 
   const { error } = await supabaseClient
     .from("viajes")
-    .update({ nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino })
+    .update({ nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino, extras_habilitados })
     .eq("id", viajeActualId);
 
   if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
@@ -726,7 +730,7 @@ async function guardarEditarViaje() {
   const estadoAnterior = viajeActualData?.estado;
 
   // Actualizar caché
-  viajeActualData = { ...viajeActualData, nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino };
+  viajeActualData = { ...viajeActualData, nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino, extras_habilitados };
 
   // ── Lógica de cancelación automática ────────────────────────────────────
   if (estado === "cancelado" && estadoAnterior !== "cancelado") {
@@ -1012,6 +1016,10 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   if (tabPresEarly) tabPresEarly.style.display = esWorkerOAdminEarly ? "" : "none";
   const tabResEarly = document.getElementById("tab-resumen");
   if (tabResEarly) tabResEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  const tabExtraEarly = document.getElementById("tab-extra");
+  if (tabExtraEarly) {
+    tabExtraEarly.style.display = (esWorkerOAdminEarly && !!viajeActualData?.extras_habilitados) ? "" : "none";
+  }
 
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
@@ -1971,7 +1979,11 @@ function switchViajeTab(tab) {
   const _esWorkerOAdmin = Array.isArray(currentUserRole)
     ? currentUserRole.some(r => ["admin","worker"].includes(r))
     : ["admin","worker"].includes(currentUserRole);
-  if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen")) {
+  if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra")) {
+    tab = "pasajeros";
+  }
+  // Extra requiere además que el viaje lo tenga habilitado
+  if (tab === "extra" && !viajeActualData?.extras_habilitados) {
     tab = "pasajeros";
   }
 
@@ -1982,6 +1994,8 @@ function switchViajeTab(tab) {
   if (tabPres) tabPres.classList.toggle("active", tab === "presupuesto");
   const tabRes = document.getElementById("tab-resumen");
   if (tabRes) tabRes.classList.toggle("active", tab === "resumen");
+  const tabExtra = document.getElementById("tab-extra");
+  if (tabExtra) tabExtra.classList.toggle("active", tab === "extra");
 
   // Paneles
   document.getElementById("panel-pasajeros").style.display   = tab === "pasajeros"   ? "" : "none";
@@ -1990,11 +2004,14 @@ function switchViajeTab(tab) {
   if (panelPres) panelPres.style.display = tab === "presupuesto" ? "" : "none";
   const panelRes = document.getElementById("panel-resumen");
   if (panelRes) panelRes.style.display = tab === "resumen" ? "" : "none";
+  const panelExtra = document.getElementById("panel-extra");
+  if (panelExtra) panelExtra.style.display = tab === "extra" ? "" : "none";
 
   if (tab === "pasajeros")   _refrescarPasajerosSiCorresponde();
   if (tab === "egresos")     loadEgresos(viajeActualId);
   if (tab === "presupuesto") loadPresupuesto(viajeActualId);
   if (tab === "resumen")     loadResumen(viajeActualId);
+  if (tab === "extra")       loadExtras(viajeActualId);
 }
 
 // Al volver al tab Pasajeros desde otro tab (egresos/presupuesto/resumen),
@@ -2059,7 +2076,7 @@ function _initSwipeTabsViaje() {
 }
 
 function _cambiarTabViajePorSwipe(direccion) {
-  const ordenTabs = ["pasajeros", "egresos", "presupuesto", "resumen"];
+  const ordenTabs = ["pasajeros", "egresos", "presupuesto", "resumen", "extra"];
 
   // Solo se consideran las tabs visibles según el rol del usuario
   const visibles = ordenTabs.filter(t => {

@@ -417,6 +417,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         Resumen
       </button>
+      <button class="viaje-tab" id="tab-extra" onclick="switchViajeTab('extra')" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+        Extra
+      </button>
     </div>
     </div>
 
@@ -568,6 +572,64 @@
       </div>
     </div>
 
+    <!-- PANEL: EXTRA -->
+    <div id="panel-extra" class="viaje-tab-panel" style="display:none">
+      <div class="detalle-section">
+        <div id="extras-list">
+          <div class="viaje-pasajeros-empty">Cargando…</div>
+        </div>
+
+        <button class="btn-agregar-pasajero" id="btn-agregar-extra" onclick="mostrarFormExtra()" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Agregar servicio extra
+        </button>
+
+        <!-- Formulario nuevo/editar servicio extra (inline) -->
+        <div id="form-extra" style="display:none">
+          <div class="pago-form-inner">
+            <input type="hidden" id="extra-id" value="" />
+            <div class="detail-grid">
+
+              <div class="form-field full">
+                <label class="form-label">Nombre <span class="req">*</span></label>
+                <input type="text" id="extra-nombre" class="form-input" placeholder="Ej: Traslado aeropuerto" />
+              </div>
+
+              <div class="form-field full">
+                <label class="form-label">Descripción</label>
+                <input type="text" id="extra-descripcion" class="form-input" placeholder="Detalle opcional del servicio" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Precio de venta (Gs.) <span class="req">*</span></label>
+                <input type="number" id="extra-precio-venta" class="form-input" placeholder="Ej: 150000" min="0" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Costo fijo (Gs.)</label>
+                <input type="number" id="extra-costo-fijo" class="form-input" placeholder="Ej: 50000" min="0" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Costo por persona (Gs.)</label>
+                <input type="number" id="extra-costo-persona" class="form-input" placeholder="Ej: 20000" min="0" />
+              </div>
+
+            </div>
+
+            <div class="form-actions" style="margin-top:.75rem">
+              <button class="btn-cancel" onclick="cerrarFormExtra()">Cancelar</button>
+              <button class="btn-save" id="btn-guardar-extra" onclick="guardarExtra()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     </div>
     <!-- /viaje-tab-panels -->
 
@@ -641,6 +703,14 @@
         <div class="form-field">
           <label class="form-label">Puntos destino</label>
           <input type="number" id="ve-puntos" class="form-input" placeholder="Ej: 100" min="0" />
+        </div>
+
+        <!-- Servicios extra -->
+        <div class="form-field full">
+          <label class="form-check-wrap">
+            <input type="checkbox" id="ve-extras-habilitados" />
+            Habilitar servicios extra para este viaje
+          </label>
         </div>
 
       </div>
@@ -789,6 +859,14 @@
   <label class="form-label">Puntos destino</label>
   <input type="number" id="v-puntos" class="form-input" placeholder="Ej: 100" min="0">
 </div>
+
+            <!-- Servicios extra -->
+            <div class="form-field full">
+              <label class="form-check-wrap">
+                <input type="checkbox" id="v-extras-habilitados" />
+                Habilitar servicios extra para este viaje
+              </label>
+            </div>
 
           </div>
         </div>
@@ -1967,6 +2045,7 @@
   <script src="usuarios.js"></script>
   <script src="usuarios-reservas.js"></script>
   <script src="pagos.js"></script>
+  <script src="extras.js"></script>
   <script src="resumen.js"></script>
   <script src="recibos.js"></script>
   <script src="byc.js"></script>
