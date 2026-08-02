@@ -29,7 +29,7 @@ async function loadExtras(viajeId) {
 
   const { data, error } = await supabaseClient
     .from("servicios_extra")
-    .select("id, nombre, descripcion, precio_venta, costo_fijo, costo_por_persona, created_at")
+    .select("id, nombre, descripcion, precio_venta, costo_real, created_at")
     .eq("viaje_id", viajeId)
     .order("created_at", { ascending: false });
 
@@ -61,12 +61,7 @@ async function loadExtras(viajeId) {
     const desc = s.descripcion
       ? `<div class="extra-desc">${_escapeHtml(s.descripcion)}</div>`
       : "";
-    const costos = [];
-    if (s.costo_fijo)        costos.push(`Fijo: Gs. ${s.costo_fijo.toLocaleString("es-PY")}`);
-    if (s.costo_por_persona) costos.push(`x persona: Gs. ${s.costo_por_persona.toLocaleString("es-PY")}`);
-    const costosHtml = costos.length
-      ? `<div class="extra-costos">${costos.join(" · ")}</div>`
-      : "";
+    const costosHtml = `<div class="extra-costos">Costo real: Gs. ${(s.costo_real || 0).toLocaleString("es-PY")}</div>`;
 
     const acciones = puedeEditar ? `
       <div class="extra-row-actions">
@@ -130,8 +125,7 @@ function editarExtra(id) {
   document.getElementById("extra-nombre").value          = servicio.nombre || "";
   document.getElementById("extra-descripcion").value     = servicio.descripcion || "";
   document.getElementById("extra-precio-venta").value    = servicio.precio_venta || 0;
-  document.getElementById("extra-costo-fijo").value      = servicio.costo_fijo || 0;
-  document.getElementById("extra-costo-persona").value   = servicio.costo_por_persona || 0;
+  document.getElementById("extra-costo-real").value      = servicio.costo_real || 0;
 
   const saveBtn = document.getElementById("btn-guardar-extra");
   if (saveBtn) {
@@ -154,7 +148,7 @@ function cerrarFormExtra() {
 }
 
 function _limpiarFormExtra() {
-  ["extra-id", "extra-nombre", "extra-descripcion", "extra-precio-venta", "extra-costo-fijo", "extra-costo-persona"]
+  ["extra-id", "extra-nombre", "extra-descripcion", "extra-precio-venta", "extra-costo-real"]
     .forEach(id => {
       const el = document.getElementById(id);
       if (el) { el.value = ""; el.classList.remove("error"); }
@@ -164,19 +158,24 @@ function _limpiarFormExtra() {
 async function guardarExtra() {
   if (!_esWorkerOAdminExtras()) return; // guarda extra, RLS igual lo bloquearía
 
-  const nombre        = document.getElementById("extra-nombre")?.value.trim();
-  const descripcion    = document.getElementById("extra-descripcion")?.value.trim() || null;
-  const precio_venta   = parseInt(document.getElementById("extra-precio-venta")?.value) || 0;
-  const costo_fijo     = parseInt(document.getElementById("extra-costo-fijo")?.value) || 0;
-  const costo_por_persona = parseInt(document.getElementById("extra-costo-persona")?.value) || 0;
+  const nombre           = document.getElementById("extra-nombre")?.value.trim();
+  const descripcion      = document.getElementById("extra-descripcion")?.value.trim() || null;
+  const precioVentaRaw   = document.getElementById("extra-precio-venta")?.value;
+  const costoRealRaw     = document.getElementById("extra-costo-real")?.value;
+  const precio_venta     = parseInt(precioVentaRaw);
+  const costo_real       = parseInt(costoRealRaw);
 
   let valido = true;
   if (!nombre) {
     document.getElementById("extra-nombre")?.classList.add("error");
     valido = false;
   }
-  if (!precio_venta || precio_venta <= 0) {
+  if (precioVentaRaw === "" || isNaN(precio_venta) || precio_venta < 0) {
     document.getElementById("extra-precio-venta")?.classList.add("error");
+    valido = false;
+  }
+  if (costoRealRaw === "" || isNaN(costo_real) || costo_real < 0) {
+    document.getElementById("extra-costo-real")?.classList.add("error");
     valido = false;
   }
   if (!valido) return;
@@ -189,8 +188,7 @@ async function guardarExtra() {
     nombre,
     descripcion,
     precio_venta,
-    costo_fijo,
-    costo_por_persona
+    costo_real
   };
 
   let error;
