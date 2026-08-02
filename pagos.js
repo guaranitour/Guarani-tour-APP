@@ -12,6 +12,9 @@ let pagosCtx = {
   metodos         : [],   // { id, metodo_de_pago }
   bancos          : [],   // { id, banco_id }
   pasajeroDestino : null,
+  extrasAsignados     : [],   // servicio_extra_pasajeros de este viaje_pasajero (con datos del servicio)
+  extrasDisponibles   : [],   // servicios_extra del viaje aún no asignados a este pasajero
+  extraElegido        : null, // { id, nombre, precio_venta } seleccionado en el modal, previo a confirmar
 };
 
 /* ── ENTRAR A LA VISTA ──────────────────────── */
@@ -189,6 +192,12 @@ async function loadPagosPasajero() {
     return;
   }
 
+  // Servicios extra asignados a este pasajero (no afectan total_a_pagar en DB,
+  // se suman en memoria para el cálculo de saldo mostrado en pantalla)
+  await loadExtrasPasajero();
+  const totalExtras = pagosCtx.extrasAsignados.reduce((s, e) => s + (e.precio_venta_real || 0), 0);
+  const totalConExtras = pagosCtx.totalAPagar + totalExtras;
+
   // Etapa 2: membresía Club Destino depende de pasajero_id (recién disponible tras la etapa 1)
   let esMiembro = false;
   let puntosViaje = vp?.puntos_destino || 0;
@@ -210,10 +219,10 @@ async function loadPagosPasajero() {
   });
 
   const neto  = totalPagado - totalDevuelto - totalTransferido;
-  const esCanje = pagosCtx.totalAPagar === 0;
-  const saldo = esCanje ? -neto : pagosCtx.totalAPagar - neto;
-  const pct   = (!esCanje && pagosCtx.totalAPagar > 0)
-    ? Math.min(100, Math.round((neto / pagosCtx.totalAPagar) * 100)) : 0;
+  const esCanje = totalConExtras === 0;
+  const saldo = esCanje ? -neto : totalConExtras - neto;
+  const pct   = (!esCanje && totalConExtras > 0)
+    ? Math.min(100, Math.round((neto / totalConExtras) * 100)) : 0;
 
   // Estado del saldo: excedente / saldado / canje / pendiente
   let saldoClase, saldoLabel, saldoValor;
@@ -245,7 +254,7 @@ async function loadPagosPasajero() {
     <div class="pagos-resumen-grid">
       <div class="pagos-resumen-item">
         <span class="pr-label">Total a pagar</span>
-        <span class="pr-value">${esCanje ? "Canje" : "Gs. " + pagosCtx.totalAPagar.toLocaleString("es-PY")}</span>
+        <span class="pr-value">${esCanje ? "Canje" : "Gs. " + totalConExtras.toLocaleString("es-PY")}</span>
       </div>
       <div class="pagos-resumen-item pagado">
         <span class="pr-label">Pagado</span>
@@ -757,3 +766,240 @@ async function confirmarTransferirPago() {
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg> Confirmar transferencia`;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   SERVICIOS EXTRA DEL PASAJERO
+   Usa servicio_extra_pasajeros para vincular un
+   servicios_extra del viaje a este viaje_pasajero.
+   No modifica viaje_pasajeros.total_a_pagar: el total
+   con extras se calcula en memoria (ver loadPagosPasajero).
+═══════════════════════════════════════════════ */
+
+function _esWorkerOAdminPagos() {
+  return Array.isArray(currentUserRole)
+    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
+    : ["admin", "worker"].includes(currentUserRole);
+}
+
+/* Carga los extras ya asignados a este pasajero y pinta la sección.
+   La sección completa queda oculta si el viaje no tiene
+   extras_habilitados, sin importar el rol. */
+async function loadExtrasPasajero() {
+  const section = document.getElementById("pagos-extra-section");
+  const listEl  = document.getElementById("pagos-extra-list");
+  const btnAdd  = document.getElementById("btn-agregar-extra-pasajero");
+  if (!section || !listEl) return;
+
+  const habilitado = !!viajeActualData?.extras_habilitados;
+  if (!habilitado) {
+    section.style.display = "none";
+    pagosCtx.extrasAsignados = [];
+    return;
+  }
+  section.style.display = "";
+
+  const puedeEditar = _esWorkerOAdminPagos();
+  if (btnAdd) btnAdd.style.display = puedeEditar ? "" : "none";
+
+  const { data, error } = await supabaseClient
+    .from("servicio_extra_pasajeros")
+    .select("id, precio_venta_real, servicio_extra_id, servicios_extra(id, nombre)")
+    .eq("viaje_pasajero_id", parseInt(pagosCtx.viajePasajeroId));
+
+  if (error) {
+    console.error("Error cargando servicios extra del pasajero:", error);
+    listEl.innerHTML = `<div class="pagos-empty">Error al cargar servicios extra</div>`;
+    pagosCtx.extrasAsignados = [];
+    return;
+  }
+
+  pagosCtx.extrasAsignados = data || [];
+
+  if (pagosCtx.extrasAsignados.length === 0) {
+    listEl.innerHTML = `<div class="pagos-empty" style="padding:1rem .2rem">Sin servicios extra asignados</div>`;
+    return;
+  }
+
+  const total = pagosCtx.extrasAsignados.reduce((s, e) => s + (e.precio_venta_real || 0), 0);
+
+  listEl.innerHTML = pagosCtx.extrasAsignados.map(e => {
+    const nombre = e.servicios_extra?.nombre || "Servicio extra";
+    const removeBtn = puedeEditar ? `
+      <button class="pagos-extra-remove" title="Quitar" onclick="eliminarExtraPasajero('${e.id}')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </button>` : "";
+    return `
+    <div class="pagos-extra-row">
+      <span class="pagos-extra-nombre">${_escapeHtmlPagos(nombre)}</span>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span class="pagos-extra-precio">Gs. ${(e.precio_venta_real || 0).toLocaleString("es-PY")}</span>
+        ${removeBtn}
+      </div>
+    </div>`;
+  }).join("") + `
+    <div class="pagos-extra-total-row">
+      <span class="pagos-extra-total-label">Total en extras</span>
+      <span class="pagos-extra-total-valor">Gs. ${total.toLocaleString("es-PY")}</span>
+    </div>`;
+}
+
+/* ── MODAL: AGREGAR SERVICIO EXTRA ──────────── */
+
+async function abrirModalAgregarExtraPasajero() {
+  if (!_esWorkerOAdminPagos()) return;
+
+  pagosCtx.extraElegido = null;
+
+  const modal = document.getElementById("modal-agregar-extra");
+  const pasoLista  = document.getElementById("modal-extra-paso-lista");
+  const pasoPrecio = document.getElementById("modal-extra-paso-precio");
+  const listaEl    = document.getElementById("modal-extra-lista");
+  if (!modal) return;
+
+  pasoLista.style.display  = "";
+  pasoPrecio.style.display = "none";
+  listaEl.innerHTML = `<div class="modal-trans-vacio">Cargando servicios disponibles…</div>`;
+  modal.style.display = "flex";
+
+  // Servicios del viaje que este pasajero todavía no tiene asignados
+  const { data: todos, error } = await supabaseClient
+    .from("servicios_extra")
+    .select("id, nombre, precio_venta")
+    .eq("viaje_id", parseInt(pagosCtx.viajeId))
+    .order("nombre", { ascending: true });
+
+  if (error) {
+    console.error("Error cargando servicios extra del viaje:", error);
+    listaEl.innerHTML = `<div class="modal-trans-vacio">Error al cargar servicios</div>`;
+    return;
+  }
+
+  const idsAsignados = new Set(pagosCtx.extrasAsignados.map(e => String(e.servicio_extra_id)));
+  pagosCtx.extrasDisponibles = (todos || []).filter(s => !idsAsignados.has(String(s.id)));
+
+  if (pagosCtx.extrasDisponibles.length === 0) {
+    listaEl.innerHTML = `<div class="modal-trans-vacio">No hay más servicios extra disponibles para este pasajero</div>`;
+    return;
+  }
+
+  listaEl.innerHTML = pagosCtx.extrasDisponibles.map(s => `
+    <div class="modal-trans-item" onclick="_elegirExtraPasajero('${s.id}')">
+      <div>
+        <strong>${_escapeHtmlPagos(s.nombre)}</strong>
+      </div>
+      <span style="font-size:.8rem;color:var(--text-muted)">Gs. ${(s.precio_venta || 0).toLocaleString("es-PY")}</span>
+    </div>`).join("");
+}
+
+function _elegirExtraPasajero(servicioId) {
+  const servicio = pagosCtx.extrasDisponibles.find(s => String(s.id) === String(servicioId));
+  if (!servicio) return;
+
+  pagosCtx.extraElegido = servicio;
+
+  document.getElementById("modal-extra-paso-lista").style.display  = "none";
+  document.getElementById("modal-extra-paso-precio").style.display = "";
+  document.getElementById("modal-extra-nombre-elegido").textContent = servicio.nombre;
+
+  const precioEl = document.getElementById("modal-extra-precio");
+  if (precioEl) precioEl.value = servicio.precio_venta || 0;
+}
+
+function _volverListaExtraPasajero() {
+  pagosCtx.extraElegido = null;
+  document.getElementById("modal-extra-paso-precio").style.display = "none";
+  document.getElementById("modal-extra-paso-lista").style.display  = "";
+}
+
+function cerrarModalAgregarExtraPasajero(event) {
+  // Si viene de click en el backdrop, solo cerrar si el click fue directo al overlay
+  if (event && event.target !== document.getElementById("modal-agregar-extra")) return;
+  const modal = document.getElementById("modal-agregar-extra");
+  if (modal) modal.style.display = "none";
+  pagosCtx.extraElegido = null;
+}
+
+async function confirmarAgregarExtraPasajero() {
+  if (!_esWorkerOAdminPagos()) return;
+
+  const servicio = pagosCtx.extraElegido;
+  if (!servicio) return;
+
+  const precioRaw = document.getElementById("modal-extra-precio")?.value;
+  const precio_venta_real = parseInt(precioRaw);
+
+  if (precioRaw === "" || isNaN(precio_venta_real) || precio_venta_real < 0) {
+    document.getElementById("modal-extra-precio")?.classList.add("error");
+    return;
+  }
+
+  const btn = document.getElementById("btn-confirmar-extra-pasajero");
+  if (btn) { btn.disabled = true; btn.textContent = "Agregando…"; }
+
+  const { error } = await supabaseClient
+    .from("servicio_extra_pasajeros")
+    .insert([{
+      servicio_extra_id : servicio.id,
+      viaje_pasajero_id : parseInt(pagosCtx.viajePasajeroId),
+      precio_venta_real,
+    }]);
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Agregar`;
+  }
+
+  if (error) {
+    console.error("Error agregando servicio extra al pasajero:", error);
+    if (typeof showToast === "function") showToast("Error al agregar el servicio extra", "error");
+    else alert("Error al agregar el servicio extra");
+    return;
+  }
+
+  if (typeof showToast === "function") showToast("✅ Servicio extra agregado", "success");
+
+  cerrarModalAgregarExtraPasajero();
+  await loadPagosPasajero(); // recarga extras + recalcula el resumen con el nuevo total
+}
+
+async function eliminarExtraPasajero(id) {
+  if (!_esWorkerOAdminPagos()) return;
+
+  const asignado = pagosCtx.extrasAsignados.find(e => String(e.id) === String(id));
+  const nombre = asignado?.servicios_extra?.nombre || "este servicio extra";
+
+  if (!confirm(`¿Quitar "${nombre}" de este pasajero? Se descontará del total a pagar.`)) return;
+
+  const { error } = await supabaseClient
+    .from("servicio_extra_pasajeros")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error quitando servicio extra del pasajero:", error);
+    if (typeof showToast === "function") showToast("Error al quitar el servicio extra", "error");
+    else alert("Error al quitar el servicio extra");
+    return;
+  }
+
+  if (typeof showToast === "function") showToast("Servicio extra quitado", "success");
+
+  await loadPagosPasajero();
+}
+
+/* Escape local — evita colisión si otro archivo ya define un helper con el mismo nombre */
+if (typeof _escapeHtmlPagos !== "function") {
+  var _escapeHtmlPagos = function (str) {
+    if (str == null) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  };
+}
+
