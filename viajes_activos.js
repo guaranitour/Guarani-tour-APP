@@ -295,15 +295,22 @@ async function checkAlertasViajes(viajes) {
 
       const vpIds = (pasajeros || []).map(p => p.id);
 
-      const { data: pagos } = vpIds.length > 0
-        ? await supabaseClient
-            .from("pagos")
-            .select("monto, tipo")
-            .in("viaje_pasajero_id", vpIds)
-        : { data: [] };
+      const [{ data: pagos }, { data: extrasVp }] = vpIds.length > 0
+        ? await Promise.all([
+            supabaseClient
+              .from("pagos")
+              .select("monto, tipo")
+              .in("viaje_pasajero_id", vpIds),
+            supabaseClient
+              .from("servicio_extra_pasajeros")
+              .select("precio_venta_real")
+              .in("viaje_pasajero_id", vpIds),
+          ])
+        : [{ data: [] }, { data: [] }];
 
       // ── Cálculo de cobro ────────────────────
-      const totalEsperado = (pasajeros || []).reduce((s, p) => s + (p.total_a_pagar || 0), 0);
+      const totalExtrasViaje = (extrasVp || []).reduce((s, e) => s + (e.precio_venta_real || 0), 0);
+      const totalEsperado = (pasajeros || []).reduce((s, p) => s + (p.total_a_pagar || 0), 0) + totalExtrasViaje;
 
       const pagosReales    = (pagos || []).filter(p => p.tipo === "Pago");
       const devoluciones   = (pagos || []).filter(p => p.tipo === "Devolución");
@@ -928,16 +935,23 @@ async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
   }
 
   let todosPagos = null;
+  let todosExtrasPasajero = null;
   if (pasajeros && pasajeros.length > 0) {
     const vpIds = pasajeros.map(p => p.id);
-    ({ data: todosPagos } = await supabaseClient
-      .from("pagos")
-      .select("viaje_pasajero_id, monto, tipo")
-      .in("viaje_pasajero_id", vpIds));
+    ([{ data: todosPagos }, { data: todosExtrasPasajero }] = await Promise.all([
+      supabaseClient
+        .from("pagos")
+        .select("viaje_pasajero_id, monto, tipo")
+        .in("viaje_pasajero_id", vpIds),
+      supabaseClient
+        .from("servicio_extra_pasajeros")
+        .select("viaje_pasajero_id, precio_venta_real")
+        .in("viaje_pasajero_id", vpIds),
+    ]));
     if (viajeId !== viajeActualId) return;
   }
 
-  const datos = { viaje, pasajeros, errPasajeros, bycData, todosPagos };
+  const datos = { viaje, pasajeros, errPasajeros, bycData, todosPagos, todosExtrasPasajero };
   _viajeDetalleCache.set(viajeId, datos);
   // Si esta carga fue un refresco silencioso de fondo (silencioso=true),
   // NO tratamos este pintado como "entrada de cero" al viaje: el usuario
@@ -950,7 +964,7 @@ async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
 }
 
 function _pintarDetalleViaje(datos, { refrescando }) {
-  const { viaje, pasajeros, errPasajeros, bycData, todosPagos } = datos;
+  const { viaje, pasajeros, errPasajeros, bycData, todosPagos, todosExtrasPasajero } = datos;
 
   const nombreEl = document.getElementById("detalle-viaje-nombre");
   const infoEl = document.getElementById("detalle-viaje-info");
@@ -1051,6 +1065,13 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     pagosPorVP[pg.viaje_pasajero_id].push(pg);
   });
 
+  // Suma de servicios extra por pasajero — no viven en total_a_pagar (columna
+  // en DB), se suman en memoria igual que en pagos.js (ver loadPagosPasajero).
+  const extrasPorVP = {};
+  (todosExtrasPasajero || []).forEach(e => {
+    extrasPorVP[e.viaje_pasajero_id] = (extrasPorVP[e.viaje_pasajero_id] || 0) + (e.precio_venta_real || 0);
+  });
+
   const esAdmin = Array.isArray(currentUserRole)
     ? currentUserRole.includes("admin")
     : currentUserRole === "admin";
@@ -1074,7 +1095,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     const _pagado      = _pgs.filter(pg => pg.tipo === "Pago").reduce((s, pg) => s + (pg.monto || 0), 0);
     const _devuelto    = _pgs.filter(pg => pg.tipo === "Devolución").reduce((s, pg) => s + (pg.monto || 0), 0);
     const _transferido = _pgs.filter(pg => pg.tipo === "Transferencia").reduce((s, pg) => s + (pg.monto || 0), 0);
-    const total  = p.total_a_pagar || 0;
+    const total  = (p.total_a_pagar || 0) + (extrasPorVP[p.id] || 0);
     const neto   = _pagado - _devuelto - _transferido;
     const esCanje = total === 0;
     const noAsiste = (p.asistencia || "Asiste") === "No asiste";
@@ -1093,6 +1114,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
       _vendedor  : (p.pasajeros?.Vendedor || "").trim().replace(/\s+/g, " "),
       _esMiembro : (p.puntos_destino || 0) > 0,
       _pillClass,
+      _totalConExtras : total, // total_a_pagar + servicios extra asignados
       _pagos     : _pgs,
       _sinByc    : (() => {
         const ciNorm = (p.pasajeros?.["Documento de Identidad"] || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
@@ -1491,7 +1513,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
     const nombre   = p._nombre || p.pasajeros?.Pasajero || "Sin nombre";
     const nombreE  = nombre.replace(/'/g, "\\'");
     const pid      = p.pasajero_id || p.pasajeros?.id || "";
-    const total    = p.total_a_pagar || 0;
+    const total    = p._totalConExtras ?? (p.total_a_pagar || 0);
     const ciNorm   = (p.pasajeros?.["Documento de Identidad"] || "").replace(/[\.\-\s]/g, "").trim().toLowerCase();
     const sinByc   = !ciNorm || !_bycAceptados.has(ciNorm);
     const esCanje  = total === 0;
@@ -2868,8 +2890,8 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
 
     if (vpErr || !vp) throw new Error("No se pudo obtener datos del pasajero.");
 
-    // 2. Pagos + bancos en paralelo
-    const [{ data: pagos, error: pgErr }, { data: bancosData }] = await Promise.all([
+    // 2. Pagos + bancos + servicios extra en paralelo
+    const [{ data: pagos, error: pgErr }, { data: bancosData }, { data: extrasVp }] = await Promise.all([
       supabaseClient
         .from("pagos")
         .select("monto, tipo, fecha_pago, banco, comprobante_nro")
@@ -2878,6 +2900,10 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
       supabaseClient
         .from("bancos")
         .select("id, banco_id"),
+      supabaseClient
+        .from("servicio_extra_pasajeros")
+        .select("precio_venta_real")
+        .eq("viaje_pasajero_id", parseInt(vpId)),
     ]);
 
     if (pgErr) throw new Error("No se pudo obtener el historial de pagos.");
@@ -2895,7 +2921,8 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     const sumaDevuelto = devoluciones.reduce((s, p) => s + (p.monto || 0), 0);
     const sumaTransf  = transferencias.reduce((s, p) => s + (p.monto || 0), 0);
     const neto        = sumaPagado - sumaDevuelto - sumaTransf;
-    const total       = vp.total_a_pagar || 0;
+    const totalExtras = (extrasVp || []).reduce((s, e) => s + (e.precio_venta_real || 0), 0);
+    const total       = (vp.total_a_pagar || 0) + totalExtras;
     const saldo       = Math.max(0, total - neto);
 
     const formatFechaLocal = (fechaStr) => {
