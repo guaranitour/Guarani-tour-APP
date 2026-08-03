@@ -770,11 +770,14 @@ h2 {
 .fab:active { transform: scale(.96); }
 
 /* ── FAB SOS (contacto de emergencia) ───────────────────────
-   A la izquierda para no superponerse con .fab (nuevo cliente/viaje),
-   que vive a la derecha en otras vistas. z-index por encima de
-   .bottom-nav (200): si no, el navbar fijo lo tapa por completo. */
+/* ── FAB SOS (contacto de emergencia) ───────────────────────
+   El FAB genérico (.fab) está oculto dentro de Detalle de pasajero,
+   así que SOS puede vivir a la derecha sin chocar con nada.
+   z-index por encima de .bottom-nav (200): si no, el navbar fijo lo
+   tapa por completo. Separado del navbar con más aire (6rem) para
+   que no quede pegado al borde superior de la barra. */
 .fab-sos {
-  position: fixed; bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px)); left: 1.8rem; z-index: 210;
+  position: fixed; bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); right: 1.8rem; z-index: 210;
   height: 52px; padding: 0 1.1rem 0 .9rem; border-radius: 26px;
   background: var(--danger); color: #fff; border: none; cursor: pointer;
   display: flex; align-items: center; gap: .45rem;
@@ -788,7 +791,7 @@ h2 {
 .fab-sos-label { line-height: 1; }
 
 @media (max-width: 520px) {
-  .fab-sos { left: 1.1rem; bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px)); }
+  .fab-sos { right: 1.1rem; bottom: calc(5.6rem + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ── Modal SOS: contacto de emergencia ──────────────────────
@@ -801,6 +804,11 @@ h2 {
   border-radius: 16px;
   box-shadow: var(--shadow-md);
   overflow: visible;
+  /* El reset global "*{margin:0}" anula el auto-centrado nativo de
+     <dialog> (que depende de margin:auto). Lo restauramos a mano. */
+  position: fixed;
+  inset: 0;
+  margin: auto;
 }
 .modal-sos::backdrop {
   background: rgba(0,0,0,.45);
