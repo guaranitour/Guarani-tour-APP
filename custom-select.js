@@ -129,7 +129,11 @@ function initCustomSelect(selectId, opts = {}) {
 
   trigger.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSelect(); }
-    if (e.key === "Escape") closeSelect();
+    if (e.key === "Escape") {
+      // Evita que el mismo Esc cierre también un <dialog> padre, si lo hay.
+      if (activePopup) e.stopPropagation();
+      closeSelect();
+    }
   });
 
   // Sincronizar si el valor del select cambia desde JS externo
@@ -146,6 +150,19 @@ function initCustomSelect(selectId, opts = {}) {
 function refreshCustomSelect(selectId) {
   const inst = _csInstances[selectId];
   if (inst) inst.syncTrigger();
+}
+
+/**
+ * Devuelve el contenedor donde debe montarse el popup (dropdown o sheet).
+ * Si el trigger vive dentro de un <dialog> abierto, el popup se monta ahí
+ * dentro: un <dialog modal> crea su propio "top layer", y cualquier
+ * elemento fuera de él (aunque tenga z-index alto) queda por debajo,
+ * sin importar el valor del z-index. Fuera de un <dialog>, el
+ * comportamiento no cambia: se sigue usando document.body.
+ */
+function _csPopupContainer(trigger) {
+  const dialog = trigger.closest("dialog");
+  return (dialog && dialog.open) ? dialog : document.body;
 }
 
 /* ── Dropdown (≤ 6 opciones) ─────────────────────────────── */
@@ -200,7 +217,7 @@ function _openDropdown(sel, trigger, options, onSelect) {
     dropdown.appendChild(item);
   });
 
-  document.body.appendChild(dropdown);
+  _csPopupContainer(trigger).appendChild(dropdown);
 
   function onOutsideClick(e) {
     if (!dropdown.contains(e.target) && e.target !== trigger) {
@@ -249,7 +266,7 @@ function _openSheet(sel, trigger, options, onSelect, onClose) {
   `;
 
   overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
+  _csPopupContainer(trigger).appendChild(overlay);
 
   const listEl   = sheet.querySelector(".cs-sheet-list");
   const searchEl = sheet.querySelector(".cs-sheet-search");
@@ -345,6 +362,10 @@ function _openSheet(sel, trigger, options, onSelect, onClose) {
 
   function onKey(e) {
     if (e.key === "Escape") {
+      // stopPropagation: si este sheet vive dentro de un <dialog>, evita que
+      // el mismo Esc además cierre el <dialog> padre (su cierre nativo por
+      // Esc no distingue si el foco real está en un overlay hijo).
+      e.stopPropagation();
       if (_csSheetOpen) history.back();
     }
   }
