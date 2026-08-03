@@ -769,6 +769,94 @@ h2 {
 .fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(45,106,79,.5); }
 .fab:active { transform: scale(.96); }
 
+/* ── FAB SOS (contacto de emergencia) ───────────────────────
+   A la izquierda para no superponerse con .fab (nuevo cliente/viaje),
+   que vive a la derecha en otras vistas. */
+.fab-sos {
+  position: fixed; bottom: 1.8rem; left: 1.8rem; z-index: 150;
+  height: 52px; padding: 0 1.1rem 0 .9rem; border-radius: 26px;
+  background: var(--danger); color: #fff; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: .45rem;
+  font-family: 'Roboto', sans-serif; font-weight: 700; font-size: .85rem; letter-spacing: .04em;
+  box-shadow: 0 4px 16px rgba(192,57,43,.4);
+  transition: transform .15s, box-shadow .15s;
+}
+.fab-sos:hover { transform: scale(1.05); box-shadow: 0 6px 22px rgba(192,57,43,.5); }
+.fab-sos:active { transform: scale(.96); }
+.fab-sos:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.fab-sos-label { line-height: 1; }
+
+@media (max-width: 520px) {
+  .fab-sos { left: 1.1rem; bottom: 1.1rem; }
+}
+
+/* ── Modal SOS: contacto de emergencia ──────────────────────
+   <dialog> nativo: focus trap, Esc y ::backdrop gratis. */
+.modal-sos {
+  border: none; padding: 0; background: transparent;
+  max-width: min(480px, calc(100vw - 2rem));
+  width: 100%;
+  max-height: min(640px, calc(100vh - 2rem));
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  overflow: visible;
+}
+.modal-sos::backdrop {
+  background: rgba(0,0,0,.45);
+  animation: sosBackdropIn .18s ease-out;
+}
+.modal-sos[open] .modal-sos-card { animation: sosCardIn .18s cubic-bezier(.4,0,.2,1); }
+
+@keyframes sosBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sosCardIn {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-sos-card {
+  display: flex; flex-direction: column;
+  max-height: min(640px, calc(100vh - 2rem));
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 0;
+}
+
+.modal-sos-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .75rem; padding: 1.1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-sos-titulo {
+  display: flex; align-items: center; gap: .5rem;
+  font-family: 'Roboto', sans-serif; font-size: 1.05rem; font-weight: 700;
+  color: var(--danger); margin: 0;
+}
+.modal-sos-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: transparent; border: none; cursor: pointer; color: inherit;
+  transition: background .12s;
+}
+.modal-sos-close:hover { background: rgba(0,0,0,.06); }
+.modal-sos-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.modal-sos-body {
+  padding: 1.2rem; overflow-y: auto; flex: 1 1 auto;
+}
+
+.modal-sos-footer {
+  padding: 1rem 1.2rem; border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-sos-footer-group { display: flex; justify-content: flex-end; gap: .6rem; }
+
+@media (max-width: 520px) {
+  .modal-sos { max-width: calc(100vw - 1.5rem); }
+}
+
 /* ── FORMULARIO NUEVO CLIENTE ────────────────────────────── */
 .form-page-header { margin-bottom: 1.5rem; }
 .form-page-header h1 {

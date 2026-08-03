@@ -411,6 +411,9 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (!_fromHash) _setHash(view, idx);
 
   // Ocultar todas las vistas
+  setFabSosVisible(false); // solo se re-muestra dentro de Detalle de pasajero
+  const _modalSos = document.getElementById("modal-contacto");
+  if (_modalSos && _modalSos.open) _modalSos.close();
   hideEl("view-clientes");
   hideEl("view-detalle");
   hideEl("view-nuevo");
@@ -1108,8 +1111,8 @@ async function renderDetalle(pasajeroId) {
   // Asegurar modo lectura al renderizar
   cancelarEdicionDetalle(true);
 
-  // ── Contacto de emergencia ────────────────────────
-  resetContactoCollapse();
+  // ── Contacto de emergencia (FAB SOS) ───────────────
+  setFabSosVisible(true);
   cargarContactoEmergencia(p.id);
 
   // ── Datos de viajes del pasajero ──────────────────
@@ -1270,181 +1273,67 @@ function mostrarFeedbackDetalle(msg, ok) {
   if (ok) setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
-// ── Contacto de emergencia ───────────────────────────────────
+// ── Contacto de emergencia (FAB SOS + modal) ─────────────────
 let _contactoActual = null; // fila actual en memoria, o null si no existe
-let _contactoExpandido = false;
-let _contactoAnimando = null; // Animation en curso, si hay
-
-const CONTACTO_ANIM_MS = 320;
-const CONTACTO_ANIM_EASING = "cubic-bezier(.4,0,.2,1)";
-
-function _contactoEls() {
-  return {
-    body:    document.getElementById("contacto-collapse"),
-    toggle:  document.getElementById("contacto-toggle"),
-  };
-}
-
-// Fija el estado inicial (colapsado) sin animar — se llama al entrar al detalle.
-function resetContactoCollapse() {
-  const { body, toggle } = _contactoEls();
-  if (!body || !toggle) return;
-  if (_contactoAnimando) { _contactoAnimando.cancel(); _contactoAnimando = null; }
-  _contactoExpandido = false;
-  body.style.height = "0px";
-  body.style.overflow = "hidden";
-  toggle.setAttribute("aria-expanded", "false");
-}
-
-function toggleContactoCollapse() {
-  _contactoExpandido ? _colapsarContacto() : _expandirContacto();
-}
-
-function _expandirContacto() {
-  const { body, toggle } = _contactoEls();
-  if (!body || !toggle) return;
-  if (_contactoAnimando) _contactoAnimando.cancel();
-
-  const startHeight = body.getBoundingClientRect().height;
-
-  _contactoExpandido = true;
-  toggle.setAttribute("aria-expanded", "true");
-
-  // Medimos la altura final en el próximo frame, no en este mismo tick:
-  // si algo (ej. initCustomSelect() sobre el <select> de parentesco)
-  // termina de ajustar su propio layout de forma asíncrona, queremos
-  // que ya haya corrido antes de fijar cuánto debe medir la sección.
-  // Medir en el mismo tick que se dispara ese ajuste podía dejar la
-  // altura corta y tapar los botones de Guardar/Cancelar. Mientras
-  // esperamos el frame, la sección se ve exactamente igual que antes
-  // (seguimos en startHeight/hidden), así que no hay salto visual.
-  requestAnimationFrame(() => {
-    if (!_contactoExpandido) return; // se colapsó de nuevo mientras esperábamos el frame
-
-    const prevHeight = body.style.height;
-    const prevOverflow = body.style.overflow;
-    body.style.height = "auto";
-    body.style.overflow = "visible";
-    const endHeight = body.getBoundingClientRect().height;
-    body.style.height = prevHeight || `${startHeight}px`;
-    body.style.overflow = prevOverflow || "hidden";
-
-    _contactoAnimando = body.animate(
-      [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
-      { duration: CONTACTO_ANIM_MS, easing: CONTACTO_ANIM_EASING, fill: "forwards" }
-    );
-
-    _contactoAnimando.onfinish = () => {
-      body.style.height = "auto";
-      body.style.overflow = "visible";
-      _contactoAnimando = null;
-      // Última red de seguridad: si el contenido cambió de tamaño
-      // mientras la animación corría (ej. un dropdown que se infló
-      // recién ahí), re-medimos una vez más ya con overflow visible.
-      _syncContactoCollapseHeight();
-      // La sección recién revelada puede terminar más abajo de lo que
-      // se ve en pantalla. NO usamos scrollIntoView acá: ese método
-      // considera "visible" cualquier punto dentro del viewport, pero
-      // el navbar inferior es position:fixed y tapa una franja del
-      // viewport sin que el navegador lo sepa — scrollIntoView podía
-      // dejar los botones justo detrás del navbar, mostrando como
-      // "ya scrolleado" algo que en realidad seguía tapado. Calculamos
-      // el scroll a mano, restando la altura real del navbar.
-      _scrollParaMostrarFinalContacto();
-    };
-    _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
-  });
-}
-
-// Scrollea lo necesario para que el final de la sección de contacto
-// (los botones Guardar/Cancelar si se está editando, o el final del
-// contenido si no) quede realmente visible por encima del navbar
-// inferior fijo, no solo dentro del viewport en teoría.
-function _scrollParaMostrarFinalContacto() {
-  const { body } = _contactoEls();
-  if (!body) return;
-
-  const scrollActionsEl = document.getElementById("contacto-edit-actions");
-  const targetEl = (scrollActionsEl && scrollActionsEl.style.display !== "none")
-    ? scrollActionsEl
-    : body;
-
-  const navbar = document.getElementById("bottom-nav");
-  const navbarAltura = (navbar && navbar.style.display !== "none")
-    ? navbar.getBoundingClientRect().height
-    : 0;
-
-  // window.innerHeight no baja cuando el teclado virtual está abierto
-  // en la mayoría de navegadores móviles (el layout viewport no
-  // cambia); visualViewport.height sí refleja el espacio realmente
-  // visible. Sin esto, con el teclado abierto el cálculo asumía más
-  // espacio libre del que había, y el scroll se quedaba corto.
-  const alturaVisible = window.visualViewport
-    ? window.visualViewport.height
-    : window.innerHeight;
-
-  const rect = targetEl.getBoundingClientRect();
-  const margenExtra = 16; // aire entre el contenido y el borde del navbar
-  const espacioLibreDebajo = alturaVisible - navbarAltura;
-
-  // Si el borde inferior del elemento ya está por encima del navbar,
-  // no hace falta scrollear más.
-  const desborde = rect.bottom - espacioLibreDebajo + margenExtra;
-  if (desborde <= 0) return;
-
-  window.scrollBy({ top: desborde, behavior: "smooth" });
-
-  // Reintento: si el teclado virtual se abre/cierra o termina de
-  // ajustar el viewport después de este cálculo (común justo después
-  // de un cambio de foco), un solo scroll puede quedar corto. Volvemos
-  // a medir una vez más una vez asentado el layout.
-  setTimeout(() => {
-    const rect2 = targetEl.getBoundingClientRect();
-    const alturaVisible2 = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const espacioLibreDebajo2 = alturaVisible2 - navbarAltura;
-    const desborde2 = rect2.bottom - espacioLibreDebajo2 + margenExtra;
-    if (desborde2 > 0) window.scrollBy({ top: desborde2, behavior: "smooth" });
-  }, 400);
-}
-
-function _colapsarContacto() {
-  const { body, toggle } = _contactoEls();
-  if (!body || !toggle) return;
-  if (_contactoAnimando) _contactoAnimando.cancel();
-
-  const startHeight = body.getBoundingClientRect().height;
-  body.style.overflow = "hidden";
-
-  _contactoExpandido = false;
-  toggle.setAttribute("aria-expanded", "false");
-
-  _contactoAnimando = body.animate(
-    [{ height: `${startHeight}px` }, { height: "0px" }],
-    { duration: CONTACTO_ANIM_MS, easing: CONTACTO_ANIM_EASING, fill: "forwards" }
-  );
-
-  _contactoAnimando.onfinish = () => {
-    body.style.height = "0px";
-    _contactoAnimando = null;
-  };
-  _contactoAnimando.oncancel = () => { _contactoAnimando = null; };
-}
-
-// Re-mide la altura cuando el contenido interno cambia mientras está
-// expandido (view↔edit, feedback, estado vacío). Sin animar: es un ajuste
-// instantáneo de una sección ya abierta, no una apertura/cierre.
-function _syncContactoCollapseHeight() {
-  if (!_contactoExpandido || _contactoAnimando) return;
-  const { body } = _contactoEls();
-  if (!body) return;
-  body.style.height = "auto";
-}
+let _fabSosUltimoFoco = null; // elemento a devolver el foco al cerrar el modal
 
 function _puedeEditarContacto() {
   return ["admin", "worker"].some(r =>
     Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
   );
 }
+
+// Muestra u oculta el FAB SOS según la vista activa. Se llama al entrar
+// y salir de "Detalle de pasajero".
+function setFabSosVisible(visible) {
+  const fab = document.getElementById("fab-sos");
+  if (fab) fab.style.display = visible ? "" : "none";
+}
+
+function abrirModalContacto() {
+  const modal = document.getElementById("modal-contacto");
+  if (!modal) return;
+  _fabSosUltimoFoco = document.activeElement;
+  if (typeof modal.showModal === "function") {
+    modal.showModal();
+  } else {
+    // Fallback para navegadores sin soporte de <dialog>
+    modal.setAttribute("open", "");
+  }
+  // Foco inicial: primer control interactivo relevante visible.
+  const focoInicial =
+    modal.querySelector("#contacto-fields-edit:not([style*='display: none']) input, " +
+                         "#contacto-empty:not([style*='display: none']) button, " +
+                         ".modal-sos-close");
+  if (focoInicial) focoInicial.focus();
+}
+
+function cerrarModalContacto() {
+  const modal = document.getElementById("modal-contacto");
+  if (!modal) return;
+  if (typeof modal.close === "function" && modal.open) {
+    modal.close();
+  } else {
+    modal.removeAttribute("open");
+  }
+  if (_fabSosUltimoFoco && typeof _fabSosUltimoFoco.focus === "function") {
+    _fabSosUltimoFoco.focus();
+  }
+  _fabSosUltimoFoco = null;
+}
+
+// El cierre con tecla Esc dispara el evento "close" nativo del <dialog>
+// sin pasar por cerrarModalContacto(): devolvemos el foco igual en ese caso.
+document.addEventListener("DOMContentLoaded", () => {
+  const modalSos = document.getElementById("modal-contacto");
+  if (!modalSos) return;
+  modalSos.addEventListener("close", () => {
+    if (_fabSosUltimoFoco && typeof _fabSosUltimoFoco.focus === "function") {
+      _fabSosUltimoFoco.focus();
+    }
+    _fabSosUltimoFoco = null;
+  });
+});
 
 async function cargarContactoEmergencia(pasajeroId) {
   const puede = _puedeEditarContacto();
@@ -1493,8 +1382,6 @@ async function cargarContactoEmergencia(pasajeroId) {
     if (btnEditar)  btnEditar.style.display  = "none";
     if (btnAgregar) btnAgregar.style.display = puede ? "" : "none";
   }
-
-  _syncContactoCollapseHeight();
 }
 
 function activarEdicionContacto() {
@@ -1512,23 +1399,18 @@ function activarEdicionContacto() {
   document.getElementById("contacto-fields-view").style.display  = "none";
   document.getElementById("contacto-empty").style.display        = "none";
   document.getElementById("contacto-fields-edit").style.display  = "";
+  document.getElementById("contacto-view-actions").style.display = "none";
   document.getElementById("contacto-edit-actions").style.display = "";
-  document.getElementById("btn-editar-contacto").style.display   = "none";
   document.getElementById("contacto-edit-feedback").style.display = "none";
 
-  // Si la sección está plegada, la desplegamos DESPUÉS de haber
-  // cambiado el contenido a modo edición: así _expandirContacto() mide
-  // la altura real del formulario (más alto que la vista de lectura) y
-  // no la del contenido anterior. Si ya estaba expandida, solo
-  // re-medimos con el ajuste instantáneo de siempre.
-  if (!_contactoExpandido) _expandirContacto();
-  else _syncContactoCollapseHeight();
+  document.getElementById("ce-nombre").focus();
 }
 
 function cancelarEdicionContacto() {
   document.getElementById("contacto-fields-edit").style.display  = "none";
   document.getElementById("contacto-edit-actions").style.display = "none";
   document.getElementById("contacto-edit-feedback").style.display = "none";
+  document.getElementById("contacto-view-actions").style.display = "";
 
   const puede = _puedeEditarContacto();
   if (_contactoActual) {
@@ -1540,7 +1422,6 @@ function cancelarEdicionContacto() {
     const btnAgregar = document.getElementById("btn-agregar-contacto");
     if (btnAgregar) btnAgregar.style.display = puede ? "" : "none";
   }
-  _syncContactoCollapseHeight();
 }
 
 async function guardarContactoEmergencia() {
@@ -1600,11 +1481,7 @@ function mostrarFeedbackContacto(msg, ok) {
   el.style.background = ok ? "#f0faf4" : "#fff0f0";
   el.style.color      = ok ? "#2d6a4f" : "#c0392b";
   el.style.border     = ok ? "1px solid rgba(45,106,79,.2)" : "1px solid rgba(192,57,43,.2)";
-  _syncContactoCollapseHeight();
-  if (ok) setTimeout(() => {
-    el.style.display = "none";
-    _syncContactoCollapseHeight();
-  }, 3000);
+  if (ok) setTimeout(() => { el.style.display = "none"; }, 3000);
 }
 
 // ── Avatar ─────────────────────────────────────────────────
