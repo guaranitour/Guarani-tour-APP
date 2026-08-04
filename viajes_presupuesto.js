@@ -193,12 +193,18 @@ async function guardarPresupuesto() {
   const inputs = document.querySelectorAll(".presupuesto-input");
   const btn    = document.getElementById("btn-guardar-presupuesto");
 
-  // Construir filas a upsert: solo las que tienen monto > 0
+  // Construir filas a upsert: se incluye cualquier campo con valor
+  // numérico válido, incluyendo 0. Solo se ignoran los campos vacíos
+  // (el usuario no tocó esa categoría) — eso es lo que permite "vaciar"
+  // un campo para eliminar la categoría del presupuesto en modo edición.
   const filas = [];
   inputs.forEach(input => {
     const catId = parseInt(input.dataset.catId);
-    const monto = parseInt(input.value) || 0;
-    if (monto > 0) {
+    const valorTexto = input.value.trim();
+    if (valorTexto === "") return; // vacío: se ignora, no se guarda
+
+    const monto = parseInt(valorTexto);
+    if (!Number.isNaN(monto) && monto >= 0) {
       filas.push({
         viaje_id:            viajeActualId,
         categoria_id:        catId,
