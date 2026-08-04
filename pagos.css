@@ -429,6 +429,15 @@
    de archivos de GitHub): ícono + nombre truncado en una sola línea +
    botón para quitar. Reemplaza al span de texto plano, que en pantallas
    angostas se desparramaba en varias líneas sin estructura visual. */
+/* pago-foto-wrap es un item de .detail-grid (grid-template-columns:
+   1fr 1fr). Los grid items no se encogen por debajo del ancho
+   intrínseco de su contenido por defecto (min-width:auto implícito),
+   así que sin este min-width:0 el nombre largo del archivo dentro del
+   chip empujaba la columna entera y desalineaba todo el formulario. */
+#pago-foto-wrap {
+  min-width: 0;
+}
+
 .file-chip {
   display: flex;
   align-items: center;
