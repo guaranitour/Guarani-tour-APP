@@ -848,6 +848,14 @@ function openViajeDetalle(viajeId) {
 async function loadViajeDetalle(viajeId) {
   viajeActualId = parseInt(viajeId, 10);
 
+  // Siempre entrar por el tab Pasajeros. Sin esto, si el usuario venía
+  // parado en Egresos/Presupuesto/Resumen de OTRO viaje, ese panel queda
+  // con "display" activo y sus datos viejos en pantalla — nada lo oculta
+  // ni lo refresca hasta que el usuario hace clic manualmente en un tab,
+  // porque loadEgresos/loadPresupuesto/etc. solo se disparan dentro de
+  // switchViajeTab.
+  switchViajeTab("pasajeros");
+
   const cacheado = _viajeDetalleCache.get(viajeActualId);
 
   if (cacheado) {
