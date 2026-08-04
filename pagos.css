@@ -439,6 +439,9 @@
   border-radius: 10px;
   background: var(--bg);
   max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .file-chip-icon {
