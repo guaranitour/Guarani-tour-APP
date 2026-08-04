@@ -470,68 +470,12 @@ function formatFecha(val) {
 }
 
 /* ── SUBIR IMAGEN ─────────────────────────── */
-/* ── CONVERSIÓN DE IMAGEN A WEBP ─────────────
-   Reduce el peso del archivo antes de subirlo a Storage, manteniendo
-   buena calidad visual. Usa <canvas> nativo, sin librerías externas.
-   Si algo falla (navegador viejo sin soporte, imagen corrupta, etc.),
-   devuelve el archivo original sin tocar — nunca bloquea la subida. */
-async function _convertirAWebp(file, calidad = 0.82, maxDimension = 1600) {
-  // Si ya es WebP, o no es una imagen (ej. no debería pasar por acá,
-  // pero por las dudas), no hay nada que convertir.
-  if (!file.type.startsWith("image/") || file.type === "image/webp") {
-    return file;
-  }
-
-  try {
-    const bitmap = await createImageBitmap(file);
-
-    // Redimensionar si excede maxDimension, para no subir fotos de
-    // cámara de 12MP+ a tamaño completo cuando se van a mostrar como
-    // portada de card — esto es lo que más peso ahorra, más incluso
-    // que el cambio de formato en sí.
-    let { width, height } = bitmap;
-    if (width > maxDimension || height > maxDimension) {
-      const escala = maxDimension / Math.max(width, height);
-      width  = Math.round(width * escala);
-      height = Math.round(height * escala);
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width  = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close?.();
-
-    const blob = await new Promise(resolve => {
-      canvas.toBlob(resolve, "image/webp", calidad);
-    });
-
-    // toBlob puede devolver null si el navegador no soporta la
-    // codificación WebP (Safari < 14 principalmente).
-    if (!blob) return file;
-
-    const nombreBase = file.name.replace(/\.[^.]+$/, "");
-    return new File([blob], `${nombreBase}.webp`, { type: "image/webp" });
-
-  } catch (err) {
-    console.warn("No se pudo convertir la imagen a WebP, se sube el archivo original:", err);
-    return file;
-  }
-}
-
 async function uploadViajeImage(file, fixedName = null) {
-  const fileConvertido = await _convertirAWebp(file);
-
-  // Si fixedName viene sin extensión explícita, se respeta tal cual
-  // (uso típico: "viaje_123" para upsert); si no se pasó fixedName, el
-  // nombre se arma con el nombre ya convertido (extensión .webp
-  // incluida cuando la conversión tuvo éxito).
-  const fileName = fixedName || `${Date.now()}_${fileConvertido.name}`;
+  const fileName = fixedName || `${Date.now()}_${file.name}`;
 
   const { error } = await supabaseClient.storage
     .from("viajes")
-    .upload(fileName, fileConvertido, { upsert: !!fixedName });
+    .upload(fileName, file, { upsert: !!fixedName });
 
   if (error) throw error;
 
@@ -832,7 +776,7 @@ function previewViajeImgEditar(event) {
 function previewViajeImg(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const preview = document.querySelector(".viaje-imagen-preview");
+  const preview = document.querySelector("#view-viaje-nuevo .viaje-imagen-preview");
   const overlay = document.getElementById("viaje-img-overlay");
   const reader = new FileReader();
   reader.onload = (e) => {

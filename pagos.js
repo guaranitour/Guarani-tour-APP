@@ -328,28 +328,38 @@ async function loadPagosPasajero() {
 
 /* ── MOSTRAR / OCULTAR FORM ─────────────────── */
 
-// Sincroniza el texto visible junto al botón "Seleccionar" con el
-// archivo realmente elegido en el <input type="file"> oculto (ver
-// file-input-custom en pagos.css). Sin esto, en pantallas angostas no
-// hay forma de saber si el usuario ya adjuntó un comprobante: el
+// Sincroniza el "chip" de archivo (ícono + nombre truncado + botón
+// quitar) con el archivo realmente elegido en el <input type="file">
+// oculto (ver .file-chip en pagos.css). Sin esto, en pantallas angostas
+// no hay forma de saber si el usuario ya adjuntó un comprobante: el
 // nombre que muestra el navegador dentro del input nativo se recorta.
 function _actualizarNombreArchivo(inputId, nombreElId) {
   const input  = document.getElementById(inputId);
   const nombreEl = document.getElementById(nombreElId);
+  const chipEl = nombreEl?.closest(".file-chip");
   if (!input || !nombreEl) return;
   const archivo = input.files?.[0];
   if (archivo) {
     nombreEl.textContent = archivo.name;
-    nombreEl.classList.add("file-input-name--selected");
+    nombreEl.title = archivo.name; // nombre completo al mantener presionado / hover
+    if (chipEl) chipEl.hidden = false;
   } else {
-    nombreEl.textContent = "Ningún archivo seleccionado";
-    nombreEl.classList.remove("file-input-name--selected");
+    nombreEl.textContent = "";
+    nombreEl.removeAttribute("title");
+    if (chipEl) chipEl.hidden = true;
   }
 }
 
 // El input es parte del HTML estático (no se recrea con innerHTML), así
 // que un único listener alcanza para toda la vida de la página.
 document.getElementById("pago-foto")?.addEventListener("change", () => {
+  _actualizarNombreArchivo("pago-foto", "pago-foto-nombre");
+});
+
+// Botón "✕" del chip: limpia el input sin reabrir el selector de archivos.
+document.getElementById("pago-foto-quitar")?.addEventListener("click", () => {
+  const input = document.getElementById("pago-foto");
+  if (input) input.value = "";
   _actualizarNombreArchivo("pago-foto", "pago-foto-nombre");
 });
 

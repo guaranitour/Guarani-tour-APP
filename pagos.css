@@ -425,23 +425,64 @@
   box-shadow: 0 0 0 3px rgba(45,106,79,.1);
 }
 
-.file-input-name {
-  font-size: .85rem;
+/* Tarjeta de archivo seleccionado, estilo "chip" (similar al selector
+   de archivos de GitHub): ícono + nombre truncado en una sola línea +
+   botón para quitar. Reemplaza al span de texto plano, que en pantallas
+   angostas se desparramaba en varias líneas sin estructura visual. */
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .5rem;
+  padding: .55rem .6rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  max-width: 100%;
+}
+
+.file-chip-icon {
+  flex-shrink: 0;
   color: var(--text-muted);
+}
+
+.file-chip-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0;
-  flex: 1;
-}
-
-.file-input-name.file-input-name--selected {
-  color: var(--text);
+  font-size: .85rem;
   font-weight: 500;
+  color: var(--text);
 }
 
-/* En mobile, el nombre pasa a su propia línea completa: así nunca se
-   corta, sin importar cuán largo sea el nombre del archivo. */
+.file-chip-remove {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.file-chip-remove:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.file-chip-remove:active {
+  background: var(--border);
+}
+
 @media (max-width: 480px) {
   .file-input-custom {
     align-items: stretch;
@@ -449,14 +490,6 @@
 
   .file-input-btn {
     justify-content: center;
-  }
-
-  .file-input-name {
-    flex-basis: 100%;
-    white-space: normal;
-    word-break: break-word;
-    font-size: .82rem;
-    padding: .3rem .1rem 0;
   }
 }
 
