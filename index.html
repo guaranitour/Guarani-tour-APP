@@ -1001,7 +1001,17 @@
                 <!-- Foto comprobante -->
                 <div class="form-field" id="pago-foto-wrap">
                   <label class="form-label">Foto comprobante</label>
-                  <input type="file" id="pago-foto" class="form-input" accept="image/*,application/pdf" />
+                  <div class="file-input-custom" id="pago-foto-custom">
+                    <input type="file" id="pago-foto" class="file-input-native" accept="image/*,application/pdf" />
+                    <button type="button" class="file-input-btn" onclick="document.getElementById('pago-foto').click()">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Seleccionar
+                    </button>
+                    <span class="file-input-name" id="pago-foto-nombre">Ningún archivo seleccionado</span>
+                  </div>
                 </div>
 
                 <!-- Observación -->

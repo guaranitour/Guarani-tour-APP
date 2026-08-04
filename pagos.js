@@ -327,6 +327,32 @@ async function loadPagosPasajero() {
 }
 
 /* ── MOSTRAR / OCULTAR FORM ─────────────────── */
+
+// Sincroniza el texto visible junto al botón "Seleccionar" con el
+// archivo realmente elegido en el <input type="file"> oculto (ver
+// file-input-custom en pagos.css). Sin esto, en pantallas angostas no
+// hay forma de saber si el usuario ya adjuntó un comprobante: el
+// nombre que muestra el navegador dentro del input nativo se recorta.
+function _actualizarNombreArchivo(inputId, nombreElId) {
+  const input  = document.getElementById(inputId);
+  const nombreEl = document.getElementById(nombreElId);
+  if (!input || !nombreEl) return;
+  const archivo = input.files?.[0];
+  if (archivo) {
+    nombreEl.textContent = archivo.name;
+    nombreEl.classList.add("file-input-name--selected");
+  } else {
+    nombreEl.textContent = "Ningún archivo seleccionado";
+    nombreEl.classList.remove("file-input-name--selected");
+  }
+}
+
+// El input es parte del HTML estático (no se recrea con innerHTML), así
+// que un único listener alcanza para toda la vida de la página.
+document.getElementById("pago-foto")?.addEventListener("change", () => {
+  _actualizarNombreArchivo("pago-foto", "pago-foto-nombre");
+});
+
 function mostrarFormPago() {
   ["pago-monto","pago-comprobante","pago-observacion"].forEach(id => {
     const el = document.getElementById(id);
@@ -334,6 +360,7 @@ function mostrarFormPago() {
   });
   const fotoEl  = document.getElementById("pago-foto");
   if (fotoEl) fotoEl.value = "";
+  _actualizarNombreArchivo("pago-foto", "pago-foto-nombre");
   const bancoInput = document.getElementById("pago-banco-input");
   if (bancoInput) bancoInput.value = "";
   const bancoHidden = document.getElementById("pago-banco");
