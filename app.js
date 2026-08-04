@@ -299,6 +299,16 @@ window.addEventListener("popstate", (event) => {
     _closeModulosSheetUI();
     return;
   }
+  // Mismo caso para el bottom sheet de un custom select (categoría, caja,
+  // etc. — ver custom-select.js). Ese componente pushea su propia entrada
+  // de historial al abrirse y la consume al cerrarse (clic afuera, X, o
+  // atrás), pero su propio listener de popstate se registra recién cuando
+  // el usuario abre el sheet — es decir, DESPUÉS de este listener global,
+  // que ya está activo desde que carga la página. Por orden de registro,
+  // este código corre primero en cada popstate, así que sin este chequeo
+  // se dispara una navegación real del SPA antes de que custom-select.js
+  // llegue a frenarla con stopImmediatePropagation().
+  if (window._csSheetOpen) return;
   const { view, idx } = _parseHash(location.hash);
   // Scroll guardado para esta entrada del historial (si existe)
   _pendingScrollY = (event.state && typeof event.state.scrollY === "number") ? event.state.scrollY : null;

@@ -19,8 +19,14 @@ const CUSTOM_SELECT_THRESHOLD = 6; // ≤ este número → dropdown, > → botto
 // Registro de instancias para poder refrescarlas
 const _csInstances = {};
 
-// Contador de sheets abiertos para manejar el historial del SPA
+// Contador de sheets abiertos para manejar el historial del SPA.
+// Expuesto en window (además de la variable local) porque 'let' de nivel
+// superior NO cuelga de window automáticamente — a diferencia de 'var' —
+// y app.js necesita poder consultarlo para no navegar cuando el popstate
+// en realidad viene de cerrar este sheet (ver window.addEventListener
+// "popstate" en app.js).
 let _csSheetOpen = false;
+window._csSheetOpen = false;
 
 /**
  * Inicializa el custom select para un <select> existente por su ID.
@@ -274,6 +280,7 @@ function _openSheet(sel, trigger, options, onSelect, onClose) {
 
   // FIX 2: Pushear estado falso al historial para interceptar el botón atrás
   _csSheetOpen = true;
+  window._csSheetOpen = true;
   history.pushState({ csSheet: true }, "");
 
   // Render opciones filtradas
@@ -332,6 +339,7 @@ function _openSheet(sel, trigger, options, onSelect, onClose) {
     sheet.classList.add("cs-closing");
     overlay.classList.add("cs-closing");
     _csSheetOpen = false;
+    window._csSheetOpen = false;
     setTimeout(() => overlay.remove(), 200);
     document.removeEventListener("keydown", onKey);
     window.removeEventListener("popstate", onPopState);
