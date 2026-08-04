@@ -310,9 +310,10 @@ async function initReciboNuevoView() {
   const grupo = document.getElementById('frec-grupo-transferencia');
   if (grupo) grupo.style.display = 'none';
 
-  // Fecha de hoy
+  // Fecha de hoy (en horario local, NO usar toISOString() que es UTC
+  // y puede devolver el día equivocado según hora/timezone del dispositivo)
   const campoFecha = document.getElementById('frec-fecha');
-  if (campoFecha) campoFecha.value = new Date().toISOString().split('T')[0];
+  if (campoFecha) campoFecha.value = fechaLocalISO();
 
   const errEl = document.getElementById('form-recibo-error');
   if (errEl) errEl.textContent = '';
@@ -996,6 +997,17 @@ function toggleGrupoRecibos(header) {
 function formatGs(n) {
   if (n == null || n === '') return '—';
   return 'Gs. ' + Number(n).toLocaleString('es-PY');
+}
+
+// Devuelve la fecha de HOY como 'YYYY-MM-DD' usando los componentes
+// locales del dispositivo (no UTC). new Date().toISOString() convierte
+// a UTC internamente y puede devolver el día anterior o siguiente según
+// la hora y el timezone configurado — por eso no se usa acá.
+function fechaLocalISO(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function formatFechaRecibo(f) {
