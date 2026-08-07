@@ -7,6 +7,7 @@
 // del panel de staff. Coincide con el mockup v3 aprobado.
 
 const LOGO_URL = "app_imagen_512px.png"; // raíz del repo, mismo origen que index.html
+const HP_ANCHO_HOJA = 680; // ancho fijo del documento en px — única fuente de verdad
 
 const HP_COLOR = {
   azulProfundo : "#0B3D66",
@@ -123,20 +124,22 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     const dataUrl = await htmlToImage.toPng(hoja, {
       pixelRatio: 2,
       backgroundColor: "#ffffff",
-      width: hoja.offsetWidth,
-      height: hoja.offsetHeight
+      width: HP_ANCHO_HOJA,
+      height: hoja.scrollHeight
     });
 
     if (!dataUrl || dataUrl === "data:,") {
       throw new Error("La captura de la imagen salió vacía.");
     }
-    console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length);
+    console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length,
+                "ancho:", HP_ANCHO_HOJA, "alto:", hoja.scrollHeight);
 
-    // 4. Convertir la imagen a PDF con jsPDF (tamaño ajustado al contenido)
+    // 4. Convertir la imagen a PDF con jsPDF, una sola página ajustada al
+    //    contenido real (sin depender de leer el PNG resultante otra vez)
     const { jsPDF } = window.jspdf;
-    const imgProps  = await obtenerDimensiones(dataUrl);
-    const pdfWidth  = 210; // A4 mm
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const mmPorPx   = 210 / HP_ANCHO_HOJA; // ancho de página fijo en A4 (210mm)
+    const pdfWidth  = 210;
+    const pdfHeight = hoja.scrollHeight * mmPorPx;
 
     const pdf = new jsPDF({
       orientation : "portrait",
@@ -181,20 +184,12 @@ function esperarImagenes(root) {
   }));
 }
 
-function obtenerDimensiones(dataUrl) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.width, height: img.height });
-    img.src = dataUrl;
-  });
-}
-
 // ── Construcción del nodo HTML a capturar ────────────────────────────────
 function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, filas, formatGs }) {
   const wrap = document.createElement("div");
   wrap.id = "hp-captura";
   wrap.style.cssText = `
-    width:680px;
+    width:${HP_ANCHO_HOJA}px;
     background:#ffffff;
     font-family:'Inter', -apple-system, sans-serif;
     color:${HP_COLOR.grisTinta};
