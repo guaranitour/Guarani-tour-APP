@@ -137,37 +137,26 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length,
                 "ancho:", HP_ANCHO_HOJA, "alto:", hoja.scrollHeight);
 
-    // 4. Convertir la imagen a PDF con jsPDF, en una página A4 real fija.
-    //    La imagen se escala manteniendo su proporción y se ubica arriba;
-    //    si el contenido es más alto que el alto disponible, se reescala
-    //    también por altura para seguir entrando en una sola página.
+    // 4. Convertir la imagen a PDF con jsPDF, en una página cuyo tamaño se
+    //    ajusta al contenido real (sin espacio en blanco sobrante ni recorte
+    //    de contenido). El ancho de página se fija en base al ancho de
+    //    captura + márgenes, y el alto se deriva del alto real capturado.
     const { jsPDF } = window.jspdf;
-    const A4_ANCHO_MM = 210;
-    const A4_ALTO_MM  = 297;
-    const MARGEN_MM   = 10;
+    const MARGEN_MM = 10;
 
-    const anchoDisponible = A4_ANCHO_MM - MARGEN_MM * 2;
-    const altoDisponible  = A4_ALTO_MM - MARGEN_MM * 2;
+    const mmPorPx     = 1 / (96 / 25.4); // 1px @ 96dpi → mm
+    const imgWidthMm  = HP_ANCHO_HOJA * mmPorPx;
+    const imgHeightMm = hoja.scrollHeight * mmPorPx;
 
-    const mmPorPx   = anchoDisponible / HP_ANCHO_HOJA;
-    let imgWidthMm  = anchoDisponible;
-    let imgHeightMm = hoja.scrollHeight * mmPorPx;
-
-    if (imgHeightMm > altoDisponible) {
-      const factor = altoDisponible / imgHeightMm;
-      imgHeightMm *= factor;
-      imgWidthMm  *= factor;
-    }
-
-    const offsetX = (A4_ANCHO_MM - imgWidthMm) / 2;
-    const offsetY = MARGEN_MM;
+    const paginaAnchoMm = imgWidthMm + MARGEN_MM * 2;
+    const paginaAltoMm  = imgHeightMm + MARGEN_MM * 2;
 
     const pdf = new jsPDF({
-      orientation : "portrait",
+      orientation : paginaAltoMm >= paginaAnchoMm ? "portrait" : "landscape",
       unit        : "mm",
-      format      : "a4"
+      format      : [paginaAnchoMm, paginaAltoMm]
     });
-    pdf.addImage(dataUrl, "PNG", offsetX, offsetY, imgWidthMm, imgHeightMm);
+    pdf.addImage(dataUrl, "PNG", MARGEN_MM, MARGEN_MM, imgWidthMm, imgHeightMm);
 
     const nombreArchivo = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${nombreViaje.replace(/\s+/g, "_")}.pdf`;
     pdf.save(nombreArchivo);
