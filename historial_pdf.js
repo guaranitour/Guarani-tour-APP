@@ -121,6 +121,9 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     // de un nodo recién insertado antes del primer paint
     await esperarFrames(2);
 
+    // hoja.scrollHeight aquí ya refleja HP_ALTO_MIN (min-height del wrapper)
+    // cuando el contenido es corto, o el alto real del contenido si es más
+    // largo — así el footer queda siempre al fondo verdadero de la hoja.
     const dataUrl = await htmlToImage.toPng(hoja, {
       pixelRatio: 2,
       backgroundColor: "#ffffff",
@@ -134,19 +137,37 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length,
                 "ancho:", HP_ANCHO_HOJA, "alto:", hoja.scrollHeight);
 
-    // 4. Convertir la imagen a PDF con jsPDF, una sola página ajustada al
-    //    contenido real (sin depender de leer el PNG resultante otra vez)
+    // 4. Convertir la imagen a PDF con jsPDF, en una página A4 real fija.
+    //    La imagen se escala manteniendo su proporción y se ubica arriba;
+    //    si el contenido es más alto que el alto disponible, se reescala
+    //    también por altura para seguir entrando en una sola página.
     const { jsPDF } = window.jspdf;
-    const mmPorPx   = 210 / HP_ANCHO_HOJA; // ancho de página fijo en A4 (210mm)
-    const pdfWidth  = 210;
-    const pdfHeight = hoja.scrollHeight * mmPorPx;
+    const A4_ANCHO_MM = 210;
+    const A4_ALTO_MM  = 297;
+    const MARGEN_MM   = 10;
+
+    const anchoDisponible = A4_ANCHO_MM - MARGEN_MM * 2;
+    const altoDisponible  = A4_ALTO_MM - MARGEN_MM * 2;
+
+    const mmPorPx   = anchoDisponible / HP_ANCHO_HOJA;
+    let imgWidthMm  = anchoDisponible;
+    let imgHeightMm = hoja.scrollHeight * mmPorPx;
+
+    if (imgHeightMm > altoDisponible) {
+      const factor = altoDisponible / imgHeightMm;
+      imgHeightMm *= factor;
+      imgWidthMm  *= factor;
+    }
+
+    const offsetX = (A4_ANCHO_MM - imgWidthMm) / 2;
+    const offsetY = MARGEN_MM;
 
     const pdf = new jsPDF({
       orientation : "portrait",
       unit        : "mm",
-      format      : [pdfWidth, pdfHeight]
+      format      : "a4"
     });
-    pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.addImage(dataUrl, "PNG", offsetX, offsetY, imgWidthMm, imgHeightMm);
 
     const nombreArchivo = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${nombreViaje.replace(/\s+/g, "_")}.pdf`;
     pdf.save(nombreArchivo);
@@ -186,10 +207,18 @@ function esperarImagenes(root) {
 
 // ── Construcción del nodo HTML a capturar ────────────────────────────────
 function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, filas, formatGs }) {
+  // Alto mínimo = proporción de una hoja A4 (297/210) aplicada al ancho fijo
+  // de captura. Si el contenido real es más corto, el wrapper igual llena
+  // ese alto y el footer (con margin-top:auto) queda pegado abajo del todo.
+  const HP_ALTO_MIN = Math.round(HP_ANCHO_HOJA * (297 / 210));
+
   const wrap = document.createElement("div");
   wrap.id = "hp-captura";
   wrap.style.cssText = `
     width:${HP_ANCHO_HOJA}px;
+    min-height:${HP_ALTO_MIN}px;
+    display:flex;
+    flex-direction:column;
     background:#ffffff;
     font-family:'Inter', -apple-system, sans-serif;
     color:${HP_COLOR.grisTinta};
@@ -209,7 +238,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
     : `<tr><td colspan="4" style="padding:20px;text-align:center;color:${HP_COLOR.grisSuave};">Sin pagos registrados</td></tr>`;
 
   wrap.innerHTML = `
-    <div style="border-radius:14px;overflow:hidden;border:1px solid ${HP_COLOR.linea};">
+    <div style="flex:1;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;border:1px solid ${HP_COLOR.linea};">
 
       <div style="background:linear-gradient(135deg,${HP_COLOR.azulProfundo} 0%,${HP_COLOR.azulCielo} 100%);
                    padding:18px 28px;display:flex;align-items:center;gap:14px;">
@@ -279,7 +308,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
       </div>
 
       <div style="padding:14px 28px 20px;text-align:center;font-size:9.5px;color:${HP_COLOR.grisSuave};
-                   border-top:1px solid ${HP_COLOR.linea};margin-top:12px;">
+                   border-top:1px solid ${HP_COLOR.linea};margin-top:auto;">
         Documento generado automáticamente a partir de los registros de pagos de Guaranitour.
       </div>
     </div>
