@@ -67,7 +67,10 @@ async function loadResumen(viajeId) {
   /* ── Cálculos de pasajeros ───────────────────── */
   const totalPasajeros = (vpRows || []).length;
   const totalAsisten   = (vpRows || []).filter(p => p.asistencia === "Asiste").length;
-  const totalEsperado  = (vpRows || []).reduce((s, p) => s + (p.total_a_pagar || 0), 0);
+  // Solo cuenta como "esperado" lo de pasajeros que van a asistir.
+  const totalEsperado  = (vpRows || [])
+    .filter(p => p.asistencia === "Asiste")
+    .reduce((s, p) => s + (p.total_a_pagar || 0), 0);
 
   // Desglose por sexo
   const porSexo = { M: 0, F: 0, otro: 0 };
@@ -136,6 +139,13 @@ async function loadResumen(viajeId) {
     if (debe <= 0) paxAlDia++;
     else paxConDeuda++;
   });
+
+  // Recaudado (neto de devoluciones/transferencias) de pasajeros que NO
+  // asisten — se muestra aparte para no inflar el total esperado del viaje.
+  const noAsistenRows   = (vpRows || []).filter(p => p.asistencia !== "Asiste");
+  const totalNoAsisten  = noAsistenRows.length;
+  const recaudadoNoAsisten = noAsistenRows
+    .reduce((s, p) => s + (pagadoPorVP[String(p.id)] || 0), 0);
 
   const netoIngresado  = totalCobrado - totalDevuelto - totalTransferido;
   const saldoPendiente = Math.max(0, totalEsperado - netoIngresado);
@@ -232,12 +242,21 @@ async function loadResumen(viajeId) {
       <div class="resumen-card">
         <span class="resumen-card-label">Total esperado</span>
         <span class="resumen-card-value">Gs. ${fmt(totalEsperado)}</span>
+        <span class="resumen-card-sub">solo pasajeros que asisten</span>
       </div>
       <div class="resumen-card">
         <span class="resumen-card-label">Neto cobrado</span>
         <span class="resumen-card-value positivo">Gs. ${fmt(netoIngresado)}</span>
       </div>
     </div>
+    ${totalNoAsisten > 0 ? `
+    <div class="resumen-grid">
+      <div class="resumen-card">
+        <span class="resumen-card-label">Recaudado de no asisten</span>
+        <span class="resumen-card-value ${recaudadoNoAsisten > 0 ? "positivo" : ""}">Gs. ${fmt(recaudadoNoAsisten)}</span>
+        <span class="resumen-card-sub">${totalNoAsisten} pasajero${totalNoAsisten === 1 ? "" : "s"} no asiste${totalNoAsisten === 1 ? "" : "n"}</span>
+      </div>
+    </div>` : ""}
     <div class="resumen-progress-wrap">
       <div class="resumen-progress-bar">
         <div class="resumen-progress-fill ${pctCobrado >= 100 ? "completo" : ""}"
