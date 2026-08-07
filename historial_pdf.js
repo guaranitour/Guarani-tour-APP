@@ -98,7 +98,12 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
 
     const nombreViaje = viajeActualData?.nombre || "—";
 
-    // 3. Armar el nodo HTML en memoria (fuera de pantalla) y capturarlo
+    // Contenedor "trampa": recorta visualmente a 0px sin usar opacity/visibility,
+    // que son las propiedades que html-to-image a veces filtra al PNG capturado.
+    const jaula = document.createElement("div");
+    jaula.style.cssText = "position:absolute; top:0; left:0; width:1px; height:1px; overflow:hidden; pointer-events:none;";
+    document.body.appendChild(jaula);
+
     hoja = construirHojaHistorial({
       pasajero  : nombrePasajero,
       viaje     : nombreViaje,
@@ -106,7 +111,7 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
       filas     : filasPagos,
       formatGs
     });
-    document.body.appendChild(hoja);
+    jaula.appendChild(hoja);
 
     // esperar fuentes/logo antes de capturar
     await document.fonts.ready;
@@ -147,7 +152,7 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     console.error("Error generando PDF:", err);
     alert("No se pudo generar el PDF: " + err.message);
   } finally {
-    if (hoja) hoja.remove();
+    if (hoja && hoja.parentElement) hoja.parentElement.remove(); // saca la jaula completa
     btn.disabled = false;
     btn.classList.remove("btn-pdf-loading");
   }
@@ -189,13 +194,10 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
   const wrap = document.createElement("div");
   wrap.id = "hp-captura";
   wrap.style.cssText = `
-    position:fixed; left:0; top:0; z-index:-1;
     width:680px;
     background:#ffffff;
     font-family:'Inter', -apple-system, sans-serif;
     color:${HP_COLOR.grisTinta};
-    opacity:0.01;
-    pointer-events:none;
   `;
 
   const filasHtml = filas.length
