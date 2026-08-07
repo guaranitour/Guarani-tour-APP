@@ -137,26 +137,20 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length,
                 "ancho:", HP_ANCHO_HOJA, "alto:", hoja.scrollHeight);
 
-    // 4. Convertir la imagen a PDF con jsPDF, en una página cuyo tamaño se
-    //    ajusta al contenido real (sin espacio en blanco sobrante ni recorte
-    //    de contenido). El ancho de página se fija en base al ancho de
-    //    captura + márgenes, y el alto se deriva del alto real capturado.
+    // 4. Convertir la imagen a PDF con jsPDF, en una página cuyo tamaño es
+    //    exactamente el de la imagen capturada — sin márgenes en ningún lado.
     const { jsPDF } = window.jspdf;
-    const MARGEN_MM = 10;
 
     const mmPorPx     = 1 / (96 / 25.4); // 1px @ 96dpi → mm
     const imgWidthMm  = HP_ANCHO_HOJA * mmPorPx;
     const imgHeightMm = hoja.scrollHeight * mmPorPx;
 
-    const paginaAnchoMm = imgWidthMm + MARGEN_MM * 2;
-    const paginaAltoMm  = imgHeightMm + MARGEN_MM * 2;
-
     const pdf = new jsPDF({
-      orientation : paginaAltoMm >= paginaAnchoMm ? "portrait" : "landscape",
+      orientation : imgHeightMm >= imgWidthMm ? "portrait" : "landscape",
       unit        : "mm",
-      format      : [paginaAnchoMm, paginaAltoMm]
+      format      : [imgWidthMm, imgHeightMm]
     });
-    pdf.addImage(dataUrl, "PNG", MARGEN_MM, MARGEN_MM, imgWidthMm, imgHeightMm);
+    pdf.addImage(dataUrl, "PNG", 0, 0, imgWidthMm, imgHeightMm);
 
     const nombreArchivo = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${nombreViaje.replace(/\s+/g, "_")}.pdf`;
     pdf.save(nombreArchivo);
