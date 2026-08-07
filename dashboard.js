@@ -556,8 +556,11 @@ function renderViajesActivos(viajesData, vpData) {
       return a.fecha_salida.localeCompare(b.fecha_salida);
     });
 
+  // Cuenta todo pasajero salvo el que marcó explícitamente "No asiste".
+  // Quien aún no confirmó (asistencia vacía/null) sigue contando.
   const countsByViaje = {};
   vpData.forEach(vp => {
+    if ((vp.asistencia || "").toLowerCase() === "no asiste") return;
     countsByViaje[vp.viaje_id] = (countsByViaje[vp.viaje_id] || 0) + 1;
   });
 
