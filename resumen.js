@@ -340,7 +340,10 @@ async function loadResumen(viajeId) {
 
     <!-- ── Saldo neto global ── -->
     <div class="resumen-saldo-row">
-      <span class="resumen-saldo-label">Saldo neto (cobrado − egresos)</span>
+      <span class="resumen-saldo-label">
+        Saldo neto (cobrado − egresos)
+        <span class="resumen-card-sub" style="display:block;font-weight:400;">incluye pasajeros que asisten y no asisten</span>
+      </span>
       <span class="resumen-saldo-valor ${saldoNeto >= 0 ? "positivo" : "negativo"}">
         Gs. ${fmt(saldoNeto)}
       </span>
