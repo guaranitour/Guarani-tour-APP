@@ -207,16 +207,10 @@ function esperarImagenes(root) {
 
 // ── Construcción del nodo HTML a capturar ────────────────────────────────
 function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, filas, formatGs }) {
-  // Alto mínimo = proporción de una hoja A4 (297/210) aplicada al ancho fijo
-  // de captura. Si el contenido real es más corto, el wrapper igual llena
-  // ese alto y el footer (con margin-top:auto) queda pegado abajo del todo.
-  const HP_ALTO_MIN = Math.round(HP_ANCHO_HOJA * (297 / 210));
-
   const wrap = document.createElement("div");
   wrap.id = "hp-captura";
   wrap.style.cssText = `
     width:${HP_ANCHO_HOJA}px;
-    min-height:${HP_ALTO_MIN}px;
     display:flex;
     flex-direction:column;
     background:#ffffff;
