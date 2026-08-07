@@ -111,11 +111,21 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     // esperar fuentes/logo antes de capturar
     await document.fonts.ready;
     await esperarImagenes(hoja);
+    // dos frames de respiro: algunos navegadores no completan el layout
+    // de un nodo recién insertado antes del primer paint
+    await esperarFrames(2);
 
     const dataUrl = await htmlToImage.toPng(hoja, {
       pixelRatio: 2,
-      backgroundColor: "#ffffff"
+      backgroundColor: "#ffffff",
+      width: hoja.offsetWidth,
+      height: hoja.offsetHeight
     });
+
+    if (!dataUrl || dataUrl === "data:,") {
+      throw new Error("La captura de la imagen salió vacía.");
+    }
+    console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length);
 
     // 4. Convertir la imagen a PDF con jsPDF (tamaño ajustado al contenido)
     const { jsPDF } = window.jspdf;
@@ -143,6 +153,18 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
   }
 }
 
+function esperarFrames(n) {
+  return new Promise(resolve => {
+    let restantes = n;
+    function tick() {
+      restantes--;
+      if (restantes <= 0) resolve();
+      else requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
 function esperarImagenes(root) {
   const imgs = Array.from(root.querySelectorAll("img"));
   return Promise.all(imgs.map(img => {
@@ -167,11 +189,13 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
   const wrap = document.createElement("div");
   wrap.id = "hp-captura";
   wrap.style.cssText = `
-    position:fixed; left:-9999px; top:0;
+    position:fixed; left:0; top:0; z-index:-1;
     width:680px;
     background:#ffffff;
     font-family:'Inter', -apple-system, sans-serif;
     color:${HP_COLOR.grisTinta};
+    opacity:0.01;
+    pointer-events:none;
   `;
 
   const filasHtml = filas.length
