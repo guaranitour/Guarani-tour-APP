@@ -230,7 +230,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
         <div>
           <div style="font-size:17px;font-weight:800;color:#ffffff;letter-spacing:.2px;">Historial de Pagos</div>
           <div style="font-size:10.5px;font-weight:600;color:rgba(255,255,255,.72);
-                       text-transform:uppercase;letter-spacing:.6px;">Guaranitour</div>
+                       text-transform:uppercase;letter-spacing:.6px;">Guarani Tour E.A.S.</div>
         </div>
       </div>
 
@@ -292,7 +292,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
 
       <div style="padding:14px 28px 20px;text-align:center;font-size:9.5px;color:${HP_COLOR.grisSuave};
                    border-top:1px solid ${HP_COLOR.linea};margin-top:auto;">
-        Documento generado automáticamente a partir de los registros de pagos de Guaranitour.
+        Documento generado automáticamente a partir de los registros de pagos de Guarani Tour E.A.S.
       </div>
     </div>
   `;
