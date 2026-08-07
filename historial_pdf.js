@@ -234,7 +234,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
           <span style="font-size:13.5px;font-weight:700;color:${HP_COLOR.azulProfundo};word-break:break-word;">${escapeHtml(pasajero)}</span>
         </div>
         <div style="display:grid;grid-template-columns:88px 1fr;gap:10px;padding:3px 0;align-items:baseline;">
-          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${HP_COLOR.grisSuave};">Viaje</span>
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${HP_COLOR.grisSuave};">Concepto</span>
           <span style="font-size:13.5px;font-weight:700;color:${HP_COLOR.azulProfundo};word-break:break-word;">${escapeHtml(viaje)}</span>
         </div>
       </div>
@@ -286,7 +286,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
 
       <div style="padding:14px 28px 20px;text-align:center;font-size:9.5px;color:${HP_COLOR.grisSuave};
                    border-top:1px solid ${HP_COLOR.linea};margin-top:auto;">
-        Documento generado automáticamente a partir de los registros de pagos de Guarani Tour E.A.S.
+        Documento generado automáticamente a partir de los registros de pagos de <span style="text-transform:uppercase;">Guarani Tour E.A.S.</span>
       </div>
     </div>
   `;
