@@ -1,7 +1,12 @@
-// ── Generador de Historial de Pagos PDF (html-to-image + jsPDF) ─────────────
+// ── Generador de Historial de Pagos (html-to-image + Web Share API) ────────
 // Reemplaza la llamada a Apps Script: todo se arma y renderiza en el cliente.
 // No requiere backend ni exponer keys. El texto queda rasterizado (no
 // seleccionable) — aceptado a propósito para simplificar el flujo.
+//
+// La imagen PNG capturada se comparte directamente vía navigator.share()
+// (panel nativo de compartir: WhatsApp, etc.). Si el navegador/dispositivo
+// no soporta compartir archivos (típicamente desktop), se descarga el PNG
+// como fallback. Ya no se genera PDF.
 //
 // Paleta: azul institucional (marca cliente-facing), no el verde interno
 // del panel de staff. Coincide con el mockup v3 aprobado.
@@ -22,6 +27,10 @@ const HP_COLOR = {
 };
 
 async function generarHistorialPDF(event, vpId, nombrePasajero) {
+  return compartirHistorialImagen(event, vpId, nombrePasajero);
+}
+
+async function compartirHistorialImagen(event, vpId, nombrePasajero) {
   event.stopPropagation();
 
   const btn = event.currentTarget;
@@ -137,32 +146,51 @@ async function generarHistorialPDF(event, vpId, nombrePasajero) {
     console.log("[historial_pdf] dataUrl generado, longitud:", dataUrl.length,
                 "ancho:", HP_ANCHO_HOJA, "alto:", hoja.scrollHeight);
 
-    // 4. Convertir la imagen a PDF con jsPDF, en una página cuyo tamaño es
-    //    exactamente el de la imagen capturada — sin márgenes en ningún lado.
-    const { jsPDF } = window.jspdf;
+    // 4. Compartir la imagen vía el panel nativo (WhatsApp, etc.) si el
+    //    dispositivo lo soporta; si no, descargarla como PNG.
+    const nombreArchivo = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${nombreViaje.replace(/\s+/g, "_")}.png`;
+    const archivoImagen = await dataUrlAFile(dataUrl, nombreArchivo);
 
-    const mmPorPx     = 1 / (96 / 25.4); // 1px @ 96dpi → mm
-    const imgWidthMm  = HP_ANCHO_HOJA * mmPorPx;
-    const imgHeightMm = hoja.scrollHeight * mmPorPx;
+    const puedeCompartirArchivo = navigator.canShare && navigator.canShare({ files: [archivoImagen] });
 
-    const pdf = new jsPDF({
-      orientation : imgHeightMm >= imgWidthMm ? "portrait" : "landscape",
-      unit        : "mm",
-      format      : [imgWidthMm, imgHeightMm]
-    });
-    pdf.addImage(dataUrl, "PNG", 0, 0, imgWidthMm, imgHeightMm);
-
-    const nombreArchivo = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${nombreViaje.replace(/\s+/g, "_")}.pdf`;
-    pdf.save(nombreArchivo);
+    if (puedeCompartirArchivo) {
+      try {
+        await navigator.share({
+          files : [archivoImagen],
+          title : `Historial de Pagos — ${nombrePasajero}`,
+          text  : `Historial de pagos de ${nombrePasajero} — ${nombreViaje}`
+        });
+      } catch (shareErr) {
+        // El usuario canceló el panel de compartir: no es un error real.
+        if (shareErr.name !== "AbortError") throw shareErr;
+      }
+    } else {
+      descargarDataUrl(dataUrl, nombreArchivo);
+    }
 
   } catch (err) {
-    console.error("Error generando PDF:", err);
-    alert("No se pudo generar el PDF: " + err.message);
+    console.error("Error generando el historial:", err);
+    alert("No se pudo generar el historial: " + err.message);
   } finally {
     if (hoja && hoja.parentElement) hoja.parentElement.remove(); // saca la jaula completa
     btn.disabled = false;
     btn.classList.remove("btn-pdf-loading");
   }
+}
+
+async function dataUrlAFile(dataUrl, nombreArchivo) {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], nombreArchivo, { type: "image/png" });
+}
+
+function descargarDataUrl(dataUrl, nombreArchivo) {
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = nombreArchivo;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 function esperarFrames(n) {

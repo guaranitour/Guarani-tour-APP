@@ -1576,7 +1576,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       </button>` : ""}
-      <button class="btn-pdf-vp" title="Descargar historial de pagos"
+      <button class="btn-pdf-vp" title="Compartir historial de pagos"
         onclick="generarHistorialPDF(event, '${p.id}', '${nombreE}')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
