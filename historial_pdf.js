@@ -12,7 +12,7 @@
 // del panel de staff. Coincide con el mockup v3 aprobado.
 
 const LOGO_URL = "app_imagen_512px.png"; // raíz del repo, mismo origen que index.html
-const HP_ANCHO_HOJA = 680; // ancho fijo del documento en px — única fuente de verdad
+const HP_ANCHO_HOJA = 520; // ancho fijo del documento en px — única fuente de verdad
 
 const HP_COLOR = {
   azulProfundo : "#0B3D66",
@@ -246,7 +246,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
     <div style="flex:1;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;border:1px solid ${HP_COLOR.linea};">
 
       <div style="background:linear-gradient(135deg,${HP_COLOR.azulProfundo} 0%,${HP_COLOR.azulCielo} 100%);
-                   padding:18px 28px;display:flex;align-items:center;gap:14px;">
+                   padding:18px 20px;display:flex;align-items:center;gap:14px;">
         <img src="${LOGO_URL}" crossorigin="anonymous"
              style="width:40px;height:40px;border-radius:50%;background:#fff;object-fit:cover;flex-shrink:0;" />
         <div>
@@ -256,18 +256,18 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
         </div>
       </div>
 
-      <div style="padding:14px 28px;background:${HP_COLOR.papel};border-bottom:1px solid ${HP_COLOR.linea};">
-        <div style="display:grid;grid-template-columns:88px 1fr;gap:10px;padding:3px 0;align-items:baseline;">
+      <div style="padding:14px 20px;background:${HP_COLOR.papel};border-bottom:1px solid ${HP_COLOR.linea};">
+        <div style="display:grid;grid-template-columns:72px 1fr;gap:10px;padding:3px 0;align-items:baseline;">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${HP_COLOR.grisSuave};">Pasajero</span>
           <span style="font-size:13.5px;font-weight:700;color:${HP_COLOR.azulProfundo};word-break:break-word;">${escapeHtml(pasajero)}</span>
         </div>
-        <div style="display:grid;grid-template-columns:88px 1fr;gap:10px;padding:3px 0;align-items:baseline;">
+        <div style="display:grid;grid-template-columns:72px 1fr;gap:10px;padding:3px 0;align-items:baseline;">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${HP_COLOR.grisSuave};">Concepto</span>
           <span style="font-size:13.5px;font-weight:700;color:${HP_COLOR.azulProfundo};word-break:break-word;">${escapeHtml(viaje)}</span>
         </div>
       </div>
 
-      <div style="margin:14px 28px;display:grid;grid-template-columns:1fr 1fr 1fr;
+      <div style="margin:14px 20px;display:grid;grid-template-columns:1fr 1fr 1fr;
                    border:1px solid ${HP_COLOR.linea};border-radius:10px;overflow:hidden;">
         <div style="padding:11px 8px;text-align:center;border-right:1px solid ${HP_COLOR.linea};">
           <div style="font-size:16px;font-weight:800;color:${HP_COLOR.azulProfundo};">${formatGs(total)}</div>
@@ -283,13 +283,13 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
         </div>
       </div>
 
-      <div style="padding:0 28px 6px;">
+      <div style="padding:0 20px 6px;">
         <div style="height:6px;background:${HP_COLOR.linea};border-radius:99px;overflow:hidden;">
           <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${HP_COLOR.azulCielo},${HP_COLOR.verdeOk});"></div>
         </div>
       </div>
 
-      <div style="margin:16px 28px 0;">
+      <div style="margin:16px 20px 0;">
         <div style="font-size:12.5px;font-weight:800;color:${HP_COLOR.azulProfundo};margin-bottom:6px;
                      display:flex;align-items:center;gap:6px;">
           <span style="width:3px;height:12px;background:${HP_COLOR.dorado};border-radius:2px;display:inline-block;"></span>
@@ -312,7 +312,7 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
         </table>
       </div>
 
-      <div style="padding:14px 28px 20px;text-align:center;font-size:9.5px;color:${HP_COLOR.grisSuave};
+      <div style="padding:14px 20px 20px;text-align:center;font-size:9.5px;color:${HP_COLOR.grisSuave};
                    border-top:1px solid ${HP_COLOR.linea};margin-top:auto;">
         Documento generado automáticamente a partir de los registros de pagos de <span style="text-transform:uppercase;">Guarani Tour E.A.S.</span>
       </div>
