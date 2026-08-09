@@ -134,7 +134,7 @@ async function compartirHistorialImagen(event, vpId, nombrePasajero) {
     // cuando el contenido es corto, o el alto real del contenido si es más
     // largo — así el footer queda siempre al fondo verdadero de la hoja.
     const dataUrl = await htmlToImage.toPng(hoja, {
-      pixelRatio: 2,
+      pixelRatio: 3,
       backgroundColor: "#ffffff",
       width: HP_ANCHO_HOJA,
       height: hoja.scrollHeight
@@ -158,7 +158,7 @@ async function compartirHistorialImagen(event, vpId, nombrePasajero) {
         await navigator.share({
           files : [archivoImagen],
           title : `Historial de Pagos — ${nombrePasajero}`,
-          text  : `Historial de pagos de ${nombrePasajero} — ${nombreViaje}`
+          text  : `Hola ${nombrePasajero}, te pasamos los pagos que hiciste hasta ahora.`
         });
       } catch (shareErr) {
         // El usuario canceló el panel de compartir: no es un error real.
@@ -243,12 +243,13 @@ function construirHojaHistorial({ pasajero, viaje, total, saldo, neto, pct, fila
     : `<tr><td colspan="4" style="padding:20px;text-align:center;color:${HP_COLOR.grisSuave};">Sin pagos registrados</td></tr>`;
 
   wrap.innerHTML = `
-    <div style="flex:1;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;border:1px solid ${HP_COLOR.linea};">
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
 
       <div style="background:linear-gradient(135deg,${HP_COLOR.azulProfundo} 0%,${HP_COLOR.azulCielo} 100%);
                    padding:18px 20px;display:flex;align-items:center;gap:14px;">
         <img src="${LOGO_URL}" crossorigin="anonymous"
-             style="width:40px;height:40px;border-radius:50%;background:#fff;object-fit:cover;flex-shrink:0;" />
+             style="width:42px;height:42px;border-radius:50%;background:#fff;object-fit:cover;flex-shrink:0;
+                    image-rendering:-webkit-optimize-contrast;image-rendering:high-quality;" />
         <div>
           <div style="font-size:17px;font-weight:800;color:#ffffff;letter-spacing:.2px;">Historial de Pagos</div>
           <div style="font-size:10.5px;font-weight:600;color:rgba(255,255,255,.72);
