@@ -72,14 +72,16 @@ async function loadResumen(viajeId) {
     .filter(p => p.asistencia === "Asiste")
     .reduce((s, p) => s + (p.total_a_pagar || 0), 0);
 
-  // Desglose por sexo
+  // Desglose por sexo — solo pasajeros que asisten
   const porSexo = { M: 0, F: 0, otro: 0 };
-  (vpRows || []).forEach(p => {
-    const s = p.pasajeros?.Sexo;
-    if (s === "M" || s === "Masculino") porSexo.M++;
-    else if (s === "F" || s === "Femenino") porSexo.F++;
-    else porSexo.otro++;
-  });
+  (vpRows || [])
+    .filter(p => p.asistencia === "Asiste")
+    .forEach(p => {
+      const s = p.pasajeros?.Sexo;
+      if (s === "M" || s === "Masculino") porSexo.M++;
+      else if (s === "F" || s === "Femenino") porSexo.F++;
+      else porSexo.otro++;
+    });
 
   // Club Destino: miembro = puntos_destino > 0
   const totalMiembros   = (vpRows || []).filter(p => (p.puntos_destino || 0) > 0).length;
@@ -131,14 +133,16 @@ async function loadResumen(viajeId) {
     }
   });
 
-  // Pasajeros con saldo pendiente vs. al día
+  // Pasajeros con saldo pendiente vs. al día — solo los que asisten
   let paxAlDia = 0, paxConDeuda = 0;
-  (vpRows || []).forEach(p => {
-    const pagado = pagadoPorVP[String(p.id)] || 0;
-    const debe   = (p.total_a_pagar || 0) - pagado;
-    if (debe <= 0) paxAlDia++;
-    else paxConDeuda++;
-  });
+  (vpRows || [])
+    .filter(p => p.asistencia === "Asiste")
+    .forEach(p => {
+      const pagado = pagadoPorVP[String(p.id)] || 0;
+      const debe   = (p.total_a_pagar || 0) - pagado;
+      if (debe <= 0) paxAlDia++;
+      else paxConDeuda++;
+    });
 
   // Recaudado (neto de devoluciones/transferencias) de pasajeros que NO
   // asisten — se muestra aparte para no inflar el total esperado del viaje.
@@ -232,12 +236,12 @@ async function loadResumen(viajeId) {
           <span style="color:var(--text-muted);font-weight:400"> / </span>
           <span class="${paxConDeuda > 0 ? "negativo" : ""}">${paxConDeuda}</span>
         </span>
-        <span class="resumen-card-sub">pasajeros</span>
+        <span class="resumen-card-sub">pasajeros que asisten</span>
       </div>
       <div class="resumen-card">
         <span class="resumen-card-label">Por sexo</span>
         <span class="resumen-card-value">${porSexo.M}M · ${porSexo.F}F${porSexo.otro > 0 ? " · " + porSexo.otro + "?" : ""}</span>
-        <span class="resumen-card-sub">de ${totalPasajeros} pasajeros</span>
+        <span class="resumen-card-sub">de ${totalAsisten} que asisten</span>
       </div>
     </div>
 
