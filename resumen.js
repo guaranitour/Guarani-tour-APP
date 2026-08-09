@@ -142,15 +142,26 @@ async function loadResumen(viajeId) {
 
   // Recaudado (neto de devoluciones/transferencias) de pasajeros que NO
   // asisten — se muestra aparte para no inflar el total esperado del viaje.
+  const asistenRows     = (vpRows || []).filter(p => p.asistencia === "Asiste");
   const noAsistenRows   = (vpRows || []).filter(p => p.asistencia !== "Asiste");
   const totalNoAsisten  = noAsistenRows.length;
   const recaudadoNoAsisten = noAsistenRows
     .reduce((s, p) => s + (pagadoPorVP[String(p.id)] || 0), 0);
 
-  const netoIngresado  = totalCobrado - totalDevuelto - totalTransferido;
-  const saldoPendiente = Math.max(0, totalEsperado - netoIngresado);
+  // netoIngresado = todo lo cobrado en el viaje (para "Neto cobrado" y para
+  // el desglose por método/caja, que sí debe incluir a los no-asisten).
+  const netoIngresado = totalCobrado - totalDevuelto - totalTransferido;
+
+  // netoIngresadoAsisten = neto solo de pasajeros que asisten. Es el que
+  // corresponde comparar contra totalEsperado (también filtrado por
+  // "Asiste"), para que saldoPendiente y pctCobrado no se reduzcan por
+  // pagos de pasajeros que no van a asistir.
+  const netoIngresadoAsisten = asistenRows
+    .reduce((s, p) => s + (pagadoPorVP[String(p.id)] || 0), 0);
+
+  const saldoPendiente = Math.max(0, totalEsperado - netoIngresadoAsisten);
   const pctCobrado     = totalEsperado > 0
-    ? Math.min(100, Math.round((netoIngresado / totalEsperado) * 100))
+    ? Math.min(100, Math.round((netoIngresadoAsisten / totalEsperado) * 100))
     : 0;
 
   /* ── Cálculos de egresos ─────────────────────── */
