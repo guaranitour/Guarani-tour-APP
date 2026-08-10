@@ -1020,28 +1020,41 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   }
   // ───────────────────────────────────────────────────────────────────────
 
-  // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
-  const btnAgregarEarly = document.getElementById("btn-agregar-vp");
-  if (btnAgregarEarly) btnAgregarEarly.style.display = "";
-
   // Rol del usuario actual (se necesita para los tabs, incluso sin pasajeros)
+  const esFinanzasEarly = currentUserRole === "facturacion";
   const esWorkerOAdminEarly = Array.isArray(currentUserRole)
     ? currentUserRole.some(r => ["admin", "worker"].includes(r))
     : ["admin", "worker"].includes(currentUserRole);
+  // Egresos/Presupuesto/Resumen: admin, worker y finanzas (finanzas sin edición,
+  // controlado dentro de cada módulo). Extra y agregar-pasajero quedan afuera
+  // de finanzas: no gestiona pasajeros ni servicios extra.
+  const puedeVerFinancierosEarly = esWorkerOAdminEarly || esFinanzasEarly;
+
+  // Botón agregar pasajero: visible para admin/worker/viewer, no para finanzas
+  const btnAgregarEarly = document.getElementById("btn-agregar-vp");
+  if (btnAgregarEarly) btnAgregarEarly.style.display = esFinanzasEarly ? "none" : "";
+
+  // Tab Pasajeros: finanzas no debe ver el listado de pasajeros del viaje
+  const tabPasajerosEarly = document.getElementById("tab-pasajeros");
+  if (tabPasajerosEarly) tabPasajerosEarly.style.display = esFinanzasEarly ? "none" : "";
 
   // Mostrar tabs según rol — antes del return temprano, para que
   // Egresos/Presupuesto/Resumen queden disponibles aunque el viaje
   // todavía no tenga pasajeros cargados.
   const tabEgresosEarly = document.getElementById("tab-egresos");
-  if (tabEgresosEarly) tabEgresosEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  if (tabEgresosEarly) tabEgresosEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabPresEarly = document.getElementById("tab-presupuesto");
-  if (tabPresEarly) tabPresEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  if (tabPresEarly) tabPresEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabResEarly = document.getElementById("tab-resumen");
-  if (tabResEarly) tabResEarly.style.display = esWorkerOAdminEarly ? "" : "none";
+  if (tabResEarly) tabResEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabExtraEarly = document.getElementById("tab-extra");
   if (tabExtraEarly) {
     tabExtraEarly.style.display = (esWorkerOAdminEarly && !!viajeActualData?.extras_habilitados) ? "" : "none";
   }
+
+  // Finanzas entra directo a Resumen (no tiene acceso a Pasajeros, que es
+  // la tab activa por defecto en el HTML).
+  if (esFinanzasEarly) switchViajeTab("resumen");
 
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
@@ -2005,11 +2018,16 @@ function capitalizarNombre(str) {
 
 /* ── TABS VIAJE DETALLE ────────────────────── */
 function switchViajeTab(tab) {
-  // Redirigir viewer si intenta acceder a tabs restringidos
+  // Redirigir según rol si intenta acceder a un tab restringido
+  const esFinanzas = currentUserRole === "facturacion";
   const _esWorkerOAdmin = Array.isArray(currentUserRole)
     ? currentUserRole.some(r => ["admin","worker"].includes(r))
     : ["admin","worker"].includes(currentUserRole);
-  if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra")) {
+
+  if (esFinanzas) {
+    // Finanzas: solo egresos/presupuesto/resumen. Nunca pasajeros ni extra.
+    if (tab === "pasajeros" || tab === "extra") tab = "resumen";
+  } else if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra")) {
     tab = "pasajeros";
   }
   // Extra requiere además que el viaje lo tenga habilitado

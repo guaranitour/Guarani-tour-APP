@@ -156,9 +156,9 @@ async function enterApp(user) {
  // 👇 OCULTAR USUARIOS SI NO ES ADMIN
 const card = document.getElementById("card-usuarios");
 if (card) card.style.display = data.role === "admin" ? "" : "none";
-  // 👇 MOVIMIENTOS BANCARIOS: solo admin y worker
+  // 👇 MOVIMIENTOS BANCARIOS: admin, worker y finanzas (finanzas solo lectura, ver movimientos.js)
   const cardMov = document.getElementById("card-movimientos");
-  if (cardMov) cardMov.style.display = ["admin", "worker"].includes(data.role) ? "" : "none";
+  if (cardMov) cardMov.style.display = ["admin", "worker", "facturacion"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   if (!appReady) {
@@ -383,6 +383,12 @@ const _vistasConTransicion = new Set([
 ]);
 
 function navigateTo(view, idx = null, _fromHash = false) {
+  // Guard de acceso: finanzas no puede entrar a clientes, usuarios ni byc,
+  // ni por menú ni por hash/URL directa ni por llamada programática.
+  if (currentUserRole === "facturacion" && (view === "clientes" || view === "usuarios" || view === "byc" || view === "byc-vincular")) {
+    view = "viajes";
+  }
+
   const soportaVT = typeof document.startViewTransition === "function";
   const aplicaTransicion =
     soportaVT &&
@@ -1575,11 +1581,11 @@ function setField(id, value) {
 // cortos, sin descripción y en grid de 3.
 // ══════════════════════════════════════════════════════════
 const MODULOS_MENU = [
-  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)" },
+  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", roles: ["admin", "worker", "viewer"] },
   { slug: "viajes",             label: "Viajes",      img: "viajes.png",    bg: "rgba(45,106,79,.12)" },
   { slug: "recibos",            label: "Recibos",     img: "recibo.png",    bg: "rgba(201,168,76,.18)" },
-  { slug: "movimientos",        label: "Movimientos", img: "bancario.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker"] },
-  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)" },
+  { slug: "movimientos",        label: "Movimientos", img: "bancario.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "facturacion"] },
+  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)", roles: ["admin", "worker", "viewer"] },
   { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)" },
   { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
