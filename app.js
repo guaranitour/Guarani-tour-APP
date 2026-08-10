@@ -75,6 +75,120 @@ function hideEl(id) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// SUGERENCIA DE INSTALACIÓN PWA
+// Se muestra una sola vez por navegador, antes del login, si:
+//  - la app NO está corriendo ya instalada (modo standalone), y
+//  - el usuario no eligió antes "Continuar en el navegador"
+//    (esa elección se recuerda para siempre en localStorage).
+// Si el usuario instala o ya la tiene instalada, no vuelve a aparecer.
+// ══════════════════════════════════════════════════════════
+const LS_KEY_PWA_DISMISS = "gt_pwa_prompt_dismissed";
+
+// Detecta si la app ya corre instalada (modo standalone).
+// - display-mode: standalone cubre Android/Chrome/Edge/desktop.
+// - navigator.standalone es la propiedad legacy de iOS Safari,
+//   no reportada por matchMedia en versiones viejas de iOS.
+function _pwaEstaInstalada() {
+  const porMediaQuery = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+  const porIosLegacy = window.navigator.standalone === true;
+  return !!(porMediaQuery || porIosLegacy);
+}
+
+function _esIosSafari() {
+  const ua = window.navigator.userAgent || "";
+  const esIos = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Mac") && "ontouchend" in document);
+  return esIos;
+}
+
+// Evento que Chrome/Android/Edge disparan cuando la app es instalable.
+// Hay que interceptarlo temprano (antes de que el usuario haga nada) y
+// guardarlo para poder disparar el prompt nativo más tarde, al tocar
+// "Instalar" — si no se captura acá, no se puede invocar después.
+let _deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+// Se llama una vez al arrancar, antes de mostrar login o app. Devuelve
+// una promesa para poder esperar a que el usuario decida antes de
+// continuar el flujo normal (login / restaurar sesión).
+function mostrarPromptInstalacionSiCorresponde() {
+  return new Promise((resolve) => {
+    if (_pwaEstaInstalada()) { resolve(); return; }
+    if (localStorage.getItem(LS_KEY_PWA_DISMISS) === "1") { resolve(); return; }
+
+    const modal = document.getElementById("modal-instalar-pwa");
+    if (!modal) { resolve(); return; }
+
+    const esIos = _esIosSafari();
+    const textoDefault = document.getElementById("modal-instalar-texto-default");
+    const iosSteps = document.getElementById("modal-instalar-ios-steps");
+    const btnInstalar = document.getElementById("btn-instalar-pwa");
+
+    // iOS no tiene instalación con un clic: mostramos instrucciones
+    // manuales y ocultamos el botón "Instalar" (no hay nada que disparar).
+    if (esIos) {
+      if (iosSteps) iosSteps.style.display = "";
+      if (btnInstalar) btnInstalar.style.display = "none";
+    } else {
+      if (iosSteps) iosSteps.style.display = "none";
+      if (btnInstalar) btnInstalar.style.display = "";
+    }
+    if (textoDefault) textoDefault.style.display = esIos ? "none" : "";
+
+    _resolverPromptInstalacion = resolve;
+    modal.showModal();
+  });
+}
+
+let _resolverPromptInstalacion = null;
+
+function _cerrarModalInstalacion() {
+  const modal = document.getElementById("modal-instalar-pwa");
+  if (modal && modal.open) modal.close();
+  if (_resolverPromptInstalacion) {
+    _resolverPromptInstalacion();
+    _resolverPromptInstalacion = null;
+  }
+}
+
+// El usuario eligió seguir en el navegador: se recuerda para siempre,
+// no se vuelve a preguntar en este navegador.
+function _elegirContinuarNavegador() {
+  localStorage.setItem(LS_KEY_PWA_DISMISS, "1");
+  _cerrarModalInstalacion();
+}
+
+// El usuario tocó "Instalar". Si el navegador soporta el prompt nativo
+// (Chrome/Android/Edge), lo disparamos y esperamos su respuesta. Si
+// instala, no hace falta guardar nada: la próxima vez _pwaEstaInstalada()
+// ya va a dar true. Si cancela el prompt nativo, lo dejamos donde estaba
+// (no marcamos "no volver a preguntar": no dijo que no quiere instalar,
+// solo canceló el diálogo del navegador).
+async function _elegirInstalarPwa() {
+  if (!_deferredInstallPrompt) {
+    // No debería pasar (el botón se oculta si no hay prompt disponible
+    // en iOS), pero por robustez: si no hay prompt nativo disponible,
+    // simplemente cerramos sin marcar la elección como definitiva.
+    _cerrarModalInstalacion();
+    return;
+  }
+  const promptEvent = _deferredInstallPrompt;
+  _deferredInstallPrompt = null;
+  _cerrarModalInstalacion();
+  try {
+    await promptEvent.prompt();
+    // No es necesario leer promptEvent.userChoice: tanto si acepta como
+    // si cancela, el modal ya se cerró y no volvemos a mostrarlo en esta
+    // carga de página. Si canceló, aparecerá de nuevo en la próxima visita
+    // (no se guardó LS_KEY_PWA_DISMISS).
+  } catch (err) {
+    console.warn("No se pudo mostrar el prompt de instalación:", err);
+  }
+}
+
 function showLogin() {
   appReady = false;
   showEl("login-view");
@@ -230,8 +344,13 @@ document.addEventListener("DOMContentLoaded", () => {
   hideEl("login-view");
   hideEl("app-view");
 
-  supabaseClient.auth.getSession().then(({ data: { session } }) => {
+  supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
     hideEl("splash-view");
+    // Antes de mostrar login o entrar a la app: si corresponde, se muestra
+    // el prompt de instalación y se espera a que el usuario decida
+    // (instalar, o "continuar en el navegador"). Si ya está instalada o
+    // ya eligió antes, la promesa resuelve al instante sin mostrar nada.
+    await mostrarPromptInstalacionSiCorresponde();
     if (session?.user) enterApp(session.user);
     else showLogin();
   });
