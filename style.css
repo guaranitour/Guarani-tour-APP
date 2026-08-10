@@ -866,45 +866,6 @@ h2 {
   .modal-sos { max-width: calc(100vw - 1.5rem); }
 }
 
-/* ── Modal sugerencia instalación PWA ─────────── */
-.modal-instalar-titulo { color: var(--accent2); }
-
-.modal-instalar-logo-wrap {
-  display: flex; justify-content: center; margin-bottom: .9rem;
-}
-.modal-instalar-logo {
-  width: 64px; height: 64px; border-radius: 16px;
-  box-shadow: var(--shadow-md, 0 4px 14px rgba(0,0,0,.12));
-}
-
-.modal-instalar-texto {
-  font-size: .88rem; line-height: 1.5; color: var(--text-mid);
-  text-align: center; margin: 0 0 .3rem;
-}
-
-.modal-instalar-ios-steps { margin-top: 1rem; }
-.modal-instalar-ios-list {
-  list-style: none; padding: 0; margin: .6rem 0 0;
-  display: flex; flex-direction: column; gap: .5rem;
-}
-.modal-instalar-ios-list li {
-  display: flex; align-items: center; gap: .55rem;
-  font-size: .85rem; color: var(--text);
-  background: var(--accent-light);
-  border-radius: 10px; padding: .6rem .75rem;
-}
-.modal-instalar-ios-num {
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  font-size: .72rem; font-weight: 700;
-}
-
-.modal-instalar-btn-instalar {
-  width: auto; padding: .6rem 1.1rem; display: inline-flex;
-  align-items: center; gap: .4rem; font-size: .85rem;
-}
-
 /* ── FORMULARIO NUEVO CLIENTE ────────────────────────────── */
 .form-page-header { margin-bottom: 1.5rem; }
 .form-page-header h1 {
