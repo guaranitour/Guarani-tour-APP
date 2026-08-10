@@ -2,7 +2,7 @@ async function loginWithGoogle() {
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: "https://guaranitour.github.io/Guarani-tour-APP/"
+      redirectTo: "app.guaranitour.com"
     }
   });
   if (error) {
