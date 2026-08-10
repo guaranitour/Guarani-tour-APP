@@ -4,12 +4,12 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 
 // storageKey: por defecto Supabase guarda la sesión en localStorage bajo
-// una clave fija ("sb-<project-ref>-auth-token"). Como Guarani Tour App
-// y Selección de Asientos viven en el mismo dominio (guaranitour.github.io)
-// y usan el MISMO proyecto Supabase, sin esto ambas apps pisan la misma
-// entrada de localStorage y se invalidan la sesión mutuamente. Con una
-// storageKey propia y distinta en cada app, cada una tiene su sesión
-// completamente independiente, aunque compartan dominio y proyecto.
+// una clave fija ("sb-<project-ref>-auth-token"). Guarani Tour App
+// (app.guaranitour.com) y Selección de Asientos (dominio propio) usan
+// el MISMO proyecto Supabase. Aunque hoy viven en dominios distintos
+// (localStorage ya no se comparte entre ellos), se mantiene esta
+// storageKey propia por si en el futuro comparten dominio o subdominio,
+// y para que cada app tenga una sesión explícitamente independiente.
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { storageKey: 'sb-guaranitour-auth-token' }
 });

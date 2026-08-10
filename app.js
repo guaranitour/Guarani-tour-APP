@@ -1599,7 +1599,7 @@ function _renderModulosSheet() {
   grid.innerHTML = visibles.map(m => `
     <button type="button" class="modulo-item" style="--modulo-icon-bg:${m.bg}" onclick="navigateTo('${m.slug}'); closeModulosSheet();">
       <span class="modulo-item-icon">
-        <img src="https://guaranitour.github.io/Guarani-tour-APP/img/${m.img}" alt="" width="24" height="24">
+        <img src="/img/${m.img}" alt="" width="24" height="24">
       </span>
       <span class="modulo-item-label">${m.label}</span>
     </button>
@@ -1741,7 +1741,7 @@ function _renderShortcutSheet() {
   grid.innerHTML = visibles.map(m => `
     <button type="button" class="modulo-item ${m.slug === seleccionado ? "is-selected" : ""}" style="--modulo-icon-bg:${m.bg}" onclick="setShortcutSlug('${m.slug}'); closeShortcutPicker();">
       <span class="modulo-item-icon">
-        <img src="https://guaranitour.github.io/Guarani-tour-APP/img/${m.img}" alt="" width="24" height="24">
+        <img src="/img/${m.img}" alt="" width="24" height="24">
       </span>
       <span class="modulo-item-label">${m.label}</span>
     </button>

@@ -24,24 +24,24 @@ messaging.onBackgroundMessage((payload) => {
     data.title || "Guaraní Tour",
     {
       body: data.body || "",
-      icon: data.icon || "/Guarani-tour-APP/icons/guaranitour_192.png",
-      badge: "/Guarani-tour-APP/icons/badge_96.png",
+      icon: data.icon || "/icons/guaranitour_192.png",
+      badge: "/icons/badge_96.png",
       image: data.image || undefined,
-      data: { link: data.link || "/Guarani-tour-APP/#viajes" }
+      data: { link: data.link || "/#viajes" }
     }
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/Guarani-tour-APP/#viajes";
+  const link = event.notification.data?.link || "/#viajes";
   const [targetPath, targetHash = ""] = link.split("#");
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
       // Si ya hay una ventana/pestaña de la PWA abierta, la reutilizamos.
       for (const client of windowClients) {
-        if (client.url.includes("/Guarani-tour-APP/") && "focus" in client) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
           // client.navigate() con solo un cambio de hash no siempre dispara
           // el router de la SPA (algunos navegadores no consideran eso una
           // "navegación" real). Mandamos un postMessage para que la app
