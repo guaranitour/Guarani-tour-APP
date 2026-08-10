@@ -258,6 +258,13 @@ async function enterApp(user) {
   currentUserRole = data.role;
   currentUserName = data.nombre || user.email.split("@")[0];
 
+  // Sugerencia de instalación: recién acá el navegador tuvo tiempo real
+  // de evaluar la instalabilidad de la PWA (con el usuario ya habiendo
+  // interactuado: login con Google, redirect, etc.). Mostrarlo antes del
+  // login es demasiado temprano — beforeinstallprompt todavía no se
+  // disparó en ese momento y el botón "Instalar" no tiene nada que hacer.
+  await mostrarPromptInstalacionSiCorresponde();
+
   // Sincronizar foto de perfil de Google (si vino y cambió respecto a la guardada)
   const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
   currentUserAvatar = data.avatar_url || googleAvatar || null;
@@ -366,13 +373,8 @@ document.addEventListener("DOMContentLoaded", () => {
   hideEl("login-view");
   hideEl("app-view");
 
-  supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
     hideEl("splash-view");
-    // Antes de mostrar login o entrar a la app: si corresponde, se muestra
-    // el prompt de instalación y se espera a que el usuario decida
-    // (instalar, o "continuar en el navegador"). Si ya está instalada o
-    // ya eligió antes, la promesa resuelve al instante sin mostrar nada.
-    await mostrarPromptInstalacionSiCorresponde();
     if (session?.user) enterApp(session.user);
     else showLogin();
   });
