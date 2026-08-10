@@ -167,6 +167,16 @@ function _elegirContinuarNavegador() {
 // ya va a dar true. Si cancela el prompt nativo, lo dejamos donde estaba
 // (no marcamos "no volver a preguntar": no dijo que no quiere instalar,
 // solo canceló el diálogo del navegador).
+//
+// IMPORTANTE: prompt() solo funciona si se llama dentro del mismo gesto
+// síncrono del click del usuario ("user activation"). Cualquier `await`
+// antes de llamarlo puede hacer que el navegador considere gastada la
+// activación: no lanza error, pero el diálogo nativo nunca aparece y el
+// evento de instalabilidad se pierde igual (por eso Chrome/Samsung
+// Internet dejan de ofrecer "Instalar" desde el menú aunque no haya
+// pasado nada visible). Por eso acá cerramos nuestro <dialog> de forma
+// síncrona (sin await) y recién ahí llamamos prompt(), todavía dentro
+// del mismo gesto de click.
 async function _elegirInstalarPwa() {
   if (!_deferredInstallPrompt) {
     // No debería pasar (el botón se oculta si no hay prompt disponible
@@ -177,15 +187,27 @@ async function _elegirInstalarPwa() {
   }
   const promptEvent = _deferredInstallPrompt;
   _deferredInstallPrompt = null;
-  _cerrarModalInstalacion();
+
+  // Cerramos nuestro <dialog> primero (sin esperar nada async entremedio)
+  // para que no compita en foco/z-index con el diálogo nativo del
+  // navegador, pero seguimos dentro del mismo gesto síncrono del click.
+  // No usamos _cerrarModalInstalacion() acá porque esa función también
+  // resuelve la promesa que destraba el arranque de la app — eso lo
+  // hacemos manualmente más abajo, después de esperar prompt().
+  const modal = document.getElementById("modal-instalar-pwa");
+  if (modal && modal.open) modal.close();
+
   try {
     await promptEvent.prompt();
-    // No es necesario leer promptEvent.userChoice: tanto si acepta como
-    // si cancela, el modal ya se cerró y no volvemos a mostrarlo en esta
-    // carga de página. Si canceló, aparecerá de nuevo en la próxima visita
-    // (no se guardó LS_KEY_PWA_DISMISS).
+    const resultado = await promptEvent.userChoice;
+    console.log("Resultado instalación PWA:", resultado.outcome);
   } catch (err) {
     console.warn("No se pudo mostrar el prompt de instalación:", err);
+  } finally {
+    if (_resolverPromptInstalacion) {
+      _resolverPromptInstalacion();
+      _resolverPromptInstalacion = null;
+    }
   }
 }
 
