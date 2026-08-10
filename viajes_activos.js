@@ -1021,7 +1021,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   // ───────────────────────────────────────────────────────────────────────
 
   // Rol del usuario actual (se necesita para los tabs, incluso sin pasajeros)
-  const esFinanzasEarly = currentUserRole === "facturacion";
+  const esFinanzasEarly = currentUserRole === "finanzas";
   const esWorkerOAdminEarly = Array.isArray(currentUserRole)
     ? currentUserRole.some(r => ["admin", "worker"].includes(r))
     : ["admin", "worker"].includes(currentUserRole);
@@ -2019,7 +2019,7 @@ function capitalizarNombre(str) {
 /* ── TABS VIAJE DETALLE ────────────────────── */
 function switchViajeTab(tab) {
   // Redirigir según rol si intenta acceder a un tab restringido
-  const esFinanzas = currentUserRole === "facturacion";
+  const esFinanzas = currentUserRole === "finanzas";
   const _esWorkerOAdmin = Array.isArray(currentUserRole)
     ? currentUserRole.some(r => ["admin","worker"].includes(r))
     : ["admin","worker"].includes(currentUserRole);

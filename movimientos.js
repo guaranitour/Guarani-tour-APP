@@ -103,7 +103,7 @@ async function cargarMovimientos() {
 
   // Finanzas tiene acceso de solo lectura a Movimientos: no puede registrar nuevos.
   const btnNuevoMov = document.getElementById("btn-nuevo-movimiento");
-  if (btnNuevoMov) btnNuevoMov.style.display = currentUserRole === "facturacion" ? "none" : "";
+  if (btnNuevoMov) btnNuevoMov.style.display = currentUserRole === "finanzas" ? "none" : "";
 
   // Mostrar tarjeta con ceros mientras carga
   _renderTarjetaBanco(0, 0, 0);
@@ -367,7 +367,7 @@ async function guardarMovimiento() {
 
   // Defensa en el cliente (el control real de escritura debe estar en las
   // RLS policies de Supabase — esto solo evita el flujo normal desde la UI).
-  if (currentUserRole === "facturacion") {
+  if (currentUserRole === "finanzas") {
     if (errEl) errEl.textContent = "No tenés permiso para registrar movimientos.";
     return;
   }

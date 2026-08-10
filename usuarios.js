@@ -90,7 +90,7 @@ async function loadUsers() {
             <option value="admin"       ${u.role === 'admin'       ? 'selected' : ''}>Admin</option>
             <option value="worker"      ${u.role === 'worker'      ? 'selected' : ''}>Worker</option>
             <option value="viewer"      ${u.role === 'viewer'      ? 'selected' : ''}>Viewer</option>
-            <option value="facturacion" ${u.role === 'facturacion' ? 'selected' : ''}>Finanzas</option>
+            <option value="finanzas" ${u.role === 'finanzas' ? 'selected' : ''}>Finanzas</option>
           </select>
 
           <select
