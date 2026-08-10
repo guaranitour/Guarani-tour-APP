@@ -818,7 +818,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "movimientos") {
 
-    if (!["admin", "worker"].includes(currentUserRole)) {
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) {
       navigateTo("dashboard");
       return;
     }
