@@ -383,10 +383,11 @@ const _vistasConTransicion = new Set([
 ]);
 
 function navigateTo(view, idx = null, _fromHash = false) {
-  // Guard de acceso: finanzas no puede entrar a clientes, usuarios ni byc,
+  // Guard de acceso: finanzas no puede entrar a clientes, usuarios, byc
+  // ni al detalle de un pasajero (tampoco desde Club Destino/ranking),
   // ni por menú ni por hash/URL directa ni por llamada programática.
-  if (currentUserRole === "finanzas" && (view === "clientes" || view === "usuarios" || view === "byc" || view === "byc-vincular")) {
-    view = "viajes";
+  if (currentUserRole === "finanzas" && (view === "clientes" || view === "usuarios" || view === "byc" || view === "byc-vincular" || view === "detalle")) {
+    view = "dashboard";
   }
 
   const soportaVT = typeof document.startViewTransition === "function";

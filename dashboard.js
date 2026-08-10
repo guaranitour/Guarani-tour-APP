@@ -260,14 +260,19 @@ async function loadDashboard() {
   setDashboardGreeting();
 
   const esWorkerOAdmin = ["admin", "worker"].includes(currentUserRole);
+  const puedeVerComparativo = esWorkerOAdmin || currentUserRole === "finanzas";
+  const esFinanzas = currentUserRole === "finanzas";
   const teniaCache = _dashCacheReady();
 
   if (teniaCache) {
     // 1a) YA hay algo cacheado de una visita anterior: lo pintamos TAL
     //     CUAL, al instante, sin skeleton. El usuario ve el panel completo
     //     desde el primer frame como si nunca se hubiera ido.
+    // Excepción: BYC nunca se pinta desde caché para finanzas — el caché
+    // es global en memoria y podría venir de una sesión anterior con otro
+    // rol (mismo navegador sin recargar entre logins).
     root.innerHTML = `
-      <div id="dash-slot-byc">${_dashCache.byc}</div>
+      <div id="dash-slot-byc">${esFinanzas ? "" : _dashCache.byc}</div>
       <div id="dash-slot-viajes">${_dashCache.viajes}</div>
       <div id="dash-slot-extra">${_dashCache.extra || ""}</div>
       <div id="dash-slot-club">${_dashCache.club}</div>
@@ -289,7 +294,7 @@ async function loadDashboard() {
     _setSlotRevalidating(slotByc, true);
     _setSlotRevalidating(slotViajes, true);
     _setSlotRevalidating(slotClub, true);
-    if (esWorkerOAdmin && _dashCache.extra) _setSlotRevalidating(slotExtra, true);
+    if (puedeVerComparativo && _dashCache.extra) _setSlotRevalidating(slotExtra, true);
   }
 
   // Si algo falla feo, un pequeño helper para pintar error en un slot puntual
@@ -344,7 +349,7 @@ async function loadDashboard() {
     //    Si veníamos de caché, _swapSlotIfChanged compara con lo anterior
     //    y solo toca el DOM si el HTML realmente cambió.
 
-    const htmlByc = renderKpisByc(bycData || [], pasajerosData || []);
+    const htmlByc = esFinanzas ? "" : renderKpisByc(bycData || [], pasajerosData || []);
     if (teniaCache) _swapSlotIfChanged(slotByc, htmlByc, "byc");
     else if (slotByc) slotByc.innerHTML = htmlByc;
     _dashCache.byc = htmlByc;
@@ -375,7 +380,7 @@ async function loadDashboard() {
     // dos queries adicionales (egresos, pagos): se resuelven en paralelo
     // a Club Destino, cada una reemplazando su propio slot al terminar.
     let extraPromise = Promise.resolve();
-    if (esWorkerOAdmin) {
+    if (puedeVerComparativo) {
       if (!teniaCache && slotExtra) {
         slotExtra.innerHTML = `<hr class="dash-section-divider" />` + _skelComparativo();
       }
@@ -400,7 +405,7 @@ async function loadDashboard() {
           const htmlExtra =
             `<hr class="dash-section-divider" />` +
             renderComparativo(last3, vpLast3, egresosData || [], pagosData || []) +
-            renderRankingVendedores(last3, vpLast3);
+            (esWorkerOAdmin ? renderRankingVendedores(last3, vpLast3) : "");
           if (teniaCache) _swapSlotIfChanged(slotExtra, htmlExtra, "extra");
           else if (slotExtra) slotExtra.innerHTML = htmlExtra;
           _dashCache.extra = htmlExtra;
