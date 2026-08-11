@@ -1583,7 +1583,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
       </div>
       ${esAdmin ? `
       <button class="btn-editar-vp" title="Editar"
-        onclick="abrirEdicionVP(event, '${p.id}', ${total}, ${p.puntos_destino || 0}, '${p.asistencia || "Asiste"}')">
+        onclick="abrirEdicionVP(event, '${p.id}', ${total}, ${p.puntos_destino || 0}, '${p.asistencia || "Asiste"}', '${pid}')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1604,7 +1604,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
   }).join("");
 }
 
-function abrirEdicionVP(event, vpId, total, puntos, asistencia) {
+function abrirEdicionVP(event, vpId, total, puntos, asistencia, pasajeroId) {
   event.stopPropagation();
 
   // Cerrar cualquier form abierto
@@ -1617,6 +1617,11 @@ function abrirEdicionVP(event, vpId, total, puntos, asistencia) {
 
   const form = document.createElement("div");
   form.className = "vp-edit-form";
+  // Guardamos el pasajero_id y la asistencia ORIGINAL (antes de cualquier
+  // cambio en el <select>) para poder detectar en guardarEdicionVP la
+  // transición "No asiste" → "Asiste" y recalcular los puntos Club Destino.
+  form.dataset.pasajeroId = pasajeroId || "";
+  form.dataset.asistenciaOriginal = asistencia || "Asiste";
   form.innerHTML = `
     <div class="vp-edit-inner">
       <div class="vp-edit-field" style="grid-column:1/-1">
@@ -1661,12 +1666,33 @@ async function guardarEdicionVP(vpId) {
     return;
   }
 
+  const form = document.querySelector(".vp-edit-form");
+  const asistenciaOriginal = form?.dataset.asistenciaOriginal || "Asiste";
+  const pasajeroId = form?.dataset.pasajeroId || "";
+  const vuelveAAsistir = asistenciaOriginal === "No asiste" && asistencia === "Asiste";
+
   const btn = document.querySelector(".vp-edit-form .btn-save");
   btn.disabled = true;
   btn.textContent = "Guardando…";
 
-  // Si No asiste, puntos siempre 0. Si Asiste, respetar el valor manual del input.
-  const puntosAsignar = asistencia === "No asiste" ? 0 : puntosInput;
+  // Si No asiste, puntos siempre 0. Si Asiste, respetar el valor manual del
+  // input — EXCEPTO cuando vuelve de "No asiste" a "Asiste": ahí se
+  // otorgan de nuevo los puntos base del viaje, con la misma regla que se
+  // usa al agregar un pasajero nuevo (solo si ya es miembro Club Destino,
+  // es decir, ≥2 viajes previos con "Asiste").
+  let puntosAsignar = asistencia === "No asiste" ? 0 : puntosInput;
+
+  if (vuelveAAsistir && pasajeroId) {
+    const { data: viajesPrevios } = await supabaseClient
+      .from("viaje_pasajeros")
+      .select("id")
+      .eq("pasajero_id", pasajeroId)
+      .eq("asistencia", "Asiste");
+
+    const esMiembro = (viajesPrevios || []).length >= 2;
+    const puntosViaje = viajeActualData?.puntos_destino || 0;
+    puntosAsignar = esMiembro ? puntosViaje : 0;
+  }
 
   const { error } = await supabaseClient
     .from("viaje_pasajeros")
