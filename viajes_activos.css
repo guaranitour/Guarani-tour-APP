@@ -1007,10 +1007,73 @@
 .resumen-saldo-valor.positivo { color: var(--success-text); }
 .resumen-saldo-valor.negativo { color: var(--danger); }
 
+/* ── Detalle colapsable (<details> nativo) ─────
+   Usado por _renderProyeccionGanancia y otras
+   secciones opcionales dentro de tarjetas. ──── */
+.resumen-details {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.resumen-details summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: 1rem 1.1rem;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.resumen-details summary::-webkit-details-marker { display: none; }
+
+.resumen-details summary span:first-child { flex: 1; }
+
+/* Flecha propia, rota al abrir — reemplaza el marker nativo */
+.resumen-details summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--text-muted, #888);
+  border-bottom: 2px solid var(--text-muted, #888);
+  transform: rotate(-45deg);
+  transition: transform .2s ease;
+  flex-shrink: 0;
+}
+
+.resumen-details[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.resumen-details-badge {
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+.resumen-details-badge.positivo { color: var(--success-text); }
+.resumen-details-badge.negativo { color: var(--danger); }
+
+.resumen-details-body {
+  padding: 0 1.1rem 1rem;
+}
+
 @media (max-width: 520px) {
   .resumen-desglose-row,
   .resumen-saldo-row { flex-wrap: wrap; }
   .resumen-saldo-valor { font-size: .92rem; }
+  .resumen-details summary { padding: .85rem .9rem; }
+  .resumen-details-body { padding: 0 .9rem .85rem; }
 }
 
 /* ── EXTRA (servicios_extra) ─────────────────── */

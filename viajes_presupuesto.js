@@ -134,6 +134,10 @@ async function loadPresupuesto(viajeId) {
 // ganancia con lo ya confirmado (dato real, siempre disponible) y, si
 // el viaje tiene cargados pasajeros estimados + precio por pasajero,
 // también la ganancia objetivo (la meta con la que se armó el presupuesto).
+//
+// Colapsable: el dato más usado (ganancia con lo confirmado hoy) queda
+// visible en el <summary> sin abrir; el desglose completo (objetivo,
+// ingreso estimado, presupuesto) va adentro, cerrado por defecto.
 function _renderProyeccionGanancia({ egresosPresupuestados, paxEstimados, precioEstimado, ingresoConfirmado }) {
   const gPY = (n) => "Gs. " + Math.round(n).toLocaleString("es-PY");
   const claseGanancia = (n) => n >= 0 ? "positivo" : "negativo";
@@ -145,34 +149,40 @@ function _renderProyeccionGanancia({ egresosPresupuestados, paxEstimados, precio
   const gananciaObjetivo  = hayObjetivo ? ingresoObjetivo - egresosPresupuestados : 0;
 
   return `
-    <div class="resumen-card full" style="margin-bottom:.85rem">
-      <span class="resumen-card-label">Proyección de ganancias</span>
+    <details class="resumen-details" style="margin-bottom:.85rem">
+      <summary>
+        <span>Proyección de ganancias</span>
+        <span class="resumen-details-badge ${claseGanancia(gananciaConfirmada)}">
+          ${gananciaConfirmada < 0 ? "− " : ""}${gPY(Math.abs(gananciaConfirmada))}
+        </span>
+      </summary>
+      <div class="resumen-details-body">
+        ${hayObjetivo ? `
+          <div class="resumen-desglose-row">
+            <span class="resumen-desglose-nombre">Ingreso objetivo (${paxEstimados} pax × ${gPY(precioEstimado)})</span>
+            <span class="resumen-desglose-monto">${gPY(ingresoObjetivo)}</span>
+          </div>
+          <div class="resumen-desglose-row">
+            <span class="resumen-desglose-nombre">Presupuesto (egresos)</span>
+            <span class="resumen-desglose-monto">${gPY(egresosPresupuestados)}</span>
+          </div>
+          <div class="resumen-saldo-row" style="margin-top:.4rem">
+            <span class="resumen-saldo-label">Ganancia objetivo</span>
+            <span class="resumen-saldo-valor ${claseGanancia(gananciaObjetivo)}">${gananciaObjetivo < 0 ? "− " : ""}${gPY(Math.abs(gananciaObjetivo))}</span>
+          </div>
+        ` : `
+          <div class="resumen-card-sub" style="margin-bottom:.5rem">
+            Cargá "Pasajeros estimados" y "Precio por pasajero" al editar el presupuesto para ver también la ganancia objetivo.
+          </div>
+        `}
 
-      ${hayObjetivo ? `
-        <div class="resumen-desglose-row">
-          <span class="resumen-desglose-nombre">Ingreso objetivo (${paxEstimados} pax × ${gPY(precioEstimado)})</span>
-          <span class="resumen-desglose-monto">${gPY(ingresoObjetivo)}</span>
+        <div class="resumen-saldo-row" style="margin-top:${hayObjetivo ? ".5rem" : "0"}">
+          <span class="resumen-saldo-label">Ganancia con lo confirmado hoy</span>
+          <span class="resumen-saldo-valor ${claseGanancia(gananciaConfirmada)}">${gananciaConfirmada < 0 ? "− " : ""}${gPY(Math.abs(gananciaConfirmada))}</span>
         </div>
-        <div class="resumen-desglose-row">
-          <span class="resumen-desglose-nombre">Presupuesto (egresos)</span>
-          <span class="resumen-desglose-monto">${gPY(egresosPresupuestados)}</span>
-        </div>
-        <div class="resumen-saldo-row" style="margin-top:.4rem">
-          <span class="resumen-saldo-label">Ganancia objetivo</span>
-          <span class="resumen-saldo-valor ${claseGanancia(gananciaObjetivo)}">${gananciaObjetivo < 0 ? "− " : ""}${gPY(Math.abs(gananciaObjetivo))}</span>
-        </div>
-      ` : `
-        <div class="resumen-card-sub" style="margin-bottom:.5rem">
-          Cargá "Pasajeros estimados" y "Precio por pasajero" al editar el presupuesto para ver también la ganancia objetivo.
-        </div>
-      `}
-
-      <div class="resumen-saldo-row" style="margin-top:${hayObjetivo ? ".5rem" : "0"}">
-        <span class="resumen-saldo-label">Ganancia con lo confirmado hoy</span>
-        <span class="resumen-saldo-valor ${claseGanancia(gananciaConfirmada)}">${gananciaConfirmada < 0 ? "− " : ""}${gPY(Math.abs(gananciaConfirmada))}</span>
+        <div class="resumen-card-sub">Ingreso confirmado: ${gPY(ingresoConfirmado)} (pasajeros que asisten)</div>
       </div>
-      <div class="resumen-card-sub">Ingreso confirmado: ${gPY(ingresoConfirmado)} (pasajeros que asisten)</div>
-    </div>
+    </details>
   `;
 }
 
