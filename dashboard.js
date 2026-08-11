@@ -683,7 +683,9 @@ async function irADashPasajero(pasajeroId) {
     await loadPassengers();
   }
   const p = allPassengers.find(x => x.id === pasajeroId);
-  if (p) navigateTo("detalle", p._idx);
+  // navigateTo espera el id real (estable), no p._idx (posición en el
+  // array, que puede no coincidir con ningún id y rompe el detalle).
+  if (p) navigateTo("detalle", p.id);
 }
 
 // ── Vista de Club Destino: lista completa de miembros ────────
