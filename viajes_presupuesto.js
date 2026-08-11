@@ -11,18 +11,21 @@
 let _presupuestoCategorias = [];   // caché de categorías globales
 let _presupuestoOriginal   = {};   // { categoria_id: monto } al cargar para detectar cambios
 let _presupuestoModoEdicion = false;
+let _presupuestoProyeccion = { paxEstimados: null, precioEstimado: null }; // caché de pasajeros_estimados/precio_estimado_pasajero del viaje
 
 let _presupuestoLoadToken = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
 
 async function loadPresupuesto(viajeId) {
   const miToken = ++_presupuestoLoadToken;
   const listEl  = document.getElementById("presupuesto-list");
+  const proyEl  = document.getElementById("presupuesto-proyeccion");
   const btnReg  = document.getElementById("btn-registrar-presupuesto");
   const btnEdit = document.getElementById("btn-editar-presupuesto");
   const formEl  = document.getElementById("form-presupuesto");
   if (!listEl) return;
 
   listEl.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
+  if (proyEl)  proyEl.innerHTML = "";
   if (btnReg)  btnReg.style.display  = "none";
   if (btnEdit) btnEdit.style.display = "none";
   if (formEl)  formEl.style.display  = "none";
@@ -34,8 +37,8 @@ async function loadPresupuesto(viajeId) {
     ? currentUserRole.some(r => ["admin","worker"].includes(r))
     : ["admin","worker"].includes(currentUserRole);
 
-  // Traer presupuesto guardado + categorías en paralelo
-  const [{ data: filas, error }, { data: globales }, { data: locales }] = await Promise.all([
+  // Traer presupuesto guardado + categorías + datos de proyección en paralelo
+  const [{ data: filas, error }, { data: globales }, { data: locales }, { data: viajeProy }, { data: pasajerosConfirmados }] = await Promise.all([
     supabaseClient
       .from("presupuesto_viaje")
       .select("id, categoria_id, monto_presupuestado")
@@ -49,7 +52,17 @@ async function loadPresupuesto(viajeId) {
       .from("categorias")
       .select("id, nombre")
       .eq("scope", parseInt(viajeId))
-      .order("nombre", { ascending: true })
+      .order("nombre", { ascending: true }),
+    supabaseClient
+      .from("viajes")
+      .select("pasajeros_estimados, precio_estimado_pasajero")
+      .eq("id", viajeId)
+      .single(),
+    supabaseClient
+      .from("viaje_pasajeros")
+      .select("total_a_pagar")
+      .eq("viaje_id", viajeId)
+      .eq("asistencia", "Asiste")
   ]);
 
   // Respuesta obsoleta: el usuario ya cambió de viaje o de tab dos veces.
@@ -62,6 +75,11 @@ async function loadPresupuesto(viajeId) {
   }
 
   _presupuestoCategorias = [...(globales || []), ...(locales || [])];
+  // Caché para precargar el form de edición con los valores ya guardados.
+  _presupuestoProyeccion = {
+    paxEstimados: viajeProy?.pasajeros_estimados || null,
+    precioEstimado: viajeProy?.precio_estimado_pasajero || null
+  };
 
   const hayPresupuesto = filas && filas.length > 0;
 
@@ -84,6 +102,15 @@ async function loadPresupuesto(viajeId) {
 
   const total = filas.reduce((s, f) => s + (f.monto_presupuestado || 0), 0);
 
+  if (proyEl) {
+    proyEl.innerHTML = _renderProyeccionGanancia({
+      egresosPresupuestados: total,
+      paxEstimados: _presupuestoProyeccion.paxEstimados,
+      precioEstimado: _presupuestoProyeccion.precioEstimado,
+      ingresoConfirmado: (pasajerosConfirmados || []).reduce((s, p) => s + (p.total_a_pagar || 0), 0)
+    });
+  }
+
   listEl.innerHTML = `
     <div class="egresos-total-row" style="margin-bottom:.85rem">
       <span class="egresos-total-label">Total presupuestado</span>
@@ -101,6 +128,52 @@ async function loadPresupuesto(viajeId) {
   `;
 
   if (btnEdit && esAdmin) btnEdit.style.display = "";
+}
+
+// Arma la tarjeta de proyección de ganancias, mostrando siempre la
+// ganancia con lo ya confirmado (dato real, siempre disponible) y, si
+// el viaje tiene cargados pasajeros estimados + precio por pasajero,
+// también la ganancia objetivo (la meta con la que se armó el presupuesto).
+function _renderProyeccionGanancia({ egresosPresupuestados, paxEstimados, precioEstimado, ingresoConfirmado }) {
+  const gPY = (n) => "Gs. " + Math.round(n).toLocaleString("es-PY");
+  const claseGanancia = (n) => n >= 0 ? "positivo" : "negativo";
+
+  const gananciaConfirmada = ingresoConfirmado - egresosPresupuestados;
+
+  const hayObjetivo = !!(paxEstimados && precioEstimado);
+  const ingresoObjetivo   = hayObjetivo ? paxEstimados * precioEstimado : 0;
+  const gananciaObjetivo  = hayObjetivo ? ingresoObjetivo - egresosPresupuestados : 0;
+
+  return `
+    <div class="resumen-card full" style="margin-bottom:.85rem">
+      <span class="resumen-card-label">Proyección de ganancias</span>
+
+      ${hayObjetivo ? `
+        <div class="resumen-desglose-row">
+          <span class="resumen-desglose-nombre">Ingreso objetivo (${paxEstimados} pax × ${gPY(precioEstimado)})</span>
+          <span class="resumen-desglose-monto">${gPY(ingresoObjetivo)}</span>
+        </div>
+        <div class="resumen-desglose-row">
+          <span class="resumen-desglose-nombre">Presupuesto (egresos)</span>
+          <span class="resumen-desglose-monto">${gPY(egresosPresupuestados)}</span>
+        </div>
+        <div class="resumen-saldo-row" style="margin-top:.4rem">
+          <span class="resumen-saldo-label">Ganancia objetivo</span>
+          <span class="resumen-saldo-valor ${claseGanancia(gananciaObjetivo)}">${gananciaObjetivo < 0 ? "− " : ""}${gPY(Math.abs(gananciaObjetivo))}</span>
+        </div>
+      ` : `
+        <div class="resumen-card-sub" style="margin-bottom:.5rem">
+          Cargá "Pasajeros estimados" y "Precio por pasajero" al editar el presupuesto para ver también la ganancia objetivo.
+        </div>
+      `}
+
+      <div class="resumen-saldo-row" style="margin-top:${hayObjetivo ? ".5rem" : "0"}">
+        <span class="resumen-saldo-label">Ganancia con lo confirmado hoy</span>
+        <span class="resumen-saldo-valor ${claseGanancia(gananciaConfirmada)}">${gananciaConfirmada < 0 ? "− " : ""}${gPY(Math.abs(gananciaConfirmada))}</span>
+      </div>
+      <div class="resumen-card-sub">Ingreso confirmado: ${gPY(ingresoConfirmado)} (pasajeros que asisten)</div>
+    </div>
+  `;
 }
 
 function confirmarEditarPresupuesto() {
@@ -137,6 +210,11 @@ async function mostrarFormPresupuesto(esEdicion) {
   const btnReg    = document.getElementById("btn-registrar-presupuesto");
   const btnEdit   = document.getElementById("btn-editar-presupuesto");
   if (!formEl || !fieldsEl) return;
+
+  const paxInput    = document.getElementById("presupuesto-pax-estimados");
+  const precioInput = document.getElementById("presupuesto-precio-estimado");
+  if (paxInput)    paxInput.value    = _presupuestoProyeccion.paxEstimados || "";
+  if (precioInput) precioInput.value = _presupuestoProyeccion.precioEstimado || "";
 
   // Cargar categorías si no están en caché
   if (_presupuestoCategorias.length === 0) {
@@ -193,6 +271,18 @@ async function guardarPresupuesto() {
   const inputs = document.querySelectorAll(".presupuesto-input");
   const btn    = document.getElementById("btn-guardar-presupuesto");
 
+  // Proyección de ingresos (opcional): se guarda en la tabla viajes,
+  // independiente de si hay categorías de gasto cargadas o no.
+  const paxInput    = document.getElementById("presupuesto-pax-estimados");
+  const precioInput = document.getElementById("presupuesto-precio-estimado");
+  const paxEstimados   = paxInput?.value.trim()    ? parseInt(paxInput.value)    : null;
+  const precioEstimado = precioInput?.value.trim() ? parseInt(precioInput.value) : null;
+
+  await supabaseClient
+    .from("viajes")
+    .update({ pasajeros_estimados: paxEstimados, precio_estimado_pasajero: precioEstimado })
+    .eq("id", viajeActualId);
+
   // Construir filas a upsert: se incluye cualquier campo con valor
   // numérico válido, incluyendo 0. Solo se ignoran los campos vacíos
   // (el usuario no tocó esa categoría) — eso es lo que permite "vaciar"
@@ -214,6 +304,14 @@ async function guardarPresupuesto() {
   });
 
   if (filas.length === 0) {
+    // Sin categorías de gasto: si al menos se guardó la proyección, cerramos
+    // el form igual en vez de forzar un error sobre un input que puede no
+    // aplicar (el usuario solo quería cargar pax/precio estimados).
+    if (paxEstimados != null || precioEstimado != null) {
+      cerrarFormPresupuesto();
+      loadPresupuesto(viajeActualId);
+      return;
+    }
     inputs[0]?.classList.add("error");
     return;
   }
