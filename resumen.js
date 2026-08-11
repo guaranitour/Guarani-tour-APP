@@ -209,14 +209,37 @@ async function loadResumen(viajeId) {
   /* ── Render ──────────────────────────────────── */
   const fmt = n => (n || 0).toLocaleString("es-PY");
 
+  // Íconos reutilizados (evita repetir el mismo <svg> 3 veces en el string)
+  const icoDinero = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
+  const icoTarjeta = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
+  const icoEstrella = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+  const icoUsuarios = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+
   cont.innerHTML = `
 
-    <!-- ── Stat cards: pasajeros + pendiente ── -->
+    <!-- ══ HERO: saldo neto global — lo primero que se ve ══ -->
+    <div class="resumen-hero ${saldoNeto >= 0 ? "positivo" : "negativo"}">
+      <span class="resumen-hero-label">Saldo neto del viaje</span>
+      <span class="resumen-hero-valor">Gs. ${fmt(saldoNeto)}</span>
+      <span class="resumen-hero-sub">Cobrado − egresos · incluye asisten y no asisten</span>
+    </div>
+
+    <!-- ══ RECAUDACIÓN ══ -->
+    <div class="resumen-section-title">${icoDinero} Recaudación</div>
+
+    <div class="resumen-progress-wrap">
+      <div class="resumen-progress-bar">
+        <div class="resumen-progress-fill ${pctCobrado >= 100 ? "completo" : ""}"
+             style="width:${pctCobrado}%"></div>
+      </div>
+      <span class="resumen-pct">${pctCobrado}%</span>
+    </div>
+
     <div class="resumen-grid">
       <div class="resumen-card">
-        <span class="resumen-card-label">Pasajeros</span>
-        <span class="resumen-card-value">${totalPasajeros}</span>
-        <span class="resumen-card-sub">${totalAsisten} asisten</span>
+        <span class="resumen-card-label">Total esperado</span>
+        <span class="resumen-card-value">Gs. ${fmt(totalEsperado)}</span>
+        <span class="resumen-card-sub">solo pasajeros que asisten</span>
       </div>
       <div class="resumen-card">
         <span class="resumen-card-label">Saldo pendiente</span>
@@ -227,8 +250,30 @@ async function loadResumen(viajeId) {
       </div>
     </div>
 
-    <!-- ── Pasajeros: deuda + sexo ── -->
+    ${totalNoAsisten > 0 ? `
     <div class="resumen-grid">
+      <div class="resumen-card full">
+        <span class="resumen-card-label">Recaudado de no asisten</span>
+        <span class="resumen-card-value ${recaudadoNoAsisten > 0 ? "positivo" : ""}">Gs. ${fmt(recaudadoNoAsisten)}</span>
+        <span class="resumen-card-sub">${totalNoAsisten} pasajero${totalNoAsisten === 1 ? "" : "s"} no asiste${totalNoAsisten === 1 ? "" : "n"} · no cuenta en el total esperado</span>
+      </div>
+    </div>` : ""}
+
+    ${totalDevuelto > 0 || totalTransferido > 0 ? `
+    <div class="resumen-movimientos">
+      ${totalCobrado > 0    ? `<div class="resumen-mov-row"><span>Total cobrado</span><span class="positivo">+ Gs. ${fmt(totalCobrado)}</span></div>` : ""}
+      ${totalDevuelto > 0   ? `<div class="resumen-mov-row"><span>Devoluciones</span><span class="negativo">− Gs. ${fmt(totalDevuelto)}</span></div>` : ""}
+      ${totalTransferido > 0? `<div class="resumen-mov-row"><span>Transferencias internas</span><span class="negativo">− Gs. ${fmt(totalTransferido)}</span></div>` : ""}
+      <div class="resumen-mov-row"><span>Neto cobrado</span><span class="positivo">Gs. ${fmt(netoIngresado)}</span></div>
+    </div>` : ""}
+
+    <!-- ══ PASAJEROS ══ -->
+    <div class="resumen-section-title" style="margin-top:1.25rem">${icoUsuarios} Pasajeros</div>
+    <div class="resumen-grid">
+      <div class="resumen-card">
+        <span class="resumen-card-label">Total / Asisten</span>
+        <span class="resumen-card-value">${totalPasajeros} <span style="color:var(--text-muted);font-weight:400">/</span> ${totalAsisten}</span>
+      </div>
       <div class="resumen-card">
         <span class="resumen-card-label">Al día / Con deuda</span>
         <span class="resumen-card-value">
@@ -236,141 +281,19 @@ async function loadResumen(viajeId) {
           <span style="color:var(--text-muted);font-weight:400"> / </span>
           <span class="${paxConDeuda > 0 ? "negativo" : ""}">${paxConDeuda}</span>
         </span>
-        <span class="resumen-card-sub">pasajeros que asisten</span>
+        <span class="resumen-card-sub">de los que asisten</span>
       </div>
-      <div class="resumen-card">
+    </div>
+    <div class="resumen-grid">
+      <div class="resumen-card full">
         <span class="resumen-card-label">Por sexo</span>
         <span class="resumen-card-value">${porSexo.M}M · ${porSexo.F}F${porSexo.otro > 0 ? " · " + porSexo.otro + "?" : ""}</span>
         <span class="resumen-card-sub">de ${totalAsisten} que asisten</span>
       </div>
     </div>
 
-    <!-- ── Recaudación ── -->
-    <div class="resumen-section-title">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="1" x2="12" y2="23"/>
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-      </svg>
-      Recaudación
-    </div>
-    <div class="resumen-grid">
-      <div class="resumen-card">
-        <span class="resumen-card-label">Total esperado</span>
-        <span class="resumen-card-value">Gs. ${fmt(totalEsperado)}</span>
-        <span class="resumen-card-sub">solo pasajeros que asisten</span>
-      </div>
-      <div class="resumen-card">
-        <span class="resumen-card-label">Neto cobrado</span>
-        <span class="resumen-card-value positivo">Gs. ${fmt(netoIngresado)}</span>
-      </div>
-    </div>
-    ${totalNoAsisten > 0 ? `
-    <div class="resumen-grid">
-      <div class="resumen-card">
-        <span class="resumen-card-label">Recaudado de no asisten</span>
-        <span class="resumen-card-value ${recaudadoNoAsisten > 0 ? "positivo" : ""}">Gs. ${fmt(recaudadoNoAsisten)}</span>
-        <span class="resumen-card-sub">${totalNoAsisten} pasajero${totalNoAsisten === 1 ? "" : "s"} no asiste${totalNoAsisten === 1 ? "" : "n"}</span>
-      </div>
-    </div>` : ""}
-    <div class="resumen-progress-wrap">
-      <div class="resumen-progress-bar">
-        <div class="resumen-progress-fill ${pctCobrado >= 100 ? "completo" : ""}"
-             style="width:${pctCobrado}%"></div>
-      </div>
-      <span class="resumen-pct">${pctCobrado}%</span>
-    </div>
-    ${totalDevuelto > 0 || totalTransferido > 0 ? `
-    <div class="resumen-movimientos">
-      ${totalCobrado > 0    ? `<div class="resumen-mov-row"><span>Total cobrado</span><span class="positivo">+ Gs. ${fmt(totalCobrado)}</span></div>` : ""}
-      ${totalDevuelto > 0   ? `<div class="resumen-mov-row"><span>Devoluciones</span><span class="negativo">− Gs. ${fmt(totalDevuelto)}</span></div>` : ""}
-      ${totalTransferido > 0? `<div class="resumen-mov-row"><span>Transferencias internas</span><span class="negativo">− Gs. ${fmt(totalTransferido)}</span></div>` : ""}
-    </div>` : ""}
-
-    <!-- ── Por método de pago ── -->
-    <div class="resumen-section-title" style="margin-top:1.25rem">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-      </svg>
-      Por método de pago
-    </div>
-    ${saldoPorMetodoEntries.map(r => `
-    <div class="resumen-metodo-card">
-      <div class="resumen-metodo-nombre">${r.nombre}</div>
-      <div class="resumen-metodo-cols">
-        <div class="resumen-metodo-col">
-          <span class="resumen-metodo-col-label">Cobrado</span>
-          <span class="resumen-metodo-col-value cobrado">Gs. ${fmt(r.cobrado)}</span>
-        </div>
-        <div class="resumen-metodo-col">
-          <span class="resumen-metodo-col-label">Egresos</span>
-          <span class="resumen-metodo-col-value egreso">${r.egresos > 0 ? "Gs. " + fmt(r.egresos) : "—"}</span>
-        </div>
-        <div class="resumen-metodo-col">
-          <span class="resumen-metodo-col-label">Saldo</span>
-          <span class="resumen-metodo-col-value ${r.saldo >= 0 ? "positivo" : "negativo"}">
-            ${r.saldo >= 0 ? "+" : "−"} Gs. ${fmt(Math.abs(r.saldo))}
-          </span>
-        </div>
-      </div>
-    </div>`).join("")}
-
-    <!-- ── Egresos ── -->
-    <div class="resumen-section-title" style="margin-top:1.25rem">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="1" x2="12" y2="23"/>
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-      </svg>
-      Egresos
-    </div>
-    <div class="resumen-grid">
-      <div class="resumen-card">
-        <span class="resumen-card-label">Total egresos</span>
-        <span class="resumen-card-value negativo">Gs. ${fmt(totalEgresos)}</span>
-      </div>
-      <div class="resumen-card">
-        <span class="resumen-card-label">Presupuestado</span>
-        <span class="resumen-card-value neutro">
-          ${totalPresupuestado > 0 ? "Gs. " + fmt(totalPresupuestado) : "—"}
-        </span>
-        ${totalPresupuestado > 0 ? `
-        <span class="resumen-card-sub">
-          ${desvioPresupuesto > 0
-            ? "▲ Gs. " + fmt(desvioPresupuesto) + " sobre"
-            : desvioPresupuesto < 0
-              ? "▼ Gs. " + fmt(Math.abs(desvioPresupuesto)) + " bajo"
-              : "Exacto"}
-        </span>` : ""}
-      </div>
-    </div>
-
-    ${desgloseEntries.length > 0 ? `
-    <div class="resumen-section-title" style="margin-top:.25rem">Por categoría</div>
-    <div>
-      ${desgloseEntries.map(([nombre, monto]) => `
-      <div class="resumen-desglose-row">
-        <span class="resumen-desglose-nombre">${nombre}</span>
-        <span class="resumen-desglose-monto">Gs. ${fmt(monto)}</span>
-      </div>`).join("")}
-    </div>` : ""}
-
-    <!-- ── Saldo neto global ── -->
-    <div class="resumen-saldo-row">
-      <span class="resumen-saldo-label">
-        Saldo neto (cobrado − egresos)
-        <span class="resumen-card-sub" style="display:block;font-weight:400;">incluye pasajeros que asisten y no asisten</span>
-      </span>
-      <span class="resumen-saldo-valor ${saldoNeto >= 0 ? "positivo" : "negativo"}">
-        Gs. ${fmt(saldoNeto)}
-      </span>
-    </div>
-
-    <!-- ── Club Destino ── -->
-    <div class="resumen-section-title" style="margin-top:1.25rem">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-      Club Destino
-    </div>
+    <!-- ══ CLUB DESTINO ══ -->
+    <div class="resumen-section-title" style="margin-top:1.25rem">${icoEstrella} Club Destino</div>
     <div class="resumen-grid">
       <div class="resumen-card">
         <span class="resumen-card-label">Miembros / No miembros</span>
@@ -388,26 +311,96 @@ async function loadResumen(viajeId) {
       </div>
     </div>
 
-    <!-- ── Por vendedor ── -->
+    <!-- ══ DETALLE (colapsado por defecto) ══ -->
+    <div class="resumen-section-title" style="margin-top:1.5rem">Detalle</div>
+
+    <details class="resumen-details">
+      <summary>
+        ${icoTarjeta}
+        <span>Por método de pago</span>
+        <span class="resumen-details-badge">${saldoPorMetodoEntries.length}</span>
+      </summary>
+      <div class="resumen-details-body">
+        ${saldoPorMetodoEntries.map(r => `
+        <div class="resumen-metodo-card">
+          <div class="resumen-metodo-nombre">${r.nombre}</div>
+          <div class="resumen-metodo-cols">
+            <div class="resumen-metodo-col">
+              <span class="resumen-metodo-col-label">Cobrado</span>
+              <span class="resumen-metodo-col-value cobrado">Gs. ${fmt(r.cobrado)}</span>
+            </div>
+            <div class="resumen-metodo-col">
+              <span class="resumen-metodo-col-label">Egresos</span>
+              <span class="resumen-metodo-col-value egreso">${r.egresos > 0 ? "Gs. " + fmt(r.egresos) : "—"}</span>
+            </div>
+            <div class="resumen-metodo-col">
+              <span class="resumen-metodo-col-label">Saldo</span>
+              <span class="resumen-metodo-col-value ${r.saldo >= 0 ? "positivo" : "negativo"}">
+                ${r.saldo >= 0 ? "+" : "−"} Gs. ${fmt(Math.abs(r.saldo))}
+              </span>
+            </div>
+          </div>
+        </div>`).join("")}
+      </div>
+    </details>
+
+    <details class="resumen-details">
+      <summary>
+        ${icoDinero}
+        <span>Egresos</span>
+        <span class="resumen-details-badge">Gs. ${fmt(totalEgresos)}</span>
+      </summary>
+      <div class="resumen-details-body">
+        <div class="resumen-grid">
+          <div class="resumen-card">
+            <span class="resumen-card-label">Total egresos</span>
+            <span class="resumen-card-value negativo">Gs. ${fmt(totalEgresos)}</span>
+          </div>
+          <div class="resumen-card">
+            <span class="resumen-card-label">Presupuestado</span>
+            <span class="resumen-card-value neutro">
+              ${totalPresupuestado > 0 ? "Gs. " + fmt(totalPresupuestado) : "—"}
+            </span>
+            ${totalPresupuestado > 0 ? `
+            <span class="resumen-card-sub">
+              ${desvioPresupuesto > 0
+                ? "▲ Gs. " + fmt(desvioPresupuesto) + " sobre"
+                : desvioPresupuesto < 0
+                  ? "▼ Gs. " + fmt(Math.abs(desvioPresupuesto)) + " bajo"
+                  : "Exacto"}
+            </span>` : ""}
+          </div>
+        </div>
+        ${desgloseEntries.length > 0 ? `
+        <div class="resumen-section-title" style="margin-top:.5rem">Por categoría</div>
+        <div>
+          ${desgloseEntries.map(([nombre, monto]) => `
+          <div class="resumen-desglose-row">
+            <span class="resumen-desglose-nombre">${nombre}</span>
+            <span class="resumen-desglose-monto">Gs. ${fmt(monto)}</span>
+          </div>`).join("")}
+        </div>` : ""}
+      </div>
+    </details>
+
     ${vendedorEntries.length > 0 ? `
-    <div class="resumen-section-title" style="margin-top:1.25rem">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-      Por vendedor
-    </div>
-    <div>
-      ${vendedorEntries.map(([nombre, data]) => `
-      <div class="resumen-desglose-row">
-        <span class="resumen-desglose-nombre">${nombre}</span>
-        <span class="resumen-vendedor-pills">
-          <span class="resumen-pill">${data.total} pax</span>
-          ${data.asisten > 0 ? `<span class="resumen-pill asiste">${data.asisten} asisten</span>` : ""}
-        </span>
-      </div>`).join("")}
-    </div>` : ""}
+    <details class="resumen-details">
+      <summary>
+        ${icoUsuarios}
+        <span>Por vendedor</span>
+        <span class="resumen-details-badge">${vendedorEntries.length}</span>
+      </summary>
+      <div class="resumen-details-body">
+        ${vendedorEntries.map(([nombre, data]) => `
+        <div class="resumen-desglose-row">
+          <span class="resumen-desglose-nombre">${nombre}</span>
+          <span class="resumen-vendedor-pills">
+            <span class="resumen-pill">${data.total} pax</span>
+            ${data.asisten > 0 ? `<span class="resumen-pill asiste">${data.asisten} asisten</span>` : ""}
+          </span>
+        </div>`).join("")}
+      </div>
+    </details>` : ""}
 
     <div style="height:1.5rem"></div>
   `;

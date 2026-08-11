@@ -3,6 +3,49 @@
    Solo para admin y worker
 ═══════════════════════════════════════════ */
 
+/* ── Hero: saldo neto global ────────────────
+   Reemplaza a .resumen-saldo-row como elemento
+   destacado; va primero en el DOM. ─────────── */
+.resumen-hero {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  border-radius: 14px;
+  padding: 1.1rem 1.15rem;
+  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, rgba(46,125,82,.08), rgba(46,125,82,.02));
+  border: 1px solid rgba(46,125,82,.18);
+}
+
+.resumen-hero.negativo {
+  background: linear-gradient(135deg, rgba(192,57,43,.08), rgba(192,57,43,.02));
+  border-color: rgba(192,57,43,.18);
+}
+
+.resumen-hero-label {
+  font-size: .74rem;
+  font-weight: 600;
+  color: var(--text-muted, #7a8c7e);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.resumen-hero-valor {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--success, #2e7d52);
+}
+
+.resumen-hero.negativo .resumen-hero-valor {
+  color: var(--danger, #c0392b);
+}
+
+.resumen-hero-sub {
+  font-size: .72rem;
+  color: var(--text-muted, #7a8c7e);
+}
+
 /* ── Grilla de stat cards ─────────────────── */
 .resumen-grid {
   display: grid;
@@ -243,6 +286,74 @@
   background: rgba(45,106,79,.1);
   border-color: rgba(45,106,79,.2);
   color: var(--accent);
+}
+
+/* ── Detalle colapsable (<details> nativo) ───── */
+.resumen-details {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  margin-bottom: .6rem;
+  overflow: hidden;
+}
+
+.resumen-details:last-of-type { margin-bottom: 1rem; }
+
+.resumen-details summary {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .8rem .9rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text, #1a3a2a);
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.resumen-details summary::-webkit-details-marker { display: none; }
+
+.resumen-details summary span:nth-child(2) { flex: 1; }
+
+/* Flecha propia, rota al abrir — reemplaza el marker nativo */
+.resumen-details summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--text-muted, #7a8c7e);
+  border-bottom: 2px solid var(--text-muted, #7a8c7e);
+  transform: rotate(-45deg);
+  transition: transform .2s ease;
+  flex-shrink: 0;
+}
+
+.resumen-details[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.resumen-details-badge {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--text-muted, #7a8c7e);
+  background: var(--glass-bg, #f8faf8);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 20px;
+  padding: .1rem .5rem;
+}
+
+.resumen-details-body {
+  padding: 0 .9rem .9rem;
+}
+
+.resumen-details-body .resumen-grid:first-child,
+.resumen-details-body .resumen-metodo-card:first-child {
+  margin-top: .1rem;
+}
+
+.resumen-details-body .resumen-metodo-card:last-child {
+  margin-bottom: 0;
 }
 
 /* ── Empty state ─────────────────────────────── */
