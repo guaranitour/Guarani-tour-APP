@@ -540,15 +540,35 @@
 
         <div id="form-presupuesto" style="display:none">
           <div class="pago-form-inner">
-            <p class="presupuesto-form-hint" style="margin-bottom:.5rem">Proyección de ingresos (opcional, para calcular ganancia estimada)</p>
-            <div class="detail-grid" style="margin-bottom:.85rem">
-              <div class="form-field">
-                <label class="form-label">Pasajeros estimados</label>
-                <input type="number" id="presupuesto-pax-estimados" class="form-input" min="0" placeholder="Ej: 40" />
+
+            <!-- Proyección de ingresos: bloque destacado para que no se
+                 pierda entre las categorías de gasto de abajo. -->
+            <div style="
+              background: var(--accent-light, #e8f0eb);
+              border: 1px solid var(--accent, #2d6a4f);
+              border-left: 4px solid var(--accent, #2d6a4f);
+              border-radius: 10px;
+              padding: .85rem .9rem;
+              margin-bottom: 1.1rem;
+            ">
+              <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #2d6a4f)" stroke-width="2.2">
+                  <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+                </svg>
+                <span style="font-size:.85rem;font-weight:700;color:var(--text,#1a3a2a)">Proyección de ingresos</span>
               </div>
-              <div class="form-field">
-                <label class="form-label">Precio por pasajero (Gs.)</label>
-                <input type="number" id="presupuesto-precio-estimado" class="form-input" min="0" placeholder="Ej: 500000" />
+              <p class="presupuesto-form-hint" style="margin-bottom:.6rem">
+                Opcional — completá estos dos datos para ver la ganancia objetivo del viaje (no solo lo ya confirmado).
+              </p>
+              <div class="detail-grid">
+                <div class="form-field">
+                  <label class="form-label">Pasajeros estimados</label>
+                  <input type="number" id="presupuesto-pax-estimados" class="form-input" min="0" placeholder="Ej: 40" />
+                </div>
+                <div class="form-field">
+                  <label class="form-label">Precio por pasajero (Gs.)</label>
+                  <input type="number" id="presupuesto-precio-estimado" class="form-input" min="0" placeholder="Ej: 500000" />
+                </div>
               </div>
             </div>
 
