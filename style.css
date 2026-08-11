@@ -677,6 +677,9 @@ h2 {
   grid-template-columns: 1fr 1fr;
   gap: .8rem;
 }
+@media (max-width: 520px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
 
 .detail-field {
   display: flex;

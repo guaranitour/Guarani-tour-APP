@@ -965,6 +965,54 @@
   white-space: nowrap;
 }
 
+/* ── PROYECCIÓN DE GANANCIAS ────────────────────
+   Card usada en viajes_presupuesto.js (_renderProyeccionGanancia).
+   Sigue el mismo patrón visual que .egresos-total-row de arriba. */
+.resumen-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+.resumen-card-label {
+  display: block;
+  font-size: .78rem; font-weight: 700;
+  color: var(--text-muted, #888);
+  text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: .7rem;
+}
+.resumen-card-sub {
+  font-size: .78rem; color: var(--text-muted, #888);
+  line-height: 1.4;
+}
+
+.resumen-desglose-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: .75rem;
+  padding: .35rem 0;
+  font-size: .85rem;
+}
+.resumen-desglose-nombre { color: var(--text-mid, #555); flex: 1; min-width: 0; }
+.resumen-desglose-monto  { font-weight: 600; color: var(--text, #1a1a1a); white-space: nowrap; }
+
+.resumen-saldo-row {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: .75rem;
+  padding: .6rem .75rem;
+  background: var(--bg2, #e8e4de);
+  border-radius: 8px;
+}
+.resumen-saldo-label { font-size: .85rem; font-weight: 500; color: var(--text-mid, #555); }
+.resumen-saldo-valor { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+.resumen-saldo-valor.positivo { color: var(--success-text); }
+.resumen-saldo-valor.negativo { color: var(--danger); }
+
+@media (max-width: 520px) {
+  .resumen-desglose-row,
+  .resumen-saldo-row { flex-wrap: wrap; }
+  .resumen-saldo-valor { font-size: .92rem; }
+}
+
 /* ── EXTRA (servicios_extra) ─────────────────── */
 
 .extra-row {
