@@ -29,7 +29,32 @@ async function cargarRecibos() {
   todosLosRecibos = data || [];
   recibosFiltrados = [...todosLosRecibos];
   actualizarChipsModoRecibos();
+  actualizarResumenMesRecibos();
   renderizarRecibos(recibosFiltrados);
+}
+
+// Totales del mes en curso (calendario, no "últimos 30 días"), sobre el
+// total de recibos cargados —no sobre recibosFiltrados— para que una
+// búsqueda activa no altere el resumen mostrado arriba.
+function actualizarResumenMesRecibos() {
+  const totalEl = document.getElementById('recibos-resumen-total');
+  const cantEl  = document.getElementById('recibos-resumen-cantidad');
+  if (!totalEl || !cantEl) return;
+
+  const hoy = new Date();
+  const anioActual = hoy.getFullYear();
+  const mesActual  = hoy.getMonth(); // 0-11
+
+  const delMes = todosLosRecibos.filter(r => {
+    if (!r.fecha) return false;
+    const d = new Date(r.fecha + 'T00:00:00');
+    return d.getFullYear() === anioActual && d.getMonth() === mesActual;
+  });
+
+  const totalGs = delMes.reduce((s, r) => s + (Number(r.monto) || 0), 0);
+
+  totalEl.textContent = formatGs(totalGs);
+  cantEl.textContent  = delMes.length;
 }
 
 // Llamado desde los chips "Todos" / "Por viaje" / "Por cliente"

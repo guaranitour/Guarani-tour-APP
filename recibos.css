@@ -50,6 +50,46 @@
 }
 .btn-nuevo-recibo:hover { opacity: .88; }
 
+/* ── Resumen del mes (2 tarjetas sobre el toolbar) ───── */
+.recibos-resumen {
+  display: flex;
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+
+.recibos-resumen-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: 12px;
+  padding: .7rem .8rem;
+  min-width: 0;
+}
+
+.recibos-resumen-label {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-light, #888);
+  font-weight: 600;
+}
+
+.recibos-resumen-valor {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text, #1a2e1e);
+  margin-top: .15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recibos-resumen-valor--gold {
+  color: var(--gold, #c9a24b);
+}
+
 /* ── Chips de modo de vista (Todos / Por viaje / Por cliente) ── */
 .recibos-modo {
   display: flex;
