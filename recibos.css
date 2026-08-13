@@ -50,6 +50,38 @@
 }
 .btn-nuevo-recibo:hover { opacity: .88; }
 
+/* ── Chips de modo de vista (Todos / Por viaje / Por cliente) ── */
+.recibos-modo {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.recibos-modo::-webkit-scrollbar { display: none; }
+
+.recibos-modo-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border, #e8ede9);
+  background: var(--surface, #fff);
+  color: var(--text-light, #888);
+  font-size: .78rem;
+  font-weight: 600;
+  padding: .4rem .8rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+  font-family: inherit;
+}
+.recibos-modo-chip:hover {
+  background: var(--bg, #f7faf8);
+}
+.recibos-modo-chip.activo {
+  background: var(--primary, #2d6a4f);
+  border-color: var(--primary, #2d6a4f);
+  color: #fff;
+}
+
 /* ── Grupo (accordion) ───────────────────────── */
 .recibos-grupo {
   border: 1px solid var(--border, #e8ede9);
@@ -59,11 +91,20 @@
   background: var(--surface, #fff);
 }
 
+/* En modo "Todos" es un contenedor plano: sin header clicable, siempre
+   expandido, y no queremos el borde/radio duplicado del grupo. */
+.recibos-grupo--plana {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: 0;
+}
+
 .recibos-grupo-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: .85rem 1rem;
+  gap: .7rem;
+  padding: .8rem .9rem;
   cursor: pointer;
   user-select: none;
   transition: background .15s;
@@ -72,21 +113,28 @@
   background: var(--bg, #f7faf8);
 }
 
-.recibos-grupo-info {
+.recibos-grupo-icono {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, var(--primary, #2d6a4f), var(--primary-dark, #1a3a2a));
   display: flex;
   align-items: center;
-  min-width: 0;
+  justify-content: center;
+  color: #fff;
 }
 
 .recibos-grupo-datos {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
 .recibos-grupo-nombre {
-  font-size: .95rem;
-  font-weight: 600;
+  font-size: .92rem;
+  font-weight: 700;
   color: var(--text, #1a2e1e);
   white-space: nowrap;
   overflow: hidden;
@@ -94,9 +142,21 @@
 }
 
 .recibos-grupo-sub {
-  font-size: .78rem;
+  font-size: .76rem;
   color: var(--text-light, #888);
   margin-top: .1rem;
+}
+
+.recibos-grupo-total {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.recibos-grupo-total-valor {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--primary, #2d6a4f);
+  white-space: nowrap;
 }
 
 .recibos-chevron {
@@ -119,10 +179,17 @@
 .recibos-grupo--abierto .recibos-grupo-body {
   display: flex;
 }
+/* En modo plano no hay header arriba, así que no corresponde el borde */
+.recibos-grupo--plana .recibos-grupo-body {
+  border-top: none;
+}
 
-/* ── Tarjeta de recibo (fila con divisor) ────── */
+/* ── Tarjeta de recibo ───────────────────────── */
 .recibo-card {
-  padding: .7rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .7rem .9rem;
   cursor: pointer;
   transition: background .12s;
   border-bottom: 1px solid var(--border, #e8ede9);
@@ -134,56 +201,72 @@
   background: var(--bg, #f7faf8);
 }
 
-.recibo-card-inner {
+.recibo-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--success-bg, #e6f4ea);
+  color: var(--primary, #2d6a4f);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: .75rem;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .8rem;
 }
 
-.recibo-card-left {
-  display: flex;
-  align-items: center;
-  gap: .6rem;
+.recibo-card-main {
+  flex: 1;
   min-width: 0;
 }
 
-.recibo-nro {
-  font-size: .72rem;
-  font-weight: 600;
-  color: var(--primary, #2d6a4f);
-  letter-spacing: .02em;
-  flex-shrink: 0;
+.recibo-card-linea1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
 }
 
 .recibo-cliente {
-  font-size: .88rem;
-  font-weight: 500;
+  font-size: .87rem;
+  font-weight: 600;
   color: var(--text, #1a2e1e);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.recibo-card-right {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  flex-shrink: 0;
-}
-
 .recibo-monto {
-  font-size: .88rem;
+  font-size: .87rem;
   font-weight: 700;
   color: var(--text, #1a2e1e);
   white-space: nowrap;
+  flex-shrink: 0;
 }
+
+.recibo-card-linea2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .2rem;
+}
+
+.recibo-meta {
+  font-size: .74rem;
+  color: var(--text-light, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .recibo-metodo-badge {
   display: inline-flex;
   align-items: center;
-  padding: .2rem .55rem;
+  flex-shrink: 0;
+  padding: .15rem .55rem;
   border-radius: 20px;
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 600;
   letter-spacing: .02em;
   text-transform: uppercase;

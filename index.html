@@ -1756,6 +1756,11 @@
         Nuevo
       </button>
     </div>
+    <div class="recibos-modo">
+      <button type="button" class="recibos-modo-chip activo" data-modo="todos" onclick="cambiarModoAgrupacionRecibos('todos')">Todos</button>
+      <button type="button" class="recibos-modo-chip" data-modo="viaje" onclick="cambiarModoAgrupacionRecibos('viaje')">Por viaje</button>
+      <button type="button" class="recibos-modo-chip" data-modo="cliente" onclick="cambiarModoAgrupacionRecibos('cliente')">Por cliente</button>
+    </div>
     <div id="recibos-cont"></div>
   </div>
 </div>

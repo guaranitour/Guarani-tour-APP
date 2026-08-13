@@ -5,10 +5,16 @@
 let todosLosRecibos = [];
 let recibosFiltrados = [];
 
+// Modo de vista de la lista: 'todos' (sin agrupar, más reciente primero,
+// es el default) | 'viaje' (agrupado por abona_por) | 'cliente' (agrupado
+// por cliente). Se resetea a 'todos' cada vez que se entra al módulo.
+let _modoAgrupacionRecibos = 'todos';
+
 // ── Cargar y renderizar lista ─────────────────
 async function cargarRecibos() {
   const cont = document.getElementById('recibos-cont');
   cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
+  _modoAgrupacionRecibos = 'todos';
 
   const { data, error } = await supabaseClient
     .from('recibos')
@@ -22,7 +28,21 @@ async function cargarRecibos() {
 
   todosLosRecibos = data || [];
   recibosFiltrados = [...todosLosRecibos];
+  actualizarChipsModoRecibos();
   renderizarRecibos(recibosFiltrados);
+}
+
+// Llamado desde los chips "Todos" / "Por viaje" / "Por cliente"
+function cambiarModoAgrupacionRecibos(modo) {
+  _modoAgrupacionRecibos = modo;
+  actualizarChipsModoRecibos();
+  renderizarRecibos(recibosFiltrados);
+}
+
+function actualizarChipsModoRecibos() {
+  document.querySelectorAll('.recibos-modo-chip').forEach(chip => {
+    chip.classList.toggle('activo', chip.dataset.modo === _modoAgrupacionRecibos);
+  });
 }
 
 function renderizarRecibos(lista) {
@@ -37,31 +57,50 @@ function renderizarRecibos(lista) {
     return;
   }
 
+  // Modo "Todos": lista plana, sin agrupar (ya viene ordenada por fecha
+  // desc desde la carga; al filtrar se preserva ese orden).
+  if (_modoAgrupacionRecibos === 'todos') {
+    cont.innerHTML = `<div class="recibos-grupo recibos-grupo--abierto recibos-grupo--plana">
+      <div class="recibos-grupo-body">
+        ${lista.map(r => renderReciboCard(r)).join('')}
+      </div>
+    </div>`;
+    return;
+  }
+
+  const campoClave = _modoAgrupacionRecibos === 'cliente' ? 'cliente' : 'abona_por';
+  const etiquetaSinDato = _modoAgrupacionRecibos === 'cliente' ? '(Sin cliente)' : '(Sin viaje)';
+
   const grupos = {};
   for (const r of lista) {
-    const clave = r.abona_por || '(Sin vendedor)';
+    const clave = r[campoClave] || etiquetaSinDato;
     if (!grupos[clave]) grupos[clave] = [];
     grupos[clave].push(r);
   }
 
   const claves = Object.keys(grupos).sort((a, b) => {
-    if (a === '(Sin vendedor)') return 1;
-    if (b === '(Sin vendedor)') return -1;
+    if (a === etiquetaSinDato) return 1;
+    if (b === etiquetaSinDato) return -1;
     return a.localeCompare(b);
   });
 
   cont.innerHTML = claves.map(clave => {
     const items = grupos[clave];
     const totalGs = items.reduce((s, r) => s + (Number(r.monto) || 0), 0);
+    const iconoSvg = _modoAgrupacionRecibos === 'cliente'
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>';
 
     return `
       <div class="recibos-grupo">
         <div class="recibos-grupo-header" onclick="toggleGrupoRecibos(this)">
-          <div class="recibos-grupo-info">
-            <div class="recibos-grupo-datos">
-              <span class="recibos-grupo-nombre">${clave}</span>
-              <span class="recibos-grupo-sub">${items.length} recibo${items.length !== 1 ? 's' : ''} · ${formatGs(totalGs)}</span>
-            </div>
+          <div class="recibos-grupo-icono">${iconoSvg}</div>
+          <div class="recibos-grupo-datos">
+            <span class="recibos-grupo-nombre">${clave}</span>
+            <span class="recibos-grupo-sub">${items.length} recibo${items.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="recibos-grupo-total">
+            <span class="recibos-grupo-total-valor">${formatGs(totalGs)}</span>
           </div>
           <svg class="recibos-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </div>
@@ -77,14 +116,25 @@ function renderReciboCard(r) {
     ? `<span class="recibo-metodo-badge recibo-metodo-${slugMetodo(r.forma_pago)}">${r.forma_pago}</span>`
     : '';
 
+  // En modo "Todos" (y en modo "cliente") el viaje no está implícito por
+  // el grupo, así que lo mostramos como metadato dentro de la card.
+  const mostrarViaje = _modoAgrupacionRecibos !== 'viaje' && r.abona_por;
+  const metaTexto = [
+    r.fecha ? formatFechaRecibo(r.fecha) : null,
+    r.recibo_nro ? `#${r.recibo_nro}` : null,
+    mostrarViaje ? r.abona_por : null,
+  ].filter(Boolean).join(' · ');
+
   return `
     <div class="recibo-card" onclick="navigateTo('recibo-detalle', ${r.id})">
-      <div class="recibo-card-inner">
-        <div class="recibo-card-left">
+      <div class="recibo-avatar">${inicialRecibo(r.cliente)}</div>
+      <div class="recibo-card-main">
+        <div class="recibo-card-linea1">
           <span class="recibo-cliente">${r.cliente || '—'}</span>
-        </div>
-        <div class="recibo-card-right">
           <span class="recibo-monto">${formatGs(r.monto)}</span>
+        </div>
+        <div class="recibo-card-linea2">
+          <span class="recibo-meta">${metaTexto || '—'}</span>
           ${metodoBadge}
         </div>
       </div>
@@ -1013,7 +1063,11 @@ function fechaLocalISO(date = new Date()) {
 function formatFechaRecibo(f) {
   if (!f) return '—';
   const d = new Date(f + 'T00:00:00');
-  return d.toLocaleDateString('es-PY', { day: '2-digit', month: 'short', year: 'numeric' });
+  const hoy = new Date();
+  const opciones = d.getFullYear() === hoy.getFullYear()
+    ? { day: '2-digit', month: 'short' }
+    : { day: '2-digit', month: 'short', year: 'numeric' };
+  return d.toLocaleDateString('es-PY', opciones);
 }
 
 function inicialRecibo(nombre) {
