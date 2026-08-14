@@ -52,8 +52,8 @@ async function initPushNotifications(staffId) {
 
   try {
     const registration = await navigator.serviceWorker.register(
-      '/Guarani-tour-APP/firebase-messaging-sw.js',
-      { scope: '/Guarani-tour-APP/firebase-cloud-messaging-push-scope' }
+      '/firebase-messaging-sw.js',
+      { scope: '/firebase-cloud-messaging-push-scope' }
     );
 
     const token = await messaging.getToken({
