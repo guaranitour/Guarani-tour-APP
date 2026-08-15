@@ -158,6 +158,17 @@ body {
   justify-content: center;
 }
 
+/* El centrado vertical de arriba es para la card de login (contenido
+   fijo y chico). Una vez logueado, #app-view puede crecer más alto que
+   el viewport —formularios largos, listas, etc.— y si seguimos
+   centrando, la parte de arriba queda por encima del viewport visible
+   hasta hacer scroll. Con la app activa, el layout pasa a fluir normal
+   desde arriba. */
+body.app-activa {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
 /* ── Gradiente de fondo suave ── */
 body::before {
   content: '';

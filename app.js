@@ -63,6 +63,13 @@ function showEl(id) {
     const nav = document.getElementById("bottom-nav");
     if (nav) nav.style.display = "";
     if (typeof _renderShortcutButton === "function") _renderShortcutButton();
+    // body tiene `align-items:center` para centrar verticalmente la card
+    // de login. Una vez logueado, #app-view puede crecer más alto que el
+    // viewport (ej. formularios largos como "recibo nuevo"): con el body
+    // todavía centrando ese contenido, la parte de arriba (topbar) queda
+    // recortada por encima del viewport hasta que el usuario scrollea.
+    // Esta clase anula el centrado apenas se muestra la app.
+    document.body.classList.add("app-activa");
   }
 }
 function hideEl(id) {
@@ -72,6 +79,7 @@ function hideEl(id) {
     if (nav) nav.style.display = "none";
     if (typeof closeModulosSheet === "function") closeModulosSheet();
     if (typeof closeShortcutPicker === "function") closeShortcutPicker();
+    document.body.classList.remove("app-activa");
   }
 }
 
