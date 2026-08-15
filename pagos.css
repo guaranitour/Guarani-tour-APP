@@ -439,6 +439,21 @@
   min-width: 0;
 }
 
+/* Grid propio del form de "Registrar pago": .detail-grid colapsa a
+   1 columna por debajo de 520px (@media en style.css), que es todo
+   el rango de celulares — con eso Tipo/Monto, Fecha/Método, etc.
+   nunca aparecían en la misma fila donde más se los necesita. Este
+   grid mantiene 2 columnas siempre; los campos que no combinan bien
+   en columna angosta (Foto comprobante, Observación) usan .full. */
+.pago-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .8rem;
+}
+.pago-form-grid > .form-field {
+  min-width: 0;
+}
+
 .file-chip {
   display: flex;
   align-items: center;
