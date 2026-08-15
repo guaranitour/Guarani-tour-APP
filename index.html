@@ -1847,9 +1847,17 @@
         </div>
 
         <div class="form-recibo-field">
-          <label for="frec-concepto">Concepto *</label>
+          <label for="frec-concepto" id="frec-concepto-label">Concepto *</label>
           <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
         </div>
+
+        <label class="frec-solidario-check" for="frec-es-solidario">
+          <input type="checkbox" id="frec-es-solidario" onchange="onToggleSolidario(this.checked)" />
+          <span>
+            <strong>Es una donación solidaria</strong>
+            <small>El cliente no está pagando un servicio: es un aporte voluntario. Se usará una plantilla de recibo distinta.</small>
+          </span>
+        </label>
 
         <hr class="form-recibo-sep" />
 

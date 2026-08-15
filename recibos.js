@@ -140,6 +140,9 @@ function renderReciboCard(r) {
   const metodoBadge = r.forma_pago
     ? `<span class="recibo-metodo-badge recibo-metodo-${slugMetodo(r.forma_pago)}">${r.forma_pago}</span>`
     : '';
+  const solidarioBadge = r.es_solidario
+    ? `<span class="recibo-metodo-badge recibo-metodo-solidario">Solidario</span>`
+    : '';
 
   // En modo "Todos" (y en modo "cliente") el viaje no está implícito por
   // el grupo, así que lo mostramos como metadato dentro de la card.
@@ -160,7 +163,7 @@ function renderReciboCard(r) {
         </div>
         <div class="recibo-card-linea2">
           <span class="recibo-meta">${metaTexto || '—'}</span>
-          ${metodoBadge}
+          <span class="recibo-card-badges">${solidarioBadge}${metodoBadge}</span>
         </div>
       </div>
     </div>`;
@@ -282,7 +285,7 @@ function initReciboDetalleView(id) {
       <div class="recibo-doc-header">
         <div class="recibo-doc-empresa">
           <span class="recibo-doc-logo-text">Guarani Tour</span>
-          <span class="recibo-doc-subtitulo">Comprobante de pago</span>
+          <span class="recibo-doc-subtitulo">${recibo.es_solidario ? 'Comprobante de donación' : 'Comprobante de pago'}</span>
         </div>
         <div class="recibo-doc-nro-bloque">
           <span class="recibo-doc-nro-label">RECIBO</span>
@@ -380,6 +383,11 @@ async function initReciboNuevoView() {
   const chipsCont = document.getElementById('frec-speeches-chips');
   if (chipsCont) chipsCont.innerHTML = '';
   _viajeIdSeleccionadoRecibo = null;
+
+  // Reset del checkbox "Es donación solidaria" y su efecto en el form
+  const chkSolidario = document.getElementById('frec-es-solidario');
+  if (chkSolidario) chkSolidario.checked = false;
+  onToggleSolidario(false);
 
   // Ocultar grupo transferencia explícitamente
   const grupo = document.getElementById('frec-grupo-transferencia');
@@ -592,6 +600,29 @@ function _esAdminRecibos() {
     : currentUserRole === 'admin';
 }
 
+// ── Checkbox "Es una donación solidaria" ──────
+// Al tildarse: oculta el bloque de frases rápidas (aunque haya viaje
+// elegido) y cambia el label/placeholder del concepto para guiar qué
+// escribir. abona_por sigue siendo obligatorio en ambos casos —no se
+// toca su validación ni su combo.
+let _esRecibosSolidario = false;
+
+function onToggleSolidario(checked) {
+  _esRecibosSolidario = checked;
+
+  const wrap  = document.getElementById('frec-speeches-wrap');
+  if (wrap) wrap.style.display = 'none';
+  const chips = document.getElementById('frec-speeches-chips');
+  if (chips) chips.innerHTML = '';
+
+  const label = document.getElementById('frec-concepto-label');
+  const campo = document.getElementById('frec-concepto');
+  if (label) label.textContent = checked ? 'Motivo de la donación *' : 'Concepto *';
+  if (campo) campo.placeholder = checked
+    ? 'Ej: Aporte solidario para la campaña de fin de año…'
+    : 'Descripción del pago…';
+}
+
 // Wrapper con nombre estable para poder hacer removeEventListener antes
 // de volver a engancharlo (evita duplicar el listener entre aperturas
 // del formulario).
@@ -608,7 +639,9 @@ async function onCambioViajeRecibo(nombreViaje) {
   const viajeId = nombreViaje ? _viajesRecibosPorNombre[nombreViaje] : null;
   _viajeIdSeleccionadoRecibo = viajeId || null;
 
-  if (!viajeId) {
+  // Si es donación solidaria, nunca mostramos frases rápidas por viaje:
+  // el concepto de una donación se escribe a mano, no se sugiere.
+  if (!viajeId || _esRecibosSolidario) {
     wrap.style.display = 'none';
     chips.innerHTML = '';
     return;
@@ -957,6 +990,7 @@ async function guardarNuevoRecibo() {
   const concepto   = document.getElementById('frec-concepto').value.trim();
   const forma_pago = document.getElementById('frec-forma-pago').value || null;
   const abona_por  = document.getElementById('frec-abona-por').value || null;
+  const es_solidario = document.getElementById('frec-es-solidario').checked;
 
   if (!cliente)                        { errEl.textContent = 'El nombre del cliente es obligatorio.'; return; }
   if (!ci)                             { errEl.textContent = 'El CI es obligatorio.'; return; }
@@ -986,6 +1020,7 @@ async function guardarNuevoRecibo() {
       banco:       document.getElementById('frec-banco').value.trim()       || '',
       comprobante: document.getElementById('frec-comprobante').value.trim() || '',
       email:       correo,
+      es_solidario, // Apps Script decide la plantilla del PDF/correo según este flag
     };
 
     const gsRes = await fetch(APPSCRIPT_URL, {
@@ -1025,6 +1060,7 @@ async function guardarNuevoRecibo() {
     banco:               document.getElementById('frec-banco').value.trim()       || null,
     comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
     abona_por:           abona_por,
+    es_solidario,
     usuario:             currentUserName || null,
     link:                linkPdf || null,
     ...(recibo_nro && { recibo_nro }),

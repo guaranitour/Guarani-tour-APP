@@ -50,7 +50,44 @@
 }
 .btn-nuevo-recibo:hover { opacity: .88; }
 
-/* ── Resumen del mes (2 tarjetas sobre el toolbar) ───── */
+/* ── Checkbox "Es una donación solidaria" ────── */
+.frec-solidario-check {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .75rem .85rem;
+  border: 1px dashed var(--gold, #c9a24b);
+  background: var(--warning-bg, #fbf1e0);
+  border-radius: 10px;
+  cursor: pointer;
+  margin: .2rem 0 .9rem;
+}
+
+.frec-solidario-check input[type="checkbox"] {
+  margin-top: .2rem;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--gold, #c9a24b);
+  cursor: pointer;
+}
+
+.frec-solidario-check span {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+
+.frec-solidario-check strong {
+  font-size: .85rem;
+  color: var(--warning-text, #9a6a12);
+}
+
+.frec-solidario-check small {
+  font-size: .74rem;
+  color: var(--text-light, #888);
+  line-height: 1.35;
+}
 .recibos-resumen {
   display: flex;
   gap: .6rem;
@@ -292,6 +329,13 @@
   margin-top: .2rem;
 }
 
+.recibo-card-badges {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  flex-shrink: 0;
+}
+
 .recibo-meta {
   font-size: .74rem;
   color: var(--text-light, #888);
@@ -317,6 +361,7 @@
 .recibo-metodo-tarjeta        { background: var(--warning-bg); color: var(--warning-text); }
 .recibo-metodo-cheque         { background: var(--danger-bg2); color: var(--danger-text); }
 .recibo-metodo-deposito       { background: var(--info-bg); color: var(--info-text); }
+.recibo-metodo-solidario      { background: var(--gold, #c9a24b); color: #fff; }
 
 .recibo-banco,
 .recibo-comprobante-nro {
