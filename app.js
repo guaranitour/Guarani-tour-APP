@@ -111,8 +111,17 @@ async function enterApp(user) {
     .eq("email", user.email)
     .single();
 
-  if (error || !data) {
-    // No está en la tabla staff
+  if (error && error.code !== "PGRST116") {
+    // Fallo transitorio (red, timeout, 5xx de Supabase): NO cerrar sesión.
+    // Si cerráramos sesión acá, cualquier corte de red momentáneo durante
+    // un refresh de token en background desloguearía al usuario sin motivo.
+    console.warn("enterApp: error consultando staff, no se cierra sesión", error);
+    showLogin();
+    return;
+  }
+
+  if (!data) {
+    // PGRST116 = "0 rows": acá sí, el email realmente no está en staff
     await supabaseClient.auth.signOut();
     showLogin();
     showAccessDenied("not_staff");
@@ -244,8 +253,17 @@ document.addEventListener("DOMContentLoaded", () => {
     else showLogin();
   });
 
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     hideEl("splash-view");
+
+    // TOKEN_REFRESHED se dispara solo, en background, aprox. cada hora
+    // (y al volver el tab a foreground). No hace falta reconstruir toda
+    // la app en ese caso: la sesión sigue siendo la misma, solo cambió
+    // el token. Relanzar enterApp() acá era el origen de los cierres de
+    // sesión intermitentes (un simple timeout de red al reconsultar
+    // "staff" terminaba ejecutando signOut()).
+    if (event === "TOKEN_REFRESHED") return;
+
     if (session?.user) enterApp(session.user);
     else showLogin();
   });
