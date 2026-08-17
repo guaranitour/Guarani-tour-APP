@@ -71,6 +71,57 @@ async function initCalendario() {
   });
 
   _fcInstance.render();
+  _initSwipeCalendario();
+}
+
+/* ── Swipe horizontal para cambiar de mes ─────────────────────
+   Mismo patrón que _initSwipeTabsViaje en viajes_activos.js: se
+   distingue gesto horizontal de scroll vertical con un umbral chico
+   antes de decidir, y solo se bloquea el scroll nativo (preventDefault)
+   una vez confirmado que el gesto es horizontal. ──────────────── */
+let _swipeCalendarioInit = false;
+function _initSwipeCalendario() {
+  if (_swipeCalendarioInit) return;
+  _swipeCalendarioInit = true;
+
+  const wrap = document.getElementById("calendario-fc");
+  if (!wrap) return;
+
+  let startX = 0, startY = 0, tracking = false, isHorizontal = false;
+  const UMBRAL_DIRECCION = 10;
+  const UMBRAL_CAMBIO    = 50;
+
+  wrap.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+    isHorizontal = false;
+  }, { passive: true });
+
+  wrap.addEventListener("touchmove", (e) => {
+    if (!tracking || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+
+    if (!isHorizontal && (Math.abs(dx) > UMBRAL_DIRECCION || Math.abs(dy) > UMBRAL_DIRECCION)) {
+      isHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    if (isHorizontal) e.preventDefault();
+  }, { passive: false });
+
+  wrap.addEventListener("touchend", (e) => {
+    if (!tracking) return;
+    tracking = false;
+    if (!isHorizontal) return;
+
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) < UMBRAL_CAMBIO) return;
+
+    // Deslizar hacia la izquierda → mes siguiente. Hacia la derecha → mes anterior.
+    if (dx < 0) calendarioIrMesSiguiente();
+    else calendarioIrMesAnterior();
+  }, { passive: true });
 }
 
 /* ── Carga de FullCalendar por CDN (una sola vez, cacheada) ──── */
@@ -363,7 +414,67 @@ async function guardarCalendarioNuevoEvento(ev) {
   if (_fcInstance) _fcInstance.refetchEvents();
 }
 
-/* ── Utilidades ──────────────────────────────────────────────── */
+/* ── Selector rápido de mes/año (bottom sheet) ────────────────
+   No agrega entrada de historial (a diferencia de #modulos-sheet):
+   se cierra por overlay/X, sin interferir con el manejo de popstate
+   global de app.js. */
+function abrirCalendarioSelectorFecha() {
+  if (!_fcInstance) return;
+  const actual = _fcInstance.getDate();
+  _poblarSelectMesAnio(actual.getMonth(), actual.getFullYear());
+
+  const sheet = document.getElementById("calendario-fecha-sheet");
+  const overlay = document.getElementById("calendario-fecha-overlay");
+  if (!sheet || !overlay) return;
+  sheet.classList.add("open");
+  overlay.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function cerrarCalendarioSelectorFecha() {
+  const sheet = document.getElementById("calendario-fecha-sheet");
+  const overlay = document.getElementById("calendario-fecha-overlay");
+  if (sheet) sheet.classList.remove("open");
+  if (overlay) overlay.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+const _CAL_MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function _poblarSelectMesAnio(mesActual, anioActual) {
+  const selMes = document.getElementById("cal-filtro-mes");
+  const selAnio = document.getElementById("cal-filtro-anio");
+  if (!selMes || !selAnio) return;
+
+  selMes.innerHTML = _CAL_MESES.map((m, i) =>
+    `<option value="${i}" ${i === mesActual ? "selected" : ""}>${m}</option>`
+  ).join("");
+
+  // Rango razonable: 3 años atrás a 3 años adelante del año actual real
+  // (no del navegado), suficiente para viajes/eventos planificados con
+  // anticipación sin volverse un selector infinito.
+  const anioHoy = new Date().getFullYear();
+  const anios = [];
+  for (let a = anioHoy - 3; a <= anioHoy + 3; a++) anios.push(a);
+  if (!anios.includes(anioActual)) anios.push(anioActual);
+  anios.sort((a, b) => a - b);
+
+  selAnio.innerHTML = anios.map((a) =>
+    `<option value="${a}" ${a === anioActual ? "selected" : ""}>${a}</option>`
+  ).join("");
+}
+
+function calendarioAplicarFiltroFecha() {
+  const mes = parseInt(document.getElementById("cal-filtro-mes").value, 10);
+  const anio = parseInt(document.getElementById("cal-filtro-anio").value, 10);
+  if (isNaN(mes) || isNaN(anio) || !_fcInstance) return;
+
+  _fcInstance.gotoDate(new Date(anio, mes, 1));
+  cerrarCalendarioSelectorFecha();
+}
 function _isoFecha(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
