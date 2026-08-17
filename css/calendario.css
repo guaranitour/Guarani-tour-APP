@@ -68,13 +68,29 @@
 .calendario-leyenda-dot--cumple   { background: var(--gold); }
 .calendario-leyenda-dot--evento   { background: #4682b4; }
 
-/* ── Contenedor de FullCalendar ─────────────────────────────── */
+.calendario-toolbar-titulo-btn {
+  display: flex; align-items: center; gap: .3rem;
+  background: none; border: none; cursor: pointer;
+  padding: .3rem .5rem; border-radius: 8px;
+  color: inherit; min-width: 0;
+}
+.calendario-toolbar-titulo-btn:hover { background: var(--surface-hover); }
+.calendario-toolbar-titulo-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.calendario-toolbar-titulo-btn svg { flex-shrink: 0; color: var(--text-muted); }
+
+.calendario-fecha-sheet-body { display: flex; flex-direction: column; gap: 0; }
+.calendario-fecha-ir-btn { width: 100%; justify-content: center; margin-top: .3rem; }
+
+/* Contenedor de FullCalendar. touch-action:pan-y permite que el
+   navegador siga gestionando scroll vertical mientras el listener de
+   swipe (JS) controla el gesto horizontal con preventDefault(). */
 .calendario-wrap {
   background: var(--surface, #fff);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: .6rem .5rem;
   overflow: hidden;
+  touch-action: pan-y;
 }
 
 /* Fuente y colores base heredados del sistema */
