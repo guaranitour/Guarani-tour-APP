@@ -105,19 +105,38 @@ function renderTopbarProfile() {
 
 async function enterApp(user) {
   // Verificar si el usuario está en la tabla staff y habilitado
-  const { data, error } = await supabaseClient
+  let { data, error } = await supabaseClient
     .from("staff")
     .select("id, role, status, nombre, avatar_url")
     .eq("email", user.email)
     .single();
 
   if (error && error.code !== "PGRST116") {
-    // Fallo transitorio (red, timeout, 5xx de Supabase): NO cerrar sesión.
-    // Si cerráramos sesión acá, cualquier corte de red momentáneo durante
-    // un refresh de token en background desloguearía al usuario sin motivo.
-    console.warn("enterApp: error consultando staff, no se cierra sesión", error);
-    showLogin();
-    return;
+    // Fallo transitorio (red, timeout, 5xx de Supabase): NO cerrar sesión
+    // NI mostrar el login. La sesión de Supabase sigue siendo válida acá
+    // (esto no es un error de auth, es un error de red/consulta); mandar
+    // a showLogin() de todos modos es, para el usuario, un deslogueo
+    // igual de molesto aunque técnicamente no se haya llamado signOut().
+    // Un reintento único con backoff corto resuelve la enorme mayoría de
+    // estos casos (corte de red de un instante, cold start de la
+    // conexión al volver la PWA de background, etc.) sin que el usuario
+    // vea nada. Si el reintento también falla, ahí sí se informa el
+    // problema sin tirar al usuario a login.
+    console.warn("enterApp: error consultando staff, reintentando…", error);
+    await new Promise((r) => setTimeout(r, 1500));
+    const retry = await supabaseClient
+      .from("staff")
+      .select("id, role, status, nombre, avatar_url")
+      .eq("email", user.email)
+      .single();
+
+    if (retry.error && retry.error.code !== "PGRST116") {
+      console.error("enterApp: reintento también falló, se mantiene la vista actual", retry.error);
+      _mostrarErrorConexionEnterApp();
+      return;
+    }
+    data = retry.data;
+    error = retry.error;
   }
 
   if (!data) {
@@ -228,6 +247,41 @@ window.addEventListener("hashchange", () => {
   }
 });
 
+// Se llama cuando enterApp() no logra confirmar el staff ni siquiera
+// tras reintentar (problema de red persistente, no de autorización).
+// Clave: si la app YA estaba abierta (appReady === true), esto ocurrió
+// en un refresh silencioso en background — NO tocamos la UI ni
+// mostramos login, solo un toast, para no expulsar a alguien que está
+// activamente usando la app por un corte de red de un instante.
+// Si todavía no había entrado (arranque en frío), ahí sí corresponde
+// mostrar login con un aviso, porque no hay una vista de app que
+// preservar.
+function _mostrarErrorConexionEnterApp() {
+  if (appReady) {
+    _appToast("Problema de conexión al verificar tu sesión. Reintentando…", true);
+    return;
+  }
+  showLogin();
+  showAccessDenied("connection");
+}
+
+// Toast mínimo, sin dependencias de otros módulos (calendario.js define
+// uno similar para su propio uso; este es el genérico de app.js).
+function _appToast(msg, esError = false) {
+  const el = document.createElement("div");
+  el.textContent = msg;
+  el.setAttribute("role", "status");
+  el.style.cssText = `
+    position:fixed; left:50%; bottom:calc(6rem + env(safe-area-inset-bottom,0px));
+    transform:translateX(-50%); z-index:400;
+    background:${esError ? "var(--danger)" : "var(--accent)"}; color:#fff;
+    padding:.65rem 1.1rem; border-radius:10px; font-size:.85rem;
+    box-shadow:var(--shadow-md); max-width:calc(100vw - 2rem); text-align:center;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
 function showAccessDenied(reason) {
   const card = document.querySelector(".login-card");
   const existing = document.getElementById("access-denied-msg");
@@ -238,6 +292,8 @@ function showAccessDenied(reason) {
   msg.style.cssText = "margin-top:1rem; padding:.75rem 1rem; background:#fff0f0; border:1px solid rgba(192,57,43,.2); border-radius:10px; font-size:.85rem; color:#c0392b; text-align:center;";
   msg.textContent = reason === "disabled"
     ? "Tu acceso está deshabilitado. Contactá al administrador."
+    : reason === "connection"
+    ? "No pudimos verificar tu sesión por un problema de conexión. Volvé a intentar en unos segundos."
     : "Tu cuenta no pertenece al staff. Contactá al administrador si creés que es un error.";
   card.appendChild(msg);
 }
