@@ -2023,12 +2023,39 @@
         <button type="button" class="calendario-nav-btn" onclick="calendarioIrMesAnterior()" aria-label="Mes anterior">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <span class="calendario-toolbar-titulo" id="calendario-toolbar-titulo" aria-live="polite"></span>
+        <button type="button" class="calendario-toolbar-titulo-btn" id="calendario-toolbar-titulo-btn" onclick="abrirCalendarioSelectorFecha()" aria-haspopup="true">
+          <span class="calendario-toolbar-titulo" id="calendario-toolbar-titulo" aria-live="polite"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
         <button type="button" class="calendario-nav-btn" onclick="calendarioIrMesSiguiente()" aria-label="Mes siguiente">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
       <button type="button" class="calendario-hoy-btn" onclick="calendarioIrHoy()">Hoy</button>
+    </div>
+
+    <!-- Selector de mes/año: bottom sheet propio (mismo patrón visual
+         que #modulos-sheet), no depende de custom-select.js -->
+    <div class="modulos-overlay" id="calendario-fecha-overlay" onclick="cerrarCalendarioSelectorFecha()"></div>
+    <div class="modulos-sheet" id="calendario-fecha-sheet" role="dialog" aria-modal="true" aria-labelledby="calendario-fecha-sheet-title">
+      <div class="modulos-sheet-handle" aria-hidden="true"></div>
+      <div class="modulos-sheet-header">
+        <h2 id="calendario-fecha-sheet-title">Ir a mes</h2>
+        <button type="button" class="modulos-sheet-close" onclick="cerrarCalendarioSelectorFecha()" aria-label="Cerrar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="calendario-fecha-sheet-body">
+        <div class="calendario-form-field">
+          <label class="form-label" for="cal-filtro-mes">Mes</label>
+          <select id="cal-filtro-mes" class="form-input"></select>
+        </div>
+        <div class="calendario-form-field">
+          <label class="form-label" for="cal-filtro-anio">Año</label>
+          <select id="cal-filtro-anio" class="form-input"></select>
+        </div>
+        <button type="button" class="btn-agregar-pasajero calendario-fecha-ir-btn" onclick="calendarioAplicarFiltroFecha()">Ir</button>
+      </div>
     </div>
 
     <div class="calendario-wrap">
