@@ -504,6 +504,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vmov) _vmov.style.display = "none";
   const _vmovn = document.getElementById("view-movimiento-nuevo");
   if (_vmovn) _vmovn.style.display = "none";
+  const _vcal = document.getElementById("view-calendario");
+  if (_vcal) _vcal.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -872,6 +874,17 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Nuevo movimiento" }
     ]);
     iniciarFormMovimiento();
+
+  }
+
+  else if (view === "calendario") {
+
+    showEl("view-calendario");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Calendario" }
+    ]);
+    initCalendario();
 
   }
 
@@ -1616,6 +1629,7 @@ const MODULOS_MENU = [
   { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)" },
   { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
+  { slug: "calendario",         label: "Calendario",  img: "calendario.png",bg: "rgba(70,130,180,.15)" },
 ];
 
 function _renderModulosSheet() {
