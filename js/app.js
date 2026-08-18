@@ -171,6 +171,9 @@ async function enterApp(user) {
       });
   }
 
+  // Registrar última conexión (no bloqueante: si falla, no debe afectar el login)
+  touchLastSeen(data.id);
+
   // Pedir permiso de notificaciones y registrar el token (no bloqueante)
   if (typeof initPushNotifications === "function") {
     initPushNotifications(data.id).then((result) => {
@@ -2151,4 +2154,16 @@ function switchUsuariosTab(tab, opts = {}) {
     }
     _usuariosTabsLoaded[tab] = true;
   }
+}
+
+// ── Última conexión (staff.last_seen) ───────────────────────
+// Se llama una vez por sesión al resolver enterApp(). Fire-and-forget:
+// un fallo acá nunca debe bloquear ni afectar el flujo de login.
+// Usa un RPC (security definer) en vez de UPDATE directo porque la policy
+// RLS de UPDATE sobre "staff" solo permite escribir al admin — el RPC
+// esquiva esa restricción de forma acotada, tocando solo last_seen y
+// solo la fila del propio usuario autenticado (ver last_seen.sql).
+async function touchLastSeen(_staffId) {
+  const { error } = await supabaseClient.rpc("touch_last_seen");
+  if (error) console.warn("No se pudo registrar last_seen:", error);
 }
