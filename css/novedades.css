@@ -78,6 +78,9 @@
 .nov-close:hover { background: var(--border); color: var(--text); }
 
 /* ── Slides wrapper ────────────────────────────────────── */
+/* min-height en vez de height fija: acomoda slides cortos (layout
+   centrado clásico) y largos (layout --largo, más alto) sin dejar un
+   hueco vacío en los cortos ni recortar los largos. */
 .nov-slides-wrap {
   min-height: 280px;
   display: flex;
@@ -104,6 +107,49 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Variante para slides con texto largo (más de ~140 caracteres o con
+   varios párrafos) ───────────────────────────────────────────────────
+   El layout centrado clásico (ícono grande arriba, texto centrado)
+   funciona bien para 1-2 líneas, pero un párrafo largo centrado es
+   incómodo de leer y deja un ícono de 80px desproporcionado frente al
+   bloque de texto. Acá: ícono chico en línea con el badge/título
+   (encabezado horizontal), y el cuerpo alineado a la izquierda —
+   mismo patrón que usa cualquier lista de "qué hay de nuevo" con
+   contenido más denso. La clase la agrega _novRenderSlides() en JS
+   según el largo real del texto, no hay que marcarla a mano. */
+.nov-slide--largo {
+  align-items: stretch;
+  text-align: left;
+  padding: 0 .2rem;
+}
+.nov-slide--largo .nov-slide-visual {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin-bottom: .9rem;
+}
+.nov-slide--largo .nov-slide-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  flex-shrink: 0;
+}
+.nov-slide--largo .nov-slide-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.nov-slide--largo .nov-slide-badge {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.nov-slide--largo .nov-slide-nombre {
+  text-align: left;
+}
+.nov-slide--largo .nov-slide-desc {
+  text-align: left;
+  max-width: none;
+}
+
 /* ── Visual: contenedor del ícono ──────────────────────── */
 .nov-slide-visual {
   margin-bottom: 1.1rem;
@@ -114,6 +160,7 @@
   display: flex; align-items: center; justify-content: center;
   color: #fff;
   box-shadow: 0 6px 24px rgba(0, 0, 0, .16);
+  flex-shrink: 0;
 }
 
 /* Colores por tipo de slide */
