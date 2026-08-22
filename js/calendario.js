@@ -206,10 +206,20 @@ async function _cargarEventosCumpleanos() {
   const eventos = [];
 
   (data || []).forEach((p) => {
-    const fNac = new Date(p["Fecha de nacimiento"]);
-    if (isNaN(fNac)) return;
-    const mes = fNac.getMonth();
-    const dia = fNac.getDate();
+    // No usamos new Date(p["Fecha de nacimiento"]) directamente: un string
+    // "YYYY-MM-DD" se interpreta como medianoche UTC, y .getMonth()/.getDate()
+    // lo devuelven en la zona horaria LOCAL del navegador. En Paraguay
+    // (detrás de UTC), eso corre el día hacia atrás — a veces incluso el
+    // mes, si la fecha cae a principio de mes. Por eso un cumpleaños recién
+    // cargado podía no reconocerse en el día correcto. Parseamos los
+    // componentes a mano para evitar esa conversión de zona horaria.
+    const fechaStr = String(p["Fecha de nacimiento"] || "");
+    const partes = fechaStr.split("-");
+    if (partes.length !== 3) return;
+    const [anioNac, mesNac, diaNac] = partes.map((n) => parseInt(n, 10));
+    if (isNaN(anioNac) || isNaN(mesNac) || isNaN(diaNac)) return;
+    const mes = mesNac - 1; // Date usa mes 0-indexado
+    const dia = diaNac;
 
     anios.forEach((anio) => {
       const fechaEvento = new Date(anio, mes, dia);
