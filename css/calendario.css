@@ -139,11 +139,13 @@
   min-height: 0 !important;
   height: auto !important;
   margin-top: 0 !important;
+  overflow: visible !important;
 }
 .fc .fc-daygrid-day-frame {
-  height: 40px !important;
+  height: 42px !important;
   min-height: 0 !important;
   padding-bottom: 0;
+  overflow: visible !important;
 }
 .fc .fc-daygrid-day-top { justify-content: center; }
 
@@ -173,11 +175,11 @@
 .fc .fc-daygrid-event-harness { display: none; }
 
 .calendario-day-bars {
-  display: flex; flex-direction: column; gap: 1.5px;
-  margin: 1px auto 2px; padding: 0 8px; max-width: 30px;
+  display: flex; flex-direction: column; gap: 1px;
+  margin: 1px auto 0; padding: 0 8px; max-width: 30px;
 }
 .calendario-day-bar {
-  height: 2px; border-radius: 1px; width: 100%;
+  height: 1.8px; border-radius: 1px; width: 100%;
 }
 .calendario-day-bar--viaje  { background: var(--accent); }
 .calendario-day-bar--cumple { background: var(--gold); }
@@ -203,16 +205,25 @@
   border-top: 1px solid var(--border);
 }
 .calendario-dia-panel-header {
-  display: flex; align-items: baseline; gap: .6rem;
-  margin-bottom: .4rem;
+  display: flex; align-items: center; gap: .7rem;
+  margin-bottom: .5rem;
 }
 .calendario-dia-panel-num {
-  font-size: 1.8rem; font-weight: 800; line-height: 1;
+  font-size: 2rem; font-weight: 800; line-height: 1;
   color: var(--text);
+  flex-shrink: 0;
+}
+.calendario-dia-panel-textos {
+  display: flex; flex-direction: column; gap: .1rem;
+  min-width: 0;
 }
 .calendario-dia-panel-dow {
-  font-size: .85rem; font-weight: 600; color: var(--text-muted);
-  text-transform: capitalize;
+  font-size: .92rem; font-weight: 700; color: var(--text);
+  text-transform: capitalize; line-height: 1.2;
+}
+.calendario-dia-panel-mes {
+  font-size: .72rem; font-weight: 500; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .03em; line-height: 1.2;
 }
 
 .calendario-evento-row {
@@ -295,12 +306,24 @@
   padding: .9rem 1.1rem; border-top: 1px solid var(--border); flex-shrink: 0;
   display: flex; justify-content: flex-end; gap: .6rem;
 }
+/* btn-cancel y btn-agregar-pasajero son clases globales pensadas
+   para contextos distintos (padding/font-size distintos entre sí):
+   acá dentro del mismo footer los igualamos para que ambos botones
+   queden del mismo alto y con el mismo peso visual. */
+.calendario-dia-footer .btn-cancel,
+.calendario-dia-footer .btn-agregar-pasajero {
+  padding: .65rem 1.3rem;
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 10px;
+}
 
 @media (max-width: 520px) {
   .calendario-toolbar-titulo { font-size: 1.15rem; }
   .calendario-dia-modal { max-width: calc(100vw - 1.5rem); }
-  .fc .fc-daygrid-day-frame { height: 36px !important; }
-  .calendario-dia-panel-num { font-size: 1.6rem; }
+  .fc .fc-daygrid-day-frame { height: 38px !important; }
+  .calendario-dia-panel-num { font-size: 1.7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
