@@ -350,11 +350,16 @@ function _seleccionarDia(date) {
 
   const numEl = document.getElementById("calendario-dia-panel-num");
   const dowEl = document.getElementById("calendario-dia-panel-dow");
+  const mesEl = document.getElementById("calendario-dia-panel-mes");
   const body = document.getElementById("calendario-dia-panel-body");
-  if (!numEl || !dowEl || !body) return;
+  if (!numEl || !dowEl || !mesEl || !body) return;
 
   numEl.textContent = date.getDate();
-  dowEl.textContent = date.toLocaleDateString("es-PY", { weekday: "long", month: "long" });
+  // Jerarquía: día de semana como texto principal secundario (medio,
+  // color base), mes como caption de contexto (chico, muted) — el
+  // número grande sigue siendo el elemento dominante del header.
+  dowEl.textContent = date.toLocaleDateString("es-PY", { weekday: "long" });
+  mesEl.textContent = date.toLocaleDateString("es-PY", { month: "long", year: "numeric" });
 
   if (eventosDia.length === 0) {
     body.innerHTML = `
