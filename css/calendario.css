@@ -132,13 +132,13 @@
 .fc .fc-day-sun .fc-daygrid-day-number { color: var(--danger); }
 
 .fc .fc-daygrid-day-number {
-  font-size: .9rem; font-weight: 500; color: var(--text);
-  padding: .5rem .4rem .1rem;
+  font-size: .82rem; font-weight: 500; color: var(--text);
+  padding: .3rem .4rem 0;
   text-decoration: none;
   width: 100%; text-align: center;
 }
 
-.fc .fc-daygrid-day-frame { min-height: 48px; } /* mínimo táctil (44px) */
+.fc .fc-daygrid-day-frame { min-height: 34px; } /* filas compactas: el mes completo debe entrar en ~70% del alto */
 .fc .fc-daygrid-day-top { justify-content: center; }
 
 /* "Hoy": recuadro redondeado, no relleno de fondo (evita "manchar"
@@ -146,7 +146,7 @@
 .fc .fc-day-today { background: transparent !important; }
 .fc .fc-day-today .fc-daygrid-day-number {
   font-weight: 700; color: #fff; background: var(--accent);
-  width: 26px; height: 26px; border-radius: 8px;
+  width: 22px; height: 22px; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto; padding: 0;
 }
@@ -167,11 +167,11 @@
 .fc .fc-daygrid-event-harness { display: none; }
 
 .calendario-day-bars {
-  display: flex; flex-direction: column; gap: 2px;
-  margin: 3px auto 0; padding: 0 6px; max-width: 34px;
+  display: flex; flex-direction: column; gap: 1.5px;
+  margin: 2px auto 0; padding: 0 8px; max-width: 30px;
 }
 .calendario-day-bar {
-  height: 3px; border-radius: 2px; width: 100%;
+  height: 2.5px; border-radius: 2px; width: 100%;
 }
 .calendario-day-bar--viaje  { background: var(--accent); }
 .calendario-day-bar--cumple { background: var(--gold); }
@@ -192,16 +192,16 @@
    Mismo patrón visual que Samsung: número grande a la izquierda,
    día de semana + mes al lado, lista de eventos debajo. */
 .calendario-dia-panel {
-  margin-top: 1.6rem;
-  padding-top: 1.2rem;
+  margin-top: 1rem;
+  padding-top: .9rem;
   border-top: 1px solid var(--border);
 }
 .calendario-dia-panel-header {
   display: flex; align-items: baseline; gap: .6rem;
-  margin-bottom: .6rem;
+  margin-bottom: .4rem;
 }
 .calendario-dia-panel-num {
-  font-size: 2.1rem; font-weight: 800; line-height: 1;
+  font-size: 1.8rem; font-weight: 800; line-height: 1;
   color: var(--text);
 }
 .calendario-dia-panel-dow {
@@ -293,8 +293,8 @@
 @media (max-width: 520px) {
   .calendario-toolbar-titulo { font-size: 1.15rem; }
   .calendario-dia-modal { max-width: calc(100vw - 1.5rem); }
-  .fc .fc-daygrid-day-frame { min-height: 44px; }
-  .calendario-dia-panel-num { font-size: 1.85rem; }
+  .fc .fc-daygrid-day-frame { min-height: 32px; }
+  .calendario-dia-panel-num { font-size: 1.6rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
