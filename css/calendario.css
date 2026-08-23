@@ -319,24 +319,29 @@
   flex: 1 1 0;
   width: auto;
   box-sizing: border-box;
-  padding: .75rem .8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 .8rem;
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
   font-size: .9rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   border-radius: 10px;
   border-width: 1.5px;
   border-style: solid;
   text-align: center;
-  justify-content: center;
 }
 .calendario-dia-footer .btn-cancel {
   background: var(--surface);
-  border: 1.5px solid var(--border);
+  border-color: var(--border);
   color: var(--text-mid);
 }
 .calendario-dia-footer .btn-agregar-pasajero {
   background: var(--accent);
-  border: 1.5px solid var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .calendario-dia-footer .btn-cancel:focus-visible,
