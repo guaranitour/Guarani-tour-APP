@@ -133,12 +133,12 @@
 
 .fc .fc-daygrid-day-number {
   font-size: .82rem; font-weight: 500; color: var(--text);
-  padding: .3rem .4rem 0;
+  padding: .22rem .4rem 0;
   text-decoration: none;
   width: 100%; text-align: center;
 }
 
-.fc .fc-daygrid-day-frame { min-height: 34px; } /* filas compactas: el mes completo debe entrar en ~70% del alto */
+.fc .fc-daygrid-day-frame { min-height: 26px; } /* filas compactas: el mes completo debe entrar en ~70% del alto */
 .fc .fc-daygrid-day-top { justify-content: center; }
 
 /* "Hoy": recuadro redondeado, no relleno de fondo (evita "manchar"
@@ -146,7 +146,7 @@
 .fc .fc-day-today { background: transparent !important; }
 .fc .fc-day-today .fc-daygrid-day-number {
   font-weight: 700; color: #fff; background: var(--accent);
-  width: 22px; height: 22px; border-radius: 7px;
+  width: 20px; height: 20px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto; padding: 0;
 }
@@ -156,7 +156,7 @@
 .fc .fc-daygrid-day.calendario-day-seleccionado .fc-daygrid-day-frame {
   outline: 1.5px solid var(--accent2);
   outline-offset: -1.5px;
-  border-radius: 12px;
+  border-radius: 9px;
 }
 .fc .fc-daygrid-day.calendario-day-seleccionado.fc-day-today .fc-daygrid-day-number {
   background: var(--accent2);
@@ -168,10 +168,10 @@
 
 .calendario-day-bars {
   display: flex; flex-direction: column; gap: 1.5px;
-  margin: 2px auto 0; padding: 0 8px; max-width: 30px;
+  margin: 1px auto 2px; padding: 0 8px; max-width: 30px;
 }
 .calendario-day-bar {
-  height: 2.5px; border-radius: 2px; width: 100%;
+  height: 2px; border-radius: 1px; width: 100%;
 }
 .calendario-day-bar--viaje  { background: var(--accent); }
 .calendario-day-bar--cumple { background: var(--gold); }
@@ -293,7 +293,7 @@
 @media (max-width: 520px) {
   .calendario-toolbar-titulo { font-size: 1.15rem; }
   .calendario-dia-modal { max-width: calc(100vw - 1.5rem); }
-  .fc .fc-daygrid-day-frame { min-height: 32px; }
+  .fc .fc-daygrid-day-frame { min-height: 26px; }
   .calendario-dia-panel-num { font-size: 1.6rem; }
 }
 
