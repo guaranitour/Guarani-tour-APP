@@ -127,7 +127,24 @@
   width: 100%; text-align: center;
 }
 
-.fc .fc-daygrid-day-frame { min-height: 26px; } /* filas compactas: el mes completo debe entrar en ~70% del alto */
+/* La altura real de cada fila no la fija fc-daygrid-day-frame: FC
+   reserva su propio mínimo en fc-daygrid-day-events (el contenedor
+   donde normalmente van las barras de evento nativas, que acá
+   ocultamos) y en la fila de la tabla interna. Sin pisar esto,
+   cualquier min-height de arriba no tenía efecto real — era la
+   causa de las celdas altas. Usamos height fija (no min-height)
+   para no depender de qué otro elemento interno esté reservando
+   espacio. */
+.fc .fc-daygrid-day-events {
+  min-height: 0 !important;
+  height: auto !important;
+  margin-top: 0 !important;
+}
+.fc .fc-daygrid-day-frame {
+  height: 40px !important;
+  min-height: 0 !important;
+  padding-bottom: 0;
+}
 .fc .fc-daygrid-day-top { justify-content: center; }
 
 /* "Hoy": recuadro redondeado, no relleno de fondo (evita "manchar"
@@ -282,7 +299,7 @@
 @media (max-width: 520px) {
   .calendario-toolbar-titulo { font-size: 1.15rem; }
   .calendario-dia-modal { max-width: calc(100vw - 1.5rem); }
-  .fc .fc-daygrid-day-frame { min-height: 26px; }
+  .fc .fc-daygrid-day-frame { height: 36px !important; }
   .calendario-dia-panel-num { font-size: 1.6rem; }
 }
 
