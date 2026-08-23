@@ -2061,29 +2061,22 @@
     <div class="calendario-wrap">
       <div id="calendario-fc"></div>
     </div>
+
+    <!-- Panel inline del día seleccionado (reemplaza el popup: se
+         actualiza en el lugar al tocar un día, sin overlay ni salto
+         de contexto — mismo patrón que Samsung Calendar). -->
+    <section class="calendario-dia-panel" id="calendario-dia-panel" aria-live="polite">
+      <header class="calendario-dia-panel-header">
+        <span class="calendario-dia-panel-num" id="calendario-dia-panel-num">—</span>
+        <span class="calendario-dia-panel-dow" id="calendario-dia-panel-dow"></span>
+      </header>
+      <div class="calendario-dia-panel-body" id="calendario-dia-panel-body"></div>
+    </section>
   </div>
 
   <button type="button" class="calendario-fab" onclick="abrirCalendarioNuevoEvento()" aria-label="Nuevo evento">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
-
-  <!-- Modal: eventos del día -->
-  <dialog id="calendario-dia-modal" class="calendario-dia-modal" aria-labelledby="calendario-dia-titulo">
-    <form method="dialog" class="calendario-dia-card" onsubmit="return false">
-      <header class="calendario-dia-header">
-        <h2 id="calendario-dia-titulo" class="calendario-dia-titulo">Día</h2>
-        <button type="button" class="calendario-dia-close" onclick="cerrarCalendarioDiaModal()" aria-label="Cerrar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </header>
-      <div class="calendario-dia-body" id="calendario-dia-body"></div>
-      <footer class="calendario-dia-footer">
-        <button type="button" class="btn-agregar-pasajero" id="calendario-dia-nuevo-btn" onclick="abrirCalendarioNuevoEvento()">
-          + Agregar evento este día
-        </button>
-      </footer>
-    </form>
-  </dialog>
 
   <!-- Modal: nuevo evento propio -->
   <dialog id="calendario-nuevo-modal" class="calendario-dia-modal" aria-labelledby="calendario-nuevo-titulo">
