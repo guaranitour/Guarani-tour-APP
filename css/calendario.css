@@ -318,11 +318,14 @@
 .calendario-dia-footer .btn-agregar-pasajero {
   flex: 1 1 0;
   width: auto;
+  box-sizing: border-box;
   padding: .75rem .8rem;
   font-size: .9rem;
   font-weight: 600;
   line-height: 1.2;
   border-radius: 10px;
+  border-width: 1.5px;
+  border-style: solid;
   text-align: center;
   justify-content: center;
 }
