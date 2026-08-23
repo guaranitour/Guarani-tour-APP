@@ -151,9 +151,79 @@ function _actualizarTituloToolbar(fecha) {
   el.textContent = fecha.toLocaleDateString("es-PY", { month: "long", year: "numeric" });
 }
 
-function calendarioIrMesAnterior() { if (_fcInstance) _fcInstance.prev(); }
-function calendarioIrMesSiguiente() { if (_fcInstance) _fcInstance.next(); }
+function calendarioIrMesAnterior() { _cambiarMesConCarrusel(-1); }
+function calendarioIrMesSiguiente() { _cambiarMesConCarrusel(1); }
 function calendarioIrHoy() { if (_fcInstance) _fcInstance.today(); }
+
+/* ── Animación de carrusel al cambiar de mes ──────────────────
+   FullCalendar no soporta dos meses visibles a la vez, así que se
+   simula: se clona el grid actual como "foto" congelada, se deja
+   que FullCalendar renderice el mes nuevo por debajo (invisible
+   momentáneamente, tapado por el clon), y luego se animan ambos
+   con translateX — el clon (mes viejo) saliendo, el grid real (mes
+   nuevo) entrando desde el lado opuesto.
+
+   direccion: 1 = mes siguiente (contenido entra desde la derecha),
+             -1 = mes anterior (contenido entra desde la izquierda). */
+let _calCarruselAnimando = false;
+function _cambiarMesConCarrusel(direccion) {
+  if (!_fcInstance || _calCarruselAnimando) return; // evita solapar swipes/clicks rápidos
+
+  const wrap = document.querySelector(".calendario-wrap");
+  const grid = document.getElementById("calendario-fc");
+  if (!wrap || !grid) { _fcInstance[direccion === 1 ? "next" : "prev"](); return; }
+
+  // Respeta prefers-reduced-motion: cambia de mes sin animación.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    _fcInstance[direccion === 1 ? "next" : "prev"]();
+    return;
+  }
+
+  _calCarruselAnimando = true;
+
+  const anchoWrap = wrap.getBoundingClientRect().width;
+
+  // 1) Clon congelado del mes actual, superpuesto en la misma posición.
+  const clon = grid.cloneNode(true);
+  clon.id = "";
+  clon.setAttribute("aria-hidden", "true");
+  clon.style.cssText = `
+    position:absolute; top:0; left:0; width:100%;
+    margin:0; z-index:2; pointer-events:none;
+    transition:transform .28s cubic-bezier(.22,.61,.36,1);
+    transform:translateX(0);
+  `;
+  wrap.appendChild(clon);
+
+  // 2) Dispara el cambio real: FullCalendar re-renderiza `grid` por
+  // debajo del clon (queda tapado, no se ve el "salto").
+  _fcInstance[direccion === 1 ? "next" : "prev"]();
+
+  // 3) El grid real arranca la animación desplazado hacia el lado por
+  // el que "entra", sin transición todavía (evita que el navegador
+  // anime este posicionamiento inicial).
+  grid.style.transition = "none";
+  grid.style.transform = `translateX(${direccion * anchoWrap}px)`;
+  grid.offsetHeight; // fuerza reflow: aplica el translate de arranque antes de animar
+
+  requestAnimationFrame(() => {
+    grid.style.transition = "transform .28s cubic-bezier(.22,.61,.36,1)";
+    grid.style.transform = "translateX(0)";
+    clon.style.transform = `translateX(${-direccion * anchoWrap}px)`;
+  });
+
+  const limpiar = () => {
+    clon.remove();
+    grid.style.transition = "";
+    grid.style.transform = "";
+    _calCarruselAnimando = false;
+  };
+  grid.addEventListener("transitionend", limpiar, { once: true });
+  // Salvavidas: si transitionend no dispara (ej. el elemento se
+  // desmonta o el navegador no emite el evento), no queremos dejar
+  // el calendario bloqueado en animando=true para siempre.
+  setTimeout(() => { if (_calCarruselAnimando) limpiar(); }, 400);
+}
 
 /* ── Carga y normalización de eventos ─────────────────────────
    Se combinan las 3 fuentes en un solo array de "eventos FullCalendar"
