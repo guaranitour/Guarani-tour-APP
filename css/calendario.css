@@ -87,6 +87,7 @@
   padding: 0;
   overflow: hidden;
   touch-action: pan-y;
+  position: relative; /* ancla el clon del carrusel de meses (ver calendario.js) */
 }
 
 /* Fuente y colores base heredados del sistema */
@@ -354,5 +355,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .calendario-fab, .calendario-nav-btn { transition: none; }
+  .calendario-fab, .calendario-nav-btn, #calendario-fc { transition: none; }
 }
