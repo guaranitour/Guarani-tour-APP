@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v103';
+const CACHE_NAME    = 'guarani-tour-v102';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -16,6 +16,7 @@ const STATIC_ASSETS = [
   '/css/dashboard.css',
   '/css/novedades.css',
   '/css/custom-select.css',
+  '/css/calendario.css',
   '/js/app.js',
   '/js/auth.js',
   '/js/supabaseClient.js',
@@ -35,6 +36,7 @@ const STATIC_ASSETS = [
   '/js/dashboard.js',
   '/js/novedades.js',
   '/js/movimientos.js',
+  '/js/calendario.js',
   '/firebase-config.js',
   '/favicon.ico',
   '/icons/favicon-16x16.png',
@@ -42,15 +44,37 @@ const STATIC_ASSETS = [
   '/icons/apple-touch-icon.png',
   '/icons/guaranitour_192.png',
   '/icons/guaranitour_512.png',
+  '/img/cliente.png',
+  '/img/viajes.png',
+  '/img/recibo.png',
+  '/img/bancario.png',
+  '/img/byc.png',
+  '/img/historial.png',
+  '/img/asiento.png',
+  '/img/staff.png',
+  '/img/calendario.png',
   '/manifest.json',
 ];
 
-// Instalar: cachear assets estáticos
+// Instalar: cachear assets estáticos.
+// Usamos Promise.allSettled en vez de cache.addAll() directo: addAll()
+// es todo-o-nada — si UN solo asset de STATIC_ASSETS devuelve 404, la
+// instalación entera falla y no se cachea nada, ni lo que sí existe.
+// Con allSettled, un asset faltante solo se loguea y el resto se cachea
+// igual.
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(async cache => {
+      const results = await Promise.allSettled(
+        STATIC_ASSETS.map(url => cache.add(url))
+      );
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          console.warn('[SW] No se pudo precachear:', STATIC_ASSETS[i], r.reason);
+        }
+      });
+      return self.skipWaiting();
+    })
   );
 });
 
@@ -117,6 +141,24 @@ self.addEventListener('fetch', event => {
         if (cached) return cached;
         const response = await fetch(event.request);
         if (response.ok) cache.put(event.request, response.clone());
+        return response;
+      })
+    );
+    return;
+  }
+
+  // ── Íconos de módulos (/img/): cache-first, se guardan en CACHE_NAME
+  // si por algún motivo no llegaron a precachearse en install (ej. un
+  // módulo nuevo agregado sin actualizar STATIC_ASSETS).
+  if (url.origin === self.location.origin && url.pathname.startsWith('/img/')) {
+    event.respondWith(
+      caches.match(event.request).then(async cached => {
+        if (cached) return cached;
+        const response = await fetch(event.request);
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(event.request, response.clone());
+        }
         return response;
       })
     );
