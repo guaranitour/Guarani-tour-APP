@@ -178,7 +178,31 @@ function _pintarShellOptimista(user) {
   return true;
 }
 
+// Evita que dos llamadas a enterApp() para el MISMO usuario corran en
+// paralelo. Antes esta carrera (getSession() + onAuthStateChange()
+// disparando casi al mismo tiempo en el arranque) era inofensiva
+// porque el splash tapaba todo hasta que ambas resolvían; ahora que
+// el splash se oculta apenas hay caché, dos ejecuciones simultáneas
+// pueden pisarse el estado global (currentUserRole, appReady, etc.)
+// a mitad de camino y disparar un showLogin() espurio.
+let _enterAppInFlightEmail = null;
+let _enterAppInFlightPromise = null;
+
 async function enterApp(user) {
+  if (_enterAppInFlightEmail === user.email && _enterAppInFlightPromise) {
+    // Ya hay una llamada en curso para este mismo usuario: no la
+    // dupliquemos, solo esperamos a que termine esa.
+    return _enterAppInFlightPromise;
+  }
+  _enterAppInFlightEmail = user.email;
+  _enterAppInFlightPromise = _enterAppImpl(user).finally(() => {
+    _enterAppInFlightEmail = null;
+    _enterAppInFlightPromise = null;
+  });
+  return _enterAppInFlightPromise;
+}
+
+async function _enterAppImpl(user) {
   // Verificar si el usuario está en la tabla staff y habilitado
   let { data, error } = await supabaseClient
     .from("staff")
