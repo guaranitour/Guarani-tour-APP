@@ -77,6 +77,18 @@
 .calendario-fecha-sheet-body .calendario-form-field { flex-shrink: 0; }
 .calendario-fecha-ir-btn { width: 100%; justify-content: center; margin-top: .3rem; flex-shrink: 0; min-height: 44px; }
 
+/* El sheet reutiliza .modulos-sheet (bottom:0), pero en la vista de
+   calendario el .bottom-nav fijo (64px de alto real, ver style.css)
+   se dibuja por encima de esa franja aunque el z-index del sheet sea
+   mayor — position:fixed en ambos hace que el navbar tape esa parte
+   inferior en el plano. Se sube el sheet esa misma altura, igual que
+   .fab ya hace en style.css, para que "Ir" quede siempre visible. */
+#calendario-fecha-sheet {
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 1.4rem;
+  border-radius: 22px;
+}
+
 /* Contenedor de FullCalendar. Sin card visible (Samsung no encierra
    el grid en un recuadro): fluye directo sobre el fondo de la vista.
    touch-action:pan-y permite que el navegador siga gestionando scroll
@@ -320,24 +332,29 @@
   flex: 1 1 0;
   width: auto;
   box-sizing: border-box;
-  padding: .75rem .8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 .8rem;
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
   font-size: .9rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   border-radius: 10px;
   border-width: 1.5px;
   border-style: solid;
   text-align: center;
-  justify-content: center;
 }
 .calendario-dia-footer .btn-cancel {
   background: var(--surface);
-  border: 1.5px solid var(--border);
+  border-color: var(--border);
   color: var(--text-mid);
 }
 .calendario-dia-footer .btn-agregar-pasajero {
   background: var(--accent);
-  border: 1.5px solid var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .calendario-dia-footer .btn-cancel:focus-visible,
