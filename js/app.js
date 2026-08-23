@@ -174,6 +174,7 @@ function _pintarShellOptimista(user) {
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
+  _precargarIconosModulos();
 
   return true;
 }
@@ -314,6 +315,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
+  _precargarIconosModulos();
   if (!appReady) {
     appReady = true;
     // Si venimos de una notificación push, Android suele ignorar el hash
@@ -1833,6 +1835,24 @@ const MODULOS_MENU = [
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
   { slug: "calendario",         label: "Calendario",  img: "calendario.png",bg: "rgba(70,130,180,.15)" },
 ];
+
+// Precarga en memoria del navegador (no solo en el cache del SW) de los
+// íconos del sheet de módulos. El SW ya los responde rápido desde disco,
+// pero el <img> del sheet solo se crea cuando el usuario lo abre, y ese
+// primer fetch sigue siendo asíncrono. Creando un objeto Image() por
+// adelantado, el navegador ya tiene el bitmap decodificado en su propia
+// caché de memoria para cuando el sheet realmente se renderiza —
+// eliminando el parpadeo/lag de la primera apertura.
+// Se llama una sola vez, apenas se confirma el rol (ver enterApp()),
+// para no precargar íconos de módulos a los que el usuario no tiene acceso.
+let _modulosIconosPrecargados = false;
+function _precargarIconosModulos() {
+  if (_modulosIconosPrecargados) return;
+  _modulosIconosPrecargados = true;
+  MODULOS_MENU
+    .filter(m => !m.roles || m.roles.includes(currentUserRole))
+    .forEach(m => { new Image().src = `/img/${m.img}`; });
+}
 
 function _renderModulosSheet() {
   const grid = document.getElementById("modulos-sheet-grid");
