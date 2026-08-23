@@ -304,19 +304,46 @@
 .calendario-form-field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .85rem; }
 .calendario-dia-footer {
   padding: .9rem 1.1rem; border-top: 1px solid var(--border); flex-shrink: 0;
-  display: flex; justify-content: flex-end; gap: .6rem;
+  display: flex; gap: .6rem;
 }
 /* btn-cancel y btn-agregar-pasajero son clases globales pensadas
-   para contextos distintos (padding/font-size distintos entre sí):
-   acá dentro del mismo footer los igualamos para que ambos botones
-   queden del mismo alto y con el mismo peso visual. */
+   para contextos distintos entre sí (padding/font-size propios):
+   acá, dentro de este footer, los igualamos a 50/50 con ancho fijo
+   (no dependiente del contenido) para que el layout no dependa de
+   qué tan largo sea el texto de cada botón, y les definimos un
+   :focus-visible propio para que nunca se vea el outline dashed por
+   defecto del navegador cuando el diálogo autoenfoca el submit. */
 .calendario-dia-footer .btn-cancel,
 .calendario-dia-footer .btn-agregar-pasajero {
-  padding: .65rem 1.3rem;
-  font-size: .85rem;
+  flex: 1 1 0;
+  width: auto;
+  padding: .75rem .8rem;
+  font-size: .9rem;
   font-weight: 600;
   line-height: 1.2;
   border-radius: 10px;
+  text-align: center;
+  justify-content: center;
+}
+.calendario-dia-footer .btn-cancel {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+}
+.calendario-dia-footer .btn-agregar-pasajero {
+  background: var(--accent);
+  border: 1.5px solid var(--accent);
+  color: #fff;
+}
+.calendario-dia-footer .btn-cancel:focus-visible,
+.calendario-dia-footer .btn-agregar-pasajero:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+}
+.calendario-dia-footer .btn-agregar-pasajero:disabled {
+  background: var(--text-muted);
+  border-color: var(--text-muted);
+  cursor: not-allowed;
 }
 
 @media (max-width: 520px) {
