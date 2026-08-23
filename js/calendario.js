@@ -14,7 +14,7 @@
 
 let _fcInstance = null;
 let _calEventosCache = null; // eventos ya normalizados de la carga más reciente
-let _calDiaModalDate = null;
+let _calDiaSeleccionada = null; // Date del día activo en el panel inline
 
 /* ── Entrada del módulo (llamada desde navigateTo) ───────────── */
 async function initCalendario() {
@@ -46,7 +46,11 @@ async function initCalendario() {
     },
     datesSet: (info) => {
       _actualizarTituloToolbar(info.view.currentStart);
-      _pintarDotsDelMes();
+      _pintarBarrasDelMes();
+      _marcarDiaSeleccionado();
+      // Primera carga: seleccionamos "hoy" para que el panel inline
+      // nunca arranque vacío (igual que Samsung Calendar).
+      if (!_calDiaSeleccionada) _seleccionarDia(new Date());
     },
     dayCellDidMount: (arg) => {
       // Accesibilidad: cada celda de día es enfocable/activable por
@@ -62,12 +66,12 @@ async function initCalendario() {
         numEl.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            _abrirDiaModal(arg.date);
+            _seleccionarDia(arg.date);
           }
         });
       }
     },
-    dateClick: (info) => _abrirDiaModal(info.date),
+    dateClick: (info) => _seleccionarDia(info.date),
   });
 
   _fcInstance.render();
@@ -266,10 +270,12 @@ async function _cargarEventosPropios() {
   }));
 }
 
-/* ── Dots por día (reemplazan las barras de evento nativas) ──── */
-function _pintarDotsDelMes() {
-  // Limpiar dots previos
-  document.querySelectorAll(".calendario-day-dots").forEach((el) => el.remove());
+/* ── Barras de color por día (estilo Samsung Calendar) ─────────
+   Reemplazan los dots sueltos por barritas horizontales apiladas
+   bajo el número del día: más legibles cuando coinciden varios
+   tipos de evento el mismo día. Máximo 3 (uno por tipo). ──────── */
+function _pintarBarrasDelMes() {
+  document.querySelectorAll(".calendario-day-bars").forEach((el) => el.remove());
   document.querySelectorAll(".calendario-day-con-eventos").forEach((el) =>
     el.classList.remove("calendario-day-con-eventos")
   );
@@ -286,19 +292,31 @@ function _pintarDotsDelMes() {
     celda.classList.add("calendario-day-con-eventos");
 
     const tiposPresentes = new Set(eventosDia.map((e) => e.extendedProps.tipo));
-    const dotsWrap = document.createElement("div");
-    dotsWrap.className = "calendario-day-dots";
+    const barsWrap = document.createElement("div");
+    barsWrap.className = "calendario-day-bars";
     ["viaje", "cumple", "evento"].forEach((tipo) => {
       if (tiposPresentes.has(tipo)) {
-        const dot = document.createElement("span");
-        dot.className = `calendario-day-dot calendario-day-dot--${tipo}`;
-        dotsWrap.appendChild(dot);
+        const barra = document.createElement("span");
+        barra.className = `calendario-day-bar calendario-day-bar--${tipo}`;
+        barsWrap.appendChild(barra);
       }
     });
 
     const frame = celda.querySelector(".fc-daygrid-day-events") || celda.querySelector(".fc-daygrid-day-frame");
-    if (frame) frame.appendChild(dotsWrap);
+    if (frame) frame.appendChild(barsWrap);
   });
+}
+
+/* ── Resalta la celda del día activo con un recuadro redondeado
+   (equivalente al outline que usa Samsung sobre el día elegido). */
+function _marcarDiaSeleccionado() {
+  document.querySelectorAll("#calendario-fc .calendario-day-seleccionado").forEach((el) =>
+    el.classList.remove("calendario-day-seleccionado")
+  );
+  if (!_calDiaSeleccionada) return;
+  const fechaStr = _isoFecha(_calDiaSeleccionada);
+  const celda = document.querySelector(`#calendario-fc .fc-daygrid-day[data-date="${fechaStr}"]`);
+  if (celda) celda.classList.add("calendario-day-seleccionado");
 }
 
 function _agruparPorDia(eventos) {
@@ -317,24 +335,39 @@ function _agruparPorDia(eventos) {
   return mapa;
 }
 
-/* ── Popover / modal del día ──────────────────────────────────── */
-function _abrirDiaModal(date) {
-  _calDiaModalDate = date;
+/* ── Panel inline del día (reemplaza el popover) ────────────────
+   Al tocar un día se actualiza este panel en el lugar, debajo del
+   calendario — sin overlay ni modal, igual que Samsung Calendar.
+   Se reutiliza en: dateClick, teclado (Enter/Espacio) y al cambiar
+   de mes (ver datesSet). ──────────────────────────────────────── */
+function _seleccionarDia(date) {
+  _calDiaSeleccionada = date;
+  _marcarDiaSeleccionado();
+
   const fechaStr = _isoFecha(date);
   const porDia = _agruparPorDia(_calEventosCache || []);
   const eventosDia = porDia[fechaStr] || [];
 
-  const modal = document.getElementById("calendario-dia-modal");
-  const titulo = document.getElementById("calendario-dia-titulo");
-  const body = document.getElementById("calendario-dia-body");
-  if (!modal || !titulo || !body) return;
+  const numEl = document.getElementById("calendario-dia-panel-num");
+  const dowEl = document.getElementById("calendario-dia-panel-dow");
+  const body = document.getElementById("calendario-dia-panel-body");
+  if (!numEl || !dowEl || !body) return;
 
-  titulo.textContent = date.toLocaleDateString("es-PY", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  numEl.textContent = date.getDate();
+  dowEl.textContent = date.toLocaleDateString("es-PY", { weekday: "long", month: "long" });
 
   if (eventosDia.length === 0) {
-    body.innerHTML = `<div class="calendario-evento-empty">Sin eventos este día.</div>`;
+    body.innerHTML = `
+      <div class="calendario-evento-empty">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="3" y="4" width="18" height="17" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+        </svg>
+        <p>Sin eventos este día.</p>
+        <button type="button" class="calendario-evento-empty-btn" onclick="abrirCalendarioNuevoEvento()">
+          + Agregar evento
+        </button>
+      </div>`;
   } else {
     body.innerHTML = eventosDia.map((ev) => {
       const tipo = ev.extendedProps.tipo;
@@ -352,36 +385,24 @@ function _abrirDiaModal(date) {
           </span>
         </button>
       `;
-    }).join("");
+    }).join("") + `
+      <button type="button" class="calendario-evento-agregar-btn" onclick="abrirCalendarioNuevoEvento()">
+        + Agregar evento este día
+      </button>`;
   }
-
-  const btnNuevoAca = document.getElementById("calendario-dia-nuevo-btn");
-  if (btnNuevoAca) btnNuevoAca.dataset.fecha = fechaStr;
-
-  modal.showModal();
-}
-
-function cerrarCalendarioDiaModal() {
-  const modal = document.getElementById("calendario-dia-modal");
-  if (modal && modal.open) modal.close();
 }
 
 function _calAbrirViaje(viajeId) {
-  cerrarCalendarioDiaModal();
   if (typeof openViajeDetalle === "function") openViajeDetalle(viajeId);
 }
 
 function _calAbrirPasajero(pasajeroId) {
-  cerrarCalendarioDiaModal();
   navigateTo("detalle", pasajeroId);
 }
 
 /* ── Nuevo evento propio ──────────────────────────────────────── */
 function abrirCalendarioNuevoEvento() {
-  const fechaPrellenada = document.getElementById("calendario-dia-nuevo-btn")?.dataset.fecha
-    || (_calDiaModalDate ? _isoFecha(_calDiaModalDate) : _isoFecha(new Date()));
-
-  cerrarCalendarioDiaModal();
+  const fechaPrellenada = _calDiaSeleccionada ? _isoFecha(_calDiaSeleccionada) : _isoFecha(new Date());
 
   const modal = document.getElementById("calendario-nuevo-modal");
   const form = document.getElementById("calendario-nuevo-form");
@@ -421,7 +442,11 @@ async function guardarCalendarioNuevoEvento(ev) {
 
   cerrarCalendarioNuevoEvento();
   _calendarioToast("Evento creado.");
+  // Recargamos el cache antes de refetch para poder repintar el panel
+  // inline de inmediato (refetchEvents no devuelve promesa en FC6).
+  await _cargarEventosCalendario();
   if (_fcInstance) _fcInstance.refetchEvents();
+  if (_calDiaSeleccionada) _seleccionarDia(_calDiaSeleccionada);
 }
 
 /* ── Selector rápido de mes/año (bottom sheet) ────────────────
