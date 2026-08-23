@@ -63,21 +63,85 @@ function _dashAvatarHtml(pasajeroId, nombre) {
     : `<span>${getInitials(nombre)}</span>`;
 }
 
-// ── Caché en memoria del panel (stale-while-revalidate) ──────
-// Vive mientras dure la sesión de la SPA (se pierde al recargar la
-// página, que es exactamente lo que queremos: no es caché de red,
-// es "no volver a mostrar un skeleton si el usuario ya vio esto").
+// ── Caché PERSISTENTE del panel (stale-while-revalidate) ─────
+// Vive en localStorage, namespaceada por staff.id: sobrevive a recargas
+// y a cerrar/reabrir la PWA (a propósito — es lo que permite pintar el
+// panel con contenido real en el primer frame, sin esperar red).
 //
-// Guarda el HTML ya renderizado de cada slot. Al reingresar al panel:
+// Namespacear por staff.id (no por email) evita que un cambio de
+// mayúsculas/alias en el email pise el caché de otro usuario, y que
+// dos cuentas distintas en el mismo dispositivo se muestren datos
+// cruzados aunque sea por un instante.
+//
+// Guarda el HTML ya renderizado de cada slot + el rol con el que se
+// generó + un timestamp. Al reingresar al panel (misma sesión o luego
+// de reabrir la app):
 //   1) se pinta lo cacheado tal cual, al instante, sin skeleton
 //   2) se dispara la recarga de datos en segundo plano
 //   3) si el HTML resultante difiere del cacheado, se reemplaza con
 //      un fade corto; si es igual, no se toca nada (evita parpadeo)
 // En ambos casos, mientras dura la revalidación se ve el indicador
 // de puntos junto al título de cada sección.
+//
+// Se invalida (no se pinta, se muestra skeleton) si:
+//   - no hay entrada para este staff.id
+//   - el rol cacheado no coincide con currentUserRole actual (evita
+//     mostrar por error, ej., BYC de un rol que ya no tiene el usuario)
+//   - pasaron más de _DASH_CACHE_MAX_AGE_MS desde que se guardó
 let _dashCache = null; // { byc, viajes, extra, club } | null
 
+const _DASH_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 horas
+
+function _dashCacheKey() {
+  // currentUserRole/currentUserName no alcanzan como identidad estable;
+  // usamos el id de staff si ya está resuelto (ver enterApp() en app.js).
+  const staffId = typeof currentStaffId !== "undefined" ? currentStaffId : null;
+  return staffId ? `dashCache_v1_${staffId}` : null;
+}
+
+// Carga el caché persistido para el usuario actual a _dashCache (en
+// memoria) si es válido; si no hay entrada, expiró, o el rol no
+// coincide, deja _dashCache en null (equivale a "sin caché").
+function _dashCacheLoad() {
+  const key = _dashCacheKey();
+  if (!key) { _dashCache = null; return; }
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) { _dashCache = null; return; }
+    const parsed = JSON.parse(raw);
+    const vencido = !parsed.ts || (Date.now() - parsed.ts) > _DASH_CACHE_MAX_AGE_MS;
+    const rolDistinto = parsed.role !== currentUserRole;
+    if (vencido || rolDistinto) {
+      localStorage.removeItem(key);
+      _dashCache = null;
+      return;
+    }
+    _dashCache = parsed.data || null;
+  } catch (e) {
+    console.warn("Caché de dashboard corrupto, se descarta:", e);
+    _dashCache = null;
+  }
+}
+
+// Persiste el estado actual de _dashCache a localStorage. Fire-and-forget:
+// si falla (cuota excedida, modo privado, etc.) no debe afectar la UI —
+// el panel ya está pintado igual, solo se pierde la persistencia.
+function _dashCacheSave() {
+  const key = _dashCacheKey();
+  if (!key || !_dashCache) return;
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      ts: Date.now(),
+      role: currentUserRole,
+      data: _dashCache
+    }));
+  } catch (e) {
+    console.warn("No se pudo persistir el caché de dashboard:", e);
+  }
+}
+
 function _dashCacheReady() {
+  if (_dashCache === null) _dashCacheLoad();
   return !!_dashCache;
 }
 
@@ -421,6 +485,11 @@ async function loadDashboard() {
     // No es necesario await acá: cada promesa pinta su slot por su cuenta
     // apenas resuelve, en el orden en que vayan llegando.
     await Promise.allSettled([clubDestinoPromise, extraPromise]);
+
+    // Persistir a localStorage recién ahora que las 4 secciones están
+    // resueltas (evita 4 escrituras por carga) y solo si tenemos con qué
+    // identificar al usuario dueño de este caché.
+    _dashCacheSave();
 
   } catch (e) {
     console.error("Error inesperado en dashboard:", e);

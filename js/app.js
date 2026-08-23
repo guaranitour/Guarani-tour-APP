@@ -92,6 +92,7 @@ function showLogin() {
 let currentUserRole = null;
 let currentUserName = null;
 let currentUserAvatar = null;
+let currentStaffId = null;
 
 function renderTopbarProfile() {
   const btn = document.querySelector(".topbar-profile");
@@ -101,6 +102,80 @@ function renderTopbarProfile() {
   } else {
     btn.innerHTML = `<span>${getInitials(currentUserName)}</span>`;
   }
+}
+
+// ── Caché de perfil de staff (arranque optimista) ────────────
+// Guarda en localStorage lo mínimo necesario para pintar la app (topbar,
+// nav, permisos por rol) SIN esperar la consulta de red a "staff". Se
+// namespacea por email porque a esta altura del arranque todavía no hay
+// staff.id resuelto (es lo que estamos por buscar).
+//
+// Esto es solo para el primer pintado — enterApp() igual corre la
+// consulta real siempre y corrige la UI (o desloguea) si algo no
+// coincide. Un dato desactualizado acá nunca se traduce en acceso
+// real a datos: RLS del lado de Supabase sigue siendo la autoridad.
+const _STAFF_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 horas
+
+function _staffCacheKey(email) {
+  return `staffCache_v1_${(email || "").toLowerCase()}`;
+}
+
+function _staffCacheGet(email) {
+  try {
+    const raw = localStorage.getItem(_staffCacheKey(email));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.ts || (Date.now() - parsed.ts) > _STAFF_CACHE_MAX_AGE_MS) {
+      localStorage.removeItem(_staffCacheKey(email));
+      return null;
+    }
+    return parsed.data || null;
+  } catch (e) {
+    console.warn("Caché de staff corrupto, se descarta:", e);
+    return null;
+  }
+}
+
+function _staffCacheSet(email, data) {
+  try {
+    localStorage.setItem(_staffCacheKey(email), JSON.stringify({ ts: Date.now(), data }));
+  } catch (e) {
+    console.warn("No se pudo persistir el caché de staff:", e);
+  }
+}
+
+function _staffCacheClear(email) {
+  try { localStorage.removeItem(_staffCacheKey(email)); } catch (e) {}
+}
+
+// Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
+// optimista con datos cacheados, SIN navegar y SIN tocar appReady.
+// La navegación real (respetando ?goto=, hash, etc.) la sigue
+// resolviendo enterApp() como siempre — así no hay dos lugares
+// decidiendo a qué vista entrar, y una notificación push o un hash
+// profundo (#viajes) se restauran igual que antes.
+// Devuelve true si pudo pintar algo, false si no había caché usable.
+function _pintarShellOptimista(user) {
+  const cached = _staffCacheGet(user.email);
+  if (!cached || cached.status !== "enabled") return false;
+
+  currentUserRole   = cached.role;
+  currentUserName   = cached.nombre || user.email.split("@")[0];
+  currentUserAvatar = cached.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+  currentStaffId    = cached.id;
+
+  hideEl("login-view");
+  showEl("app-view");
+  document.getElementById("user-email").textContent = user.email;
+  renderTopbarProfile();
+  const card = document.getElementById("card-usuarios");
+  if (card) card.style.display = cached.role === "admin" ? "" : "none";
+  const cardMov = document.getElementById("card-movimientos");
+  if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
+  const menuEmail = document.getElementById("menu-user-email");
+  if (menuEmail) menuEmail.textContent = user.email;
+
+  return true;
 }
 
 async function enterApp(user) {
@@ -141,6 +216,7 @@ async function enterApp(user) {
 
   if (!data) {
     // PGRST116 = "0 rows": acá sí, el email realmente no está en staff
+    _staffCacheClear(user.email);
     await supabaseClient.auth.signOut();
     showLogin();
     showAccessDenied("not_staff");
@@ -149,6 +225,7 @@ async function enterApp(user) {
 
   if (data.status !== "enabled") {
     // Está en staff pero deshabilitado
+    _staffCacheClear(user.email);
     await supabaseClient.auth.signOut();
     showLogin();
     showAccessDenied("disabled");
@@ -157,6 +234,7 @@ async function enterApp(user) {
 
   currentUserRole = data.role;
   currentUserName = data.nombre || user.email.split("@")[0];
+  currentStaffId  = data.id;
 
   // Sincronizar foto de perfil de Google (si vino y cambió respecto a la guardada)
   const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
@@ -170,6 +248,18 @@ async function enterApp(user) {
         if (updErr) console.warn("No se pudo actualizar avatar_url:", updErr);
       });
   }
+
+  // Persistir el perfil confirmado para el próximo arranque optimista.
+  // Se guarda SIEMPRE con los datos recién confirmados por el servidor
+  // (nunca los del caché anterior), así un cambio de rol/estado hecho
+  // por un admin se refleja acá apenas este usuario vuelve a entrar.
+  _staffCacheSet(user.email, {
+    id: data.id,
+    role: data.role,
+    status: data.status,
+    nombre: data.nombre,
+    avatar_url: currentUserAvatar
+  });
 
   // Registrar última conexión (no bloqueante: si falla, no debe afectar el login)
   touchLastSeen(data.id);
@@ -252,15 +342,16 @@ window.addEventListener("hashchange", () => {
 
 // Se llama cuando enterApp() no logra confirmar el staff ni siquiera
 // tras reintentar (problema de red persistente, no de autorización).
-// Clave: si la app YA estaba abierta (appReady === true), esto ocurrió
-// en un refresh silencioso en background — NO tocamos la UI ni
-// mostramos login, solo un toast, para no expulsar a alguien que está
-// activamente usando la app por un corte de red de un instante.
-// Si todavía no había entrado (arranque en frío), ahí sí corresponde
-// mostrar login con un aviso, porque no hay una vista de app que
-// preservar.
+// Clave: si la app YA estaba visible (appReady === true, navegación
+// confirmada; o el shell se pintó optimista desde caché al arrancar),
+// esto ocurrió en un refresh silencioso en background — NO tocamos la
+// UI ni mostramos login, solo un toast, para no expulsar a alguien que
+// está activamente usando la app por un corte de red de un instante.
+// Solo si nunca hubo nada que mostrar (arranque en frío sin caché de
+// staff) corresponde mostrar login con un aviso.
 function _mostrarErrorConexionEnterApp() {
-  if (appReady) {
+  const appYaVisible = appReady || document.getElementById("app-view")?.style.display !== "none";
+  if (appYaVisible) {
     _appToast("Problema de conexión al verificar tu sesión. Reintentando…", true);
     return;
   }
@@ -302,14 +393,42 @@ function showAccessDenied(reason) {
 }
 
 // ── Auth ───────────────────────────────────────────────────
+// Arranque optimista: getSession() de Supabase JS v2 resuelve del
+// storage local (no golpea la red salvo que el token esté vencido),
+// así que normalmente es rápido. El cuello de botella real era
+// enterApp(), que espera la consulta a "staff" por red antes de
+// mostrar la app. Ahora, si hay un perfil de staff cacheado y
+// vigente para ese email, pintamos app-view (topbar, nav, dashboard
+// desde su propio caché) DE INMEDIATO con esos datos, y enterApp()
+// sigue corriendo en paralelo para confirmar o corregir — RLS en
+// Supabase es la autoridad real en todo momento, esto solo evita la
+// espera visual cuando ya sabemos, con buena confianza, qué se va a
+// mostrar.
 document.addEventListener("DOMContentLoaded", () => {
   hideEl("login-view");
   hideEl("app-view");
 
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
-    hideEl("splash-view");
-    if (session?.user) enterApp(session.user);
-    else showLogin();
+    if (!session?.user) {
+      hideEl("splash-view");
+      showLogin();
+      return;
+    }
+
+    // Si hay un perfil de staff cacheado y vigente, pintamos el shell
+    // (topbar, nav, permisos) de inmediato y ocultamos el splash ANTES
+    // de que la consulta de red resuelva. enterApp() sigue corriendo
+    // igual que siempre — navega a la vista correcta, confirma/corrige
+    // los datos, y dispara checkNovedades — solo que ahora lo hace con
+    // la app ya visible en vez de con el splash tapando todo.
+    if (_pintarShellOptimista(session.user)) {
+      hideEl("splash-view");
+      enterApp(session.user);
+    } else {
+      // Sin caché usable (primera vez en este dispositivo, o venció):
+      // mismo comportamiento que antes, splash hasta confirmar por red.
+      enterApp(session.user).then(() => hideEl("splash-view"));
+    }
   });
 
   supabaseClient.auth.onAuthStateChange((event, session) => {
