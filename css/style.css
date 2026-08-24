@@ -1366,32 +1366,3 @@ body { padding-bottom: 0; }
   line-height: 1.4;
 }
 
-/* Resalta el módulo actualmente elegido como acceso directo */
-.modulo-item.is-selected {
-  background: var(--modulo-icon-bg, rgba(45,106,79,.12));
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
-/* ══════════════════════════════════════════════════════════
-   ACCESO DIRECTO (3er botón del navbar) — configurable
-═══════════════════════════════════════════════════════════ */
-.bn-shortcut-icon-wrap {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Badge de lápiz: siempre visible y clickeable para poder cambiar
-   el acceso directo en cualquier momento (no depende de :hover,
-   que no existe de forma confiable en pantallas táctiles). */
-.bn-shortcut-edit {
-  position: absolute;
-  top: -6px; right: -8px;
-  width: 15px; height: 15px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--accent);
-  color: #fff;
-  border: 2px solid var(--surface, var(--bg2));
-  cursor: pointer;
-}
-
