@@ -146,12 +146,39 @@ function _staffCacheClear(email) {
   try { localStorage.removeItem(_staffCacheKey(email)); } catch (e) {}
 }
 
+// Vistas que pueden restaurarse directamente al arrancar (por ?goto=,
+// por hash de la URL, o para decidir si el destino por defecto ya es
+// conocido en _pintarShellOptimista). Vive a nivel de módulo porque
+// enterApp() y _pintarShellOptimista() necesitan exactamente la misma
+// lista — tenerla duplicada es lo que hacía fácil que quedaran
+// desincronizadas.
+const RESTORABLE_VIEWS_ARRANQUE = [
+  "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
+  "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
+];
+
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
-// optimista con datos cacheados, SIN navegar y SIN tocar appReady.
-// La navegación real (respetando ?goto=, hash, etc.) la sigue
-// resolviendo enterApp() como siempre — así no hay dos lugares
-// decidiendo a qué vista entrar, y una notificación push o un hash
-// profundo (#viajes) se restauran igual que antes.
+// optimista con datos cacheados, SIN tocar appReady. La navegación REAL
+// (respetando ?goto=, hash profundo, notificación push, etc.) la sigue
+// resolviendo enterApp() como siempre — así no hay dos lugares decidiendo
+// a qué vista entrar.
+//
+// Excepción puntual: si la URL no pide una vista concreta (sin ?goto=
+// y sin hash restaurable), el destino por defecto YA se sabe que va a
+// ser "dashboard" sin necesidad de esperar a enterApp() — es el mismo
+// valor al que cae el propio enterApp() más abajo cuando no hay nada
+// que restaurar. Pintarlo acá mismo evita el hueco en blanco entre que
+// se oculta el splash (shell visible) y que la consulta de red a
+// "staff" resuelve: antes, en ese hueco, loadDashboard() todavía no se
+// había llamado ni una vez, así que #dashboard-content quedaba vacío
+// (ni skeleton ni datos) hasta que enterApp() terminaba. Ahora, con
+// caché de dashboard vigente (dashCache_v1_*), loadDashboard() pinta
+// contenido real al instante; sin ese caché, pinta su propio skeleton
+// al instante — cualquiera de los dos es mejor que la pantalla vacía.
+// enterApp() vuelve a llamar navigateTo("dashboard") cuando confirma
+// por red, pero eso es barato: loadDashboard() dispara sus queries de
+// nuevo (revalidación), no hay estado que se pise.
+//
 // Devuelve true si pudo pintar algo, false si no había caché usable.
 function _pintarShellOptimista(user) {
   const cached = _staffCacheGet(user.email);
@@ -173,6 +200,15 @@ function _pintarShellOptimista(user) {
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
+
+  const params = new URLSearchParams(location.search);
+  const hayGoto = RESTORABLE_VIEWS_ARRANQUE.includes(params.get("goto"));
+  const { view: hashView } = _parseHash(location.hash);
+  const hayHashRestaurable = hashView && RESTORABLE_VIEWS_ARRANQUE.includes(hashView) && hashView !== "dashboard";
+
+  if (!hayGoto && !hayHashRestaurable) {
+    navigateTo("dashboard");
+  }
 
   return true;
 }
@@ -323,12 +359,13 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
     const gotoParam = params.get("goto");
     const idxParam = params.get("idx");
 
-    const restorableViews = [
-      "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
-      "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
-    ];
-
-    if (gotoParam && restorableViews.includes(gotoParam)) {
+    // Nota: si _pintarShellOptimista() ya pintó "dashboard" como destino
+    // por defecto (arranque optimista, sin ?goto= ni hash), este bloque
+    // vuelve a llamar navigateTo() acá. Es intencional y barato: confirma
+    // el destino con datos ya frescos por red y, cuando SÍ hay ?goto= o
+    // hash, es la primera vez que se navega (el shell optimista no lo
+    // hizo). No hay estado que se pise entre ambas llamadas.
+    if (gotoParam && RESTORABLE_VIEWS_ARRANQUE.includes(gotoParam)) {
       // Limpiar el query param de la URL para que no quede pegado
       history.replaceState({}, "", location.pathname + location.hash);
       const idxValue = idxParam === null ? null
@@ -338,7 +375,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
       // Si hay un hash en la URL al cargar, intentar restaurar esa vista
       // (hash vacío se parsea como "dashboard", que ya es el destino por defecto)
       const { view: hashView, idx: hashIdx } = _parseHash(location.hash);
-      if (hashView && restorableViews.includes(hashView)) {
+      if (hashView && RESTORABLE_VIEWS_ARRANQUE.includes(hashView)) {
         navigateTo(hashView, hashIdx);
       } else {
         navigateTo("dashboard");
