@@ -2193,18 +2193,10 @@
       </span>
       <span>Menú</span>
     </button>
-    <!-- Acceso directo configurable: tap corto navega al módulo elegido,
-         mantener presionado (o el lápiz que aparece al primer uso) abre
-         el selector para cambiarlo. La preferencia se guarda en
-         localStorage (mismo mecanismo que el tema claro/oscuro). -->
-    <button type="button" class="bn-item" id="bn-shortcut" onclick="onShortcutTap(event)">
-      <span class="bn-shortcut-icon-wrap">
-        <svg id="bn-shortcut-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span class="bn-shortcut-edit" id="bn-shortcut-edit" onclick="event.stopPropagation(); openShortcutPicker();" role="button" tabindex="0" aria-label="Elegir acceso directo">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        </span>
-      </span>
-      <span id="bn-shortcut-label">Elegir</span>
+    <!-- Acceso directo fijo a Calendario. -->
+    <button type="button" class="bn-item" id="bn-shortcut" onclick="onShortcutTap()">
+      <svg id="bn-shortcut-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <span id="bn-shortcut-label">Calendario</span>
     </button>
   </nav>
 
@@ -2219,20 +2211,6 @@
       </button>
     </div>
     <div class="modulos-sheet-grid" id="modulos-sheet-grid"></div>
-  </div>
-
-  <!-- ── SHEET: elegir acceso directo del navbar ──────────────── -->
-  <div class="modulos-overlay" id="shortcut-overlay" onclick="closeShortcutPicker()"></div>
-  <div class="modulos-sheet" id="shortcut-sheet" role="dialog" aria-modal="true" aria-labelledby="shortcut-sheet-title">
-    <div class="modulos-sheet-handle" aria-hidden="true"></div>
-    <div class="modulos-sheet-header">
-      <h2 id="shortcut-sheet-title">Elegí tu acceso directo</h2>
-      <button type="button" class="modulos-sheet-close" onclick="closeShortcutPicker()" aria-label="Cerrar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <p class="modulos-sheet-hint">Se mostrará en el botón derecho de la barra inferior para entrar directo, sin pasar por el menú.</p>
-    <div class="modulos-sheet-grid" id="shortcut-sheet-grid"></div>
   </div>
 
   <!-- ── MODAL: ACERCA DE ── -->
