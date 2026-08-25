@@ -154,7 +154,8 @@ function _staffCacheClear(email) {
 // desincronizadas.
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
-  "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico"
+  "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
+  "activity-log"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -197,6 +198,8 @@ function _pintarShellOptimista(user) {
   if (card) card.style.display = cached.role === "admin" ? "" : "none";
   const cardMov = document.getElementById("card-movimientos");
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
+  const menuActivityLog = document.getElementById("menu-activity-log-btn");
+  if (menuActivityLog) menuActivityLog.style.display = cached.role === "admin" ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -347,6 +350,8 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   // 👇 MOVIMIENTOS BANCARIOS: admin, worker y finanzas (finanzas solo lectura, ver movimientos.js)
   const cardMov = document.getElementById("card-movimientos");
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
+  const menuActivityLog = document.getElementById("menu-activity-log-btn");
+  if (menuActivityLog) menuActivityLog.style.display = data.role === "admin" ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -745,6 +750,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vmovn) _vmovn.style.display = "none";
   const _vcal = document.getElementById("view-calendario");
   if (_vcal) _vcal.style.display = "none";
+  const _val = document.getElementById("view-activity-log");
+  if (_val) _val.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -870,6 +877,18 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     initCustomSelect("u-role");
     initCustomSelect("u-status");
     initCustomSelect("ur-role");
+
+  }
+
+  else if (view === "activity-log") {
+
+    if (currentUserRole !== "admin") return;
+    showEl("view-activity-log");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Registro de actividad" }
+    ]);
+    loadActivityLog({ reset: true });
 
   }
 
