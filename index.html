@@ -2374,5 +2374,13 @@
     }, duracion);
   }
 </script>
+  <script>
+if (location.search.includes("debug")) {
+  const script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/eruda";
+  script.onload = () => eruda.init();
+  document.body.appendChild(script);
+}
+  </script>
 </body>
 </html>
