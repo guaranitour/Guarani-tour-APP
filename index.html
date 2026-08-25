@@ -42,6 +42,7 @@
   <link rel="stylesheet" href="css/movimientos.css" />
   <link rel="stylesheet" href="css/custom-select.css" />
   <link rel="stylesheet" href="css/calendario.css" />
+  <link rel="stylesheet" href="css/activity-log.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
 
   <style>
@@ -162,6 +163,16 @@
         </button>
         <div class="hamburger-menu" id="hamburger-menu" role="menu">
           <div class="menu-user" id="user-email"></div>
+          <button class="menu-item" id="menu-activity-log-btn" style="display:none" onclick="navigateTo('activity-log'); closeMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Registro de actividad
+          </button>
           <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
@@ -1728,6 +1739,30 @@
     </div>
   </div>
 
+<!-- VISTA: REGISTRO DE ACTIVIDAD (activity_log) -->
+<div id="view-activity-log" style="display:none">
+  <div class="main">
+    <div class="mov-toolbar-filters" id="activity-log-filters">
+      <select id="al-filtro-tabla" class="mov-filtro-select" onchange="filtrarActivityLog()">
+        <option value="">Todas las tablas</option>
+        <option value="egresos">Egresos</option>
+        <option value="pagos">Pagos</option>
+        <option value="viajes">Viajes</option>
+        <option value="viaje_pasajeros">Viaje pasajeros</option>
+      </select>
+      <select id="al-filtro-usuario" class="mov-filtro-select" onchange="filtrarActivityLog()">
+        <option value="">Todos los usuarios</option>
+      </select>
+    </div>
+
+    <div id="activity-log-list"></div>
+
+    <button class="btn-ver-mas" id="activity-log-ver-mas" onclick="cargarMasActivityLog()" style="display:none">
+      Ver más
+    </button>
+  </div>
+</div>
+
 <!-- VISTA: DETALLE EGRESO -->
 <div id="view-egreso-detalle" style="display:none">
   <div class="main">
@@ -2297,6 +2332,7 @@
   <script src="js/novedades.js"></script>
   <script src="js/movimientos.js"></script>
   <script src="js/calendario.js"></script>
+  <script src="js/activity-log.js"></script>
   <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
