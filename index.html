@@ -1742,17 +1742,22 @@
 <!-- VISTA: REGISTRO DE ACTIVIDAD (activity_log) -->
 <div id="view-activity-log" style="display:none">
   <div class="main">
-    <div class="mov-toolbar-filters" id="activity-log-filters">
-      <select id="al-filtro-tabla" class="mov-filtro-select" onchange="filtrarActivityLog()">
-        <option value="">Todas las tablas</option>
-        <option value="egresos">Egresos</option>
-        <option value="pagos">Pagos</option>
-        <option value="viajes">Viajes</option>
-        <option value="viaje_pasajeros">Viaje pasajeros</option>
-      </select>
-      <select id="al-filtro-usuario" class="mov-filtro-select" onchange="filtrarActivityLog()">
-        <option value="">Todos los usuarios</option>
-      </select>
+    <div class="al-toolbar-filters" id="activity-log-filters">
+      <div class="al-filter-dropdown" id="al-filter-dropdown">
+        <button type="button" class="al-filter-icon-btn" id="al-filter-toggle" onclick="toggleActivityLogFilterMenu()" aria-haspopup="true" aria-expanded="false" title="Filtrar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span class="al-filter-badge" id="al-filter-badge" style="display:none"></span>
+        </button>
+        <div class="al-filter-menu" id="al-filter-menu" style="display:none">
+          <button type="button" class="al-filter-menu-item is-active" data-dim="todo" onclick="seleccionarDimensionActivityLog('todo')">Todo</button>
+          <button type="button" class="al-filter-menu-item" data-dim="usuario" onclick="seleccionarDimensionActivityLog('usuario')">Usuario</button>
+          <button type="button" class="al-filter-menu-item" data-dim="fecha" onclick="seleccionarDimensionActivityLog('fecha')">Fecha</button>
+          <button type="button" class="al-filter-menu-item" data-dim="tipo" onclick="seleccionarDimensionActivityLog('tipo')">Tipo</button>
+          <button type="button" class="al-filter-menu-item" data-dim="tabla" onclick="seleccionarDimensionActivityLog('tabla')">Tabla</button>
+        </div>
+      </div>
+
+      <div class="al-filter-dynamic" id="al-filter-dynamic"></div>
     </div>
 
     <div id="activity-log-list"></div>
