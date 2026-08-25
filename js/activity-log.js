@@ -1,8 +1,8 @@
 // =====================================================================
 // activity-log.js — Vista "Registro de actividad" (admin) sobre la
-// tabla activity_log. Lista paginada con filtros por tabla y por
-// usuario, cada fila expandible (<details>) mostrando el diff entre
-// old_data y new_data.
+// tabla activity_log. Lista paginada con un filtro por dimensión
+// (todo/usuario/fecha/tipo/tabla) accesible desde un ícono, cada fila
+// expandible (<details>) mostrando el diff entre old_data y new_data.
 // =====================================================================
 
 const ACTIVITY_LOG_PAGE_SIZE = 25;
@@ -21,44 +21,52 @@ const ACTIVITY_LOG_OP_LABELS = {
   DELETE: { label: "Eliminación", cls: "al-op-delete" },
 };
 
+// Dimensiones de filtro disponibles desde el ícono. Cada una define
+// cómo se renderiza su panel dinámico y cómo se aplica a la query.
+const ACTIVITY_LOG_DIMENSIONES = ["todo", "usuario", "fecha", "tipo", "tabla"];
+const ACTIVITY_LOG_DIMENSION_LABELS = {
+  todo: "Todo",
+  usuario: "Usuario",
+  fecha: "Fecha",
+  tipo: "Tipo",
+  tabla: "Tabla",
+};
+
 // Estado de paginación/filtros de la vista. Se resetea cada vez que se
-// entra a la vista o cambia un filtro.
+// entra a la vista. `dimension` indica qué filtro está activo; los
+// campos usuario/fechaInicio/fechaFin/tipo/tabla solo importan si
+// dimension coincide con ellos.
 let _activityLogState = {
   offset: 0,
-  tabla: "",
+  dimension: "todo",
   usuario: "",
+  fechaInicio: "",
+  fechaFin: "",
+  tipo: "",
+  tabla: "",
   terminado: false, // true cuando ya no hay más páginas
   cargando: false,
 };
 
 // Cache simple de "id de usuario -> email" para no repetir el join en
-// cada fila; se llena on-demand al armar el <select> de usuarios.
+// cada fila; se llena on-demand al abrir el panel de usuario.
 let _activityLogUsuariosCargados = false;
+let _activityLogUsuariosOpciones = [];
 
 async function loadActivityLog({ reset = false } = {}) {
   if (reset) {
-    _activityLogState = { offset: 0, tabla: "", usuario: "", terminado: false, cargando: false };
+    _activityLogState = {
+      offset: 0, dimension: "todo", usuario: "", fechaInicio: "", fechaFin: "",
+      tipo: "", tabla: "", terminado: false, cargando: false,
+    };
     const listEl = document.getElementById("activity-log-list");
     if (listEl) listEl.innerHTML = "";
-    const selTabla = document.getElementById("al-filtro-tabla");
-    if (selTabla) selTabla.value = "";
-    const selUsuario = document.getElementById("al-filtro-usuario");
-    if (selUsuario) selUsuario.value = "";
-    await _cargarUsuariosFiltroActivityLog();
+    _cerrarMenuFiltroActivityLog();
+    _marcarDimensionActivaActivityLog("todo");
+    _renderPanelFiltroActivityLog();
+    _actualizarBadgeFiltroActivityLog();
   }
   await _fetchActivityLogPage();
-}
-
-function filtrarActivityLog() {
-  const selTabla = document.getElementById("al-filtro-tabla");
-  const selUsuario = document.getElementById("al-filtro-usuario");
-  _activityLogState.tabla = selTabla ? selTabla.value : "";
-  _activityLogState.usuario = selUsuario ? selUsuario.value : "";
-  _activityLogState.offset = 0;
-  _activityLogState.terminado = false;
-  const listEl = document.getElementById("activity-log-list");
-  if (listEl) listEl.innerHTML = "";
-  _fetchActivityLogPage();
 }
 
 function cargarMasActivityLog() {
@@ -66,12 +74,185 @@ function cargarMasActivityLog() {
   _fetchActivityLogPage();
 }
 
+// ── Ícono de filtro: abrir/cerrar el menú de dimensiones ──
+function toggleActivityLogFilterMenu() {
+  const menu = document.getElementById("al-filter-menu");
+  const btn = document.getElementById("al-filter-toggle");
+  if (!menu || !btn) return;
+  const abierto = menu.style.display !== "none";
+  if (abierto) {
+    _cerrarMenuFiltroActivityLog();
+  } else {
+    menu.style.display = "";
+    btn.setAttribute("aria-expanded", "true");
+    document.addEventListener("click", _onClickFueraMenuFiltroActivityLog, { capture: true });
+  }
+}
+
+function _cerrarMenuFiltroActivityLog() {
+  const menu = document.getElementById("al-filter-menu");
+  const btn = document.getElementById("al-filter-toggle");
+  if (menu) menu.style.display = "none";
+  if (btn) btn.setAttribute("aria-expanded", "false");
+  document.removeEventListener("click", _onClickFueraMenuFiltroActivityLog, { capture: true });
+}
+
+function _onClickFueraMenuFiltroActivityLog(ev) {
+  const dropdown = document.getElementById("al-filter-dropdown");
+  if (dropdown && !dropdown.contains(ev.target)) _cerrarMenuFiltroActivityLog();
+}
+
+// Selección de dimensión desde el menú del ícono: cambia qué panel
+// dinámico se muestra a la derecha y dispara la búsqueda cuando
+// corresponde (p. ej. "todo" no necesita un segundo valor).
+function seleccionarDimensionActivityLog(dimension) {
+  if (!ACTIVITY_LOG_DIMENSIONES.includes(dimension)) return;
+  _activityLogState.dimension = dimension;
+  _activityLogState.usuario = "";
+  _activityLogState.fechaInicio = "";
+  _activityLogState.fechaFin = "";
+  _activityLogState.tipo = "";
+  _activityLogState.tabla = "";
+  _marcarDimensionActivaActivityLog(dimension);
+  _cerrarMenuFiltroActivityLog();
+  _renderPanelFiltroActivityLog();
+  _actualizarBadgeFiltroActivityLog();
+
+  if (dimension === "todo") {
+    filtrarActivityLog();
+  }
+  // Para las demás dimensiones, la búsqueda se dispara recién cuando
+  // el usuario elige un valor en el panel dinámico (ver los listeners
+  // "change" agregados en _renderPanelFiltroActivityLog), no al abrir
+  // el panel.
+}
+
+function _marcarDimensionActivaActivityLog(dimension) {
+  const items = document.querySelectorAll("#al-filter-menu .al-filter-menu-item");
+  items.forEach((el) => el.classList.toggle("is-active", el.dataset.dim === dimension));
+}
+
+function _actualizarBadgeFiltroActivityLog() {
+  const badge = document.getElementById("al-filter-badge");
+  if (!badge) return;
+  const activo = _activityLogState.dimension !== "todo";
+  badge.style.display = activo ? "" : "none";
+}
+
+// Arma el panel dinámico según la dimensión activa. Se reconstruye
+// entero cada vez que cambia la dimensión (es liviano: a lo sumo dos
+// selects o dos inputs de fecha).
+function _renderPanelFiltroActivityLog() {
+  const cont = document.getElementById("al-filter-dynamic");
+  if (!cont) return;
+  cont.innerHTML = "";
+
+  const dim = _activityLogState.dimension;
+
+  if (dim === "todo") {
+    return; // sin segundo control
+  }
+
+  if (dim === "tipo") {
+    const sel = document.createElement("select");
+    sel.className = "mov-filtro-select al-filtro-dynamic-select";
+    sel.id = "al-filtro-tipo";
+    sel.innerHTML = `
+      <option value="">Todo</option>
+      <option value="INSERT">Creación</option>
+      <option value="UPDATE">Edición</option>
+      <option value="DELETE">Eliminación</option>
+    `;
+    sel.value = _activityLogState.tipo;
+    sel.addEventListener("change", () => {
+      _activityLogState.tipo = sel.value;
+      filtrarActivityLog();
+    });
+    cont.appendChild(sel);
+    return;
+  }
+
+  if (dim === "tabla") {
+    const sel = document.createElement("select");
+    sel.className = "mov-filtro-select al-filtro-dynamic-select";
+    sel.id = "al-filtro-tabla";
+    sel.innerHTML = `
+      <option value="">Todas</option>
+      <option value="egresos">Egresos</option>
+      <option value="pagos">Pagos</option>
+      <option value="viajes">Viajes</option>
+      <option value="viaje_pasajeros">Viaje pasajeros</option>
+    `;
+    sel.value = _activityLogState.tabla;
+    sel.addEventListener("change", () => {
+      _activityLogState.tabla = sel.value;
+      filtrarActivityLog();
+    });
+    cont.appendChild(sel);
+    return;
+  }
+
+  if (dim === "usuario") {
+    const sel = document.createElement("select");
+    sel.className = "mov-filtro-select al-filtro-dynamic-select";
+    sel.id = "al-filtro-usuario";
+    sel.innerHTML = `<option value="">Todos</option>`;
+    cont.appendChild(sel);
+    sel.addEventListener("change", () => {
+      _activityLogState.usuario = sel.value;
+      filtrarActivityLog();
+    });
+    _cargarUsuariosFiltroActivityLog(sel);
+    return;
+  }
+
+  if (dim === "fecha") {
+    const wrap = document.createElement("div");
+    wrap.className = "al-filtro-fecha-rango";
+    wrap.innerHTML = `
+      <input type="date" class="al-filtro-fecha-input" id="al-filtro-fecha-inicio" aria-label="Fecha inicio" />
+      <span class="al-filtro-fecha-sep">–</span>
+      <input type="date" class="al-filtro-fecha-input" id="al-filtro-fecha-fin" aria-label="Fecha fin" />
+    `;
+    cont.appendChild(wrap);
+
+    const inputInicio = wrap.querySelector("#al-filtro-fecha-inicio");
+    const inputFin = wrap.querySelector("#al-filtro-fecha-fin");
+    inputInicio.value = _activityLogState.fechaInicio;
+    inputFin.value = _activityLogState.fechaFin;
+
+    const onChangeFecha = () => {
+      _activityLogState.fechaInicio = inputInicio.value;
+      _activityLogState.fechaFin = inputFin.value;
+      // Solo buscamos cuando hay al menos una fecha cargada, para no
+      // relanzar la query en cada apertura del panel sin datos.
+      if (_activityLogState.fechaInicio || _activityLogState.fechaFin) {
+        filtrarActivityLog();
+      }
+    };
+    inputInicio.addEventListener("change", onChangeFecha);
+    inputFin.addEventListener("change", onChangeFecha);
+    return;
+  }
+}
+
+function filtrarActivityLog() {
+  _activityLogState.offset = 0;
+  _activityLogState.terminado = false;
+  const listEl = document.getElementById("activity-log-list");
+  if (listEl) listEl.innerHTML = "";
+  _fetchActivityLogPage();
+}
+
 // Llena el <select> de usuarios a partir de los emails distintos que
 // ya aparecen en activity_log (evita depender de permisos sobre auth.users).
-async function _cargarUsuariosFiltroActivityLog() {
-  if (_activityLogUsuariosCargados) return;
-  const selUsuario = document.getElementById("al-filtro-usuario");
+async function _cargarUsuariosFiltroActivityLog(selUsuario) {
   if (!selUsuario) return;
+
+  if (_activityLogUsuariosCargados) {
+    _pintarOpcionesUsuarioActivityLog(selUsuario);
+    return;
+  }
 
   const { data, error } = await supabaseClient
     .from("activity_log")
@@ -93,14 +274,19 @@ async function _cargarUsuariosFiltroActivityLog() {
   }
   opciones.sort((a, b) => a.email.localeCompare(b.email));
 
-  for (const op of opciones) {
+  _activityLogUsuariosOpciones = opciones;
+  _activityLogUsuariosCargados = true;
+  _pintarOpcionesUsuarioActivityLog(selUsuario);
+}
+
+function _pintarOpcionesUsuarioActivityLog(selUsuario) {
+  for (const op of _activityLogUsuariosOpciones) {
     const optEl = document.createElement("option");
     optEl.value = op.id;
     optEl.textContent = op.email;
     selUsuario.appendChild(optEl);
   }
-
-  _activityLogUsuariosCargados = true;
+  selUsuario.value = _activityLogState.usuario;
 }
 
 async function _fetchActivityLogPage() {
@@ -116,8 +302,17 @@ async function _fetchActivityLogPage() {
     .order("changed_at", { ascending: false })
     .range(_activityLogState.offset, _activityLogState.offset + ACTIVITY_LOG_PAGE_SIZE - 1);
 
-  if (_activityLogState.tabla) query = query.eq("table_name", _activityLogState.tabla);
-  if (_activityLogState.usuario) query = query.eq("changed_by", _activityLogState.usuario);
+  const st = _activityLogState;
+  if (st.dimension === "tabla" && st.tabla) query = query.eq("table_name", st.tabla);
+  if (st.dimension === "usuario" && st.usuario) query = query.eq("changed_by", st.usuario);
+  if (st.dimension === "tipo" && st.tipo) query = query.eq("operation", st.tipo);
+  if (st.dimension === "fecha") {
+    // Los <input type="date"> entregan "YYYY-MM-DD" en hora local; para
+    // "fin" sumamos el día completo (hasta las 23:59:59.999) para que
+    // el filtro sea inclusivo del día elegido.
+    if (st.fechaInicio) query = query.gte("changed_at", `${st.fechaInicio}T00:00:00.000`);
+    if (st.fechaFin) query = query.lte("changed_at", `${st.fechaFin}T23:59:59.999`);
+  }
 
   const { data, error } = await query;
 
@@ -168,7 +363,6 @@ function _renderActivityLogRow(row) {
     <span class="al-op-badge ${opInfo.cls}">${opInfo.label}</span>
     <span class="al-summary-main">
       <span class="al-summary-tabla">${_escapeHtmlAL(tablaLabel)}</span>
-      <span class="al-summary-record">#${_escapeHtmlAL(String(row.record_id))}</span>
     </span>
     <span class="al-summary-meta">
       <span class="al-summary-user">${_escapeHtmlAL(row.changed_by_email || "—")}</span>
