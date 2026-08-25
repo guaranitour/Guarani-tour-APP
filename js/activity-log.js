@@ -125,9 +125,15 @@ async function _fetchActivityLogPage() {
 
   if (error) {
     console.error("[activity-log] error cargando registro de actividad:", error);
+    const listEl = document.getElementById("activity-log-list");
+    if (listEl && _activityLogState.offset === 0) {
+      listEl.innerHTML = `<p class="al-empty">Error al cargar: ${_escapeHtmlAL(error.message || String(error))}</p>`;
+    }
     if (btnVerMas) { btnVerMas.disabled = false; btnVerMas.textContent = "Ver más"; }
     return;
   }
+
+  console.log("[activity-log] filas recibidas:", data.length, data);
 
   const listEl = document.getElementById("activity-log-list");
   if (listEl) {
