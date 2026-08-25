@@ -1,0 +1,166 @@
+/* =====================================================================
+   activity-log.css — Vista "Registro de actividad" (activity_log)
+   ===================================================================== */
+
+#activity-log-filters {
+  margin-bottom: 1rem;
+}
+
+.al-empty {
+  color: var(--text-muted);
+  font-size: .9rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+/* ── Tarjeta expandible (<details>) ── */
+.al-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: .6rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+/* Quitar el triángulo nativo del navegador para usar el nuestro */
+.al-item summary {
+  list-style: none;
+  cursor: pointer;
+}
+.al-item summary::-webkit-details-marker { display: none; }
+
+.al-summary {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  transition: background .15s;
+}
+.al-summary:hover { background: var(--surface-hover); }
+
+/* Flechita propia que rota al abrir */
+.al-summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform .15s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.al-item[open] .al-summary::after {
+  transform: rotate(-135deg);
+}
+
+.al-op-badge {
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.al-op-insert { background: var(--success-bg); color: var(--success-text); }
+.al-op-update { background: var(--warning-bg); color: var(--warning-text); }
+.al-op-delete { background: var(--danger-bg2); color: var(--danger-text); }
+
+.al-summary-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.al-summary-tabla {
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--text);
+}
+.al-summary-record {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+.al-summary-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex-shrink: 0;
+  gap: .1rem;
+}
+.al-summary-user {
+  font-size: .78rem;
+  color: var(--text-mid);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.al-summary-fecha {
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+/* ── Cuerpo expandido: diff ── */
+.al-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.al-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: .75rem;
+  font-size: .82rem;
+}
+.al-diff-table td {
+  padding: .4rem .5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  word-break: break-word;
+}
+.al-diff-table tr:last-child td { border-bottom: none; }
+
+.al-diff-campo {
+  font-weight: 600;
+  color: var(--text-mid);
+  width: 30%;
+  white-space: nowrap;
+}
+.al-diff-antes {
+  color: var(--danger-text);
+  text-decoration: line-through;
+  opacity: .8;
+  width: 35%;
+}
+.al-diff-despues {
+  color: var(--success-text);
+  width: 35%;
+}
+.al-diff-valor {
+  color: var(--text);
+}
+
+.al-null {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Responsive: en pantallas chicas, el meta pasa debajo del título */
+@media (max-width: 480px) {
+  .al-summary {
+    flex-wrap: wrap;
+  }
+  .al-summary-meta {
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+    padding-left: calc(1rem + 20px); /* alinea bajo el título, dejando espacio del badge */
+  }
+  .al-diff-table {
+    font-size: .78rem;
+  }
+}
