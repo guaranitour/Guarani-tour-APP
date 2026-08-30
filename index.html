@@ -2411,10 +2411,6 @@
       waiting.postMessage({ type: 'SKIP_WAITING' });
       // La recarga real la dispara 'controllerchange' más arriba.
     };
-
-    document.getElementById('sw-update-dismiss').onclick = () => {
-      banner.classList.remove('sw-update-visible');
-    };
   }
 </script>
 
@@ -2423,7 +2419,6 @@
   <span class="sw-update-text">Hay una versión nueva disponible.</span>
   <div class="sw-update-actions">
     <button type="button" id="sw-update-btn" class="sw-update-btn">Actualizar</button>
-    <button type="button" id="sw-update-dismiss" class="sw-update-dismiss" aria-label="Cerrar aviso">✕</button>
   </div>
 </div>
 <style>
@@ -2471,20 +2466,6 @@
     cursor: pointer;
   }
   .sw-update-btn:disabled { opacity: .6; cursor: default; }
-  .sw-update-dismiss {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-muted, #9aa0ab);
-    font-size: .8rem;
-    cursor: pointer;
-  }
-  .sw-update-dismiss:hover { background: rgba(255,255,255,.08); }
 
   @media (max-width: 480px) {
     .sw-update-banner {
