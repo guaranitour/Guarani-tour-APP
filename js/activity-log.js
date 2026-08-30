@@ -13,6 +13,10 @@ const ACTIVITY_LOG_TABLE_LABELS = {
   pagos: "Pagos",
   viajes: "Viajes",
   viaje_pasajeros: "Viaje pasajeros",
+  categorias: "Categorías",
+  contactos_emergencia: "Contactos de emergencia",
+  servicio_extra_pasajeros: "Servicio extra pasajeros",
+  servicios_extra: "Servicios extra",
 };
 
 const ACTIVITY_LOG_OP_LABELS = {
@@ -182,6 +186,10 @@ function _renderPanelFiltroActivityLog() {
       <option value="pagos">Pagos</option>
       <option value="viajes">Viajes</option>
       <option value="viaje_pasajeros">Viaje pasajeros</option>
+      <option value="categorias">Categorías</option>
+      <option value="contactos_emergencia">Contactos de emergencia</option>
+      <option value="servicio_extra_pasajeros">Servicio extra pasajeros</option>
+      <option value="servicios_extra">Servicios extra</option>
     `;
     sel.value = _activityLogState.tabla;
     sel.addEventListener("change", () => {
