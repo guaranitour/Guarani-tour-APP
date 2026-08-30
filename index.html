@@ -2340,9 +2340,42 @@
   <script src="js/activity-log.js"></script>
   <script>
   if ('serviceWorker' in navigator) {
+    let _swRefrescando = false;
+
+    // Cuando el nuevo SW toma control (tras SKIP_WAITING), recargamos
+    // una sola vez. La guarda evita un bucle si el evento se dispara
+    // más de una vez por algún motivo.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_swRefrescando) return;
+      _swRefrescando = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => console.log('SW registrado:', reg.scope))
+        .then(reg => {
+          console.log('SW registrado:', reg.scope);
+
+          // Caso 1: ya había un SW nuevo instalado y esperando cuando
+          // entramos (ej. se instaló en segundo plano en una visita
+          // anterior y el usuario todavía no recargó).
+          if (reg.waiting) {
+            mostrarBannerActualizacion(reg);
+          }
+
+          // Caso 2: se detecta un SW nuevo mientras la app está abierta.
+          reg.addEventListener('updatefound', () => {
+            const nuevoSW = reg.installing;
+            if (!nuevoSW) return;
+            nuevoSW.addEventListener('statechange', () => {
+              // "installed" + ya hay un controller activo = es una
+              // actualización real (no la primera instalación del SW).
+              if (nuevoSW.state === 'installed' && navigator.serviceWorker.controller) {
+                mostrarBannerActualizacion(reg);
+              }
+            });
+          });
+        })
         .catch(err => console.error('SW error:', err));
     });
 
@@ -2361,7 +2394,109 @@
       }
     });
   }
+
+  function mostrarBannerActualizacion(reg) {
+    const banner = document.getElementById('sw-update-banner');
+    if (!banner || banner.classList.contains('sw-update-visible')) return;
+    banner.classList.add('sw-update-visible');
+
+    document.getElementById('sw-update-btn').onclick = () => {
+      const waiting = reg.waiting;
+      if (!waiting) {
+        // Ya no hay SW esperando (caso raro/carrera): recargamos igual.
+        window.location.reload();
+        return;
+      }
+      document.getElementById('sw-update-btn').disabled = true;
+      waiting.postMessage({ type: 'SKIP_WAITING' });
+      // La recarga real la dispara 'controllerchange' más arriba.
+    };
+
+    document.getElementById('sw-update-dismiss').onclick = () => {
+      banner.classList.remove('sw-update-visible');
+    };
+  }
 </script>
+
+<!-- ══ BANNER: nueva versión disponible ══════════════════════ -->
+<div id="sw-update-banner" class="sw-update-banner" role="status" aria-live="polite">
+  <span class="sw-update-text">Hay una versión nueva disponible.</span>
+  <div class="sw-update-actions">
+    <button type="button" id="sw-update-btn" class="sw-update-btn">Actualizar</button>
+    <button type="button" id="sw-update-dismiss" class="sw-update-dismiss" aria-label="Cerrar aviso">✕</button>
+  </div>
+</div>
+<style>
+  .sw-update-banner {
+    position: fixed;
+    left: 50%;
+    bottom: -80px;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    max-width: calc(100vw - 2rem);
+    padding: .8rem 1rem;
+    background: var(--card-bg, #1f2430);
+    color: var(--text, #fff);
+    border: 1px solid var(--border, rgba(255,255,255,.12));
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.28);
+    opacity: 0;
+    transition: bottom .25s ease, opacity .25s ease;
+  }
+  .sw-update-banner.sw-update-visible {
+    bottom: 1.25rem;
+    opacity: 1;
+  }
+  .sw-update-text {
+    font-size: .88rem;
+    white-space: nowrap;
+  }
+  .sw-update-actions {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    flex-shrink: 0;
+  }
+  .sw-update-btn {
+    padding: .45rem .9rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent, #2f8f5b);
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sw-update-btn:disabled { opacity: .6; cursor: default; }
+  .sw-update-dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, #9aa0ab);
+    font-size: .8rem;
+    cursor: pointer;
+  }
+  .sw-update-dismiss:hover { background: rgba(255,255,255,.08); }
+
+  @media (max-width: 480px) {
+    .sw-update-banner {
+      left: 1rem;
+      right: 1rem;
+      transform: none;
+      max-width: none;
+      flex-wrap: wrap;
+    }
+    .sw-update-text { white-space: normal; }
+  }
+</style>
 
 <!-- ══ TOAST GLOBAL ══════════════════════════ -->
 <div id="app-toast" aria-live="polite"></div>

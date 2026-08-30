@@ -73,7 +73,12 @@ self.addEventListener('install', event => {
           console.warn('[SW] No se pudo precachear:', STATIC_ASSETS[i], r.reason);
         }
       });
-      return self.skipWaiting();
+      // No llamamos self.skipWaiting() acá: el SW nuevo queda en estado
+      // "waiting" hasta que el usuario confirme actualizar desde el
+      // banner de la app (ver mensaje SKIP_WAITING más abajo). Así el
+      // cambio de controller y el contenido nuevo llegan juntos, en vez
+      // de que el SW tome control mientras la pestaña abierta sigue
+      // mostrando HTML/JS viejo.
     })
   );
 });
@@ -101,6 +106,13 @@ self.addEventListener('message', event => {
         await Promise.all(toDelete.map(req => cache.delete(req)));
       })
     );
+  }
+
+  // El usuario confirmó "Actualizar" en el banner de nueva versión:
+  // este SW (todavía en estado "waiting") pasa a "activating" y toma
+  // control. El cliente escucha 'controllerchange' y recarga la página.
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
 
