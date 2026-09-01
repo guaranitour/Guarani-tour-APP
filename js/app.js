@@ -155,7 +155,7 @@ function _staffCacheClear(email) {
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
   "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-  "activity-log"
+  "activity-log","legales"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -200,6 +200,8 @@ function _pintarShellOptimista(user) {
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = cached.role === "admin" ? "" : "none";
+  const menuLegales = document.getElementById("menu-legales-btn");
+  if (menuLegales) menuLegales.style.display = ["admin", "worker"].includes(cached.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -352,6 +354,8 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = data.role === "admin" ? "" : "none";
+  const menuLegales = document.getElementById("menu-legales-btn");
+  if (menuLegales) menuLegales.style.display = ["admin", "worker"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -889,6 +893,18 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Registro de actividad" }
     ]);
     loadActivityLog({ reset: true });
+
+  }
+
+  else if (view === "legales") {
+
+    if (!["admin", "worker"].includes(currentUserRole)) return;
+    showEl("view-legales");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Legales" }
+    ]);
+    loadLegales();
 
   }
 
