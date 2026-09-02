@@ -1800,6 +1800,33 @@
     </div>
 
     <div id="legales-docs-list"></div>
+
+    <!-- ══ MODAL: fecha de asamblea al subir documento legal ══ -->
+    <dialog id="legal-fecha-asamblea-modal" class="legal-fecha-modal">
+      <form id="legal-fecha-asamblea-form" onsubmit="confirmarSubidaDocLegal(event)">
+        <h3 class="legal-fecha-modal-titulo">Fecha de la asamblea</h3>
+        <p class="legal-fecha-modal-sub">
+          Archivo: <strong id="legal-fecha-modal-nombre-archivo"></strong>
+        </p>
+        <label class="legal-fecha-modal-label" for="legal-fecha-asamblea-input">
+          Fecha de asamblea *
+        </label>
+        <input
+          type="date"
+          id="legal-fecha-asamblea-input"
+          class="legal-fecha-modal-input"
+          required
+        />
+        <div class="legal-fecha-modal-actions">
+          <button type="button" class="legal-fecha-modal-cancelar" onclick="cancelarSubidaDocLegal()">
+            Cancelar
+          </button>
+          <button type="submit" class="legal-fecha-modal-confirmar" id="legal-fecha-modal-confirmar-btn">
+            Subir documento
+          </button>
+        </div>
+      </form>
+    </dialog>
   </div>
 </div>
 
