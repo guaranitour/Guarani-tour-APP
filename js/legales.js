@@ -199,13 +199,19 @@ async function descargarDocLegal(id, btnEl) {
 }
 
 // ── Subir documento nuevo ───────────────────────────────────
+// Flujo: elegir archivo → abrir modal pidiendo fecha de asamblea
+// (obligatoria) → recién ahí se sube a Storage + se inserta la fila.
+// _legalDocPendiente guarda el File entre el paso de selección y el
+// de confirmación del modal.
+let _legalDocPendiente = null;
+
 function abrirSelectorDocLegal() {
   if (!_esWorkerOAdminLegales()) return;
   const input = document.getElementById("legal-doc-file-input");
   if (input) input.click();
 }
 
-async function onArchivoLegalSeleccionado(inputEl) {
+function onArchivoLegalSeleccionado(inputEl) {
   const file = inputEl.files?.[0];
   inputEl.value = ""; // permite volver a elegir el mismo archivo más adelante
   if (!file) return;
@@ -217,8 +223,47 @@ async function onArchivoLegalSeleccionado(inputEl) {
     return;
   }
 
-  const btn = document.getElementById("btn-subir-doc-legal");
-  if (btn) { btn.disabled = true; btn.textContent = "Subiendo…"; }
+  _legalDocPendiente = file;
+  _abrirModalFechaAsamblea(file);
+}
+
+function _abrirModalFechaAsamblea(file) {
+  const modal = document.getElementById("legal-fecha-asamblea-modal");
+  const form = document.getElementById("legal-fecha-asamblea-form");
+  const nombreEl = document.getElementById("legal-fecha-modal-nombre-archivo");
+  const fechaInput = document.getElementById("legal-fecha-asamblea-input");
+  if (!modal || !form) return;
+
+  form.reset();
+  if (nombreEl) nombreEl.textContent = file.name;
+  // Fecha de asamblea es obligatoria: no se precarga con "hoy" para no
+  // inducir a confirmar sin pensarla, pero tampoco se deja completamente
+  // vacía de tope máximo — no tiene sentido registrar una asamblea futura.
+  if (fechaInput) fechaInput.max = new Date().toISOString().slice(0, 10);
+
+  modal.showModal();
+  fechaInput?.focus();
+}
+
+function cancelarSubidaDocLegal() {
+  const modal = document.getElementById("legal-fecha-asamblea-modal");
+  if (modal && modal.open) modal.close();
+  _legalDocPendiente = null;
+}
+
+async function confirmarSubidaDocLegal(ev) {
+  ev.preventDefault();
+
+  const file = _legalDocPendiente;
+  const fechaAsamblea = document.getElementById("legal-fecha-asamblea-input")?.value;
+  if (!file || !fechaAsamblea) return; // required en el input ya cubre esto en el flujo normal
+
+  const modal = document.getElementById("legal-fecha-asamblea-modal");
+  const btnConfirmar = document.getElementById("legal-fecha-modal-confirmar-btn");
+  const btnSubir = document.getElementById("btn-subir-doc-legal");
+
+  if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.textContent = "Subiendo…"; }
+  if (btnSubir) { btnSubir.disabled = true; btnSubir.textContent = "Subiendo…"; }
 
   // Path único: timestamp + nombre saneado, evita colisiones sin
   // depender de que el usuario no repita nombre de archivo.
@@ -232,7 +277,8 @@ async function onArchivoLegalSeleccionado(inputEl) {
 
   if (uploadError) {
     console.error("[legales] error subiendo archivo:", uploadError);
-    if (btn) { btn.disabled = false; btn.innerHTML = _legalesBtnSubirHtml(); }
+    if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.textContent = "Subir documento"; }
+    if (btnSubir) { btnSubir.disabled = false; btnSubir.innerHTML = _legalesBtnSubirHtml(); }
     _appToast("Error al subir el documento", true);
     return;
   }
@@ -243,10 +289,12 @@ async function onArchivoLegalSeleccionado(inputEl) {
       nombre: file.name,
       storage_path: storagePath,
       tamano_bytes: file.size,
+      fecha_asamblea: fechaAsamblea,
       subido_por_email: document.getElementById("user-email")?.textContent || null,
     }]);
 
-  if (btn) { btn.disabled = false; btn.innerHTML = _legalesBtnSubirHtml(); }
+  if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.textContent = "Subir documento"; }
+  if (btnSubir) { btnSubir.disabled = false; btnSubir.innerHTML = _legalesBtnSubirHtml(); }
 
   if (insertError) {
     console.error("[legales] error registrando documento:", insertError);
@@ -255,6 +303,9 @@ async function onArchivoLegalSeleccionado(inputEl) {
     _appToast("El archivo se subió pero no se pudo registrar. Contactá a soporte.", true);
     return;
   }
+
+  if (modal && modal.open) modal.close();
+  _legalDocPendiente = null;
 
   _appToast("✅ Documento subido");
   _cargarDocumentosLegales();
