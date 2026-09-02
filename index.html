@@ -1,2559 +1,595 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>GUARANI TOUR | Staff</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#1a3a2a" />
-  <meta name="color-scheme" id="meta-color-scheme" content="light" />
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('gt-theme');
-        var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        if (theme === 'dark') {
-          document.documentElement.setAttribute('data-theme', 'dark');
-          var metaCS = document.getElementById('meta-color-scheme');
-          if (metaCS) metaCS.setAttribute('content', 'dark');
-        }
-      } catch (e) {}
-    })();
-  </script>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/usuarios.css" />
-  <link rel="stylesheet" href="css/viajes_activos.css" />
-  <link rel="stylesheet" href="css/pagos.css" />
-  <link rel="stylesheet" href="css/resumen.css" />
-  <link rel="stylesheet" href="css/recibos.css" />
-  <link rel="stylesheet" href="css/byc.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="stylesheet" href="css/novedades.css" />
-  <link rel="stylesheet" href="css/movimientos.css" />
-  <link rel="stylesheet" href="css/custom-select.css" />
-  <link rel="stylesheet" href="css/calendario.css" />
-  <link rel="stylesheet" href="css/activity-log.css" />
-  <link rel="stylesheet" href="css/legales.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
+<meta charset="utf-8"/>
+<title>Destino Guarani</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 
-  <style>
-  /* ── Modal Acerca de ── */
-  .acerca-overlay {
-    position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0,0,0,.45);
-    display: flex; align-items: flex-end; justify-content: center;
-    animation: acercaFadeIn .2s ease;
+<!-- GitHub Pages no soporta rewrites del lado del servidor para History API.
+     Este script recupera la ruta real que 404.html guardó en sessionStorage
+     antes de redirigir acá, y la restaura con replaceState ANTES de que
+     arranque el router — así la app carga en la ruta correcta sin flicker
+     ni ida-vuelta visible en la URL. Debe ir antes de cualquier otro script. -->
+<script>
+(function () {
+  var redirect = sessionStorage.getItem('gh-pages-redirect');
+  if (redirect) {
+    sessionStorage.removeItem('gh-pages-redirect');
+    if (redirect !== location.pathname + location.search + location.hash) {
+      history.replaceState(null, '', redirect);
+    }
   }
-  @keyframes acercaFadeIn { from { opacity:0 } to { opacity:1 } }
-  .acerca-sheet {
-    background: #fff;
-    border-radius: 20px 20px 0 0;
-    width: 100%; max-width: 540px;
-    padding: 28px 24px 40px;
-    max-height: 88vh; overflow-y: auto;
-    position: relative;
-    animation: acercaSlideUp .25s cubic-bezier(.32,1,.23,1);
-  }
-  @keyframes acercaSlideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }
-  .acerca-close {
-    position: absolute; top: 16px; right: 16px;
-    background: #f0f0f0; border: none; border-radius: 50%;
-    width: 32px; height: 32px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: #555; transition: background .15s;
-  }
-  .acerca-close:hover { background: #e0e0e0; }
-  .acerca-logo-wrap { text-align: center; margin-bottom: 10px; }
-  .acerca-logo { width: 64px; height: 64px; border-radius: 50%; object-fit: contain; background: #0d2b5e; }
-  .acerca-titulo {
-    text-align: center; margin: 0 0 4px;
-    font-family: 'Roboto', sans-serif; font-size: 1.4rem; color: #1a3a2a;
-  }
-  .acerca-subtitulo {
-    text-align: center; margin: 0 0 20px;
-    font-size: .85rem; color: #888;
-  }
-  .acerca-card {
-    background: #f6f8fa; border-radius: 14px;
-    padding: 14px 16px; margin-bottom: 10px;
-  }
-  .acerca-card h3 { margin: 0 0 8px; font-size: .95rem; color: #1a3a2a; }
-  .acerca-card p, .acerca-card li { font-size: .875rem; color: #555; margin: 0; line-height: 1.5; }
-  .acerca-card ul { padding-left: 18px; margin: 0; }
-  .acerca-card li { margin-top: 5px; }
-  .acerca-intro { background: #e8f0eb; }
-  .acerca-footer {
-    text-align: center; margin-top: 20px;
-    font-size: .78rem; color: #aaa;
-  }
-  .acerca-footer p { margin: 2px 0; }
-  .acerca-version { color: #bbb; }
-  /* ── Botón Ver más (Histórico) ── */
-  .btn-ver-mas {
-    display: block;
-    width: calc(100% - 2rem);
-    margin: 1rem auto 2rem;
-    padding: .65rem 1rem;
-    background: none;
-    border: 1.5px solid var(--color-primary, #2d6a4f);
-    border-radius: 8px;
-    color: var(--color-primary, #2d6a4f);
-    font-size: .9rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background .15s, color .15s;
-  }
-  .btn-ver-mas:hover { background: var(--color-primary, #2d6a4f); color: #fff; }
-  .btn-ver-mas:disabled { opacity: .5; cursor: default; }
-  </style>
+})();
+</script>
+
+<!-- Previsualización al compartir el link (WhatsApp, Facebook, Telegram, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.guaranitour.com/">
+<meta property="og:title" content="Destino Guarani — Selección de Asientos">
+<meta property="og:description" content="Elegí tu asiento y reservá tu lugar para el viaje.">
+<meta property="og:image" content="https://www.guaranitour.com/Preview.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Destino Guarani — Selección de Asientos">
+<meta name="twitter:description" content="Elegí tu asiento y reservá tu lugar para el viaje.">
+<meta name="twitter:image" content="https://www.guaranitour.com/Preview.png">
+
+<link href="/css/base.css" rel="stylesheet"/>
+<link href="/css/home.css" rel="stylesheet"/>
+<link href="/css/croquis.css" rel="stylesheet"/>
+<link href="/css/reserve.css" rel="stylesheet"/>
+<link href="/css/panel.css" rel="stylesheet"/>
+<link href="/css/passenger-list.css" rel="stylesheet"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- ── SPLASH ── -->
-  <div id="splash-view">
-    <div class="splash-inner">
-      <div class="splash-ring">
-        <svg viewBox="0 0 100 100" class="splash-svg">
-          <circle class="splash-track" cx="50" cy="50" r="42" />
-          <circle class="splash-bar" cx="50" cy="50" r="42" />
-        </svg>
-        <img src="icons/guaranitour_512.png" class="splash-logo" alt="Guaraní Tour" />
-      </div>
-    </div>
-  </div>
-
-  <!-- ── LOGIN ── -->
-  <div id="login-view">
-    <div class="login-card">
-      <div class="logo-wrap">
-        <img src="icons/guaranitour_512.png" alt="GUARANI TOUR" class="login-logo-img" />
-      </div>
-      <h2>GUARANI TOUR</h2>
-      <p class="subtitle">Portal de staff</p>
-      <div class="divider"><span>acceso restringido</span></div>
-      <button class="btn-google" onclick="loginWithGoogle()">
-        <svg width="20" height="20" viewBox="0 0 48 48">
-          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.6 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
-          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.6 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.5-3.3-11.2-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
-          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C36.4 38.2 44 33 44 24c0-1.3-.1-2.6-.4-3.9z"/>
-        </svg>
-        Iniciar sesión con Google
-      </button>
-      <p class="footer-note">Solo personal autorizado de <span>GUARANI TOUR</span></p>
-    </div>
-  </div>
-
-  <!-- ── APP ── -->
-  <div id="app-view">
-
-    <header class="topbar">
-      <div class="hamburger-wrap">
-        <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Abrir menú" aria-haspopup="true" aria-expanded="false" aria-controls="hamburger-menu">
-          <span></span><span></span><span></span>
-        </button>
-        <div class="hamburger-menu" id="hamburger-menu" role="menu">
-          <div class="menu-user" id="user-email"></div>
-          <button class="menu-item" id="menu-activity-log-btn" style="display:none" onclick="navigateTo('activity-log'); closeMenu()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            Registro de actividad
-          </button>
-          <button class="menu-item" id="menu-legales-btn" style="display:none" onclick="navigateTo('legales'); closeMenu()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            Legales
-          </button>
-          <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            Acerca de
-          </button>
-          <button class="menu-item" id="theme-toggle-btn" onclick="toggleTheme()">
-            <svg id="theme-icon-dark" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-            <svg id="theme-icon-light" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/>
-              <line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/>
-              <line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <span id="theme-toggle-label">Modo oscuro</span>
-          </button>
-          <button class="menu-item danger" onclick="logout(); closeMenu()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
-
-      <button class="topbar-brand" onclick="navigateTo('dashboard')" aria-label="Ir al inicio">
-        <span class="topbar-brand-title">GUARANI TOUR</span>
-        <span class="topbar-brand-subtitle">APP</span>
-      </button>
-
-      <button class="topbar-profile" onclick="toggleMenu()" aria-label="Abrir menú de usuario" aria-haspopup="true" aria-expanded="false" aria-controls="hamburger-menu">
-        <span>--</span>
-      </button>
-    </header>
-
-    <div class="breadcrumb-bar">
-      <div id="breadcrumb" class="breadcrumb"></div>
-    </div>
-
-    <!-- PANEL DE CONTROL (DASHBOARD) -->
-    <div id="view-dashboard" style="display:none">
-      <div class="main">
-        <div class="dash-greet-header">
-          <div class="dash-greet-text">
-            <h1 id="dash-greeting">Panel de control</h1>
-            <p id="dash-greeting-sub">Aquí tienes un resumen de tu operación</p>
-          </div>
-          <div class="dash-greet-date" id="dash-greeting-date">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <span id="dash-greeting-date-text">—</span>
-          </div>
-        </div>
-        <div id="dashboard-content"></div>
-      </div>
-    </div>
-
-    <!-- RANKING COMPLETO DE PUNTOS -->
-    <div id="view-ranking-puntos" style="display:none">
-      <div class="main">
-        <div class="page-header">
-          <h1>Ranking de puntos · 2026</h1>
-          <p class="page-desc">Todos los pasajeros con puntos Club Destino acumulados este año</p>
-        </div>
-        <div class="search-wrap" style="margin-bottom:1rem">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" id="ranking-puntos-search" placeholder="Buscar pasajero…" oninput="filtrarRankingPuntos()" />
-        </div>
-        <div class="dash-card" id="ranking-puntos-list"></div>
-      </div>
-    </div>
-
-    <!-- CLUB DESTINO: LISTA COMPLETA DE MIEMBROS -->
-    <div id="view-club-destino" style="display:none">
-      <div class="main">
-        <div class="page-header">
-          <h1>Club Destino</h1>
-          <span class="passenger-count" id="club-destino-count">—</span>
-        </div>
-        <p class="page-desc">Pasajeros con 3 o más viajes asistidos</p>
-        <div class="search-wrap" style="margin-bottom:1rem">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" id="club-destino-search" placeholder="Buscar pasajero…" oninput="filtrarClubDestino()" />
-        </div>
-        <div class="dash-card" id="club-destino-list"></div>
-      </div>
-    </div>
-
-    <!-- LISTA CLIENTES -->
-    <div id="view-clientes" style="display:none">
-      <div class="main">
-        <div class="page-header">
-          <h1>Base de clientes</h1>
-          <span class="passenger-count" id="passenger-count">—</span>
-        </div>
-        <div class="search-wrap">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input type="text" id="search-input" placeholder="Buscar por nombre o CI…" oninput="filterPassengers()" />
-        </div>
-        <div id="passenger-list"></div>
-      </div>
-    </div>
-    
-<!-- VISTA VIAJES -->
-<div id="view-viajes" style="display:none">
-  <div class="main">
-    <div id="viajes-list"></div>
-  </div>
-</div>
-
-<!-- VISTA HISTÓRICO DE VIAJES -->
-<div id="view-historico" style="display:none">
-  <div class="main">
-    <div class="page-header">
-      <h1>Histórico de viajes</h1>
-      <p class="page-desc">Viajes ya finalizados</p>
-    </div>
-    <div class="search-wrap" style="margin-bottom:1rem">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input type="text" id="historico-search" placeholder="Buscar viaje…" oninput="filtrarHistorico()" />
-    </div>
-    <div id="historico-list"></div>
-  </div>
-</div>
-
-<!-- VISTA SELECCIÓN DE ASIENTO -->
-<div id="view-seleccion-asiento" style="display:none">
-  <div class="main">
-    <div class="page-header">
-      <h1>Selección de asiento</h1>
-      <p class="page-desc">Asignación de asientos por pasajero</p>
-    </div>
-    <div id="seleccion-asiento-content" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; gap:1.2rem;">
-      <div style="font-size:3rem;">🪑</div>
-      <p style="color:#555; font-size:.95rem; text-align:center; max-width:300px;">Redirigiendo a la plataforma de selección de asientos…</p>
-      <a href="https://www.guaranitour.com/#/Reservas" target="_blank" rel="noopener noreferrer"
-         style="display:inline-flex; align-items:center; gap:.5rem; background:#3949ab; color:#fff; border-radius:10px; padding:.75rem 1.4rem; font-size:.93rem; font-weight:500; text-decoration:none; box-shadow:0 2px 8px rgba(57,73,171,.25); transition:background .15s;"
-         onmouseover="this.style.background='#283593'" onmouseout="this.style.background='#3949ab'">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Abrir selección de asientos
-      </a>
-    </div>
-  </div>
-</div>
-
-<!-- VISTA ESTADO BYC -->
-<div id="view-byc" style="display:none">
-  <div class="main">
-    <div class="page-header">
-      <h1>Estado ByC</h1>
-      <p class="page-desc">Bases y condiciones por pasajero</p>
-    </div>
-    <div class="byc-header-toolbar">
-      <div class="search-wrap">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input type="text" id="byc-search" placeholder="Buscar por nombre o CI…" oninput="filtrarByc()" />
-      </div>
-      <button class="byc-btn-pendientes" onclick="abrirPendientesVincular()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Pendientes de vincular
-      </button>
-    </div>
-    <div id="byc-cont"></div>
-  </div>
-</div>
-
-<!-- VISTA: PENDIENTES DE VINCULAR -->
-<div id="view-byc-vincular" style="display:none">
-  <div class="main">
-    <div class="page-header">
-      <h1>Pendientes de vincular</h1>
-      <p class="page-desc">Registros ByC sin pasajero asociado</p>
-    </div>
-
-    <!-- Paso 1: lista de pendientes -->
-    <div id="byc-paso1">
-      <div class="search-wrap" style="margin-bottom:.75rem">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="byc-pendientes-search" placeholder="Buscar en pendientes…" oninput="filtrarPendientes()" />
-      </div>
-      <div id="byc-pendientes-cont"></div>
-    </div>
-
-    <!-- Paso 2: buscar pasajero -->
-    <div id="byc-paso2" style="display:none">
-      <div class="byc-paso2-byc-info" id="byc-paso2-info"></div>
-      <p class="byc-paso2-label">Buscá el pasajero correspondiente en la base:</p>
-      <div class="byc-pasajero-wrap">
-        <div class="search-wrap">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="byc-pasajero-input" placeholder="Nombre del pasajero…" autocomplete="off"
-                 oninput="filtrarPasajerosVincular(this.value)"
-                 onblur="cerrarPasajerosDropdown()" />
-        </div>
-        <div id="byc-pasajero-dropdown" class="byc-pasajero-dropdown"></div>
-      </div>
-      <div id="byc-pasajero-seleccionado" class="byc-pasajero-seleccionado" style="display:none"></div>
-      <p class="byc-vincular-error" id="byc-vincular-error"></p>
-      <div class="byc-modal-actions">
-        <button class="byc-btn-volver" onclick="volverPaso1()">← Volver</button>
-        <button class="byc-btn-confirmar" id="byc-btn-confirmar" onclick="confirmarVinculo()" disabled>Vincular</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- DETALLE DE VIAJE -->
-<div id="view-viaje-detalle" style="display:none">
-  <div class="main">
-
-    <div class="page-header">
-      <div class="detalle-titulo-row">
-        <h1 id="detalle-viaje-nombre">Viaje</h1>
-        <span id="detalle-viaje-edit-btn"></span>
-        <span id="detalle-viaje-alertas-btn" style="position:relative;margin-left:auto"></span>
-      </div>
-      <p class="page-desc" id="detalle-viaje-info"></p>
-    </div>
-
-    <!-- TABS -->
-    <div class="viaje-tabs-scroll">
-    <div class="viaje-tabs">
-      <button class="viaje-tab active" id="tab-pasajeros" onclick="switchViajeTab('pasajeros')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
-        Pasajeros
-      </button>
-      <button class="viaje-tab" id="tab-egresos" onclick="switchViajeTab('egresos')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Egresos
-      </button>
-      <button class="viaje-tab" id="tab-presupuesto" onclick="switchViajeTab('presupuesto')" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Presupuesto
-      </button>
-      <button class="viaje-tab" id="tab-extra" onclick="switchViajeTab('extra')" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-        Extra
-      </button>
-      <button class="viaje-tab" id="tab-resumen" onclick="switchViajeTab('resumen')" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        Resumen
-      </button>
-    </div>
-    </div>
-
-    <!-- PANELES (envueltos para detectar swipe horizontal) -->
-    <div id="viaje-tab-panels">
-
-    <!-- PANEL: PASAJEROS -->
-    <div id="panel-pasajeros" class="viaje-tab-panel">
-      <div class="detalle-section">
-        <div class="form-buscar-wrap" style="margin-bottom:.75rem">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="buscador-vp" class="form-input" placeholder="Buscar pasajero en este viaje…"
-                 oninput="filtrarPasajerosViaje(this.value)" />
-        </div>
-        <button class="btn-agregar-pasajero" id="btn-agregar-vp" onclick="irAgregarPasajero()" style="display:none;margin-bottom:.5rem">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Agregar pasajero
-        </button>
-
-        <div id="vp-asistencia-counter" style="display:none"></div>
-        <div id="viaje-pasajeros-list"></div>
-      </div>
-    </div>
-
-    <!-- PANEL: EGRESOS -->
-    <div id="panel-egresos" class="viaje-tab-panel" style="display:none">
-      <div class="detalle-section">
-        <div id="egresos-list">
-          <div class="viaje-pasajeros-empty">Cargando…</div>
-        </div>
-
-        <button class="btn-agregar-pasajero" id="btn-agregar-egreso" onclick="mostrarFormEgreso()" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Registrar egreso
-        </button>
-
-        <!-- Formulario nuevo egreso (inline) -->
-        <div id="form-nuevo-egreso" style="display:none">
-          <div class="pago-form-inner">
-            <div class="detail-grid">
-
-              <div class="form-field full">
-                <label class="form-label">Categoría <span class="req">*</span></label>
-                <select id="egreso-categoria" class="form-input">
-                  <option value="">— Cargando… —</option>
-                </select>
-              </div>
-
-              <div class="form-field">
-                <label class="form-label">Monto (Gs.) <span class="req">*</span></label>
-                <input type="number" id="egreso-monto" class="form-input" placeholder="Ej: 250000" min="1" />
-              </div>
-
-              <div class="form-field">
-                <label class="form-label">Fecha <span class="req">*</span></label>
-                <input type="date" id="egreso-fecha" class="form-input" />
-              </div>
-
-              <div class="form-field full">
-                <label class="form-label">Descripción</label>
-                <input type="text" id="egreso-descripcion" class="form-input" placeholder="Detalle opcional del egreso" />
-              </div>
-                <div class="form-field full">
-  <label class="form-label">Comprobante</label>
-  <input type="file" id="egreso-archivo" class="form-input" accept="image/*,application/pdf">
-</div>
-              <div class="form-field">
-                <label class="form-label">Ejecutor <span class="req">*</span></label>
-                <input type="text" id="egreso-ejecutor" class="form-input" placeholder="Quién realizó el pago" />
-              </div>
-
-              <div class="form-field">
-                <label class="form-label">Caja saliente <span class="req">*</span></label>
-                <select id="egreso-caja" class="form-input">
-                  <option value="">— Cargando… —</option>
-                </select>
-              </div>
-
-            </div>
-
-            <div class="form-actions" style="margin-top:.75rem">
-              <button class="btn-cancel" onclick="cerrarFormEgreso()">Cancelar</button>
-              <button class="btn-save" id="btn-guardar-egreso" onclick="guardarEgreso()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- PANEL: PRESUPUESTO -->
-    <div id="panel-presupuesto" class="viaje-tab-panel" style="display:none">
-      <div class="detalle-section">
-        <div id="presupuesto-proyeccion"></div>
-        <div id="presupuesto-list"></div>
-
-        <button class="btn-agregar-pasajero" id="btn-registrar-presupuesto"
-                onclick="mostrarFormPresupuesto(false)" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Registrar presupuesto
-        </button>
-
-        <button class="btn-agregar-pasajero" id="btn-editar-presupuesto"
-                onclick="confirmarEditarPresupuesto()" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-          Editar presupuesto
-        </button>
-
-        <div id="form-presupuesto" style="display:none">
-          <div class="pago-form-inner">
-
-            <!-- Proyección de ingresos: bloque destacado para que no se
-                 pierda entre las categorías de gasto de abajo. -->
-            <div style="
-              background: var(--accent-light, #e8f0eb);
-              border: 1px solid var(--accent, #2d6a4f);
-              border-left: 4px solid var(--accent, #2d6a4f);
-              border-radius: 10px;
-              padding: .85rem .9rem;
-              margin-bottom: 1.1rem;
-            ">
-              <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #2d6a4f)" stroke-width="2.2">
-                  <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
-                </svg>
-                <span style="font-size:.85rem;font-weight:700;color:var(--text,#1a3a2a)">Proyección de ingresos</span>
-              </div>
-              <p class="presupuesto-form-hint" style="margin-bottom:.6rem">
-                Opcional — completá estos dos datos para ver la ganancia objetivo del viaje (no solo lo ya confirmado).
-              </p>
-              <div class="detail-grid">
-                <div class="form-field">
-                  <label class="form-label">Pasajeros estimados</label>
-                  <input type="number" id="presupuesto-pax-estimados" class="form-input" min="0" placeholder="Ej: 40" />
-                </div>
-                <div class="form-field">
-                  <label class="form-label">Precio por pasajero (Gs.)</label>
-                  <input type="number" id="presupuesto-precio-estimado" class="form-input" min="0" placeholder="Ej: 500000" />
-                </div>
-              </div>
-            </div>
-
-            <div id="presupuesto-form-fields"></div>
-
-            <!-- Categoría extra local -->
-            <div style="margin-top:.85rem;padding-top:.85rem;border-top:1px solid var(--border,#e8ede9)">
-              <p class="presupuesto-form-hint" style="margin-bottom:.5rem">¿Necesitás un gasto que no está en la lista?</p>
-              <div style="display:flex;gap:.5rem;align-items:center">
-                <input type="text" id="input-cat-extra" class="form-input"
-                       placeholder="Nombre del gasto extra…" style="flex:1" />
-                <button class="btn-cancel" onclick="agregarCatExtra()" style="white-space:nowrap;flex-shrink:0">
-                  + Agregar
-                </button>
-              </div>
-            </div>
-
-            <div class="form-actions" style="margin-top:.75rem">
-              <button class="btn-cancel" onclick="cerrarFormPresupuesto()">Cancelar</button>
-              <button class="btn-save" id="btn-guardar-presupuesto" onclick="guardarPresupuesto()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- PANEL: RESUMEN -->
-    <div id="panel-resumen" class="viaje-tab-panel" style="display:none">
-      <div class="detalle-section">
-        <div id="resumen-cont"></div>
-      </div>
-    </div>
-
-    <!-- PANEL: EXTRA -->
-    <div id="panel-extra" class="viaje-tab-panel" style="display:none">
-      <div class="detalle-section">
-        <div id="extras-list">
-          <div class="viaje-pasajeros-empty">Cargando…</div>
-        </div>
-
-        <button class="btn-agregar-pasajero" id="btn-agregar-extra" onclick="mostrarFormExtra()" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Agregar servicio extra
-        </button>
-
-        <!-- Formulario nuevo/editar servicio extra (inline) -->
-        <div id="form-extra" style="display:none">
-          <div class="pago-form-inner">
-            <input type="hidden" id="extra-id" value="" />
-            <div class="detail-grid">
-
-              <div class="form-field full">
-                <label class="form-label">Nombre <span class="req">*</span></label>
-                <input type="text" id="extra-nombre" class="form-input" placeholder="Ej: Traslado aeropuerto" />
-              </div>
-
-              <div class="form-field full">
-                <label class="form-label">Descripción</label>
-                <input type="text" id="extra-descripcion" class="form-input" placeholder="Detalle opcional del servicio" />
-              </div>
-
-              <div class="form-field">
-                <label class="form-label">Precio de venta (Gs.) <span class="req">*</span></label>
-                <input type="number" id="extra-precio-venta" class="form-input" placeholder="Ej: 150000" min="0" />
-              </div>
-
-              <div class="form-field">
-                <label class="form-label">Costo real (Gs.) <span class="req">*</span></label>
-                <input type="number" id="extra-costo-real" class="form-input" placeholder="Ej: 50000" min="0" />
-              </div>
-
-            </div>
-
-            <div class="form-actions" style="margin-top:.75rem">
-              <button class="btn-cancel" onclick="cerrarFormExtra()">Cancelar</button>
-              <button class="btn-save" id="btn-guardar-extra" onclick="guardarExtra()">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                Guardar
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    </div>
-    <!-- /viaje-tab-panels -->
-
-  </div>
-</div>
-
-<!-- VISTA: EDITAR VIAJE -->
-<div id="view-viaje-editar" style="display:none">
-  <div class="main">
-
-    <div class="form-page-header">
-      <h1>Editar viaje</h1>
-      <p class="page-desc">Modificá los datos del viaje</p>
-    </div>
-
-    <div class="detalle-section">
-      <div class="section-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Datos del viaje
-      </div>
-      <div class="detail-grid">
-
-        <!-- Imagen protagonista -->
-        <div class="form-field viaje-imagen-upload">
-          <label class="form-label">Imagen del viaje</label>
-          <label for="ve-imagen" class="viaje-imagen-preview">
-            <div class="viaje-imagen-overlay" id="ve-img-overlay">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="3"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              Tocá para cambiar imagen
-            </div>
-          </label>
-          <input type="file" id="ve-imagen" accept="image/*" onchange="previewViajeImgEditar(event)" />
-        </div>
-
-        <!-- Nombre -->
-        <div class="form-field full">
-          <label class="form-label">Nombre del viaje <span class="req">*</span></label>
-          <input type="text" id="ve-nombre" class="form-input" placeholder="Ej: Viaje a Buenos Aires" />
-        </div>
-
-        <!-- Fechas en fila -->
-        <div class="viaje-fechas-row">
-          <div class="form-field">
-            <label class="form-label">Fecha de salida</label>
-            <input type="date" id="ve-salida" class="form-input" />
-          </div>
-          <div class="viaje-fechas-arrow">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-          <div class="form-field">
-            <label class="form-label">Fecha de regreso</label>
-            <input type="date" id="ve-regreso" class="form-input" />
-          </div>
-        </div>
-
-        <!-- Estado -->
-        <div class="form-field full">
-          <label class="form-label">Estado</label>
-          <select id="ve-estado" class="form-input">
-            <option value="activo">Activo</option>
-            <option value="completado">Completado</option>
-            <option value="cancelado">Cancelado</option>
-          </select>
-        </div>
-
-        <!-- Puntos destino -->
-        <div class="form-field">
-          <label class="form-label">Puntos destino</label>
-          <input type="number" id="ve-puntos" class="form-input" placeholder="Ej: 100" min="0" />
-        </div>
-
-        <!-- Servicios extra -->
-        <div class="form-field full">
-          <label class="form-check-wrap">
-            <input type="checkbox" id="ve-extras-habilitados" />
-            Habilitar servicios extra para este viaje
-          </label>
-        </div>
-
-      </div>
-    </div>
-
-    <div class="form-actions">
-      <button class="btn-cancel" onclick="navigateTo('viaje-detalle', viajeActualId)">Cancelar</button>
-      <button class="btn-save" id="btn-guardar-editar-viaje" onclick="guardarEditarViaje()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Guardar cambios
-      </button>
-    </div>
-
-  </div>
-</div>
-
-<!-- VISTA: AGREGAR PASAJERO -->
-<div id="view-viaje-pasajero-nuevo" style="display:none">
-  <div class="main">
-    <div class="form-page-header">
-      <h1 id="vpn-titulo">Agregar pasajero</h1>
-      <p class="page-desc" id="vpn-desc">Buscá y seleccioná el pasajero a sumar al viaje</p>
-    </div>
-
-    <!-- Banner de contexto de reemplazo (oculto salvo cuando se entra desde "Reemplazar pasajero") -->
-    <div id="reemplazo-banner" class="detalle-section" style="display:none;">
-      <div class="section-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-          <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-        </svg>
-        Reemplazo de pasajero
-      </div>
-      <p class="page-desc" style="margin:0 0 10px;">
-        Estás reemplazando a <strong id="reemplazo-nombre-origen"></strong>. Se marcará como "No asiste"
-        y el nuevo pasajero quedará vinculado a este registro.
-      </p>
-      <label class="form-check-wrap">
-        <input type="checkbox" id="reemplazo-transferir-sena" checked />
-        Transferir la seña ya pagada al nuevo pasajero
-      </label>
-    </div>
-
-    <div class="detalle-section">
-      <div class="section-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        Buscar pasajero
-      </div>
-
-      <div class="form-buscar-wrap">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="buscar-pasajero" class="form-input"
-          placeholder="Nombre o CI..." oninput="buscarPasajero()" />
-      </div>
-
-      <div id="resultados-pasajero"></div>
-    </div>
-
-    <div class="detalle-section">
-      <div class="section-title">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Monto
-      </div>
-      <label class="form-monto-label">Total a pagar (Gs.)</label>
-      <input type="number" id="input-total" class="form-input"
-        placeholder="Ej: 1500000" min="0" />
-    </div>
-
-    <div class="form-actions">
-      <button class="btn-cancel"
-        onclick="cancelarAltaPasajero()">
-        Cancelar
-      </button>
-      <button class="btn-save" id="btn-guardar-pasajero" onclick="guardarPasajeroEnViaje()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Guardar
-      </button>
-    </div>
-  </div>
-</div>
-
-    <!-- VISTA NUEVO VIAJE -->
-    <div id="view-viaje-nuevo" style="display:none">
-      <div class="main">
-
-        <div class="form-page-header">
-          <h1>Nuevo viaje</h1>
-          <p class="page-desc">Completá los datos del viaje</p>
-        </div>
-
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            Datos del viaje
-          </div>
-          <div class="detail-grid">
-
-            <!-- Imagen protagonista -->
-            <div class="form-field viaje-imagen-upload">
-              <label class="form-label">Imagen del viaje</label>
-              <label for="v-imagen" class="viaje-imagen-preview">
-                <div class="viaje-imagen-overlay" id="viaje-img-overlay">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="3"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                  Tocá para subir imagen
-                </div>
-              </label>
-              <input type="file" id="v-imagen" accept="image/*" onchange="previewViajeImg(event)" />
-            </div>
-
-            <!-- Nombre -->
-            <div class="form-field full">
-              <label class="form-label">Nombre del viaje <span class="req">*</span></label>
-              <input type="text" id="v-nombre" class="form-input" placeholder="Ej: Viaje a Buenos Aires" />
-            </div>
-
-            <!-- Fechas en fila -->
-            <div class="viaje-fechas-row">
-              <div class="form-field">
-                <label class="form-label">Fecha de salida</label>
-                <input type="date" id="v-salida" class="form-input" />
-              </div>
-              <div class="viaje-fechas-arrow">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </div>
-              <div class="form-field">
-                <label class="form-label">Fecha de regreso</label>
-                <input type="date" id="v-regreso" class="form-input" />
-              </div>
-            </div>
-
-            <!-- Estado -->
-            <div class="form-field full">
-              <label class="form-label">Estado</label>
-              <select id="v-estado" class="form-input">
-                <option value="activo">Activo</option>
-                <option value="completado">Completado</option>
-                <option value="cancelado">Cancelado</option>
-              </select>
-            </div>
-            <!-- Puntos destino -->
-<div class="form-field">
-  <label class="form-label">Puntos destino</label>
-  <input type="number" id="v-puntos" class="form-input" placeholder="Ej: 100" min="0">
-</div>
-
-            <!-- Servicios extra -->
-            <div class="form-field full">
-              <label class="form-check-wrap">
-                <input type="checkbox" id="v-extras-habilitados" />
-                Habilitar servicios extra para este viaje
-              </label>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn-cancel" onclick="navigateTo('viajes')">Cancelar</button>
-          <button class="btn-save" onclick="crearViaje()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Guardar viaje
-          </button>
-        </div>
-
-      </div>
-    </div>
-
-
-    <!-- VISTA: PAGOS DE PASAJERO EN VIAJE -->
-    <div id="view-viaje-pasajero-pagos" style="display:none">
-      <div class="main">
-
-        <div class="form-page-header">
-          <h1 id="pagos-pasajero-titulo">Pagos</h1>
-          <p class="page-desc">Historial y registro de pagos del pasajero</p>
-        </div>
-
-        <!-- Resumen financiero -->
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="1" x2="12" y2="23"/>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-            Resumen
-          </div>
-          <div id="pagos-resumen"></div>
-        </div>
-
-        <!-- Servicios extra -->
-        <div class="detalle-section" id="pagos-extra-section" style="display:none">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/>
-              <path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-            </svg>
-            Servicios extra
-          </div>
-
-          <div id="pagos-extra-list"></div>
-
-          <button class="btn-agregar-pasajero" id="btn-agregar-extra-pasajero" onclick="abrirModalAgregarExtraPasajero()" style="display:none">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Agregar servicio extra
-          </button>
-        </div>
-
-        <!-- Historial de pagos -->
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            Historial de pagos
-          </div>
-
-          <div id="pagos-list"></div>
-
-          <!-- Botón abrir form -->
-          <button class="btn-agregar-pasajero" id="btn-nuevo-pago" onclick="mostrarFormPago()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Registrar pago
-          </button>
-
-          <!-- Botón reemplazar pasajero -->
-          <button class="btn-agregar-pasajero btn-reemplazar-pasajero" id="btn-reemplazar-pasajero" onclick="iniciarReemplazoPasajero()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-            Reemplazar pasajero
-          </button>
-
-          <!-- Formulario inline -->
-          <div id="form-nuevo-pago" style="display:none">
-            <div class="pago-form-inner">
-
-              <div class="pago-form-grid">
-
-                <!-- Tipo -->
-                <div class="form-field">
-                  <label class="form-label">Tipo <span class="req">*</span></label>
-                  <select id="pago-tipo" class="form-input" onchange="onTipoChange()">
-                    <option value="Pago">Pago</option>
-                    <option value="Devolución">Devolución</option>
-                    <option value="Transferencia">Transferencia</option>
-                  </select>
-                </div>
-
-                <!-- Monto -->
-                <div class="form-field">
-                  <label class="form-label">Monto (Gs.) <span class="req">*</span></label>
-                  <input type="number" id="pago-monto" class="form-input" placeholder="Ej: 500000" min="1" />
-                </div>
-
-                <!-- Fecha -->
-                <div class="form-field">
-                  <label class="form-label">Fecha</label>
-                  <input type="date" id="pago-fecha" class="form-input" />
-                </div>
-
-                <!-- Método de pago -->
-                <div class="form-field">
-                  <label class="form-label">Método de pago</label>
-                  <select id="pago-metodo" class="form-input"></select>
-                </div>
-
-                <!-- Banco (condicional, solo con transferencia) -->
-                <div class="form-field" id="pago-banco-wrap">
-                  <label class="form-label">Banco</label>
-                  <div class="banco-search-wrap">
-                    <input type="text" id="pago-banco-input" class="form-input" placeholder="Buscar banco…" autocomplete="off" oninput="filtrarBancos()" />
-                    <input type="hidden" id="pago-banco" />
-                    <div id="banco-dropdown" class="banco-dropdown"></div>
-                  </div>
-                </div>
-
-                <!-- Nº Comprobante -->
-                <div class="form-field" id="pago-comprobante-wrap">
-                  <label class="form-label">Nº Comprobante</label>
-                  <input type="text" id="pago-comprobante" class="form-input" placeholder="Ej: 00123456" />
-                </div>
-
-                <!-- Foto comprobante -->
-                <div class="form-field full" id="pago-foto-wrap">
-                  <label class="form-label">Foto comprobante</label>
-                  <div class="file-input-custom" id="pago-foto-custom">
-                    <input type="file" id="pago-foto" class="file-input-native" accept="image/*,application/pdf" />
-                    <button type="button" class="file-input-btn" onclick="document.getElementById('pago-foto').click()">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                      </svg>
-                      Seleccionar
-                    </button>
-                  </div>
-                  <div class="file-chip" id="pago-foto-chip" hidden>
-                    <svg class="file-chip-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <span class="file-chip-name" id="pago-foto-nombre"></span>
-                    <button type="button" class="file-chip-remove" id="pago-foto-quitar" aria-label="Quitar archivo">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Observación -->
-                <div class="form-field full">
-                  <label class="form-label">Observación</label>
-                  <input type="text" id="pago-observacion" class="form-input" placeholder="Ej: Segundo pago cuota" />
-                </div>
-
-              </div>
-
-              <!-- Sección transferencia (condicional) -->
-              <div id="pago-transferencia-wrap" style="display:none">
-                <div class="section-title" style="margin-top:.75rem">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/>
-                  </svg>
-                  Pasajero destino
-                </div>
-                <div class="form-buscar-wrap">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  <input type="text" id="trans-buscar" class="form-input"
-                    placeholder="Nombre o CI del pasajero destino…"
-                    oninput="buscarPasajeroDestino()" />
-                </div>
-                <div id="trans-resultados"></div>
-              </div>
-
-              <div class="form-actions">
-                <button class="btn-cancel" onclick="ocultarFormPago()">Cancelar</button>
-                <button class="btn-save" id="btn-guardar-pago" onclick="guardarPago()">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  Registrar pago
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- DETALLE PASAJERO -->
-    <div id="view-detalle" style="display:none">
-      <div class="main detalle-main">
-
-        <!-- Estado: pasajero no encontrado (oculto por defecto) -->
-        <div id="detalle-no-encontrado" class="detalle-empty-state" style="display:none; margin: 2rem 0;">
-          <p>No se pudo cargar este pasajero. Puede que ya no exista o que el enlace sea incorrecto.</p>
-          <button class="btn-agregar-pasajero" onclick="navigateTo('clientes')">
-            Volver a la base de clientes
-          </button>
-        </div>
-
-        <div id="detalle-contenido">
-        <div class="detalle-profile">
-          <div class="detalle-avatar-wrap">
-            <div class="detalle-avatar" id="detalle-avatar">
-              <img src="" alt="" />
-              <span class="d-initials"></span>
-            </div>
-            <button class="avatar-edit-btn" onclick="triggerAvatarUpload()" title="Cambiar foto">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-          </div>
-          <input type="file" id="avatar-file-input" accept="image/*" onchange="handleAvatarUpload(event)" style="display:none" />
-          <h2 id="detalle-name"></h2>
-        </div>
-
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Datos personales
-            <button class="btn-editar-detalle" id="btn-editar-detalle" onclick="activarEdicionDetalle()" style="display:none">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar
-            </button>
-          </div>
-          <div class="detail-grid" id="detalle-fields-view">
-            <div class="detail-field">
-              <span class="detail-label">Nombre completo</span>
-              <span class="detail-value" id="d-nombre-full"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Documento de Identidad</span>
-              <span class="detail-value" id="d-ci"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Fecha de nacimiento</span>
-              <span class="detail-value" id="d-fecha"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Sexo</span>
-              <span class="detail-value" id="d-sexo"></span>
-            </div>
-            <div class="detail-field full">
-              <span class="detail-label">E-mail</span>
-              <span class="detail-value" id="d-email"></span>
-            </div>
-          </div>
-          <!-- Formulario de edición (oculto por defecto) -->
-          <div class="detail-grid" id="detalle-fields-edit" style="display:none">
-            <div class="form-field full">
-              <label class="form-label">Nombre completo <span class="req">*</span></label>
-              <input type="text" id="e-nombre" class="form-input" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Documento de Identidad <span class="req">*</span></label>
-              <input type="text" id="e-ci" class="form-input" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Sexo <span class="req">*</span></label>
-              <select id="e-sexo" class="form-input">
-                <option value="">— Seleccionar —</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-            <div class="form-field">
-              <label class="form-label">Fecha de nacimiento</label>
-              <input type="date" id="e-fecha" class="form-input" />
-            </div>
-            <div class="form-field full">
-              <label class="form-label">E-mail</label>
-              <input type="email" id="e-email" class="form-input" />
-            </div>
-          </div>
-        </div>
-
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg>
-            Datos de empresa
-          </div>
-          <div class="detail-grid" id="detalle-empresa-view">
-            <div class="detail-field">
-              <span class="detail-label">Vendedor</span>
-              <span class="detail-value" id="d-vendedor"></span>
-            </div>
-          </div>
-
-          <!-- Stats de viajes -->
-          <div class="pasajero-stats-grid">
-            <div class="pasajero-stat-card">
-              <div class="psc-icon psc-icon--club">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              </div>
-              <div class="psc-body">
-                <span class="psc-label">Club Destino</span>
-                <span class="psc-value" id="d-club-destino">—</span>
-              </div>
-            </div>
-            <div class="pasajero-stat-card pasajero-stat-card--clickable" id="card-total-viajes" onclick="irAHistorialViajes()">
-              <div class="psc-icon psc-icon--viajes">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <div class="psc-body">
-                <span class="psc-label">Total de viajes</span>
-                <span class="psc-value" id="d-total-viajes">—</span>
-              </div>
-              <svg class="psc-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
-            </div>
-            <div class="pasajero-stat-card psc-full">
-              <div class="psc-icon psc-icon--ultimo">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div class="psc-body">
-                <span class="psc-label">Último viaje</span>
-                <span class="psc-value" id="d-ultimo-viaje">—</span>
-              </div>
-            </div>
-          </div>
-          <div class="detail-grid" id="detalle-empresa-edit" style="display:none">
-            <div class="form-field full">
-              <label class="form-label">Vendedor</label>
-              <select id="e-vendedor" class="form-input">
-                <option value="">— Sin vendedor —</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Acciones edición -->
-        <div class="form-actions" id="detalle-edit-actions" style="display:none">
-          <button class="btn-cancel" onclick="cancelarEdicionDetalle()">Cancelar</button>
-          <button class="btn-save" id="btn-guardar-detalle" onclick="guardarEdicionDetalle()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Guardar cambios
-          </button>
-        </div>
-        <div id="detalle-edit-feedback" style="display:none; margin: 0 1rem 1rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- FAB SOS: contacto de emergencia (solo visible en Detalle de pasajero) -->
-    <button type="button" id="fab-sos" class="fab-sos" style="display:none"
-            onclick="abrirModalContacto()" aria-haspopup="dialog" aria-controls="modal-contacto"
-            title="Contacto de emergencia">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-      <span class="fab-sos-label">SOS</span>
-    </button>
-
-    <!-- Modal contacto de emergencia -->
-    <dialog id="modal-contacto" class="modal-sos" aria-labelledby="modal-contacto-titulo">
-      <form method="dialog" class="modal-sos-card" onsubmit="return false">
-        <header class="modal-sos-header">
-          <h2 id="modal-contacto-titulo" class="modal-sos-titulo">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Contacto de emergencia
-          </h2>
-          <button type="button" class="modal-sos-close" onclick="cerrarModalContacto()" aria-label="Cerrar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </header>
-
-        <div class="modal-sos-body">
-          <!-- Vista lectura -->
-          <div class="detail-grid" id="contacto-fields-view">
-            <div class="detail-field">
-              <span class="detail-label">Nombre</span>
-              <span class="detail-value" id="c-nombre"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Celular</span>
-              <span class="detail-value" id="c-telefono"></span>
-            </div>
-            <div class="detail-field">
-              <span class="detail-label">Parentesco</span>
-              <span class="detail-value" id="c-parentesco"></span>
-            </div>
-            <div class="detail-field full" id="c-observaciones-wrap" style="display:none">
-              <span class="detail-label">Observaciones</span>
-              <span class="detail-value" id="c-observaciones"></span>
-            </div>
-          </div>
-
-          <!-- Formulario edición / alta -->
-          <div class="detail-grid" id="contacto-fields-edit" style="display:none">
-            <div class="form-field full">
-              <label class="form-label" for="ce-nombre">Nombre <span class="req">*</span></label>
-              <input type="text" id="ce-nombre" class="form-input" placeholder="Nombre completo" autocomplete="off" />
-            </div>
-            <div class="form-field">
-              <label class="form-label" for="ce-telefono">Celular <span class="req">*</span></label>
-              <input type="tel" id="ce-telefono" class="form-input" placeholder="09xx xxx xxx" inputmode="tel" autocomplete="off" />
-            </div>
-            <div class="form-field">
-              <label class="form-label" for="ce-parentesco">Parentesco</label>
-              <select id="ce-parentesco" class="form-input">
-                <option value="">— Seleccionar —</option>
-                <option value="Padre/Madre">Padre/Madre</option>
-                <option value="Hijo/a">Hijo/a</option>
-                <option value="Cónyuge">Cónyuge</option>
-                <option value="Hermano/a">Hermano/a</option>
-                <option value="Otro familiar">Otro familiar</option>
-                <option value="Amigo/a">Amigo/a</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-            <div class="form-field full">
-              <label class="form-label" for="ce-observaciones">Observaciones</label>
-              <textarea id="ce-observaciones" class="form-input" rows="2" placeholder="Ej: alergias, condición médica, disponibilidad horaria…"></textarea>
-            </div>
-          </div>
-
-          <!-- Estado vacío -->
-          <div id="contacto-empty" class="detalle-empty-state" style="display:none">
-            <p>No hay contacto de emergencia registrado.</p>
-            <button type="button" class="btn-agregar-pasajero" id="btn-agregar-contacto" onclick="activarEdicionContacto()" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-              Agregar contacto
-            </button>
-          </div>
-
-          <div id="contacto-edit-feedback" style="display:none; margin-top:.8rem; padding:.6rem 1rem; border-radius:8px; font-size:.85rem;"></div>
-        </div>
-
-        <footer class="modal-sos-footer">
-          <!-- Footer modo lectura -->
-          <div id="contacto-view-actions" class="modal-sos-footer-group">
-            <button type="button" class="btn-cancel" onclick="cerrarModalContacto()">Cerrar</button>
-            <button type="button" class="btn-editar-detalle" id="btn-editar-contacto" onclick="activarEdicionContacto()" style="display:none">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar
-            </button>
-          </div>
-          <!-- Footer modo edición -->
-          <div class="form-actions modal-sos-footer-group" id="contacto-edit-actions" style="display:none">
-            <button type="button" class="btn-cancel" onclick="cancelarEdicionContacto()">Cancelar</button>
-            <button type="button" class="btn-save" id="btn-guardar-contacto" onclick="guardarContactoEmergencia()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Guardar contacto
-            </button>
-          </div>
-        </footer>
-      </form>
-    </dialog>
-
-
-    <!-- VISTA NUEVO CLIENTE -->
-   <div id="view-nuevo" style="display:none">
-  <div class="main">
-
-        <div class="form-page-header">
-          <h1>Nuevo cliente</h1>
-          <p class="page-desc">Completá los datos del nuevo pasajero</p>
-        </div>
-
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Datos obligatorios
-          </div>
-          <div class="detail-grid">
-            <div class="form-field full">
-              <label class="form-label">Nombre completo <span class="req">*</span></label>
-              <input type="text" id="f-nombre" class="form-input" placeholder="Ej: Juan Pérez" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Documento de Identidad <span class="req">*</span></label>
-              <input type="text" id="f-ci" class="form-input" placeholder="Ej: 1234567" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Sexo <span class="req">*</span></label>
-              <select id="f-sexo" class="form-input">
-                <option value="">— Seleccionar —</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="detalle-section">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg>
-            Datos opcionales
-          </div>
-          <div class="detail-grid">
-            <div class="form-field full">
-              <label class="form-label">E-mail</label>
-              <input type="email" id="f-email" class="form-input" placeholder="correo@ejemplo.com" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Fecha de nacimiento</label>
-              <input type="date" id="f-fecha" class="form-input" />
-            </div>
-            <div class="form-field">
-              <label class="form-label">Vendedor</label>
-              <select id="f-vendedor" class="form-input">
-                <option value="">— Sin vendedor —</option>
-              </select>
-            </div>
-
-          </div>
-        </div>
-
-        <div id="form-error" class="form-error"></div>
-
-        <div class="form-actions">
-          <button class="btn-cancel" onclick="navigateTo('clientes')">Cancelar</button>
-          <button class="btn-save" id="btn-guardar" onclick="guardarNuevoCliente()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Guardar cliente
-          </button>
-        </div>
-
-      </div>
-    </div>
-    <!-- VISTA USUARIOS -->
-<div id="view-usuarios" style="display:none">
-  <div class="main detalle-main">
-
-    <div class="form-page-header">
-      <h1>Usuarios</h1>
-      <p class="page-desc">Administrá accesos del sistema</p>
-    </div>
-
-    <div class="usuarios-tabs" role="tablist">
-      <button
-        type="button"
-        class="usuarios-tab active"
-        id="tab-btn-app"
-        role="tab"
-        aria-selected="true"
-        aria-controls="tab-panel-app"
-        onclick="switchUsuariosTab('app')">
-        App
-      </button>
-      <button
-        type="button"
-        class="usuarios-tab"
-        id="tab-btn-reservas"
-        role="tab"
-        aria-selected="false"
-        aria-controls="tab-panel-reservas"
-        onclick="switchUsuariosTab('reservas')">
-        Selección de asientos
-      </button>
-    </div>
-
-    <div id="tab-panel-app" class="usuarios-tab-panel" role="tabpanel" aria-labelledby="tab-btn-app">
-
-      <div class="detalle-section">
-        <div class="section-title">Listado</div>
-        <div id="users-list"></div>
-      </div>
-
-      <div class="detalle-section">
-        <div class="section-title">Nuevo usuario</div>
-
-        <div class="detail-grid">
-          <div class="form-field full">
-            <label class="form-label">Nombre</label>
-            <input type="text" id="u-nombre" class="form-input" placeholder="Nombre completo">
-          </div>
-
-          <div class="form-field full">
-            <label class="form-label">Correo</label>
-            <input type="email" id="u-email" class="form-input">
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Rol</label>
-            <select id="u-role" class="form-input">
-              <option value="viewer">Viewer</option>
-              <option value="worker">Worker</option>
-              <option value="admin">Admin</option>
-              <option value="finanzas">Finanzas</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Estado</label>
-            <select id="u-status" class="form-input">
-              <option value="enabled">Activo</option>
-              <option value="disabled">Inactivo</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn-save" onclick="createUser()">Agregar usuario</button>
-        </div>
-      </div>
-
-    </div>
-
-    <div id="tab-panel-reservas" class="usuarios-tab-panel" role="tabpanel" aria-labelledby="tab-btn-reservas" style="display:none">
-
-      <div class="detalle-section">
-        <div class="section-title">Acceso a Destino Guaraní (selección de asientos)</div>
-        <div id="users-reservas-list"></div>
-      </div>
-
-      <div class="detalle-section">
-        <div class="section-title">Dar acceso</div>
-
-        <div class="detail-grid">
-          <div class="form-field full">
-            <label class="form-label">Correo</label>
-            <input type="email" id="ur-email" class="form-input" placeholder="correo@gmail.com">
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Rol</label>
-            <select id="ur-role" class="form-input">
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-        </div>
-
-        <p class="page-desc" style="margin-top:.4rem">
-          Se autoriza por correo. La persona debe iniciar sesión con esa cuenta
-          de Google en la web de selección de asientos para activar el acceso.
-        </p>
-
-        <div class="form-actions">
-          <button class="btn-save" onclick="createUserReservas()">Dar acceso</button>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-
-    <div id="view-pago-detalle" style="display:none">
-      <div class="main">
-
-        <div class="form-page-header">
-          <span id="pd-badge" class="pago-tipo-badge" style="margin-bottom:.6rem;display:inline-flex"></span>
-          <div id="pd-monto" class="pd-monto-valor"></div>
-        </div>
-
-        <div class="detalle-section">
-          <div class="pd-grid">
-
-            <div class="pd-row">
-              <span class="pd-label">Fecha</span>
-              <span class="pd-value" id="pd-fecha">—</span>
-            </div>
-
-            <div class="pd-row">
-              <span class="pd-label">Método de pago</span>
-              <span class="pd-value" id="pd-metodo">—</span>
-            </div>
-
-            <div class="pd-row">
-              <span class="pd-label">Banco</span>
-              <span class="pd-value" id="pd-banco">—</span>
-            </div>
-
-            <div class="pd-row">
-              <span class="pd-label">Nº Comprobante</span>
-              <span class="pd-value" id="pd-comprobante">—</span>
-            </div>
-
-            <div class="pd-row">
-              <span class="pd-label">Observación</span>
-              <span class="pd-value" id="pd-observacion">—</span>
-            </div>
-
-            <div class="pd-row">
-              <span class="pd-label">Registrado por</span>
-              <span class="pd-value" id="pd-creado">—</span>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Foto comprobante -->
-        <div class="detalle-section" id="pd-foto-wrap">
-          <div class="section-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Comprobante
-          </div>
-          <a id="pd-foto-link" href="#" target="_blank">
-            <img id="pd-foto-img" src="" alt="Comprobante" class="pd-foto-img" />
-          </a>
-        </div>
-
-        <!-- Acciones -->
-        <div id="pd-acciones" style="display:none">
-          <button class="btn-transferir-pago" onclick="abrirModalTransferirPago()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
-            Transferir a otro pasajero
-          </button>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ── MODAL: TRANSFERIR PAGO ─────────────── -->
-    <div id="modal-transferir-pago" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalTransferirPago(event)">
-      <div class="modal-transferir-card">
-        <div class="modal-transferir-header">
-          <div class="modal-transferir-titulo">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
-            Transferir pago
-          </div>
-          <button class="modal-transferir-close" onclick="cerrarModalTransferirPago()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        <p class="modal-transferir-desc">Este pago será reasignado a otro pasajero del mismo viaje.</p>
-
-        <div class="modal-transferir-monto" id="modal-trans-monto">Gs. —</div>
-
-        <div class="form-field" style="margin-top:1rem">
-          <label class="form-label">Buscar pasajero destino</label>
-          <input
-            type="text"
-            id="modal-trans-buscar"
-            class="form-input"
-            placeholder="Nombre o CI…"
-            oninput="buscarPasajeroParaTransferir()"
-            autocomplete="off"
-          />
-        </div>
-
-        <div id="modal-trans-resultados" class="modal-trans-resultados"></div>
-
-        <div id="modal-trans-seleccionado" class="modal-trans-seleccionado" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="modal-trans-nombre-sel"></span>
-        </div>
-
-        <div class="modal-transferir-actions">
-          <button class="btn-cancel" onclick="cerrarModalTransferirPago()">Cancelar</button>
-          <button class="btn-save" id="btn-confirmar-transferencia" onclick="confirmarTransferirPago()" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
-            Confirmar transferencia
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL: AGREGAR SERVICIO EXTRA AL PASAJERO -->
-    <div id="modal-agregar-extra" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalAgregarExtraPasajero(event)">
-      <div class="modal-transferir-card">
-        <div class="modal-transferir-header">
-          <div class="modal-transferir-titulo">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/>
-              <path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-            </svg>
-            Agregar servicio extra
-          </div>
-          <button class="modal-transferir-close" onclick="cerrarModalAgregarExtraPasajero()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        <!-- Paso 1: elegir el servicio -->
-        <div id="modal-extra-paso-lista">
-          <p class="modal-transferir-desc">Elegí el servicio extra a asignarle a este pasajero.</p>
-          <div id="modal-extra-lista"></div>
-        </div>
-
-        <!-- Paso 2: confirmar precio -->
-        <div id="modal-extra-paso-precio" style="display:none">
-          <p class="modal-transferir-desc" id="modal-extra-nombre-elegido"></p>
-
-          <div class="form-field" style="margin-top:.5rem">
-            <label class="form-label">Precio a cobrar (Gs.) <span class="req">*</span></label>
-            <input type="number" id="modal-extra-precio" class="form-input" min="0" />
-          </div>
-
-          <div class="modal-transferir-actions">
-            <button class="btn-cancel" onclick="_volverListaExtraPasajero()">Volver</button>
-            <button class="btn-save" id="btn-confirmar-extra-pasajero" onclick="confirmarAgregarExtraPasajero()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Agregar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-  <!-- HISTORIAL DE VIAJES DEL PASAJERO -->
-  <div id="view-historial-viajes" style="display:none">
-    <div class="main detalle-main">
-      <div class="form-page-header">
-        <h1 id="historial-titulo">Historial de viajes</h1>
-        <p class="page-desc" id="historial-subtitulo">Viajes como protagonista</p>
-      </div>
-      <div class="detalle-section">
-        <div class="section-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          Viajes asistidos
-        </div>
-        <div id="historial-list"></div>
-      </div>
-    </div>
-  </div>
-
-<!-- VISTA: REGISTRO DE ACTIVIDAD (activity_log) -->
-<div id="view-activity-log" style="display:none">
-  <div class="main">
-    <div class="al-toolbar-filters" id="activity-log-filters">
-      <div class="al-filter-dropdown" id="al-filter-dropdown">
-        <button type="button" class="al-filter-icon-btn" id="al-filter-toggle" onclick="toggleActivityLogFilterMenu()" aria-haspopup="true" aria-expanded="false" title="Filtrar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          <span class="al-filter-badge" id="al-filter-badge" style="display:none"></span>
-        </button>
-        <div class="al-filter-menu" id="al-filter-menu" style="display:none">
-          <button type="button" class="al-filter-menu-item is-active" data-dim="todo" onclick="seleccionarDimensionActivityLog('todo')">Todo</button>
-          <button type="button" class="al-filter-menu-item" data-dim="usuario" onclick="seleccionarDimensionActivityLog('usuario')">Usuario</button>
-          <button type="button" class="al-filter-menu-item" data-dim="fecha" onclick="seleccionarDimensionActivityLog('fecha')">Fecha</button>
-          <button type="button" class="al-filter-menu-item" data-dim="tipo" onclick="seleccionarDimensionActivityLog('tipo')">Tipo</button>
-          <button type="button" class="al-filter-menu-item" data-dim="tabla" onclick="seleccionarDimensionActivityLog('tabla')">Tabla</button>
-        </div>
-      </div>
-
-      <div class="al-filter-dynamic" id="al-filter-dynamic"></div>
-    </div>
-
-    <div id="activity-log-list"></div>
-
-    <button class="btn-ver-mas" id="activity-log-ver-mas" onclick="cargarMasActivityLog()" style="display:none">
-      Ver más
-    </button>
-  </div>
-</div>
-
-<!-- VISTA: LEGALES -->
-<div id="view-legales" style="display:none">
-  <div class="main">
-    <div class="page-header">
-      <h1>Legales</h1>
-      <p class="page-desc">Documentos institucionales y actas de asamblea</p>
-    </div>
-
-    <div id="legales-secciones">
-      <div class="legales-secciones-error">Cargando…</div>
-    </div>
-
-    <div class="legal-docs-header">
-      <div>
-        <h2>Documentos de asamblea</h2>
-        <p>Actas y resoluciones subidas tras cada reunión</p>
-      </div>
-      <button type="button" class="btn-subir-doc" id="btn-subir-doc-legal" style="display:none" onclick="abrirSelectorDocLegal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Subir documento
-      </button>
-      <input type="file" id="legal-doc-file-input" accept="application/pdf" style="display:none" onchange="onArchivoLegalSeleccionado(this)" />
-    </div>
-
-    <div id="legales-docs-list"></div>
-
-    <!-- ══ MODAL: fecha de asamblea al subir documento legal ══ -->
-    <dialog id="legal-fecha-asamblea-modal" class="legal-fecha-modal">
-      <form id="legal-fecha-asamblea-form" onsubmit="confirmarSubidaDocLegal(event)">
-        <h3 class="legal-fecha-modal-titulo">Fecha de la asamblea</h3>
-        <p class="legal-fecha-modal-sub">
-          Archivo: <strong id="legal-fecha-modal-nombre-archivo"></strong>
-        </p>
-        <label class="legal-fecha-modal-label" for="legal-fecha-asamblea-input">
-          Fecha de asamblea *
-        </label>
-        <input
-          type="date"
-          id="legal-fecha-asamblea-input"
-          class="legal-fecha-modal-input"
-          required
-        />
-        <div class="legal-fecha-modal-actions">
-          <button type="button" class="legal-fecha-modal-cancelar" onclick="cancelarSubidaDocLegal()">
-            Cancelar
-          </button>
-          <button type="submit" class="legal-fecha-modal-confirmar" id="legal-fecha-modal-confirmar-btn">
-            Subir documento
-          </button>
-        </div>
-      </form>
-    </dialog>
-  </div>
-</div>
-
-<!-- VISTA: DETALLE EGRESO -->
-<div id="view-egreso-detalle" style="display:none">
-  <div class="main">
-    <div class="form-page-header">
-      <h1>Detalle de egreso</h1>
-      <p class="page-desc">Información completa del egreso registrado</p>
-    </div>
-    <div id="egreso-detalle-cont"></div>
-  </div>
-</div>
-
-<!-- VISTA RECIBOS -->
-<div id="view-recibos" style="display:none">
-  <div class="main">
-    <div class="recibos-resumen">
-      <div class="recibos-resumen-card">
-        <span class="recibos-resumen-label">Este mes</span>
-        <span class="recibos-resumen-valor" id="recibos-resumen-total">Gs. 0</span>
-      </div>
-      <div class="recibos-resumen-card">
-        <span class="recibos-resumen-label">Recibos</span>
-        <span class="recibos-resumen-valor recibos-resumen-valor--gold" id="recibos-resumen-cantidad">0</span>
-      </div>
-    </div>
-    <div class="recibos-toolbar">
-      <div class="search-wrap" style="margin-bottom:0;flex:1">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input type="text" id="recibos-search" placeholder="Buscar por cliente, CI, vendedor…" oninput="filtrarRecibos()" />
-      </div>
-      <button class="btn-nuevo-recibo" onclick="navigateTo('recibo-nuevo')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nuevo
-      </button>
-    </div>
-    <div class="recibos-modo">
-      <button type="button" class="recibos-modo-chip activo" data-modo="todos" onclick="cambiarModoAgrupacionRecibos('todos')">Todos</button>
-      <button type="button" class="recibos-modo-chip" data-modo="viaje" onclick="cambiarModoAgrupacionRecibos('viaje')">Por viaje</button>
-      <button type="button" class="recibos-modo-chip" data-modo="comercial" onclick="cambiarModoAgrupacionRecibos('comercial')">Pagos</button>
-      <button type="button" class="recibos-modo-chip" data-modo="solidario" onclick="cambiarModoAgrupacionRecibos('solidario')">Solidaridad</button>
-    </div>
-    <div id="recibos-cont"></div>
-  </div>
-</div>
-
-<!-- VISTA: DETALLE RECIBO -->
-<div id="view-recibo-detalle" style="display:none">
-  <div class="main">
-    <div id="recibo-detalle-cont"></div>
-  </div>
-</div>
-
-<!-- VISTA: NUEVO RECIBO -->
-<div id="view-recibo-nuevo" style="display:none">
-  <div class="main">
-    <form id="form-recibo-nuevo" onsubmit="return false">
-      <div class="form-recibo-grid">
-
-        <div class="form-recibo-row">
-          <div class="form-recibo-field frec-cliente-wrap" style="grid-column:1/3">
-            <label for="frec-cliente">Cliente *</label>
-            <input id="frec-cliente" type="text" placeholder="Buscar por nombre…" autocomplete="off"
-                   oninput="filtrarClientesDropdown(this.value)"
-                   onfocus="abrirClientesDropdown()"
-                   onblur="cerrarClientesDropdown()" />
-            <div id="frec-cliente-dropdown" class="frec-cliente-dropdown"></div>
-          </div>
-        </div>
-        <div class="form-recibo-row">
-          <div class="form-recibo-field">
-            <label for="frec-ci">CI *</label>
-            <div class="frec-locked-wrap">
-              <input id="frec-ci" type="text" placeholder="Nº documento" readonly />
-              <button type="button" class="frec-unlock-btn" id="btn-unlock-ci" onclick="desbloquearCampoCliente('frec-ci','btn-unlock-ci')" title="Editar manualmente">✎</button>
-            </div>
-          </div>
-          <div class="form-recibo-field">
-            <label for="frec-correo">Correo *</label>
-            <div class="frec-locked-wrap">
-              <input id="frec-correo" type="email" placeholder="correo@ejemplo.com" readonly />
-              <button type="button" class="frec-unlock-btn" id="btn-unlock-correo" onclick="desbloquearCampoCliente('frec-correo','btn-unlock-correo')" title="Editar manualmente">✎</button>
-            </div>
-          </div>
-        </div>
-
-        <hr class="form-recibo-sep" />
-
-        <div class="form-recibo-row">
-          <div class="form-recibo-field">
-            <label for="frec-monto">Monto (Gs.) *</label>
-            <input id="frec-monto" type="number" placeholder="0" min="0" />
-          </div>
-          <div class="form-recibo-field">
-            <label for="frec-fecha">Fecha *</label>
-            <input id="frec-fecha" type="date" />
-          </div>
-        </div>
-
-        <div class="form-recibo-field">
-          <label for="frec-abona-por">Abona por (viaje) *</label>
-          <select id="frec-abona-por" onchange="onCambioViajeRecibo(this.value)">
-            <option value="">— Cargando… —</option>
-          </select>
-        </div>
-
-        <div id="frec-speeches-wrap" class="frec-speeches-wrap" style="display:none">
-          <div class="frec-speeches-header">
-            <span class="frec-speeches-label">Frases rápidas para este viaje</span>
-            <button type="button" class="frec-speeches-gestionar" id="btn-gestionar-speeches"
-                    onclick="abrirModalSpeeches()" style="display:none">
-              ⚙️ Gestionar
-            </button>
-          </div>
-          <div id="frec-speeches-chips" class="frec-speeches-chips"></div>
-        </div>
-
-        <div class="form-recibo-field">
-          <label for="frec-concepto" id="frec-concepto-label">Concepto *</label>
-          <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
-        </div>
-
-        <label class="frec-solidario-check" for="frec-es-solidario">
-          <input type="checkbox" id="frec-es-solidario" onchange="onToggleSolidario(this.checked)" />
-          <span>
-            <strong>Es una donación solidaria</strong>
-            <small>El cliente no está pagando un servicio: es un aporte voluntario. Se usará una plantilla de recibo distinta.</small>
-          </span>
-        </label>
-
-        <hr class="form-recibo-sep" />
-
-        <div class="form-recibo-row">
-          <div class="form-recibo-field" style="grid-column:1/3">
-            <label for="frec-forma-pago">Forma de pago *</label>
-            <select id="frec-forma-pago" onchange="toggleCamposTransferencia()">
-              <option value="">— Seleccionar —</option>
-              <option value="Efectivo">Efectivo</option>
-              <option value="Transferencia">Transferencia</option>
-              <option value="Tigo Money">Tigo Money</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-recibo-row" id="frec-grupo-transferencia" style="display:none">
-          <div class="form-recibo-field frec-banco-wrap">
-            <label for="frec-banco-input">Banco</label>
-            <input id="frec-banco-input" type="text" placeholder="Buscar banco…" autocomplete="off"
-                   oninput="filtrarBancosDropdown(this.value)"
-                   onfocus="abrirBancosDropdown()"
-                   onblur="cerrarBancosDropdown()" />
-            <div id="frec-banco-dropdown" class="frec-banco-dropdown"></div>
-            <input type="hidden" id="frec-banco" />
-          </div>
-          <div class="form-recibo-field">
-            <label for="frec-comprobante">Nº Comprobante</label>
-            <input id="frec-comprobante" type="text" placeholder="Nº operación" />
-          </div>
-        </div>
-
-        <p class="form-recibo-error" id="form-recibo-error"></p>
-        <div class="form-recibo-actions">
-          <button type="button" class="btn-recibo-cancelar" onclick="navigateTo('recibos')">Cancelar</button>
-          <button type="button" class="btn-recibo-guardar" id="btn-guardar-recibo" onclick="guardarNuevoRecibo()">Guardar recibo</button>
-        </div>
-
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- MODAL: GESTIONAR SPEECHES DE RECIBO POR VIAJE -->
-<div id="modal-speeches" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalSpeeches(event)">
-  <div class="modal-transferir-card" onclick="event.stopPropagation()">
-    <div class="modal-transferir-header">
-      <div class="modal-transferir-titulo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Frases rápidas — <span id="modal-speeches-viaje-nombre"></span>
-      </div>
-      <button class="modal-transferir-close" onclick="cerrarModalSpeeches()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <p class="modal-transferir-desc">
-      Estas frases aparecen como opciones rápidas al elegir este viaje en un recibo nuevo.
-      Escribí la frase en plural, normal, y marcá dónde va el número con <code>{n}</code>
-      (o el nombre que prefieras, ej. <code>{cantidad}</code>) — al aplicarla se va a
-      preguntar el valor, y si es 1 el sistema ajusta la palabra siguiente al singular
-      automáticamente.<br>
-      Ej: <code>Pago parcial por {n} viajes a Encarnación</code> → con n=1 queda
-      "1 viaje", con n=3 queda "3 viajes".
-    </p>
-
-    <div id="modal-speeches-lista" class="modal-speeches-lista"></div>
-
-    <div class="modal-speeches-nuevo">
-      <textarea id="modal-speeches-input" rows="2" placeholder="Nueva frase… ej: Pago parcial por {n} viajes a Encarnación"></textarea>
-      <button type="button" class="btn-save modal-speeches-agregar" onclick="agregarSpeech()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Agregar frase
-      </button>
-    </div>
-
-    <p class="form-recibo-error" id="modal-speeches-error"></p>
-  </div>
-</div>
-
-<!-- MODAL: COMPLETAR VALORES DE UN SPEECH ANTES DE INSERTARLO -->
-<div id="modal-completar-speech" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalCompletarSpeech(event)">
-  <div class="modal-transferir-card" onclick="event.stopPropagation()">
-    <div class="modal-transferir-header">
-      <div class="modal-transferir-titulo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Completar frase
-      </div>
-      <button class="modal-transferir-close" onclick="cerrarModalCompletarSpeech()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <p class="modal-transferir-desc">Completá los valores antes de insertar la frase en el Concepto.</p>
-
-    <div id="modal-completar-campos" class="modal-completar-campos"></div>
-
-    <p class="form-recibo-error" id="modal-completar-error"></p>
-
-    <div class="modal-transferir-actions">
-      <button class="btn-cancel" onclick="cerrarModalCompletarSpeech()">Cancelar</button>
-      <button class="btn-save" onclick="confirmarCompletarSpeech()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Insertar en Concepto
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- VISTA: MOVIMIENTOS BANCARIOS -->
-<div id="view-movimientos" style="display:none">
-  <div class="main">
-    <!-- Tarjeta bancaria (contenido inyectado por movimientos.js) -->
-    <div id="mov-banco-card"></div>
-
-    <!-- Desglose Club Destino vs E.A.S. (contenido inyectado por movimientos.js) -->
-    <div id="mov-desglose-card"></div>
-
-    <!-- Filtro tipo -->
-    <div class="mov-toolbar-filters">
-      <select id="mov-filtro-tipo" class="mov-filtro-select" onchange="filtrarMovimientos()">
-        <option value="">Todos los tipos</option>
-        <option value="ingreso">Ingreso</option>
-        <option value="egreso">Egreso</option>
-      </select>
-    </div>
-
-    <!-- Botón nuevo — ancho completo -->
-    <button id="btn-nuevo-movimiento" class="mov-btn-nuevo" onclick="navigateTo('movimiento-nuevo')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Nuevo movimiento
-    </button>
-
-    <!-- Lista de movimientos -->
-    <div id="mov-list"></div>
-  </div>
-</div>
-
-<!-- VISTA: CALENDARIO -->
-<div id="view-calendario" style="display:none">
-  <div class="main">
-    <div class="calendario-leyenda">
-      <span class="calendario-leyenda-item"><span class="calendario-leyenda-dot calendario-leyenda-dot--viaje"></span> Viajes</span>
-      <span class="calendario-leyenda-item"><span class="calendario-leyenda-dot calendario-leyenda-dot--cumple"></span> Cumpleaños</span>
-      <span class="calendario-leyenda-item"><span class="calendario-leyenda-dot calendario-leyenda-dot--evento"></span> Eventos propios</span>
-    </div>
-
-    <div class="calendario-toolbar-custom">
-      <div class="calendario-toolbar-nav">
-        <button type="button" class="calendario-nav-btn" onclick="calendarioIrMesAnterior()" aria-label="Mes anterior">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button type="button" class="calendario-toolbar-titulo-btn" id="calendario-toolbar-titulo-btn" onclick="abrirCalendarioSelectorFecha()" aria-haspopup="true">
-          <span class="calendario-toolbar-titulo" id="calendario-toolbar-titulo" aria-live="polite"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <button type="button" class="calendario-nav-btn" onclick="calendarioIrMesSiguiente()" aria-label="Mes siguiente">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Selector de mes/año: bottom sheet propio (mismo patrón visual
-         que #modulos-sheet), no depende de custom-select.js -->
-    <div class="modulos-overlay" id="calendario-fecha-overlay" onclick="cerrarCalendarioSelectorFecha()"></div>
-    <div class="modulos-sheet" id="calendario-fecha-sheet" role="dialog" aria-modal="true" aria-labelledby="calendario-fecha-sheet-title">
-      <div class="modulos-sheet-handle" aria-hidden="true"></div>
-      <div class="modulos-sheet-header">
-        <h2 id="calendario-fecha-sheet-title">Ir a mes</h2>
-        <button type="button" class="modulos-sheet-close" onclick="cerrarCalendarioSelectorFecha()" aria-label="Cerrar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="calendario-fecha-sheet-body">
-        <div class="calendario-form-field">
-          <label class="form-label" for="cal-filtro-mes">Mes</label>
-          <select id="cal-filtro-mes" class="form-input"></select>
-        </div>
-        <div class="calendario-form-field">
-          <label class="form-label" for="cal-filtro-anio">Año</label>
-          <select id="cal-filtro-anio" class="form-input"></select>
-        </div>
-        <button type="button" class="btn-agregar-pasajero calendario-fecha-ir-btn" onclick="calendarioAplicarFiltroFecha()">Ir</button>
-      </div>
-    </div>
-
-    <div class="calendario-wrap">
-      <div id="calendario-fc"></div>
-    </div>
-
-    <!-- Panel inline del día seleccionado (reemplaza el popup: se
-         actualiza en el lugar al tocar un día, sin overlay ni salto
-         de contexto — mismo patrón que Samsung Calendar). -->
-    <section class="calendario-dia-panel" id="calendario-dia-panel" aria-live="polite">
-      <header class="calendario-dia-panel-header">
-        <span class="calendario-dia-panel-num" id="calendario-dia-panel-num">—</span>
-        <div class="calendario-dia-panel-textos">
-          <span class="calendario-dia-panel-dow" id="calendario-dia-panel-dow"></span>
-          <span class="calendario-dia-panel-mes" id="calendario-dia-panel-mes"></span>
-        </div>
-      </header>
-      <div class="calendario-dia-panel-body" id="calendario-dia-panel-body"></div>
-    </section>
-  </div>
-
-  <button type="button" class="calendario-fab" onclick="abrirCalendarioNuevoEvento()" aria-label="Nuevo evento">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+<!-- Header: menú + logo centrado -->
+<header aria-label="Cabecera" class="topbar">
+  <button aria-controls="navDrawer" aria-expanded="false" aria-haspopup="true" aria-label="Abrir menú" class="topbar-menu-btn" id="menuBtn" onclick="openNavDrawer()" type="button">
+    <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+      <line x1="4" x2="20" y1="7" y2="7"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="17" y2="17"/>
+    </svg>
   </button>
-
-  <!-- Modal: nuevo evento propio -->
-  <dialog id="calendario-nuevo-modal" class="calendario-dia-modal" aria-labelledby="calendario-nuevo-titulo">
-    <form id="calendario-nuevo-form" class="calendario-dia-card" onsubmit="guardarCalendarioNuevoEvento(event)">
-      <header class="calendario-dia-header">
-        <h2 id="calendario-nuevo-titulo" class="calendario-dia-titulo">Nuevo evento</h2>
-        <button type="button" class="calendario-dia-close" onclick="cerrarCalendarioNuevoEvento()" aria-label="Cerrar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </header>
-      <div class="calendario-dia-body">
-        <div class="calendario-form-field">
-          <label class="form-label" for="cne-titulo">Título *</label>
-          <input type="text" id="cne-titulo" class="form-input" required maxlength="120" />
-        </div>
-        <div class="calendario-form-field">
-          <label class="form-label" for="cne-fecha">Fecha *</label>
-          <input type="date" id="cne-fecha" class="form-input" required />
-        </div>
-        <div class="calendario-form-field">
-          <label class="form-label" for="cne-notas">Notas</label>
-          <input type="text" id="cne-notas" class="form-input" maxlength="200" />
-        </div>
-      </div>
-      <footer class="calendario-dia-footer">
-        <button type="button" class="btn-cancel" onclick="cerrarCalendarioNuevoEvento()">Cancelar</button>
-        <button type="submit" class="btn-agregar-pasajero" id="cne-guardar-btn">Guardar</button>
-      </footer>
-    </form>
-  </dialog>
-</div>
-
-<!-- VISTA: NUEVO MOVIMIENTO -->
-<div id="view-movimiento-nuevo" style="display:none">
-  <div class="main">
-    <div class="page-header">
-      <h1>Nuevo movimiento</h1>
-      <p class="page-desc">Completá los datos del movimiento bancario</p>
-    </div>
-
-    <div style="display:flex; flex-direction:column; gap:1rem; max-width:560px;">
-
-      <div class="form-recibo-row">
-        <div class="form-recibo-field">
-          <label for="mnv-fecha">Fecha *</label>
-          <input id="mnv-fecha" type="date" />
-        </div>
-        <div class="form-recibo-field">
-          <label for="mnv-tipo">Tipo *</label>
-          <select id="mnv-tipo">
-            <option value="">— Seleccionar —</option>
-            <option value="ingreso">Ingreso</option>
-            <option value="egreso">Egreso</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-recibo-field">
-          <label for="mnv-categoria">Categoría *</label>
-        <select id="mnv-categoria">
-          <option value="">— Seleccionar tipo primero —</option>
-        </select>
-      </div>
-
-      <div class="form-recibo-field">
-        <label for="mnv-descripcion">Descripción *</label>
-        <textarea id="mnv-descripcion" rows="2" placeholder="Detallá el movimiento…"></textarea>
-      </div>
-
-      <div class="form-recibo-row">
-        <div class="form-recibo-field">
-          <label for="mnv-monto">Monto (Gs.) *</label>
-          <input id="mnv-monto" type="number" placeholder="0" min="0" />
-        </div>
-        <div class="form-recibo-field">
-          <label for="mnv-cuenta-emisora">Cuenta emisora *</label>
-          <select id="mnv-cuenta-emisora">
-            <option value="">— Seleccionar tipo primero —</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-recibo-field">
-        <label for="mnv-cuenta-beneficiaria">Cuenta beneficiaria *</label>
-        <select id="mnv-cuenta-beneficiaria">
-          <option value="">— Seleccionar tipo primero —</option>
-        </select>
-      </div>
-
-      <p class="form-recibo-error" id="mnv-error"></p>
-
-      <div class="form-recibo-actions">
-        <button type="button" class="btn-recibo-cancelar" onclick="navigateTo('movimientos')">Cancelar</button>
-        <button type="button" class="btn-recibo-guardar" id="btn-guardar-movimiento" onclick="guardarMovimiento()">Guardar</button>
-      </div>
-    </div>
+  <div class="topbar-logo-wrap">
+    <img alt="Destino Guaraní" class="topbar-logo skeleton-round" id="heroLogo"/>
   </div>
-</div>
+  <span aria-hidden="true" class="topbar-spacer"></span>
+</header>
 
-  </div><!-- /app-view -->
-
-  <!-- ── BOTTOM NAVBAR (Inicio / Módulos / Más) ───────────────── -->
-  <!-- Vive FUERA de #app-view a propósito: #app-view tiene una animación
-       de entrada (cardIn) con transform, y cualquier transform en un
-       ancestro convierte a ese ancestro en containing block para los
-       hijos position:fixed — el navbar quedaría anclado al final del
-       contenido en vez de pegado a la ventana. Como hermano de
-       #app-view, queda fijo respecto al viewport real. -->
-  <nav class="bottom-nav" id="bottom-nav" aria-label="Navegación principal" style="display:none">
-    <button type="button" class="bn-item" id="bn-inicio" onclick="navigateTo('dashboard')">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
-      <span>Inicio</span>
+<!-- Menú lateral -->
+<div aria-hidden="true" class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-backdrop" onclick="closeNavDrawer()"></div>
+  <nav aria-label="Menú principal" class="nav-drawer-panel">
+    <button aria-label="Cerrar menú" class="nav-drawer-close" onclick="closeNavDrawer()" type="button">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
     </button>
-    <button type="button" class="bn-item bn-item--center" id="bn-modulos" onclick="toggleModulosSheet()" aria-haspopup="true" aria-expanded="false" aria-controls="modulos-sheet">
-      <span class="bn-fab">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-      </span>
-      <span>Menú</span>
+    <button class="nav-drawer-item" onclick="closeNavDrawer(); backToChoose();" type="button">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 11h18"/><path d="M8 6V4M16 6V4"/><circle cx="7.5" cy="19" r="1.5"/><circle cx="16.5" cy="19" r="1.5"/><path d="M3 15h2M19 15h2"/></svg>
+      Selección de asientos
     </button>
-    <!-- Acceso directo fijo a Calendario. -->
-    <button type="button" class="bn-item" id="bn-shortcut" onclick="onShortcutTap()">
-      <svg id="bn-shortcut-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <span id="bn-shortcut-label">Calendario</span>
+    <button class="nav-drawer-item" onclick="closeNavDrawer(); goBases();" type="button">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+      Bases y condiciones
+    </button>
+    <button class="nav-drawer-item" id="staffEntryBtn" onclick="closeNavDrawer(); goStaffLogin();" type="button">
+      <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span id="staffEntryBtnLabel">Acceso staff</span>
     </button>
   </nav>
+</div>
 
-  <!-- ── SHEET DE MÓDULOS (Menú) ──────────────────────────────── -->
-  <div class="modulos-overlay" id="modulos-overlay" onclick="closeModulosSheet()"></div>
-  <div class="modulos-sheet" id="modulos-sheet" role="dialog" aria-modal="true" aria-labelledby="modulos-sheet-title">
-    <div class="modulos-sheet-handle" aria-hidden="true"></div>
-    <div class="modulos-sheet-header">
-      <h2 id="modulos-sheet-title">Módulos</h2>
-      <button type="button" class="modulos-sheet-close" onclick="closeModulosSheet()" aria-label="Cerrar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modulos-sheet-grid" id="modulos-sheet-grid"></div>
-  </div>
+<main class="app" id="app">
 
-  <!-- ── MODAL: ACERCA DE ── -->
-  <div id="modal-acerca" class="acerca-overlay" style="display:none" onclick="cerrarAcercaDe(event)">
-    <div class="acerca-sheet">
-      <button class="acerca-close" onclick="cerrarAcercaDe()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-      <div class="acerca-logo-wrap">
-        <img src="icons/guaranitour_512.png" alt="GUARANI TOUR" class="acerca-logo" />
-      </div>
-      <h2 class="acerca-titulo">GUARANI TOUR</h2>
-      <p class="acerca-subtitulo">Sistema interno de gestión</p>
-
-      <div class="acerca-card acerca-intro">
-        <p>Plataforma interna para la gestión integral de viajes: desde la reserva hasta el cierre financiero, con calendario, pagos, egresos, recibos, servicios extra y seguimiento por pasajero.</p>
-      </div>
-
-      <div class="acerca-card">
-        <h3>⚙️ Funcionalidades</h3>
-        <ul>
-          <li>Gestión completa de pasajeros y reservas por viaje</li>
-          <li>Calendario con viajes, cumpleaños de pasajeros y eventos propios</li>
-          <li>Registro y seguimiento de pagos, transferencias y devoluciones</li>
-          <li>Servicios extra por viaje, con precio de venta y costo real</li>
-          <li>Control de egresos y presupuesto por viaje</li>
-          <li>Historial de pagos por pasajero, listo para compartir por WhatsApp</li>
-          <li>Generación y descarga de recibos en PDF</li>
-          <li>Dashboard con KPIs, métricas y ranking en tiempo real</li>
-          <li>Historial de viajes por pasajero con puntos acumulados</li>
-          <li>Estado de bases y condiciones (ByC)</li>
-          <li>Consolidación y gestión centralizada de base de clientes</li>
-          <li>Administración de usuarios del staff y sus permisos</li>
-          <li>Notificaciones push en la app instalada</li>
-        </ul>
-      </div>
-
-      <div class="acerca-card">
-        <h3>🔐 Acceso</h3>
-        <p>Uso exclusivo del staff autorizado, con inicio de sesión mediante Google. El acceso está controlado por niveles de permisos diferenciados por rol (admin, worker, viewer, finanzas).</p>
-      </div>
-
-      <div class="acerca-card">
-        <h3>📶 Funciona sin conexión</h3>
-        <p>La app se puede instalar en el dispositivo y sigue funcionando parcialmente sin conexión, gracias a que guarda en caché las pantallas y los datos ya visitados.</p>
-      </div>
-
-      <div class="acerca-footer">
-        <p>© 2026 GUARANI TOUR</p>
-        <p class="acerca-version">Versión 5.5.0</p>
+  <!-- Elegir viaje -->
+  <section aria-label="Elegí tu viaje" class="view active" id="view-choose">
+    <div class="home-center" style="align-items:start;">
+      <div style="max-width:680px; margin:0 auto; width:100%;">
+        <div class="trip-hero-card" id="tripHeroCard">
+          <p class="hello-greeting" id="helloGreeting">Hola</p>
+          <h2 class="view-title hero-title">Elegí tu viaje</h2>
+          <p class="trip-list-subtitle">Seleccioná el viaje activo para reservar tu asiento.</p>
+        </div>
+        <div class="trip-list" id="tripList"></div>
+        <a class="byc-banner" href="#" onclick="goBases(); return false;">
+          ¿Aún no aceptaste las Bases y Condiciones?<br>
+          <svg aria-hidden="true" class="byc-banner-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+            <line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
+          </svg>
+          ¡Hacelo acá!
+        </a>
       </div>
     </div>
+  </section>
+
+  <!-- Bases y condiciones -->
+  <section aria-label="Bases y condiciones" class="view" id="view-bases">
+    <div class="home-center" style="align-items:start;">
+      <div style="max-width:680px; margin:0 auto; width:100%;">
+        <div class="select-trip-header">
+          <button class="btn ghost btn-icon" id="basesBackBtn" onclick="_basesGoBack()" type="button">
+            <svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="15"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          </button>
+          <div class="select-trip-name">Bases y condiciones</div>
+        </div>
+
+        <!-- Pantalla 1: landing -->
+        <div class="bases-card" id="basesLanding">
+          <div class="bases-icon" aria-hidden="true">
+            <svg fill="none" height="26" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="26"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+          </div>
+          <h2 class="bases-title">Ayudanos a mejorar tu viaje</h2>
+          <p class="bases-text">En Destino guaraní queremos que cada viaje sea una gran experiencia. Completá tus datos para confirmar que aceptas las Bases y Condiciones de nuestros servicios.</p>
+          <button class="btn bases-cta" onclick="goBasesStep(1)" type="button">
+            Completar formulario
+            <svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <p class="bases-hint">
+            <svg aria-hidden="true" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="13"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Te toma menos de 2 minutos
+          </p>
+        </div>
+
+        <!-- Wizard: pasos 1-3, con header de progreso compartido -->
+        <form class="bases-card hidden" id="basesFormCard" novalidate onsubmit="return submitBasesForm(event)">
+
+          <!-- Header de progreso: título dinámico + barra + "Paso X de 3" -->
+          <div class="bases-progress" id="basesProgress">
+            <div class="bases-progress-top">
+              <h2 class="bases-form-title" id="basesStepTitle">Datos personales</h2>
+              <span class="bases-progress-count" id="basesStepCount">Paso 1 de 3</span>
+            </div>
+            <div class="bases-progress-track" aria-hidden="true">
+              <div class="bases-progress-fill" id="basesProgressFill"></div>
+            </div>
+          </div>
+
+          <!-- ───────── Paso 1: Datos personales ───────── -->
+          <fieldset class="bases-step" id="basesStep1">
+            <p class="bases-form-subtitle">Completá tus datos para identificarte en el viaje.</p>
+
+            <div class="reserve-field" style="margin-bottom:12px;">
+              <label class="reserve-field-label" for="basesNombre">Nombre y apellido</label>
+              <input autocomplete="name" id="basesNombre" name="nombre" placeholder="Ej: Ana Gómez" type="text"/>
+            </div>
+
+            <div class="reserve-field" style="margin-bottom:16px;">
+              <label class="reserve-field-label" for="basesCi">Cédula de identidad</label>
+              <input autocomplete="off" id="basesCi" inputmode="numeric" name="ci" oninput="onlyDigits(this)" placeholder="Ej: 4567890" type="text"/>
+            </div>
+
+            <div class="reserve-field" id="basesEmailWrap" style="margin-bottom:8px;">
+              <label class="reserve-field-label" for="basesEmail">Correo electrónico</label>
+              <input autocomplete="email" id="basesEmail" name="email" placeholder="Ej: ana@correo.com" type="email"/>
+            </div>
+
+            <div class="bases-confirmed-notice" style="margin-bottom:14px;">
+              <svg aria-hidden="true" class="bases-confirmed-notice-icon" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/><path d="m22 6-10 7L2 6"/>
+              </svg>
+              <span class="bases-confirmed-notice-text">
+                Si disponés de un correo electrónico, te enviaremos automáticamente tu constancia y otros documentos relacionados con tu viaje.
+              </span>
+            </div>
+
+            <label class="bases-checkbox-row" for="basesNoEmail" style="margin-bottom:4px;">
+              <input id="basesNoEmail" onchange="toggleBasesNoEmail(this.checked)" type="checkbox"/>
+              <span>No dispongo de correo electrónico</span>
+            </label>
+          </fieldset>
+
+          <!-- ───────── Paso 2: Información adicional ───────── -->
+          <fieldset class="bases-step hidden" id="basesStep2">
+            <p class="bases-form-subtitle">Información adicional para tu viaje.</p>
+
+            <div class="reserve-field" style="margin-bottom:6px;">
+              <span class="reserve-field-label">Cumpleaños (opcional)</span>
+              <div class="bases-birthday-row">
+                <select aria-label="Día de cumpleaños" id="basesBirthDay">
+                  <option value="">Día</option>
+                </select>
+                <select aria-label="Mes de cumpleaños" id="basesBirthMonth" onchange="_populateBirthDays()">
+                  <option value="">Mes</option>
+                  <option value="1">Enero</option>
+                  <option value="2">Febrero</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Mayo</option>
+                  <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+              </div>
+            </div>
+            <p class="bases-email-hint" style="margin-bottom:18px;">
+              🎁 En Destino nos complace darte un presente si tu cumpleaños cae en el mes de tu viaje.
+            </p>
+
+            <div class="reserve-field" style="margin-bottom:12px;">
+              <label class="reserve-field-label" for="basesContactoNombre">Contacto de emergencia</label>
+              <input autocomplete="off" id="basesContactoNombre" placeholder="Ej: María Gómez" type="text"/>
+            </div>
+
+            <div class="reserve-field" style="margin-bottom:12px;">
+              <label class="reserve-field-label" for="basesContactoTelefono">Teléfono de emergencia</label>
+              <input autocomplete="off" id="basesContactoTelefono" inputmode="numeric" oninput="onlyDigits(this)" placeholder="Ej: 099123456" type="text"/>
+            </div>
+
+            <div class="reserve-field" style="margin-bottom:4px;">
+              <span class="reserve-field-label">Parentesco</span>
+              <button class="bases-sheet-trigger" id="basesParentescoTrigger" onclick="openParentescoSheet()" type="button">
+                <span id="basesParentescoLabel">Seleccionar…</span>
+                <svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <input id="basesParentesco" type="hidden"/>
+            </div>
+          </fieldset>
+
+          <!-- ───────── Paso 3: Bases y condiciones ───────── -->
+          <fieldset class="bases-step hidden" id="basesStep3">
+            <p class="bases-form-subtitle">Usamos esta información para confirmar tu aceptación de las Bases y Condiciones.</p>
+
+            <a class="bases-read-notice" href="https://drive.google.com/file/d/1j2VCdg6gRKpz1dpySOV9M3Fz4RGGBbzm/view" rel="noopener" target="_blank">
+              <svg aria-hidden="true" class="bases-read-notice-icon" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/>
+              </svg>
+              <span class="bases-read-notice-text">
+                <strong>Antes de continuar, leé las Bases y Condiciones.</strong>
+                Es obligatorio para poder completar este formulario. Tocá acá para abrirlas.
+              </span>
+              <svg aria-hidden="true" class="bases-read-notice-arrow" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="16"><path d="M7 17 17 7"/></svg>
+            </a>
+
+            <!-- Aviso: visible solo si en el Paso 1 marcó "No dispongo de correo". -->
+            <div class="bases-confirmed-notice hidden" id="basesNoCorreoNotice" style="margin-bottom:16px;">
+              <svg aria-hidden="true" class="bases-confirmed-notice-icon" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/><path d="M18 8 6 16"/>
+              </svg>
+              <span class="bases-confirmed-notice-text">
+                <strong style="display:block; margin-bottom:4px;">Instrucciones en caso de no poseer correo electrónico</strong>
+                Estimado pasajero: a falta de un correo electrónico registrado que nos permita enviarte automáticamente el PDF con la constancia de tu aceptación de las Bases y Condiciones, te pedimos avisar a tu agente cuando termines.<br><br>
+                Tu agente revisará tu aceptación en nuestro sistema y te enviará el PDF por el medio de contacto que estén usando.<br><br>
+                Atentamente, Equipo Destino 🦾🚌
+              </span>
+            </div>
+
+            <label class="bases-checkbox-row bases-checkbox-row-confirm" for="basesConfirmLeido" id="basesConfirmLeidoRow" style="margin-top:4px;">
+              <input id="basesConfirmLeido" onchange="_clearBasesConfirmError()" type="checkbox"/>
+              <span>Leí y acepto las Bases y Condiciones</span>
+            </label>
+          </fieldset>
+
+          <div class="reserve-actions" style="margin-top:20px;">
+            <button class="btn ghost" id="basesStepBackBtn" onclick="basesStepBack()" type="button">Volver</button>
+            <button class="btn primary" id="basesStepNextBtn" onclick="basesStepNext()" type="button">Continuar</button>
+            <button class="btn success hidden" id="basesSubmitBtn" type="submit">Enviar</button>
+          </div>
+        </form>
+
+        <!-- Pantalla 4: confirmación -->
+        <div class="bases-card bases-confirmed hidden" id="basesConfirmedCard">
+          <div class="bases-confirmed-icon" aria-hidden="true">
+            <svg fill="none" height="30" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="30"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <h2 class="bases-confirmed-title">¡Bienvenido a Destino Guaraní!</h2>
+          <p class="bases-confirmed-text">Agradecemos que hayas aceptado las Bases y Condiciones.</p>
+
+          <div class="bases-confirmed-notice" id="basesConfirmedEmailNotice">
+            <svg aria-hidden="true" class="bases-confirmed-notice-icon" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/><path d="m22 6-10 7L2 6"/>
+            </svg>
+            <span class="bases-confirmed-notice-text" id="basesConfirmedEmailText">
+              Te enviamos un correo con la información registrada para que tengas una copia. Si no lo recibiste, o ingresaste un correo incorrecto, contactá a tu agente e indicale que completaste la aceptación, así podrá facilitarte el PDF por WhatsApp.
+            </span>
+          </div>
+
+          <p class="bases-confirmed-signature">Equipo Destino Guaraní 🦾🚌</p>
+
+          <button class="btn bases-cta" onclick="backToChoose()" type="button">
+            Ir al inicio
+            <svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom-sheet: elegir parentesco (mismo patrón que floorSheet) -->
+      <div class="action-sheet" id="parentescoSheet">
+        <div class="action-sheet-content">
+          <div class="sheet-seat-pasajero">Parentesco del contacto</div>
+          <div class="floor-sheet-options" id="parentescoSheetOptions"></div>
+          <button class="btn ghost" onclick="closeParentescoSheet()" type="button" style="margin-top:8px">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom-sheet: elegir planta (solo doble piso) -->
+  <div class="action-sheet" id="floorSheet">
+    <div class="action-sheet-content">
+      <div class="sheet-seat-code" id="floorSheetTripName">—</div>
+      <div class="sheet-seat-pasajero">Elegí la planta</div>
+      <div class="floor-sheet-options" id="floorSheetOptions"></div>
+      <button class="btn ghost" onclick="closeFloorSheet()" type="button" style="margin-top:8px">Cancelar</button>
+    </div>
   </div>
 
-    <!-- FAB -->
-  <button class="fab" id="fab-viaje-nuevo" onclick="navigateTo('viaje-nuevo')" title="Nuevo viaje" style="display:none">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-  </button>
-  <button class="fab" id="fab-nuevo" onclick="navigateTo('nuevo')" title="Nuevo cliente" style="display:none">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-  </button>
+  <!-- Selección de asientos (público) -->
+  <section aria-label="Seleccionar asiento" class="view" id="view-select">
+    <div class="select-trip-header">
+      <button class="btn ghost btn-icon" onclick="goTripMenu()" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <div class="select-trip-name" id="selectTripName">—</div>
+    </div>
 
+    <div class="legend" id="legend">
+      <span class="badge libre">Libre</span>
+      <span class="badge ocupado">Ocupado</span>
+      <span class="badge seleccionado">Seleccionado</span>
+      <span class="badge inhabilitado">Gris: Inhabilitado en esta planta</span>
+    </div>
 
-    <!-- ══ DETALLE DE PAGO ══════════════════════ -->
+    <div class="croquis-wrap" id="croquisWrap">
+      <div aria-busy="true" aria-live="polite" class="grid" id="grid-select"></div>
+      <p class="croquis-note">El croquis es referencial. La ubicación exacta de los asientos puede variar según la unidad.</p>
+    </div>
 
-  <script src="js/custom-select.js"></script>
-  <script src="js/supabaseClient.js"></script>
-  <script src="js/push-notifications.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/viajes_activos.js"></script>
-  <script src="js/historial_pdf.js"></script>
-  <script src="js/viajes_egresos.js"></script>
-  <script src="js/viajes_presupuesto.js"></script>
-  <script src="js/usuarios.js"></script>
-  <script src="js/usuarios-reservas.js"></script>
-  <script src="js/pagos.js"></script>
-  <script src="js/extras.js"></script>
-  <script src="js/resumen.js"></script>
-  <script src="js/recibos.js"></script>
-  <script src="js/byc.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/novedades.js"></script>
-  <script src="js/movimientos.js"></script>
-  <script src="js/calendario.js"></script>
-  <script src="js/activity-log.js"></script>
-  <script src="js/legales.js"></script>
-  <script>
-  if ('serviceWorker' in navigator) {
-    let _swRefrescando = false;
+    <div aria-hidden="false" class="select-action-bar" id="selectActionBar">
+      <div class="actions">
+        <button class="btn primary with-counter" id="btnReservePersistent" onclick="startSelectionPage()" type="button" aria-label="Reservar asientos seleccionados">
+          Reservar
+          <span id="selectedCounter" class="btn-counter hidden" aria-hidden="true">0</span>
+        </button>
+        <span id="selectedCounterLive" aria-live="polite" aria-atomic="true"></span>
+      </div>
+    </div>
+  </section>
 
-    // Cuando el nuevo SW toma control (tras SKIP_WAITING), recargamos
-    // una sola vez. La guarda evita un bucle si el evento se dispara
-    // más de una vez por algún motivo.
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (_swRefrescando) return;
-      _swRefrescando = true;
-      window.location.reload();
-    });
+  <!-- Formulario de reserva -->
+  <section class="view" id="view-reserve">
+    <div class="home-center">
+      <div style="max-width:560px;width:100%;padding-bottom:8px;">
+        <h2 class="view-title" id="reservePageTitle" style="display:none">Confirmar reserva</h2>
+        <div id="reservePageBody"></div>
+        <div class="reserve-actions" style="margin-top:4px;">
+          <button class="btn ghost btn-icon" onclick="backToSelect()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+            Volver
+          </button>
+          <button class="btn success" onclick="confirmReservationPage()">Confirmar reserva</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => {
-          console.log('SW registrado:', reg.scope);
+  <!-- Confirmación -->
+  <section class="view" id="view-confirmed">
+    <div class="home-center">
+      <div style="max-width:480px;width:100%;">
+        <div id="confirmedPageBody"></div>
+      </div>
+    </div>
+  </section>
 
-          // Caso 1: ya había un SW nuevo instalado y esperando cuando
-          // entramos (ej. se instaló en segundo plano en una visita
-          // anterior y el usuario todavía no recargó).
-          if (reg.waiting) {
-            mostrarBannerActualizacion(reg);
-          }
+  <!-- Login staff -->
+  <section class="view" id="view-staff-login">
+    <div class="home-center">
 
-          // Caso 2: se detecta un SW nuevo mientras la app está abierta.
-          reg.addEventListener('updatefound', () => {
-            const nuevoSW = reg.installing;
-            if (!nuevoSW) return;
-            nuevoSW.addEventListener('statechange', () => {
-              // "installed" + ya hay un controller activo = es una
-              // actualización real (no la primera instalación del SW).
-              if (nuevoSW.state === 'installed' && navigator.serviceWorker.controller) {
-                mostrarBannerActualizacion(reg);
-              }
-            });
-          });
-        })
-        .catch(err => console.error('SW error:', err));
-    });
+      <!-- Tarjeta de login normal -->
+      <div class="staff-login-card" id="staffLoginCard">
+        <div class="staff-login-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h2 class="view-title">Acceso staff</h2>
+        <p class="staff-login-msg" id="staffLoginMsg">Iniciá sesión con tu cuenta de Google autorizada.</p>
+        <button class="google-btn" id="staffLoginBtn" onclick="Auth.loginWithGoogle()" type="button">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.6 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l6-6C34.5 5.5 29.6 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5 44.5 35.3 44.5 24c0-1.2-.1-2.4-.9-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l6-6C34.5 5.5 29.6 3.5 24 3.5c-7.6 0-14.1 4.3-17.7 11.2z"/><path fill="#4CAF50" d="M24 44.5c5.5 0 10.4-1.9 14.1-5.1l-6.5-5.5C29.5 35.5 26.9 36.5 24 36.5c-5.3 0-9.7-3.4-11.3-8.1l-6.6 5.1C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5c-.5.4 7-5.1 7-15.6 0-1.2-.1-2.4-.9-3.5z"/></svg>
+          Iniciar sesión con Google
+        </button>
+        <div style="margin-top:14px;">
+          <button class="btn ghost" onclick="backToChoose()" type="button" style="width:100%">Volver al inicio</button>
+        </div>
+      </div>
 
-    // Navegación al tocar una notificación push: el SW (firebase-messaging-sw.js)
-    // manda { type: 'PUSH_NAVIGATE', hash } en lugar de depender solo de
-    // client.navigate(), porque un cambio de hash puro no siempre dispara
-    // el router de la SPA si el navegador no lo cuenta como navegación real.
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'PUSH_NAVIGATE' && event.data.hash) {
-        const nuevoHash = '#' + event.data.hash;
-        if (location.hash === nuevoHash) {
-          window.dispatchEvent(new HashChangeEvent('hashchange'));
-        } else {
-          location.hash = nuevoHash;
-        }
-      }
-    });
-  }
+      <!-- Tarjeta de acceso denegado (logueado en Google pero sin permiso en "staff") -->
+      <div class="staff-denied-card" id="staffDeniedCard" style="display:none">
+        <div class="staff-denied-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+        </div>
+        <h2 class="view-title">Acceso denegado</h2>
+        <p class="staff-denied-msg" id="staffDeniedMsg">Tu cuenta no tiene permisos para ingresar al panel staff.</p>
+        <p class="staff-denied-hint">Si creés que esto es un error, contactá a un administrador para que te dé acceso.</p>
+        <button class="btn ghost" id="staffDeniedLogoutBtn" onclick="Auth.logout()" type="button" style="width:100%">Cerrar sesión</button>
+        <div style="margin-top:8px;">
+          <button class="btn ghost" onclick="backToChoose()" type="button" style="width:100%">Volver al inicio</button>
+        </div>
+      </div>
 
-  function mostrarBannerActualizacion(reg) {
-    const banner = document.getElementById('sw-update-banner');
-    if (!banner || banner.classList.contains('sw-update-visible')) return;
-    banner.classList.add('sw-update-visible');
+    </div>
+  </section>
 
-    document.getElementById('sw-update-btn').onclick = () => {
-      const waiting = reg.waiting;
-      if (!waiting) {
-        // Ya no hay SW esperando (caso raro/carrera): recargamos igual.
-        window.location.reload();
-        return;
-      }
-      document.getElementById('sw-update-btn').disabled = true;
-      waiting.postMessage({ type: 'SKIP_WAITING' });
-      // La recarga real la dispara 'controllerchange' más arriba.
-    };
-  }
-</script>
+  <!-- Panel principal -->
+  <section class="view" id="view-panel">
+    <div class="panel-header">
+      <div class="panel-header-top">
+        <span class="panel-role-badge" id="panelRoleBadge">Staff</span>
+        <button class="btn ghost btn-icon panel-logout" onclick="Auth.logout()" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          Salir
+        </button>
+      </div>
+      <h2 class="view-title panel-title">Panel de viajes</h2>
+      <div class="panel-stats" id="panelStats"></div>
+      <div id="panelArchivedToggle"></div>
+      <button class="btn primary panel-create-btn" id="btnCreateTrip" onclick="openCreateTripForm()" style="display:none" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Nuevo viaje
+      </button>
+    </div>
+    <div id="panelTripList"></div>
+  </section>
 
-<!-- ══ BANNER: nueva versión disponible ══════════════════════ -->
-<div id="sw-update-banner" class="sw-update-banner" role="status" aria-live="polite">
-  <span class="sw-update-text">Hay una versión nueva disponible.</span>
-  <div class="sw-update-actions">
-    <button type="button" id="sw-update-btn" class="sw-update-btn">Actualizar</button>
+  <!-- Crear viaje -->
+  <section class="view" id="view-create-trip">
+    <div class="home-center">
+      <div style="max-width:480px;width:100%;">
+        <h2 class="view-title">Nuevo viaje</h2>
+        <form class="form create-trip-form" id="createTripForm" onsubmit="submitCreateTrip(event)">
+          <div class="field">
+            <span class="field-label">Nombre del viaje</span>
+            <input id="newTripName" placeholder="Ej.: Encarnación 24/02" required type="text"/>
+          </div>
+          <div class="field">
+            <span class="field-label">Tipo</span>
+            <select id="newTripType" onchange="updateTripRowsHint()">
+              <option value="convencional">Convencional (1 planta)</option>
+              <option value="doble_piso">Doble piso (2 plantas)</option>
+            </select>
+            <span class="field-hint" id="tripRowsHint">Se crearán 11 filas (44 asientos).</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Fecha y hora de salida (opcional)</span>
+            <input id="newTripDate" type="datetime-local"/>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" onclick="goPanel()" type="button">Cancelar</button>
+            <button class="btn primary" type="submit">Crear viaje</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Control de ocupación -->
+  <section class="view" id="view-control">
+    <div class="actions" style="margin-bottom:10px;">
+      <button class="btn ghost btn-icon" onclick="goPanel()" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Panel
+      </button>
+    </div>
+    <h2 class="view-title" id="controlTripName">—</h2>
+    <div class="planta-tabs" id="controlPlantaTabs"></div>
+    <div class="legend">
+      <span class="badge libre">Libre</span>
+      <span class="badge ocupado">Ocupado (tocar para mover/liberar)</span>
+      <span class="badge inhabilitado">Inhabilitado</span>
+    </div>
+    <div class="grid" id="grid-control"></div>
+  </section>
+
+  <!-- Editor de estructura -->
+  <section class="view" id="view-editor">
+    <div class="actions" style="margin-bottom:10px;">
+      <button class="btn ghost btn-icon" onclick="goPanel()" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Panel
+      </button>
+    </div>
+    <h2 class="view-title" id="editorTripName">—</h2>
+    <div class="planta-tabs" id="editorPlantaTabs"></div>
+    <div class="legend">
+      <span class="badge libre">Habilitado (tocar para inhabilitar)</span>
+      <span class="badge inhabilitado">Inhabilitado (tocar para habilitar)</span>
+      <span class="badge ocupado">Ocupado (no editable)</span>
+    </div>
+    <div id="grid-editor"></div>
+    <div class="editor-add-row">
+      <button class="btn primary" onclick="addEditorRow()" type="button">
+        + Agregar fila <span id="editorNextRowNum">1</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Lista de pasajeros exportable -->
+  <section class="view" id="view-passenger-list">
+    <div class="actions" style="margin-bottom:10px;">
+      <button class="btn ghost btn-icon" onclick="goPanel()" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Panel
+      </button>
+    </div>
+    <h2 class="view-title" id="paxTripName">—</h2>
+    <p class="pax-meta" id="paxMeta">—</p>
+
+    <div class="pax-actions">
+      <button class="btn primary" onclick="exportPassengerListImages()" type="button">
+        ⬇ Generar lista de pasajeros
+      </button>
+      <button class="btn ghost" onclick="exportChoferListImages()" type="button">
+        ⬇ Generar lista del chofer
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<!-- Action sheet: asiento ocupado (mover/liberar) -->
+<div class="action-sheet" id="seatActionSheet">
+  <div class="action-sheet-content">
+    <div class="sheet-seat-code" id="sheetSeatCode">—</div>
+    <div class="sheet-seat-pasajero" id="sheetSeatPasajero">—</div>
+    <button class="btn primary" id="sheetBtnMove" type="button">Mover a otro asiento</button>
+    <button class="btn danger" id="sheetBtnFree" type="button">Liberar asiento</button>
+    <button class="btn ghost" id="sheetBtnCancel" type="button">Cancelar</button>
   </div>
 </div>
-<style>
-  .sw-update-banner {
-    position: fixed;
-    left: 50%;
-    bottom: -80px;
-    transform: translateX(-50%);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    gap: .9rem;
-    max-width: calc(100vw - 2rem);
-    padding: .8rem 1rem;
-    background: var(--card-bg, #1f2430);
-    color: var(--text, #fff);
-    border: 1px solid var(--border, rgba(255,255,255,.12));
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.28);
-    opacity: 0;
-    transition: bottom .25s ease, opacity .25s ease;
-  }
-  .sw-update-banner.sw-update-visible {
-    bottom: 1.25rem;
-    opacity: 1;
-  }
-  .sw-update-text {
-    font-size: .88rem;
-    white-space: nowrap;
-  }
-  .sw-update-actions {
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-    flex-shrink: 0;
-  }
-  .sw-update-btn {
-    padding: .45rem .9rem;
-    border: none;
-    border-radius: 8px;
-    background: var(--accent, #2f8f5b);
-    color: #fff;
-    font-size: .85rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .sw-update-btn:disabled { opacity: .6; cursor: default; }
 
-  @media (max-width: 480px) {
-    .sw-update-banner {
-      left: 1rem;
-      right: 1rem;
-      transform: none;
-      max-width: none;
-      flex-wrap: wrap;
-    }
-    .sw-update-text { white-space: normal; }
-  }
-</style>
+<!-- Barra flotante: modo "moviendo pasajero" -->
+<div class="control-move-bar" id="controlMoveBar">
+  <div class="control-move-bar-inner">
+    <span class="control-move-text">Moviendo…</span>
+    <button class="btn ghost" onclick="cancelMove()" style="color:#fff;border-color:#374151" type="button">Cancelar</button>
+  </div>
+</div>
 
-<!-- ══ TOAST GLOBAL ══════════════════════════ -->
-<div id="app-toast" aria-live="polite"></div>
-<script>
-  let _toastTimer = null;
-  function showToast(msg, tipo = "success", duracion = 3000) {
-    const el = document.getElementById("app-toast");
-    if (!el) return;
-    clearTimeout(_toastTimer);
-    el.textContent = msg;
-    el.className = "toast-visible toast-" + tipo;
-    _toastTimer = setTimeout(() => {
-      el.className = "";
-      el.textContent = "";
-    }, duracion);
-  }
-</script>
+<!-- Overlay de carga. Arranca visible (overlay-boot show, aria-hidden="false")
+     por HTML puro, sin esperar a ningún script: cubre el hueco vacío que
+     antes quedaba bajo el header mientras Auth.init()/routeTo() resuelven
+     la vista inicial (ver main.js/start()). main.js quita "overlay-boot" y
+     lo oculta al terminar el bootstrap; de ahí en más se comporta como el
+     overlay normal, controlado por showLoading()/hideLoading(). -->
+<div aria-hidden="false" class="overlay overlay-boot show" id="overlay">
+  <div class="loader">
+    <div class="spinner"></div>
+    <div class="loader-text" id="overlayText">Cargando…</div>
+  </div>
+</div>
+
+<!-- Snackbar -->
+<div aria-atomic="true" aria-live="assertive" class="snackbar" id="snackbar" role="status"></div>
+
+<!-- Canvas de confeti (pantalla de confirmación) -->
+<canvas aria-hidden="true" id="confetti-canvas"></canvas>
+
+<!-- Scripts (orden importa: dependencias primero) -->
+<script src="/js/supabase-client.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/ui-helpers.js"></script>
+<script src="/js/nav-drawer.js"></script>
+<script src="/js/router.js"></script>
+<script src="/js/view-bases.js"></script>
+<script src="/js/view-choose.js"></script>
+<script src="/js/seats-grid.js"></script>
+<script src="/js/view-select.js"></script>
+<script src="/js/share-card.js"></script>
+<script src="/js/view-reserve.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api-admin.js"></script>
+<script src="/js/view-panel.js"></script>
+<script src="/js/view-control.js"></script>
+<script src="/js/view-editor.js"></script>
+<script src="/js/view-passenger-list.js"></script>
+<script src="/js/main.js"></script>
+
 </body>
 </html>
