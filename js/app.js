@@ -756,6 +756,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vcal) _vcal.style.display = "none";
   const _val = document.getElementById("view-activity-log");
   if (_val) _val.style.display = "none";
+  const _vleg = document.getElementById("view-legales");
+  if (_vleg) _vleg.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
