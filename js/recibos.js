@@ -6,8 +6,10 @@ let todosLosRecibos = [];
 let recibosFiltrados = [];
 
 // Modo de vista de la lista: 'todos' (sin agrupar, más reciente primero,
-// es el default) | 'viaje' (agrupado por abona_por) | 'cliente' (agrupado
-// por cliente). Se resetea a 'todos' cada vez que se entra al módulo.
+// es el default) | 'viaje' (agrupado por abona_por) | 'comercial' (solo
+// es_solidario=false/null, sin agrupar) | 'solidario' (solo
+// es_solidario=true, sin agrupar). Se resetea a 'todos' cada vez que se
+// entra al módulo.
 let _modoAgrupacionRecibos = 'todos';
 
 // ── Cargar y renderizar lista ─────────────────
@@ -84,17 +86,29 @@ function renderizarRecibos(lista) {
 
   // Modo "Todos": lista plana, sin agrupar (ya viene ordenada por fecha
   // desc desde la carga; al filtrar se preserva ese orden).
-  if (_modoAgrupacionRecibos === 'todos') {
+  // Modos "comercial"/"solidario": mismo render plano que "Todos", pero
+  // sobre un subconjunto filtrado por es_solidario — no son agrupadores,
+  // son filtros rápidos (a diferencia de "Por viaje").
+  if (_modoAgrupacionRecibos === 'todos' || _modoAgrupacionRecibos === 'comercial' || _modoAgrupacionRecibos === 'solidario') {
+    const listaModo = _modoAgrupacionRecibos === 'comercial' ? lista.filter(r => !r.es_solidario)
+                     : _modoAgrupacionRecibos === 'solidario' ? lista.filter(r => r.es_solidario)
+                     : lista;
+
+    if (listaModo.length === 0) {
+      cont.innerHTML = '<div class="recibos-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><p>No se encontraron recibos</p></div>';
+      return;
+    }
+
     cont.innerHTML = `<div class="recibos-grupo recibos-grupo--abierto recibos-grupo--plana">
       <div class="recibos-grupo-body">
-        ${lista.map(r => renderReciboCard(r)).join('')}
+        ${listaModo.map(r => renderReciboCard(r)).join('')}
       </div>
     </div>`;
     return;
   }
 
-  const campoClave = _modoAgrupacionRecibos === 'cliente' ? 'cliente' : 'abona_por';
-  const etiquetaSinDato = _modoAgrupacionRecibos === 'cliente' ? '(Sin cliente)' : '(Sin viaje)';
+  const campoClave = 'abona_por';
+  const etiquetaSinDato = '(Sin viaje)';
 
   const grupos = {};
   for (const r of lista) {
@@ -112,9 +126,7 @@ function renderizarRecibos(lista) {
   cont.innerHTML = claves.map(clave => {
     const items = grupos[clave];
     const totalGs = items.reduce((s, r) => s + (Number(r.monto) || 0), 0);
-    const iconoSvg = _modoAgrupacionRecibos === 'cliente'
-      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>';
+    const iconoSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>';
 
     return `
       <div class="recibos-grupo">
@@ -144,8 +156,8 @@ function renderReciboCard(r) {
     ? `<span class="recibo-metodo-badge recibo-metodo-solidario">Solidario</span>`
     : '';
 
-  // En modo "Todos" (y en modo "cliente") el viaje no está implícito por
-  // el grupo, así que lo mostramos como metadato dentro de la card.
+  // En cualquier modo que no agrupe por viaje, el viaje no está implícito
+  // por el grupo, así que lo mostramos como metadato dentro de la card.
   const mostrarViaje = _modoAgrupacionRecibos !== 'viaje' && r.abona_por;
   const metaTexto = [
     r.fecha ? formatFechaRecibo(r.fecha) : null,
