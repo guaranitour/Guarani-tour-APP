@@ -126,3 +126,92 @@
   color: var(--text-muted); font-size: .85rem;
   border: 1px dashed var(--border); border-radius: 12px;
 }
+
+/* ── Modal: fecha de asamblea al subir documento ─────────── */
+.legal-fecha-modal {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  width: min(400px, calc(100vw - 2.4rem));
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-md, 0 10px 40px rgba(0,0,0,.25));
+}
+.legal-fecha-modal::backdrop {
+  background: rgba(0,0,0,.45);
+}
+.legal-fecha-modal[open] {
+  animation: legalFechaModalIn .18s ease;
+}
+@keyframes legalFechaModalIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.legal-fecha-modal form {
+  padding: 1.4rem 1.4rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+}
+.legal-fecha-modal-titulo {
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 .3rem;
+  color: var(--text);
+}
+.legal-fecha-modal-sub {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin: 0 0 1.1rem;
+  overflow-wrap: anywhere;
+}
+.legal-fecha-modal-label {
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  margin-bottom: .35rem;
+}
+.legal-fecha-modal-input {
+  font-family: inherit;
+  font-size: .9rem;
+  padding: .6rem .7rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--row-bg, var(--surface));
+  color: var(--text);
+  margin-bottom: 1.3rem;
+}
+.legal-fecha-modal-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.legal-fecha-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .6rem;
+}
+.legal-fecha-modal-cancelar,
+.legal-fecha-modal-confirmar {
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 500;
+  padding: .55rem 1rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+.legal-fecha-modal-cancelar {
+  background: var(--bg2);
+  color: var(--text-mid);
+}
+.legal-fecha-modal-cancelar:hover { background: var(--border); }
+.legal-fecha-modal-confirmar {
+  background: var(--accent);
+  color: #fff;
+}
+.legal-fecha-modal-confirmar:hover { background: var(--accent2); }
+.legal-fecha-modal-confirmar:disabled,
+.legal-fecha-modal-cancelar:disabled {
+  opacity: .6;
+  cursor: default;
+}
