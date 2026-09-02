@@ -41,7 +41,19 @@ async function initCalendario() {
     dayMaxEvents: false,   // no listamos eventos dentro de la celda (ver dots)
     events: (info, success, failure) => {
       _cargarEventosCalendario()
-        .then((eventos) => success(eventos))
+        .then((eventos) => {
+          success(eventos);
+          // En la carga inicial, `datesSet` puede dispararse antes de que
+          // este fetch resuelva (_calEventosCache todavía null), así que
+          // _pintarBarrasDelMes() no pintaba nada y nadie la volvía a llamar.
+          // Repintamos acá, una vez que el cache ya tiene datos. El rAF da
+          // un tick para que FullCalendar termine de aplicar el DOM tras
+          // el success() antes de que busquemos las celdas .fc-daygrid-day.
+          requestAnimationFrame(() => {
+            _pintarBarrasDelMes();
+            _marcarDiaSeleccionado();
+          });
+        })
         .catch((err) => { console.error(err); failure(err); });
     },
     datesSet: (info) => {
