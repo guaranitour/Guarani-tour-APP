@@ -1844,10 +1844,6 @@
 <!-- VISTA RECIBOS -->
 <div id="view-recibos" style="display:none">
   <div class="main">
-    <div class="page-header">
-      <h1>Recibos</h1>
-      <span class="passenger-count" id="recibos-count">—</span>
-    </div>
     <div class="recibos-resumen">
       <div class="recibos-resumen-card">
         <span class="recibos-resumen-label">Este mes</span>
@@ -1873,7 +1869,8 @@
     <div class="recibos-modo">
       <button type="button" class="recibos-modo-chip activo" data-modo="todos" onclick="cambiarModoAgrupacionRecibos('todos')">Todos</button>
       <button type="button" class="recibos-modo-chip" data-modo="viaje" onclick="cambiarModoAgrupacionRecibos('viaje')">Por viaje</button>
-      <button type="button" class="recibos-modo-chip" data-modo="cliente" onclick="cambiarModoAgrupacionRecibos('cliente')">Por cliente</button>
+      <button type="button" class="recibos-modo-chip" data-modo="comercial" onclick="cambiarModoAgrupacionRecibos('comercial')">Pagos</button>
+      <button type="button" class="recibos-modo-chip" data-modo="solidario" onclick="cambiarModoAgrupacionRecibos('solidario')">Solidaridad</button>
     </div>
     <div id="recibos-cont"></div>
   </div>
