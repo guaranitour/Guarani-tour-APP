@@ -2232,7 +2232,8 @@ async function loadHistorialViajes(pasajeroId) {
     .from("viaje_pasajeros")
     .select(`
       viaje_id,
-      viajes ( nombre, fecha_salida, puntos_destino )
+      puntos_destino,
+      viajes ( nombre, fecha_salida )
     `)
     .eq("pasajero_id", p.id)
     .eq("asistencia", "Asiste");
@@ -2252,7 +2253,12 @@ async function loadHistorialViajes(pasajeroId) {
   listEl.innerHTML = data.map((vp, i) => {
     const nombre  = vp.viajes?.nombre || "Viaje sin nombre";
     const fecha   = formatDate(vp.viajes?.fecha_salida) || "Fecha no registrada";
-    const puntos  = vp.viajes?.puntos_destino != null ? vp.viajes.puntos_destino : "—";
+    // Los puntos realmente ganados por ESTE pasajero en ESTE viaje viven en
+    // viaje_pasajeros.puntos_destino (pueden ser 0 o distintos del base del
+    // viaje por ajuste manual / no ser miembro Club Destino todavía). Usar
+    // viajes.puntos_destino acá mostraba el puntaje base del viaje, no lo
+    // que el pasajero efectivamente acumuló.
+    const puntos  = vp.puntos_destino != null ? vp.puntos_destino : "—";
     return `
       <div class="historial-viaje-row">
         <div class="hvr-num">${i + 1}</div>
