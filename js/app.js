@@ -155,7 +155,7 @@ function _staffCacheClear(email) {
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
   "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-  "activity-log","legales"
+  "activity-log","legales","informes"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -202,6 +202,8 @@ function _pintarShellOptimista(user) {
   if (menuActivityLog) menuActivityLog.style.display = cached.role === "admin" ? "" : "none";
   const menuLegales = document.getElementById("menu-legales-btn");
   if (menuLegales) menuLegales.style.display = ["admin", "worker"].includes(cached.role) ? "" : "none";
+  const menuInformes = document.getElementById("menu-informes-btn");
+  if (menuInformes) menuInformes.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -356,6 +358,8 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (menuActivityLog) menuActivityLog.style.display = data.role === "admin" ? "" : "none";
   const menuLegales = document.getElementById("menu-legales-btn");
   if (menuLegales) menuLegales.style.display = ["admin", "worker"].includes(data.role) ? "" : "none";
+  const menuInformes = document.getElementById("menu-informes-btn");
+  if (menuInformes) menuInformes.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -403,7 +407,7 @@ window.addEventListener("hashchange", () => {
   const restorableViews = [
     "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
     "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-    "byc","byc-vincular"
+    "byc","byc-vincular","informes"
   ];
   if (hashView && restorableViews.includes(hashView)) {
     navigateTo(hashView, hashIdx, true);
@@ -758,6 +762,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_val) _val.style.display = "none";
   const _vleg = document.getElementById("view-legales");
   if (_vleg) _vleg.style.display = "none";
+  const _vinf = document.getElementById("view-informes");
+  if (_vinf) _vinf.style.display = "none";
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
@@ -907,6 +913,18 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Legales" }
     ]);
     loadLegales();
+
+  }
+
+  else if (view === "informes") {
+
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    showEl("view-informes");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Informes" }
+    ]);
+    loadInformes();
 
   }
 
