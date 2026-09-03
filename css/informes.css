@@ -1,0 +1,138 @@
+/* ============================================================
+   INFORMES — Caja y Operación
+   Reutiliza variables de tema (style.css) y las clases
+   .dash-comp-*, .dash-bar-*, .dash-state de dashboard.css para
+   el comparativo por viaje. Este archivo solo cubre lo que no
+   existe todavía: chips de rango, tabs, tarjetas KPI.
+   ============================================================ */
+
+#view-informes .informes-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding-bottom: .6rem;
+}
+
+.informes-range-row {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  padding-bottom: .3rem;
+  margin-bottom: .8rem;
+}
+.informes-range-row::-webkit-scrollbar { display: none; }
+
+.informes-range-chip {
+  flex-shrink: 0;
+  padding: .45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-mid);
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.informes-range-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.informes-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.1rem;
+}
+.informes-tab-btn {
+  flex: 1;
+  padding: .7rem 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.informes-tab-btn.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.informes-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: .6rem;
+  margin-bottom: 1.4rem;
+}
+.informes-kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: .8rem .9rem;
+}
+.informes-kpi-label {
+  font-size: .74rem;
+  color: var(--text-muted);
+  margin-bottom: .3rem;
+}
+.informes-kpi-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.informes-kpi-value.positivo { color: var(--accent); }
+.informes-kpi-value.negativo { color: var(--danger); }
+
+.informes-section-title {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 .7rem;
+}
+
+.informes-chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  margin-bottom: 1.6rem;
+}
+.informes-chart-wrap.tall { height: 240px; }
+
+.informes-note {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .7rem .9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-top: .8rem;
+}
+
+#modal-rango-informes .modal-box { max-width: 340px; }
+.informes-rango-field { margin-bottom: .9rem; }
+.informes-rango-field label {
+  display: block;
+  font-size: .8rem;
+  color: var(--text-mid);
+  margin-bottom: .35rem;
+}
+.informes-rango-field input[type="date"] {
+  width: 100%;
+  padding: .55rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: .88rem;
+}
