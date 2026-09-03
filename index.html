@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="css/calendario.css" />
   <link rel="stylesheet" href="css/activity-log.css" />
   <link rel="stylesheet" href="css/legales.css" />
+  <link rel="stylesheet" href="css/informes.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
 
   <style>
@@ -179,6 +180,14 @@
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             Legales
+          </button>
+          <button class="menu-item" id="menu-informes-btn" style="display:none" onclick="navigateTo('informes'); closeMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="20" x2="12" y2="10"/>
+              <line x1="18" y1="20" x2="18" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="16"/>
+            </svg>
+            Informes
           </button>
           <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1830,6 +1839,81 @@
   </div>
 </div>
 
+<!-- VISTA: INFORMES -->
+<div id="view-informes" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <h1>Informes</h1>
+      <p class="page-desc">Caja y operación por período</p>
+    </div>
+
+    <div class="informes-toolbar">
+      <div class="informes-range-row">
+        <button type="button" class="informes-range-chip active" data-range="mes">Mes actual</button>
+        <button type="button" class="informes-range-chip" data-range="3m">3 meses</button>
+        <button type="button" class="informes-range-chip" data-range="6m">6 meses</button>
+        <button type="button" class="informes-range-chip" data-range="custom">Personalizado</button>
+      </div>
+      <div class="informes-tabs">
+        <button type="button" class="informes-tab-btn active" data-tab="caja">Caja</button>
+        <button type="button" class="informes-tab-btn" data-tab="operacion">Operación</button>
+      </div>
+    </div>
+
+    <!-- PESTAÑA CAJA -->
+    <div id="informes-panel-caja">
+      <div class="informes-kpi-grid" id="informes-caja-kpis"></div>
+
+      <p class="informes-section-title">Evolución mensual</p>
+      <div class="informes-chart-wrap">
+        <canvas id="informes-chart-caja" role="img" aria-label="Evolución mensual de ingresos y egresos de caja">Gráfico de ingresos y egresos por mes.</canvas>
+      </div>
+
+      <p class="informes-section-title">Egresos por categoría</p>
+      <div class="informes-chart-wrap">
+        <canvas id="informes-chart-categoria" role="img" aria-label="Egresos de caja agrupados por categoría">Gráfico de egresos por categoría.</canvas>
+      </div>
+
+      <div class="informes-note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Club Destino se excluye de este balance: es fondo de socios, no caja de la empresa.
+      </div>
+    </div>
+
+    <!-- PESTAÑA OPERACIÓN -->
+    <div id="informes-panel-operacion" style="display:none">
+      <div class="informes-kpi-grid" id="informes-operacion-kpis"></div>
+
+      <p class="informes-section-title">Ingresos vs egresos por viaje</p>
+      <div id="informes-viajes-comparativo" style="margin-bottom:1.4rem"></div>
+
+      <p class="informes-section-title">Presupuestado vs ejecutado</p>
+      <div class="informes-chart-wrap tall">
+        <canvas id="informes-chart-presupuesto" role="img" aria-label="Comparación de monto presupuestado y ejecutado por categoría de gasto">Gráfico de barras presupuestado vs ejecutado.</canvas>
+      </div>
+    </div>
+
+    <!-- MODAL: rango personalizado -->
+    <dialog id="modal-rango-informes">
+      <form method="dialog" class="modal-box">
+        <h3 style="margin:0 0 1rem;font-size:1rem">Rango personalizado</h3>
+        <div class="informes-rango-field">
+          <label for="informes-rango-desde">Desde</label>
+          <input type="date" id="informes-rango-desde" />
+        </div>
+        <div class="informes-rango-field">
+          <label for="informes-rango-hasta">Hasta</label>
+          <input type="date" id="informes-rango-hasta" />
+        </div>
+        <div style="display:flex;gap:.6rem;justify-content:flex-end">
+          <button type="button" onclick="document.getElementById('modal-rango-informes').close()">Cancelar</button>
+          <button type="button" class="btn-subir-doc" onclick="confirmarRangoPersonalizadoInformes()">Aplicar</button>
+        </div>
+      </form>
+    </dialog>
+  </div>
+</div>
+
 <!-- VISTA: DETALLE EGRESO -->
 <div id="view-egreso-detalle" style="display:none">
   <div class="main">
@@ -2398,6 +2482,8 @@
   <script src="js/calendario.js"></script>
   <script src="js/activity-log.js"></script>
   <script src="js/legales.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="js/informes.js"></script>
   <script>
   if ('serviceWorker' in navigator) {
     let _swRefrescando = false;
