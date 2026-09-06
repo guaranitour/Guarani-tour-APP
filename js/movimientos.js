@@ -249,9 +249,12 @@ function actualizarCuentasPorTipo() {
     benef.disabled = true;
 
   } else if (tipo === "egreso") {
-    // Emisora: fijo Caja E.A.S
-    emisora.innerHTML = `<option value="Caja E.A.S">Caja E.A.S</option>`;
-    emisora.disabled = true;
+    // Emisora: Caja E.A.S (predeterminada) o Club Destino — seleccionable,
+    // ya no queda fija/deshabilitada.
+    emisora.innerHTML = `
+      <option value="Caja E.A.S" selected>Caja E.A.S</option>
+      <option value="Club Destino">Club Destino</option>`;
+    emisora.disabled = false;
 
     // Beneficiaria: UENO JAMIL / UENO OSCAR (seleccionable)
     benef.innerHTML = `
