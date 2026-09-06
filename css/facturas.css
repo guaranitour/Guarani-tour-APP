@@ -4,35 +4,24 @@
 
 .fact-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: .75rem;
-  flex-wrap: wrap;
   margin-bottom: 1.2rem;
 }
 
-.fact-filter-estado {
-  display: flex;
-  gap: .4rem;
-  flex-wrap: wrap;
+/* Tabs: reutiliza .informes-tabs / .informes-tab-btn de informes.css.
+   fact-tabs quita el margen inferior propio de esa clase porque acá
+   el botón de acción va pegado justo debajo, no un panel de contenido. */
+.fact-tabs {
+  margin-bottom: 0;
 }
 
-.fact-filter-chip {
-  padding: .4rem .8rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card-bg);
-  color: var(--text-mid);
-  font-size: .82rem;
-  cursor: pointer;
-  transition: background .15s, border-color .15s, color .15s;
-}
-.fact-filter-chip:hover { background: var(--surface-hover); }
-.fact-filter-chip.active {
-  background: var(--accent, #2d6a4f);
-  border-color: var(--accent, #2d6a4f);
-  color: #fff;
-  font-weight: 600;
+.fact-btn-subir-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
 }
 
 .fact-empty {
@@ -46,6 +35,10 @@
 .fact-mes-grupo { margin-bottom: 1.6rem; }
 
 .fact-mes-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
   font-size: .82rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -54,6 +47,14 @@
   margin: 0 0 .6rem;
   padding-bottom: .4rem;
   border-bottom: 1px solid var(--border);
+}
+
+.fact-mes-total {
+  font-size: .78rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-mid);
 }
 
 .fact-mes-items {
