@@ -11,7 +11,9 @@
    guarda la referencia (storage_key) + metadata + estado.
    ═══════════════════════════════════════════════════════════ */
 
-const FACTURAS_WORKER_URL = "https://storage.guaranitour.com";
+// Reemplazar por la URL real del Worker una vez desplegado
+// (ver DEPLOY.md del worker — dominio propio recomendado).
+const FACTURAS_WORKER_URL = "https://facturas-storage.guaranitour.workers.dev";
 
 let _facturasCache = [];          // última lista cargada desde Supabase
 let _facturasFiltroEstado = "todos";
@@ -245,7 +247,7 @@ function abrirModalFactura() {
   if (input) input.click();
 }
 
-function onArchivoFacturaSeleccionado(inputEl) {
+async function onArchivoFacturaSeleccionado(inputEl) {
   const file = inputEl.files?.[0];
   inputEl.value = ""; // permite volver a elegir el mismo archivo más adelante
   if (!file) return;
@@ -264,8 +266,47 @@ function onArchivoFacturaSeleccionado(inputEl) {
     return;
   }
 
-  _facturaFilePendiente = file;
-  _abrirModalDatosFactura(file);
+  // Las imágenes (no el PDF, que no aplica) se convierten a WebP antes de
+  // subir: mismo contenido visual, bastante menos peso en R2. Si algo falla
+  // (navegador viejo, memoria, etc.) seguimos con el archivo original tal
+  // cual — la carga nunca debe romperse por una optimización que no salió.
+  const esImagenConvertible = file.type !== "application/pdf" && file.type !== "image/webp";
+  const fileFinal = esImagenConvertible ? await _convertirImagenAWebp(file) : file;
+
+  _facturaFilePendiente = fileFinal;
+  _abrirModalDatosFactura(fileFinal);
+}
+
+// Convierte una imagen a WebP vía <canvas>. Devuelve un nuevo File con
+// mismo nombre base pero extensión .webp, o el archivo original sin
+// tocar si la conversión falla o no reduce el tamaño.
+async function _convertirImagenAWebp(file) {
+  try {
+    const bitmap = await createImageBitmap(file);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close?.();
+
+    const blob = await new Promise(resolve =>
+      canvas.toBlob(resolve, "image/webp", 0.85)
+    );
+    if (!blob) return file; // navegador sin soporte de encoder webp en toBlob
+
+    // Si por algún motivo el webp salió más pesado que el original
+    // (raro, pero puede pasar con imágenes ya muy comprimidas), no
+    // tiene sentido quedarse con la versión más grande.
+    if (blob.size >= file.size) return file;
+
+    const nombreBase = file.name.replace(/\.[^.]+$/, "");
+    return new File([blob], `${nombreBase}.webp`, { type: "image/webp" });
+  } catch (err) {
+    console.error("[facturas] no se pudo convertir a webp, se sube el original:", err);
+    return file;
+  }
 }
 
 function _abrirModalDatosFactura(file) {
