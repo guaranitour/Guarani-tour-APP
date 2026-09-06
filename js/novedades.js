@@ -182,13 +182,33 @@ function _novRenderLista() {
 // Los ítems son independientes entre sí (no es "solo uno abierto a la
 // vez"): el usuario puede expandir varios en simultáneo si quiere
 // comparar o leer más de un tema seguido.
+//
+// Se anima con max-height calculado desde scrollHeight (no con
+// grid-template-rows: 1fr) porque 1fr no resuelve de forma confiable
+// al alto real del contenido en todos los navegadores/WebViews —
+// en Chrome Android en particular puede quedar corto y cortar texto,
+// o dejar asomar una línea en el estado colapsado.
 function _novToggleItem(idx) {
   const item = document.querySelector(`.nov-item[data-idx="${idx}"]`);
   if (!item) return;
-  const abierto = item.classList.toggle("abierto");
+
+  const body = item.querySelector(".nov-item-body");
   const head = item.querySelector(".nov-item-head");
-  if (head) head.setAttribute("aria-expanded", String(abierto));
+  const abrir = !item.classList.contains("abierto");
+
+  item.classList.toggle("abierto", abrir);
+  if (head) head.setAttribute("aria-expanded", String(abrir));
+  if (body) body.style.maxHeight = abrir ? `${body.scrollHeight}px` : "0px";
 }
+
+// Si la pantalla cambia de tamaño (rotación, teclado, etc.) con algún
+// ítem abierto, el max-height fijado en px puede quedar desactualizado
+// y volver a cortar el texto. Se recalcula solo para los abiertos.
+window.addEventListener("resize", () => {
+  document.querySelectorAll(".nov-item.abierto .nov-item-body").forEach(body => {
+    body.style.maxHeight = `${body.scrollHeight}px`;
+  });
+});
 
 // ── Cerrar ─────────────────────────────────────────────────
 function _cerrarNovedades() {
