@@ -11,9 +11,7 @@
    guarda la referencia (storage_key) + metadata + estado.
    ═══════════════════════════════════════════════════════════ */
 
-// Reemplazar por la URL real del Worker una vez desplegado
-// (ver DEPLOY.md del worker — dominio propio recomendado).
-const FACTURAS_WORKER_URL = "https://facturas-storage.guaranitour.workers.dev";
+const FACTURAS_WORKER_URL = "https://storage.guaranitour.com";
 
 let _facturasCache = [];          // última lista cargada desde Supabase
 let _facturasFiltroEstado = "todos";
