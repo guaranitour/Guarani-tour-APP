@@ -89,7 +89,15 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 1px 3px var(--shadow-soft);
+  cursor: pointer;
+  transition: background .15s;
 }
+.fact-row:hover { background: var(--surface-hover); }
+.fact-row:focus-visible {
+  outline: 2px solid var(--accent, #2d6a4f);
+  outline-offset: -2px;
+}
+.fact-row[aria-disabled="true"] { opacity: .7; pointer-events: none; }
 
 .fact-row.is-pendiente { border-left: 3px solid var(--warning-text, #b7791f); }
 .fact-row.is-verificado { border-left: 3px solid var(--success-text, #2f8f5b); }
