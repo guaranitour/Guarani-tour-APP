@@ -729,8 +729,12 @@
 /* En pantallas angostas, las dos columnas no siempre tienen espacio
    real para convivir sin comprimir el contenido de golpe (selects con
    texto largo, montos, fechas). Colapsar a una columna evita que el
-   grid empuje el layout general a un overflow horizontal. */
-@media (max-width: 400px) {
+   grid empuje el layout general a un overflow horizontal.
+   Usa el mismo breakpoint que el resto de la app (520px, ver
+   style.css .detail-grid / .main) — la mayoría de celulares reales
+   miden entre 360px y 430px, así que un corte en 400px los dejaba
+   justo por encima del límite y el grid de 2 columnas nunca colapsaba. */
+@media (max-width: 520px) {
   .form-recibo-row {
     grid-template-columns: 1fr;
   }

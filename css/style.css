@@ -139,7 +139,14 @@
   color-scheme: dark;
 }
 
-html { background: var(--bg); }
+html {
+  background: var(--bg);
+  overflow-x: hidden; /* defensa global: ningún módulo debe poder generar
+    scroll horizontal de página completa — eso rompe el position:fixed
+    del navbar en varios navegadores mobile (recalculan el viewport
+    visual). .main ya tiene su propio overflow-x:hidden como primera
+    barrera; esto es la segunda, a nivel documento. */
+}
 
 body,
 .topbar, .hamburger-menu, .breadcrumb-bar, .search-wrap, .passenger-row,
@@ -152,7 +159,8 @@ body {
   min-height: 100vh;
   font-family: 'Roboto', sans-serif;
   background: var(--bg);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;
