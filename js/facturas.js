@@ -136,7 +136,7 @@ function _renderFacturaRow(item) {
   const puedeVerificar = _puedeVerificarFacturas() && !esVerificado;
 
   return `
-  <div class="fact-row ${esVerificado ? "is-verificado" : "is-pendiente"}">
+  <div class="fact-row ${esVerificado ? "is-verificado" : "is-pendiente"}" role="button" tabindex="0" aria-label="Abrir comprobante" onclick="abrirFactura('${item.id}', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); abrirFactura('${item.id}', this);}">
     <span class="fact-row-icon">${_iconoTipoArchivo(item.content_type)}</span>
     <div class="fact-row-info">
       <div class="fact-row-titulo">
@@ -151,11 +151,11 @@ function _renderFacturaRow(item) {
       ${esVerificado ? "Verificado" : "Pendiente"}
     </span>
     <div class="fact-row-actions">
-      <button type="button" class="fact-btn-descargar" aria-label="Descargar comprobante" onclick="descargarFactura('${item.id}', this)">
+      <button type="button" class="fact-btn-descargar" aria-label="Descargar comprobante" onclick="event.stopPropagation(); descargarFactura('${item.id}', this)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
       ${puedeVerificar ? `
-      <button type="button" class="fact-btn-verificar" onclick="verificarFactura('${item.id}', this)">
+      <button type="button" class="fact-btn-verificar" onclick="event.stopPropagation(); verificarFactura('${item.id}', this)">
         Verificar
       </button>` : ""}
     </div>
@@ -184,24 +184,61 @@ function _formatBytesFactura(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// ── Descarga (vía Worker, no Supabase Storage) ──────────────
-async function descargarFactura(id, btnEl) {
+// ── Abrir / descargar (vía Worker, no Supabase Storage) ─────
+// Ambas acciones comparten el mismo fetch autenticado; solo cambia qué
+// se hace con el blob resultante una vez que llega.
+async function _obtenerBlobFactura(id) {
   const item = _facturasCache.find(f => String(f.id) === String(id));
-  if (!item) return;
+  if (!item) return null;
 
+  const jwt = await _facturasObtenerJwt();
+  const res = await fetch(`${FACTURAS_WORKER_URL}/${encodeURIComponent(item.storage_key)}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  return { blob: await res.blob(), item };
+}
+
+// Click en la fila: abre el comprobante en una pestaña nueva con el
+// visor nativo del navegador (PDF o imagen), sin forzar descarga.
+async function abrirFactura(id, rowEl) {
+  if (rowEl) rowEl.setAttribute("aria-disabled", "true");
+
+  try {
+    const resultado = await _obtenerBlobFactura(id);
+    if (!resultado) return;
+
+    const url = URL.createObjectURL(resultado.blob);
+    window.open(url, "_blank", "noopener");
+    // Revocar después de un momento, dando tiempo a que la pestaña cargue el blob.
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  } catch (err) {
+    console.error("[facturas] error abriendo comprobante:", err);
+    _appToast("No se pudo abrir el comprobante", true);
+  } finally {
+    if (rowEl) rowEl.removeAttribute("aria-disabled");
+  }
+}
+
+// Botón de descarga dentro de la fila (acción aditiva, no reemplaza
+// el click de abrir): fuerza la descarga real vía un <a download>
+// temporal — a diferencia de abrirFactura, esto nunca queda a criterio
+// del visor del navegador.
+async function descargarFactura(id, btnEl) {
   if (btnEl) btnEl.disabled = true;
 
   try {
-    const jwt = await _facturasObtenerJwt();
-    const res = await fetch(`${FACTURAS_WORKER_URL}/${encodeURIComponent(item.storage_key)}`, {
-      headers: { Authorization: `Bearer ${jwt}` },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const resultado = await _obtenerBlobFactura(id);
+    if (!resultado) return;
 
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank", "noopener");
-    // Revocar después de un momento, dando tiempo a que la pestaña cargue el blob.
+    const url = URL.createObjectURL(resultado.blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = resultado.item.nombre_archivo || "comprobante";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   } catch (err) {
     console.error("[facturas] error descargando:", err);
