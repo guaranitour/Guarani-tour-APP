@@ -1,0 +1,230 @@
+/* =====================================================================
+   facturas.css — Vista "Facturas y tickets"
+   ===================================================================== */
+
+.fact-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+}
+
+.fact-filter-estado {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
+}
+
+.fact-filter-chip {
+  padding: .4rem .8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-mid);
+  font-size: .82rem;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.fact-filter-chip:hover { background: var(--surface-hover); }
+.fact-filter-chip.active {
+  background: var(--accent, #2d6a4f);
+  border-color: var(--accent, #2d6a4f);
+  color: #fff;
+  font-weight: 600;
+}
+
+.fact-empty {
+  color: var(--text-muted);
+  font-size: .9rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+/* ── Agrupación por mes ── */
+.fact-mes-grupo { margin-bottom: 1.6rem; }
+
+.fact-mes-titulo {
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  margin: 0 0 .6rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.fact-mes-items {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+/* ── Fila de comprobante ── */
+.fact-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem .9rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+.fact-row.is-pendiente { border-left: 3px solid var(--warning-text, #b7791f); }
+.fact-row.is-verificado { border-left: 3px solid var(--success-text, #2f8f5b); }
+
+.fact-row-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-hover);
+  color: var(--text-mid);
+}
+
+.fact-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.fact-row-titulo {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+.fact-row-monto {
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--text);
+}
+
+.fact-row-meta {
+  font-size: .76rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fact-tipo-badge {
+  font-size: .68rem;
+  font-weight: 600;
+  padding: .18rem .5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.fact-tipo-badge.is-factura { background: var(--accent-light, rgba(45,106,79,.12)); color: var(--accent, #2d6a4f); }
+.fact-tipo-badge.is-ticket  { background: var(--surface-hover); color: var(--text-mid); }
+
+.fact-estado-badge {
+  flex-shrink: 0;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .3rem .6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.fact-estado-badge.is-pendiente { background: var(--warning-bg); color: var(--warning-text); }
+.fact-estado-badge.is-verificado { background: var(--success-bg); color: var(--success-text); }
+
+.fact-row-actions {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex-shrink: 0;
+}
+
+.fact-btn-descargar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: background .15s;
+}
+.fact-btn-descargar:hover { background: var(--surface-hover); }
+.fact-btn-descargar:disabled { opacity: .5; cursor: not-allowed; }
+
+.fact-btn-verificar {
+  padding: .4rem .7rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent, #2d6a4f);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.fact-btn-verificar:hover { opacity: .9; }
+.fact-btn-verificar:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── Toggle Factura/Ticket dentro del modal ── */
+.fact-tipo-toggle {
+  display: flex;
+  gap: .6rem;
+}
+
+.fact-tipo-opcion {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  padding: .6rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: .88rem;
+  color: var(--text-mid);
+  transition: border-color .15s, background .15s;
+}
+
+.fact-tipo-opcion input[type="radio"] {
+  accent-color: var(--accent, #2d6a4f);
+  margin: 0;
+}
+
+.fact-tipo-opcion:has(input:checked) {
+  border-color: var(--accent, #2d6a4f);
+  background: var(--accent-light, rgba(45,106,79,.08));
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .fact-row {
+    flex-wrap: wrap;
+  }
+  .fact-row-info {
+    order: 1;
+    width: calc(100% - 44px);
+  }
+  .fact-estado-badge {
+    order: 3;
+    margin-left: calc(34px + .75rem);
+  }
+  .fact-row-actions {
+    order: 4;
+    margin-left: auto;
+  }
+}
