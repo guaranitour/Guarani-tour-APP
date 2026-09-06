@@ -1335,8 +1335,24 @@ body { padding-bottom: 0; }
   font-family: 'Roboto', sans-serif;
   color: var(--text);
   transition: background .15s, transform .1s;
+  position: relative;
 }
 .modulo-item:active { transform: scale(.96); }
+
+.modulo-item-badge {
+  position: absolute;
+  top: .4rem;
+  right: .4rem;
+  font-size: .6rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent, #2d6a4f);
+  border-radius: 20px;
+  padding: .1rem .45rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
 
 .modulo-item-icon {
   display: flex; align-items: center; justify-content: center;
