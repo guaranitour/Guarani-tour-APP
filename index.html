@@ -1852,22 +1852,16 @@
 <!-- VISTA: FACTURAS Y TICKETS -->
 <div id="view-facturas" style="display:none">
   <div class="main">
-    <div class="page-header">
-      <h1>Facturas y tickets</h1>
-      <p class="page-desc">Comprobantes de gasto agrupados por mes, a verificar por contaduría</p>
-    </div>
-
     <div class="fact-toolbar">
-      <button type="button" class="btn-subir-doc" id="btn-subir-factura" style="display:none" onclick="abrirModalFactura()">
+      <div class="informes-tabs fact-tabs">
+        <button type="button" class="informes-tab-btn active" data-estado="pendiente" onclick="cambiarTabFacturas('pendiente')">Sin verificar</button>
+        <button type="button" class="informes-tab-btn" data-estado="verificado" onclick="cambiarTabFacturas('verificado')">Verificados</button>
+      </div>
+
+      <button type="button" class="btn-subir-doc fact-btn-subir-full" id="btn-subir-factura" style="display:none" onclick="abrirModalFactura()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Cargar comprobante
       </button>
-
-      <div class="fact-filter-estado" role="group" aria-label="Filtrar por estado">
-        <button type="button" class="fact-filter-chip active" data-estado="todos" onclick="filtrarFacturasPorEstado('todos', this)">Todos</button>
-        <button type="button" class="fact-filter-chip" data-estado="pendiente" onclick="filtrarFacturasPorEstado('pendiente', this)">Pendientes</button>
-        <button type="button" class="fact-filter-chip" data-estado="verificado" onclick="filtrarFacturasPorEstado('verificado', this)">Verificados</button>
-      </div>
     </div>
 
     <div id="facturas-lista">
