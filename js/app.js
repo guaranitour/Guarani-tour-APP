@@ -200,12 +200,6 @@ function _pintarShellOptimista(user) {
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = cached.role === "admin" ? "" : "none";
-  const menuLegales = document.getElementById("menu-legales-btn");
-  if (menuLegales) menuLegales.style.display = ["admin", "worker"].includes(cached.role) ? "" : "none";
-  const menuFacturas = document.getElementById("menu-facturas-btn");
-  if (menuFacturas) menuFacturas.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
-  const menuInformes = document.getElementById("menu-informes-btn");
-  if (menuInformes) menuInformes.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -358,10 +352,6 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = data.role === "admin" ? "" : "none";
-  const menuLegales = document.getElementById("menu-legales-btn");
-  if (menuLegales) menuLegales.style.display = ["admin", "worker"].includes(data.role) ? "" : "none";
-  const menuInformes = document.getElementById("menu-informes-btn");
-  if (menuInformes) menuInformes.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -1939,6 +1929,9 @@ const MODULOS_MENU = [
   { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)" },
   { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
+  { slug: "legales",            label: "Legales",     img: "legales.png",   bg: "rgba(70,130,180,.15)", roles: ["admin", "worker"] },
+  { slug: "facturas",           label: "Facturas",    img: "facturas.png",  bg: "rgba(201,168,76,.18)", roles: ["admin", "worker", "finanzas"] },
+  { slug: "informes",           label: "Informes",    img: "informes.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "finanzas"] },
 ];
 
 // Precarga en memoria del navegador (no solo en el cache del SW) de los
