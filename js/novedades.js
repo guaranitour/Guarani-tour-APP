@@ -6,109 +6,114 @@
 // Subir esta versión cada vez que se cargan slides nuevos: cambia la key
 // de localStorage, así que todos vuelven a ver el modal aunque ya hayan
 // cerrado una tanda anterior.
-const _NOV_VERSION = "resumen-viajes-v1";
+const _NOV_VERSION = "lista-acordeon-v1";
 
-// ── Slides de novedades ──────────────────────────────────────────────────
-// "roles": opcional. Si no está presente, el slide es visible para todos
-// los roles. Si está, solo se muestra a quien tenga uno de esos roles
-// (comparación exacta contra el "role" pasado a checkNovedades()).
-const _NOV_SLIDES_INAUG = [
+// ── Roles habilitados para esta tanda de novedades ────────────────────
+// Todos los ítems de esta versión son relevantes solo para quienes
+// operan la app día a día: admin, worker y finanzas. "viewer" queda
+// afuera de esta tanda completa.
+const _NOV_ROLES_TANDA = ["admin", "worker", "finanzas"];
+
+// ── Novedades ──────────────────────────────────────────────────────────
+// "roles": opcional por ítem. Si no está presente, hereda _NOV_ROLES_TANDA.
+// Si está, reemplaza esa lista para ese ítem puntual.
+const _NOV_ITEMS = [
   {
-    tipo: "hoy",
-    etiqueta: "Novedad",
-    titulo: "Guaraní Tour App sigue evolucionando",
-    texto: "Seguimos mejorando la app todo el tiempo. Estos son los últimos cambios que ya podés usar.",
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    etiqueta: "Legales",
+    titulo: "Documentos de índole legal",
+    resumen: "Ya podés ver y cargar documentos legales y de asambleas.",
+    texto: "Ya contás con la posibilidad de ver los documentos de índole legal y relacionados a las asambleas que se efectúan, así como la posibilidad de cargarlos.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>`,
   },
   {
-    tipo: "hoy",
-    etiqueta: "Rendimiento",
-    titulo: "Sesiones y pantallas más estables",
-    texto: "Mejoramos la estabilidad de las sesiones y la velocidad de carga de las pantallas en toda la app.",
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <path d="M13 2 3 14h7l-1 8 10-12h-7z"/>
+    etiqueta: "Facturas",
+    titulo: "Carga de facturas y tickets",
+    resumen: "Subí comprobantes para que contaduría los verifique.",
+    texto: "Función complementaria para ordenar la carga de facturas por parte de la contadora: podés subir tus documentos y aguardar que sean verificados por esta en el sistema gubernamental.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="9" y1="15" x2="15" y2="15"/>
+      <line x1="9" y1="11" x2="12" y2="11"/>
     </svg>`,
   },
   {
-    tipo: "hoy",
-    etiqueta: "Viajes",
-    titulo: "Resumen de viajes activos, rediseñado",
-    texto: "Rediseñamos el Resumen de viajes activos para que sea mucho más fácil entender de un vistazo cómo va cada viaje.",
-    roles: ["admin", "worker", "finanzas"],
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
-  },
-  {
-    tipo: "hoy",
-    etiqueta: "Presupuesto",
-    titulo: "Proyección de ganancias en el presupuesto",
-    texto: "El presupuesto de cada viaje ahora incluye una proyección básica de ganancias, para tener una idea del resultado esperado sin salir de la app.",
-    roles: ["admin", "worker", "finanzas"],
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+    etiqueta: "Informes",
+    titulo: "Desempeño de la operación",
+    resumen: "Mirá cómo va la Caja E.A.S. en un período — en beta.",
+    texto: "Posibilidad de ver el desempeño de la operación y Caja E.A.S. dentro de un período determinado. Aún se encuentra en fase experimental, por lo que sus capacidades de mostrar información aún son limitadas. En caso de querer brindar tus sugerencias, hacenoslo llegar mediante el coordinador.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
       <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
     </svg>`,
   },
   {
-    tipo: "hoy",
-    etiqueta: "Presupuesto",
-    titulo: "Corregir un concepto ya es más simple",
-    texto: "¿Te equivocaste al registrar un concepto en el presupuesto? Ahora podés ingresar el valor 0 directamente en ese mismo concepto, sin necesidad de eliminarlo.",
-    roles: ["admin"],
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+    etiqueta: "Asientos",
+    titulo: "Selección de asientos en la nube",
+    resumen: "Mejora interna de infraestructura, sin cambios visibles.",
+    texto: "Se migró la página de selección de asientos al servidor de Cloudflare, a modo de expandir sus posibilidades a futuro. Es una mejora interna: el pasajero o staff no notará cambios actualmente en su comportamiento.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01"/>
     </svg>`,
   },
   {
-    tipo: "hoy",
-    etiqueta: "Pagos y recibos",
-    titulo: "Más métodos de pago y recibos renovados",
-    texto: "Sumamos Eko, Wally, Eclub y Mango como métodos de pago, para registrar con más precisión cómo paga cada pasajero.\n\nLa lista de Recibos tiene una apariencia renovada, y ahora incluye el concepto Solidaridad para pagos que no están relacionados a un viaje.",
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+    etiqueta: "Recibos",
+    titulo: "Filtros de recibos mejorados",
+    resumen: "Filtrá recibos por pagos comerciales o solidaridad.",
+    texto: "Recibió una pequeña mejora en los filtros que muestran la info: podés ver solo aquellos que correspondan a pagos comerciales o solidaridad, para evitar confusiones.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
       <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
     </svg>`,
   },
   {
-    tipo: "hoy",
-    etiqueta: "Calendario",
-    titulo: "Llegó el Calendario",
-    texto: "Ya podés ver tus viajes, cumpleaños y eventos propios en un calendario dentro de la app. Seguirá mejorando en las próximas actualizaciones.",
-    icono: `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>
+    etiqueta: "Almacenamiento",
+    titulo: "Migración a almacenamiento R2",
+    resumen: "Cambio gradual de proveedor: posibles fallos temporales.",
+    texto: "Se hará la migración gradual del servicio de almacenamiento a R2 en vez de Storage, un paso más en la evolución de Guaraní Tour App. Agradecemos su paciencia ante fallos relacionados a documentos e imágenes.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h.79a4.5 4.5 0 1 1 0 9z"/>
+    </svg>`,
+  },
+  {
+    etiqueta: "Estabilidad",
+    titulo: "Errores corregidos",
+    resumen: "Se corrigieron errores y se mejoró la estabilidad general.",
+    texto: "Se corrigieron errores y se mejoró la estabilidad general de la app.",
+    icono: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
     </svg>`,
   },
 ];
 
 // ── Estado interno ─────────────────────────────────────────
-let _novSlideActual = 0;
-let _novEmail       = "";
-let _novSlidesVisibles = []; // subconjunto de _NOV_SLIDES_INAUG ya filtrado por rol
+let _novEmail = "";
+let _novItemsVisibles = []; // subconjunto de _NOV_ITEMS ya filtrado por rol
 
 function _novKey(email) {
   return `guarani_novedad_${_NOV_VERSION}_${email}`;
 }
 
-/** Un slide sin "roles" es visible para todos. Con "roles", solo para
- *  quien tenga uno de esos roles exactos. */
-function _novSlideVisibleParaRol(slide, role) {
-  if (!slide.roles) return true;
-  return slide.roles.includes(role);
+/** Un ítem sin "roles" propio hereda _NOV_ROLES_TANDA. Con "roles"
+ *  propio, ese array reemplaza al de la tanda para ese ítem puntual. */
+function _novItemVisibleParaRol(item, role) {
+  const roles = item.roles || _NOV_ROLES_TANDA;
+  return roles.includes(role);
 }
 
 // ── Punto de entrada ───────────────────────────────────────
 function checkNovedades(email, role) {
   if (localStorage.getItem(_novKey(email)) === "1") return;
 
-  _novSlidesVisibles = _NOV_SLIDES_INAUG.filter(s => _novSlideVisibleParaRol(s, role));
-  if (_novSlidesVisibles.length === 0) {
+  _novItemsVisibles = _NOV_ITEMS.filter(it => _novItemVisibleParaRol(it, role));
+  if (_novItemsVisibles.length === 0) {
     // Nada relevante para este rol: no hay modal que mostrar, pero igual
     // marcamos como visto para no re-evaluar en cada carga.
     localStorage.setItem(_novKey(email), "1");
     return;
   }
 
-  _novEmail       = email;
-  _novSlideActual = 0;
+  _novEmail = email;
   _renderInaugModal();
 }
 
@@ -134,109 +139,55 @@ function _renderInaugModal() {
         </button>
       </div>
 
-      <div class="nov-slides-wrap">
-        <div class="nov-slides" id="nov-slides"></div>
-      </div>
+      <p class="nov-intro">Estos son los últimos cambios que ya podés usar.</p>
 
-      <div class="nov-dots" id="nov-dots"></div>
+      <div class="nov-lista" id="nov-lista"></div>
 
-      <div class="nov-actions">
-        <button class="nov-btn-prev" id="nov-btn-prev" onclick="_novAnterior()">← Anterior</button>
-        <button class="nov-btn-next" id="nov-btn-next" onclick="_novSiguiente()">Siguiente →</button>
-      </div>
+      <button class="nov-btn-cerrar" onclick="_cerrarNovedades()">Entendido</button>
 
     </div>`;
 
-  _novRenderSlides();
-  _novActualizarEstado();
+  _novRenderLista();
 
   requestAnimationFrame(() => overlay.classList.add("nov-visible"));
 }
 
-// Umbral para decidir si un slide usa el layout compacto (ícono grande,
-// centrado) o el layout --largo (ícono chico, alineado a la izquierda).
-// Se activa por longitud de texto O por tener más de un párrafo (\n\n),
-// lo que ocurra primero — un slide con dos párrafos cortos igual se
-// beneficia del layout largo, aunque no llegue al umbral de caracteres.
-const _NOV_LARGO_MIN_CHARS = 140;
-
-function _novEsSlideLargo(slide) {
-  return slide.texto.length > _NOV_LARGO_MIN_CHARS || slide.texto.includes("\n\n");
-}
-
-// ── Renderizar slides ──────────────────────────────────────
-function _novRenderSlides() {
-  const wrap = document.getElementById("nov-slides");
+// ── Renderizar lista con acordeón ───────────────────────────
+// Todos los ítems arrancan colapsados (solo ícono, categoría y título);
+// tocar un ítem expande su texto completo sin afectar a los demás.
+function _novRenderLista() {
+  const wrap = document.getElementById("nov-lista");
   if (!wrap) return;
 
-  wrap.innerHTML = _novSlidesVisibles.map((s, i) => {
-    const esLargo = _novEsSlideLargo(s);
-    return `
-    <div class="nov-slide nov-slide--${s.tipo} ${esLargo ? "nov-slide--largo" : ""} ${i === _novSlideActual ? "activa" : ""}" data-idx="${i}">
-      <div class="nov-slide-visual">
-        <div class="nov-slide-icon">${s.icono}</div>
-        ${esLargo ? `<div class="nov-slide-badge nov-badge--${s.tipo}">${s.etiqueta}</div>` : ""}
+  wrap.innerHTML = _novItemsVisibles.map((it, i) => `
+    <div class="nov-item" data-idx="${i}">
+      <button type="button" class="nov-item-head" onclick="_novToggleItem(${i})" aria-expanded="false" aria-controls="nov-item-body-${i}">
+        <span class="nov-item-icon">${it.icono}</span>
+        <span class="nov-item-head-text">
+          <span class="nov-item-etiqueta">${it.etiqueta}</span>
+          <span class="nov-item-titulo">${it.titulo}</span>
+        </span>
+        <svg class="nov-item-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nov-item-body" id="nov-item-body-${i}">
+        <p class="nov-item-texto">${it.texto.replace(/\n/g, "<br>")}</p>
       </div>
-      ${esLargo ? "" : `<div class="nov-slide-badge nov-badge--${s.tipo}">${s.etiqueta}</div>`}
-      <h2 class="nov-slide-nombre">${s.titulo}</h2>
-      <p class="nov-slide-desc">${s.texto.replace(/\n/g, "<br>")}</p>
     </div>
-  `;
-  }).join("");
+  `).join("");
 }
 
-// ── Dots y estado ──────────────────────────────────────────
-function _novActualizarEstado() {
-  const total  = _novSlidesVisibles.length;
-  const actual = _novSlideActual;
-
-  const dotsEl = document.getElementById("nov-dots");
-  if (dotsEl) {
-    dotsEl.innerHTML = _novSlidesVisibles.map((_, i) =>
-      `<span class="nov-dot ${i === actual ? "activo" : ""}" onclick="_novIrA(${i})"></span>`
-    ).join("");
-  }
-
-  document.querySelectorAll(".nov-slide").forEach((el, i) => {
-    el.classList.toggle("activa", i === actual);
-  });
-
-  // Actualizar fondo del sheet según slide activo
-  const sheet = document.querySelector(".nov-sheet");
-  if (sheet) {
-    sheet.dataset.tipo = _novSlidesVisibles[actual].tipo;
-  }
-
-  const btnPrev = document.getElementById("nov-btn-prev");
-  const btnNext = document.getElementById("nov-btn-next");
-  if (btnPrev) btnPrev.style.visibility = actual === 0 ? "hidden" : "visible";
-  if (btnNext) {
-    const esUltima = actual === total - 1;
-    btnNext.textContent = esUltima ? "¡Empezar!" : "Siguiente →";
-    btnNext.classList.toggle("nov-btn-empezar", esUltima);
-  }
-}
-
-// ── Navegación ─────────────────────────────────────────────
-function _novIrA(idx) {
-  _novSlideActual = idx;
-  _novActualizarEstado();
-}
-
-function _novAnterior() {
-  if (_novSlideActual > 0) {
-    _novSlideActual--;
-    _novActualizarEstado();
-  }
-}
-
-function _novSiguiente() {
-  if (_novSlideActual < _novSlidesVisibles.length - 1) {
-    _novSlideActual++;
-    _novActualizarEstado();
-  } else {
-    _cerrarNovedades();
-  }
+// ── Acordeón: abrir/cerrar un ítem ──────────────────────────
+// Los ítems son independientes entre sí (no es "solo uno abierto a la
+// vez"): el usuario puede expandir varios en simultáneo si quiere
+// comparar o leer más de un tema seguido.
+function _novToggleItem(idx) {
+  const item = document.querySelector(`.nov-item[data-idx="${idx}"]`);
+  if (!item) return;
+  const abierto = item.classList.toggle("abierto");
+  const head = item.querySelector(".nov-item-head");
+  if (head) head.setAttribute("aria-expanded", String(abierto));
 }
 
 // ── Cerrar ─────────────────────────────────────────────────
