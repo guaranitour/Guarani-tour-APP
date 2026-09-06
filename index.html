@@ -1774,13 +1774,12 @@
 <!-- VISTA: LEGALES -->
 <div id="view-legales" style="display:none">
   <div class="main">
-    <div class="page-header">
-      <h1>Legales</h1>
-      <p class="page-desc">Documentos institucionales y actas de asamblea</p>
-    </div>
+    <p class="fact-desc-pildora">Documentos institucionales y actas de asamblea</p>
 
-    <div id="legales-secciones">
-      <div class="legales-secciones-error">Cargando…</div>
+    <div id="legales-secciones" aria-live="polite" aria-busy="true">
+      <div class="legal-skeleton-row" aria-hidden="true"></div>
+      <div class="legal-skeleton-row" aria-hidden="true"></div>
+      <div class="legal-skeleton-row" aria-hidden="true"></div>
     </div>
 
     <div class="legal-docs-header">
@@ -1795,7 +1794,11 @@
       <input type="file" id="legal-doc-file-input" accept="application/pdf" style="display:none" onchange="onArchivoLegalSeleccionado(this)" />
     </div>
 
-    <div id="legales-docs-list"></div>
+    <div id="legales-docs-list" aria-live="polite" aria-busy="true">
+      <div class="legal-skeleton-row legal-skeleton-row--doc" aria-hidden="true"></div>
+      <div class="legal-skeleton-row legal-skeleton-row--doc" aria-hidden="true"></div>
+      <div class="legal-skeleton-row legal-skeleton-row--doc" aria-hidden="true"></div>
+    </div>
 
     <!-- ══ MODAL: fecha de asamblea al subir documento legal ══ -->
     <dialog id="legal-fecha-asamblea-modal" class="legal-fecha-modal">
