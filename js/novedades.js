@@ -102,7 +102,18 @@ function _novItemVisibleParaRol(item, role) {
 }
 
 // ── Punto de entrada ───────────────────────────────────────
+// DESHABILITADO: el modal de novedades quedó con problemas de recorte
+// de texto en algunos WebViews de Android que no valía la pena seguir
+// persiguiendo a ciegas. checkNovedades() es un no-op intencional:
+// cualquier llamado existente en app.js (o donde sea) sigue siendo
+// válido y no rompe nada, simplemente no hace nada. El resto del
+// archivo queda intacto por si se retoma más adelante.
 function checkNovedades(email, role) {
+  return;
+}
+
+// ── Punto de entrada original (inactivo) ────────────────────
+function _checkNovedadesOriginal(email, role) {
   if (localStorage.getItem(_novKey(email)) === "1") return;
 
   _novItemsVisibles = _NOV_ITEMS.filter(it => _novItemVisibleParaRol(it, role));
