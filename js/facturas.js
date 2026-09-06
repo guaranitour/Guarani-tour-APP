@@ -16,7 +16,7 @@
 const FACTURAS_WORKER_URL = "https://storage.guaranitour.com";
 
 let _facturasCache = [];          // última lista cargada desde Supabase
-let _facturasFiltroEstado = "todos";
+let _facturasFiltroEstado = "pendiente"; // tab inicial: "Sin verificar"
 let _facturaFilePendiente = null; // File entre selección y confirmación del modal
 
 function _rolesFacturas() {
@@ -64,10 +64,11 @@ async function _cargarFacturas() {
   _renderFacturas();
 }
 
-function filtrarFacturasPorEstado(estado, btnEl) {
+function cambiarTabFacturas(estado) {
   _facturasFiltroEstado = estado;
-  document.querySelectorAll(".fact-filter-chip").forEach(b => b.classList.remove("active"));
-  btnEl.classList.add("active");
+  document.querySelectorAll("#view-facturas .informes-tab-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.estado === estado);
+  });
   _renderFacturas();
 }
 
@@ -76,19 +77,23 @@ function _renderFacturas() {
   const cont = document.getElementById("facturas-lista");
   if (!cont) return;
 
-  const items = _facturasFiltroEstado === "todos"
-    ? _facturasCache
-    : _facturasCache.filter(f => f.estado === _facturasFiltroEstado);
+  const items = _facturasCache.filter(f => f.estado === _facturasFiltroEstado);
 
   if (items.length === 0) {
-    cont.innerHTML = `<div class="fact-empty">No hay comprobantes para mostrar.</div>`;
+    const mensaje = _facturasFiltroEstado === "verificado"
+      ? "No hay comprobantes verificados."
+      : "No hay comprobantes sin verificar.";
+    cont.innerHTML = `<div class="fact-empty">${mensaje}</div>`;
     return;
   }
 
   const grupos = _agruparPorMes(items);
   cont.innerHTML = grupos.map(g => `
     <section class="fact-mes-grupo">
-      <h2 class="fact-mes-titulo">${g.etiqueta}</h2>
+      <h2 class="fact-mes-titulo">
+        <span>${g.etiqueta}</span>
+        <span class="fact-mes-total">${_formatMontoFactura(g.total)}</span>
+      </h2>
       <div class="fact-mes-items">
         ${g.items.map(_renderFacturaRow).join("")}
       </div>
@@ -96,8 +101,10 @@ function _renderFacturas() {
   `).join("");
 }
 
-// Agrupa por año-mes de fecha_emision, ya viene ordenado desc desde
-// la consulta, así que solo hace falta particionar sin reordenar.
+// Agrupa por año-mes de fecha_emision y suma el monto de cada grupo.
+// Ya viene ordenado desc (fecha_emision, created_at) desde la consulta,
+// así que alcanza con particionar sin reordenar: dentro de cada mes
+// queda la fecha más reciente arriba y la más antigua abajo.
 function _agruparPorMes(items) {
   const grupos = [];
   const porClave = new Map();
@@ -106,11 +113,13 @@ function _agruparPorMes(items) {
     const clave = item.fecha_emision.slice(0, 7); // "YYYY-MM"
     if (!porClave.has(clave)) {
       const etiqueta = _formatMesAnio(item.fecha_emision);
-      const grupo = { clave, etiqueta, items: [] };
+      const grupo = { clave, etiqueta, items: [], total: 0 };
       porClave.set(clave, grupo);
       grupos.push(grupo);
     }
-    porClave.get(clave).items.push(item);
+    const grupo = porClave.get(clave);
+    grupo.items.push(item);
+    grupo.total += Number(item.monto) || 0;
   }
 
   return grupos;
