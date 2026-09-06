@@ -2,6 +2,20 @@
    facturas.css — Vista "Facturas y tickets"
    ===================================================================== */
 
+.fact-desc-pildora {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  width: fit-content;
+  padding: .45rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-mid);
+  font-size: .8rem;
+  line-height: 1.3;
+}
+
 .fact-toolbar {
   display: flex;
   flex-direction: column;
