@@ -144,8 +144,7 @@ function _renderFacturaRow(item) {
         <span class="fact-row-monto">${_formatMontoFactura(item.monto)}</span>
       </div>
       <div class="fact-row-meta">
-        ${_formatFechaEmisionCorta(item.fecha_emision)} · ${_escapeHtmlFactura(item.subido_por_email)}
-        ${item.tamano_bytes ? ` · ${_formatBytesFactura(item.tamano_bytes)}` : ""}
+        ${_formatFechaEmisionCorta(item.fecha_emision)}
       </div>
     </div>
     <span class="fact-estado-badge ${esVerificado ? "is-verificado" : "is-pendiente"}">
