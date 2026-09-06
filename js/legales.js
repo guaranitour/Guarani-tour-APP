@@ -57,6 +57,8 @@ async function _cargarContenidoInstitucional() {
     }
 
     const secciones = _parsearSeccionesLegales(data.html);
+    cont.setAttribute("aria-busy", "false");
+
     if (secciones.length === 0) {
       cont.innerHTML = `<p class="legales-secciones-error">El documento no tiene contenido para mostrar.</p>`;
       return;
@@ -65,6 +67,7 @@ async function _cargarContenidoInstitucional() {
     cont.innerHTML = secciones.map((s, i) => _renderSeccionLegal(s, i)).join("");
   } catch (err) {
     console.error("[legales] error cargando contenido institucional:", err);
+    cont.setAttribute("aria-busy", "false");
     cont.innerHTML = `<p class="legales-secciones-error">No se pudo cargar el contenido institucional. Reintentá más tarde.</p>`;
   }
 }
@@ -121,13 +124,19 @@ async function _cargarDocumentosLegales() {
   const listEl = document.getElementById("legales-docs-list");
   if (!listEl) return;
 
-  listEl.innerHTML = `<div class="legal-docs-empty">Cargando…</div>`;
+  listEl.setAttribute("aria-busy", "true");
+  listEl.innerHTML = `
+    <div class="legal-skeleton-row legal-skeleton-row--doc" aria-hidden="true"></div>
+    <div class="legal-skeleton-row legal-skeleton-row--doc" aria-hidden="true"></div>
+    <div class="legal-skeleton-row legal-skeleton-row--doc" aria-hidden="true"></div>`;
 
   const { data, error } = await supabaseClient
     .from("legales_documentos")
     .select("id, nombre, storage_path, tamano_bytes, fecha_asamblea, created_at")
     .order("fecha_asamblea", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
+
+  listEl.setAttribute("aria-busy", "false");
 
   if (error) {
     console.error("[legales] error cargando documentos:", error);
@@ -143,18 +152,18 @@ async function _cargarDocumentosLegales() {
   }
 
   listEl.innerHTML = _legalesDocs.map(d => `
-    <div class="legal-doc-row">
+    <button type="button" class="legal-doc-row" aria-label="Abrir ${_escapeHtmlLegal(d.nombre)}" onclick="abrirDocLegal('${d.id}', this)">
       <span class="legal-doc-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       </span>
-      <div class="legal-doc-info">
-        <div class="legal-doc-name">${_escapeHtmlLegal(d.nombre)}</div>
-        <div class="legal-doc-meta">${_formatMetaDocLegal(d)}</div>
-      </div>
-      <button type="button" class="legal-doc-download" aria-label="Descargar documento" onclick="descargarDocLegal('${d.id}', this)">
+      <span class="legal-doc-info">
+        <span class="legal-doc-name">${_escapeHtmlLegal(d.nombre)}</span>
+        <span class="legal-doc-meta">${_formatMetaDocLegal(d)}</span>
+      </span>
+      <span class="legal-doc-download" role="button" tabindex="0" aria-label="Descargar documento" onclick="event.stopPropagation(); descargarDocLegal('${d.id}', this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); event.stopPropagation(); descargarDocLegal('${d.id}', this);}">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-    </div>`).join("");
+      </span>
+    </button>`).join("");
 }
 
 function _formatMetaDocLegal(d) {
@@ -173,29 +182,56 @@ function _formatBytesLegal(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// Genera una URL firmada temporal (el bucket es privado) y abre la
-// descarga. Se pide on-demand cada vez — nunca se guarda el link fijo,
-// así no hace falta actualizar nada a mano si el archivo se reemplaza.
-async function descargarDocLegal(id, btnEl) {
+// Helper interno compartido: genera la URL firmada temporal (el bucket
+// es privado) on-demand. `forzarDescarga` agrega el parámetro que
+// soporta Supabase Storage para que el navegador descargue el archivo
+// en vez de intentar mostrarlo inline.
+async function _signedUrlDocLegal(id, { forzarDescarga = false } = {}) {
   const doc = _legalesDocs.find(d => String(d.id) === String(id));
-  if (!doc) return;
+  if (!doc) return null;
 
-  if (btnEl) btnEl.disabled = true;
+  const opciones = forzarDescarga ? { download: doc.nombre } : undefined;
 
   const { data, error } = await supabaseClient
     .storage
     .from(LEGALES_STORAGE_BUCKET)
-    .createSignedUrl(doc.storage_path, 60); // 60s alcanza para iniciar la descarga
-
-  if (btnEl) btnEl.disabled = false;
+    .createSignedUrl(doc.storage_path, 60, opciones); // 60s alcanza para iniciar
 
   if (error || !data?.signedUrl) {
     console.error("[legales] error generando URL firmada:", error);
+    return null;
+  }
+  return data.signedUrl;
+}
+
+// Click en la fila: abre el PDF en una pestaña nueva. El navegador
+// decide si lo renderiza inline o lo descarga según su propio visor
+// de PDF — no hay forma de forzar "ver" de manera fiable cross-browser,
+// pero la gran mayoría muestra el visor nativo al no pedir descarga.
+async function abrirDocLegal(id, rowEl) {
+  if (rowEl) rowEl.disabled = true;
+  const url = await _signedUrlDocLegal(id, { forzarDescarga: false });
+  if (rowEl) rowEl.disabled = false;
+
+  if (!url) {
+    _appToast("No se pudo abrir el documento", true);
+    return;
+  }
+  window.open(url, "_blank", "noopener");
+}
+
+// Botón de descarga dentro de la fila (acción aditiva, no reemplaza
+// el click de abrir): fuerza la descarga real del archivo.
+async function descargarDocLegal(id, btnEl) {
+  if (btnEl) btnEl.setAttribute("aria-disabled", "true");
+  const url = await _signedUrlDocLegal(id, { forzarDescarga: true });
+  if (btnEl) btnEl.removeAttribute("aria-disabled");
+
+  if (!url) {
     _appToast("No se pudo generar el link de descarga", true);
     return;
   }
-
-  window.open(data.signedUrl, "_blank", "noopener");
+  window.open(url, "_blank", "noopener");
 }
 
 // ── Subir documento nuevo ───────────────────────────────────
