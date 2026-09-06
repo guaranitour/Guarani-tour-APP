@@ -722,8 +722,18 @@
 
 .form-recibo-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: .65rem;
+}
+
+/* En pantallas angostas, las dos columnas no siempre tienen espacio
+   real para convivir sin comprimir el contenido de golpe (selects con
+   texto largo, montos, fechas). Colapsar a una columna evita que el
+   grid empuje el layout general a un overflow horizontal. */
+@media (max-width: 400px) {
+  .form-recibo-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-recibo-field {
@@ -750,6 +760,7 @@
   font-size: .88rem;
   color: var(--text, #1a2e1e);
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   outline: none;
   transition: border-color .15s;

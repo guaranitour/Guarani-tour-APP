@@ -488,6 +488,7 @@ h2 {
   max-width: 680px;
   width: 100%;
   margin: 0 auto;
+  overflow-x: hidden; /* defensa: un grid/flex hijo que desborde no debe arrastrar todo el viewport */
 }
 
 .page-header {
