@@ -1931,7 +1931,7 @@ const MODULOS_MENU = [
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
   { slug: "legales",            label: "Legales",     img: "legales.png",   bg: "rgba(70,130,180,.15)", roles: ["admin", "worker"] },
   { slug: "facturas",           label: "Facturas",    img: "facturas.png",  bg: "rgba(201,168,76,.18)", roles: ["admin", "worker", "finanzas"] },
-  { slug: "informes",           label: "Informes",    img: "informes.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "finanzas"] },
+  { slug: "informes",           label: "Informes",    img: "informes.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "finanzas"], beta: true },
 ];
 
 // Precarga en memoria del navegador (no solo en el cache del SW) de los
@@ -1958,6 +1958,7 @@ function _renderModulosSheet() {
   const visibles = MODULOS_MENU.filter(m => !m.roles || m.roles.includes(currentUserRole));
   grid.innerHTML = visibles.map(m => `
     <button type="button" class="modulo-item" style="--modulo-icon-bg:${m.bg}" onclick="navigateTo('${m.slug}'); closeModulosSheet();">
+      ${m.beta ? `<span class="modulo-item-badge">Beta</span>` : ""}
       <span class="modulo-item-icon">
         <img src="/img/${m.img}" alt="" width="24" height="24">
       </span>
