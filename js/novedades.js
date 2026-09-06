@@ -184,10 +184,12 @@ function _novRenderLista() {
 // comparar o leer más de un tema seguido.
 //
 // Se anima con max-height calculado desde scrollHeight (no con
-// grid-template-rows: 1fr) porque 1fr no resuelve de forma confiable
-// al alto real del contenido en todos los navegadores/WebViews —
-// en Chrome Android en particular puede quedar corto y cortar texto,
-// o dejar asomar una línea en el estado colapsado.
+// grid-template-rows: 1fr, que no resuelve de forma confiable al alto
+// real del contenido en todos los navegadores/WebViews). Al terminar
+// de abrir, además, se quita el límite (maxHeight: "none"): dejar el
+// valor en px fijo es frágil ante redondeo de subpíxeles con texto de
+// varias líneas, y cualquier cambio posterior (fuente del sistema,
+// zoom, rotación) volvería a cortar la última línea.
 function _novToggleItem(idx) {
   const item = document.querySelector(`.nov-item[data-idx="${idx}"]`);
   if (!item) return;
@@ -198,17 +200,25 @@ function _novToggleItem(idx) {
 
   item.classList.toggle("abierto", abrir);
   if (head) head.setAttribute("aria-expanded", String(abrir));
-  if (body) body.style.maxHeight = abrir ? `${body.scrollHeight}px` : "0px";
-}
+  if (!body) return;
 
-// Si la pantalla cambia de tamaño (rotación, teclado, etc.) con algún
-// ítem abierto, el max-height fijado en px puede quedar desactualizado
-// y volver a cortar el texto. Se recalcula solo para los abiertos.
-window.addEventListener("resize", () => {
-  document.querySelectorAll(".nov-item.abierto .nov-item-body").forEach(body => {
+  if (abrir) {
     body.style.maxHeight = `${body.scrollHeight}px`;
-  });
-});
+    // Tras la transición, se libera el límite para que el contenido
+    // nunca quede a merced de un cálculo en píxeles.
+    body.addEventListener("transitionend", function liberar(ev) {
+      if (ev.propertyName !== "max-height") return;
+      if (item.classList.contains("abierto")) body.style.maxHeight = "none";
+      body.removeEventListener("transitionend", liberar);
+    });
+  } else {
+    // Si estaba en "none" (ya totalmente abierto), hay que fijar antes
+    // un valor numérico real o la transición de cierre no tiene de
+    // dónde animar (no se puede transicionar desde "none").
+    body.style.maxHeight = `${body.scrollHeight}px`;
+    requestAnimationFrame(() => { body.style.maxHeight = "0px"; });
+  }
+}
 
 // ── Cerrar ─────────────────────────────────────────────────
 function _cerrarNovedades() {
