@@ -150,19 +150,14 @@
   color: var(--accent2);
 }
 
-/* Acordeón vía grid-template-rows: anima alto real del contenido sin
-   necesidad de medir con JS (max-height fijo recortaría textos largos
-   o dejaría hueco de más en los cortos). */
+/* Acordeón: max-height se anima vía transición CSS, pero el valor real
+   en píxeles lo setea _novToggleItem() en JS (scrollHeight), porque
+   una fila de grid en 1fr o un max-height fijo no garantizan mostrar
+   el alto real del contenido en todos los navegadores. */
 .nov-item-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows .25s ease;
-}
-.nov-item.abierto .nov-item-body {
-  grid-template-rows: 1fr;
-}
-.nov-item-body > .nov-item-texto {
+  max-height: 0;
   overflow: hidden;
+  transition: max-height .28s ease;
 }
 .nov-item-texto {
   font-size: .82rem;
