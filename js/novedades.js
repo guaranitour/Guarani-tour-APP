@@ -211,6 +211,16 @@ function _novToggleItem(idx) {
       if (item.classList.contains("abierto")) body.style.maxHeight = "none";
       body.removeEventListener("transitionend", liberar);
     });
+    // El contenedor de la lista tiene su propio scroll interno (puede
+    // haber varios ítems abiertos a la vez). Si el ítem recién abierto
+    // crece hacia abajo del área visible, sin este scroll queda fuera
+    // de vista durante y después de la animación — no es un corte del
+    // acordeón, es simplemente contenido que quedó debajo del fold.
+    // El pequeño delay deja que la transición arranque antes de medir
+    // la posición, para que el scroll apunte a donde el ítem termina.
+    setTimeout(() => {
+      item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }, 50);
   } else {
     // Si estaba en "none" (ya totalmente abierto), hay que fijar antes
     // un valor numérico real o la transición de cierre no tiene de
