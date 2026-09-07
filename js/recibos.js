@@ -452,6 +452,10 @@ async function cargarClientesCache() {
   const { data, error } = await supabaseClient
     .from('basesycondiciones')
     .select('nombre, ci, email')
+    // Se excluyen los registros con correo duplicado: no son una fuente
+    // confiable para autocompletar CI/correo de un pasajero (el email
+    // podría pertenecer a otra persona).
+    .or('correo_duplicado.is.null,correo_duplicado.eq.false')
     .order('nombre', { ascending: true });
   if (!error && data) _clientesCache = data;
 }
