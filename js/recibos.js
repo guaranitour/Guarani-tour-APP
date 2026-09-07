@@ -452,10 +452,19 @@ async function cargarClientesCache() {
   const { data, error } = await supabaseClient
     .from('basesycondiciones')
     .select('nombre, ci, email')
-    // Se excluyen los registros con correo duplicado: no son una fuente
-    // confiable para autocompletar CI/correo de un pasajero (el email
-    // podría pertenecer a otra persona).
-    .or('correo_duplicado.is.null,correo_duplicado.eq.false')
+    // correo_duplicado es texto heredado de un log de envíos de PDF
+    // (Apps Script escribía acá "Enviado: fecha", "Error envío: ...",
+    // "No enviado (sin correo)", etc.), no un boolean real. El único
+    // valor que de verdad marca un duplicado confirmado es el string
+    // literal "true". Filtrar por .eq.false (boolean) dejaba pasar
+    // solo las filas NULL, porque ningún string matchea contra un
+    // boolean — por eso desaparecía casi toda la tabla. Acá se excluye
+    // únicamente "true"; todo lo demás (NULL, "false", fechas, errores
+    // de envío) se considera sin duplicado confirmado.
+    // neq() solo no alcanza: en Postgres NULL <> 'true' da NULL (no
+    // true), así que .neq() por sí solo excluiría también las filas
+    // NULL. Se suman explícitamente con .or().
+    .or('correo_duplicado.is.null,correo_duplicado.neq.true')
     .order('nombre', { ascending: true });
   if (!error && data) _clientesCache = data;
 }
