@@ -316,10 +316,12 @@ async function _enterAppImpl(user) {
   const googleAvatar = freshMetadata?.avatar_url || freshMetadata?.picture || null;
   currentUserAvatar = data.avatar_url || googleAvatar || null;
   if (googleAvatar && googleAvatar !== data.avatar_url) {
+    // UPDATE directo sobre "staff" fallaba en silencio para todo el mundo
+    // salvo el admin hardcodeado en la policy de RLS. El RPC (security
+    // definer) esquiva eso de forma acotada — solo toca avatar_url y solo
+    // la fila del propio usuario autenticado (ver update_own_avatar.sql).
     supabaseClient
-      .from("staff")
-      .update({ avatar_url: googleAvatar })
-      .eq("id", data.id)
+      .rpc("update_own_avatar", { new_avatar_url: googleAvatar })
       .then(({ error: updErr }) => {
         if (updErr) console.warn("No se pudo actualizar avatar_url:", updErr);
       });
