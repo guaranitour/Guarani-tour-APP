@@ -20,11 +20,12 @@
 }
 
 /* ── Tarjeta de usuario ──────────────────────────────────────────────────── */
+/* <details> nativo: colapsable accesible sin JS extra (teclado, lector de
+   pantalla, aria-expanded automático). El estado abierto/cerrado lo maneja
+   el navegador vía el atributo [open]. */
 .user-card {
-  display: flex;
-  flex-direction: column;
-  gap: .75rem;
-  padding: 1rem 1.1rem;
+  display: block;
+  padding: 0;
   background: var(--row-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -34,26 +35,53 @@
 }
 
 .user-card:hover {
-  background: var(--row-hover);
   box-shadow: 0 4px 14px var(--shadow-soft);
-  transform: translateY(-1px);
 }
 
-/* Header: avatar + nombre/email + dot de presencia */
+.user-card[open] {
+  background: var(--row-hover);
+}
+
+/* Header = <summary>: quitar el marker/triángulo nativo del navegador,
+   ya que usamos un chevron SVG propio que rota con [open]. */
 .user-card-header {
   display: flex;
   align-items: center;
-  gap: .8rem;
+  gap: .7rem;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.user-card-header::-webkit-details-marker,
+.user-card-header::marker {
+  display: none;
+  content: "";
+}
+
+.user-card-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 14px;
+}
+
+/* Wrapper posiciona el dot de presencia como badge sobre el avatar
+   (patrón estándar: absolute sobre un contenedor relative), en vez de
+   depender de márgenes negativos ligados al gap del flex padre. */
+.user-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .user-avatar {
-  flex-shrink: 0;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background: var(--info-bg);
   color: var(--info-text);
   font-family: 'Roboto', sans-serif;
@@ -62,26 +90,92 @@
   letter-spacing: .02em;
 }
 
-/* Dot de presencia (verde = conectado en los últimos 15 min) */
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Iniciales de respaldo: ocultas mientras la <img> carga bien; el atributo
+   onerror inline las revela quitando la imagen rota (ver renderAvatar en
+   usuarios.js). Sin avatar_url, no hay <img> en absoluto y esto no aplica. */
+.user-avatar-fallback {
+  display: none;
+}
+
+.user-avatar.fallback .user-avatar-fallback {
+  display: block;
+}
+
+/* Dot de presencia (verde = conectado en los últimos 15 min), superpuesto
+   sobre el borde inferior derecho del avatar. */
 .user-presence-dot {
-  flex-shrink: 0;
-  width: 9px;
-  height: 9px;
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--text-muted);
-  opacity: .5;
+  opacity: .6;
+  border: 2px solid var(--row-bg);
 }
 
 .user-presence-dot.online {
   background: var(--success-text, #2d6a4f);
   opacity: 1;
-  box-shadow: 0 0 0 3px rgba(45,106,79,.15);
+  box-shadow: 0 0 0 2px rgba(45,106,79,.15);
 }
 
-/* Info del usuario */
+/* Info del usuario: nombre + última conexión, siempre visibles */
 .user-info {
   flex: 1;
   min-width: 0;
+}
+
+/* Chevron indicador de expandido/colapsado */
+.user-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform .2s ease;
+}
+
+.user-card[open] .user-chevron {
+  transform: rotate(180deg);
+}
+
+/* Cuerpo colapsable: correo + controles de rol/estado.
+   Se anima con el patrón nativo de <details> (interpolate-size + calc-size),
+   soportado en navegadores Chromium/Edge recientes. Donde no hay soporte,
+   el contenido igual aparece/desaparece de forma instantánea y funcional
+   — es una mejora progresiva, no una dependencia. */
+.user-card-body {
+  padding: 0 1.1rem 1rem;
+  overflow: hidden;
+}
+
+@supports (interpolate-size: allow-keywords) {
+  html { interpolate-size: allow-keywords; }
+
+  .user-card-body {
+    height: 0;
+    transition: height .22s ease, padding-block .22s ease, opacity .18s ease;
+    opacity: 0;
+    padding-block: 0;
+  }
+
+  .user-card[open] .user-card-body {
+    height: auto;
+    opacity: 1;
+    padding-block: 0 1rem;
+  }
+
+  @starting-style {
+    .user-card[open] .user-card-body {
+      height: 0;
+      opacity: 0;
+    }
+  }
 }
 
 /* Input inline para editar nombre */
@@ -119,8 +213,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: .35rem;
-  margin-top: .1rem;
+  margin-bottom: .7rem;
+  padding-top: .8rem;
+  border-top: 1px solid var(--border);
 }
 
 .user-controls {
@@ -239,13 +334,13 @@
   outline-offset: 2px;
 }
 
-/* Footer: última conexión */
+/* Footer: última conexión (ahora dentro del header colapsado, debajo del
+   nombre — sin border-top, ya que no separa secciones de la tarjeta) */
 .user-card-footer {
   display: flex;
   align-items: center;
   gap: .4rem;
-  padding-top: .65rem;
-  border-top: 1px solid var(--border);
+  margin-top: .15rem;
   font-size: .76rem;
   color: var(--text-muted);
 }
