@@ -38,6 +38,23 @@ function isOnline(iso) {
   return (Date.now() - new Date(iso).getTime()) < 15 * 60 * 1000;
 }
 
+// Arma el markup del avatar: usa la foto de Google (staff.avatar_url) si
+// existe, con fallback automático a iniciales si la imagen falla al cargar
+// (token revocado, imagen expirada, etc.). Sin avatar_url, va directo a
+// iniciales sin intentar red.
+function renderAvatar(email, avatarUrl) {
+  const initials = getInitials(email);
+  if (!avatarUrl) {
+    return `<div class="user-avatar" aria-hidden="true">${initials}</div>`;
+  }
+  return `
+    <div class="user-avatar" aria-hidden="true">
+      <img src="${avatarUrl}" alt="" loading="lazy" referrerpolicy="no-referrer"
+           onerror="this.closest('.user-avatar').classList.add('fallback'); this.remove();">
+      <span class="user-avatar-fallback">${initials}</span>
+    </div>`;
+}
+
 // Muestra un feedback breve debajo de un select (reemplaza alert)
 function showFeedback(selectEl, tipo) {
   // Si el trigger es un select oculto dentro de .user-field-wrap (rol/estado),
@@ -70,7 +87,7 @@ async function loadUsers() {
 
   const { data, error } = await supabaseClient
     .from("staff")
-    .select("id, email, role, status, nombre, last_seen")
+    .select("id, email, role, status, nombre, last_seen, avatar_url")
     .order("email");
 
   if (error) {
@@ -106,10 +123,15 @@ async function loadUsers() {
   list.innerHTML = data.map(u => {
     const online = isOnline(u.last_seen);
     return `
-    <div class="user-card">
+    <details class="user-card">
 
-      <div class="user-card-header">
-        <div class="user-avatar" aria-hidden="true">${getInitials(u.email)}</div>
+      <summary class="user-card-header">
+        <div class="user-avatar-wrap">
+          ${renderAvatar(u.email, u.avatar_url)}
+          <span class="user-presence-dot ${online ? 'online' : ''}"
+                title="${online ? 'En línea' : 'Desconectado'}"
+                aria-label="${online ? 'En línea' : 'Desconectado'}"></span>
+        </div>
 
         <div class="user-info">
           <input
@@ -117,57 +139,64 @@ async function loadUsers() {
             class="user-nombre-input"
             value="${u.nombre || ""}"
             placeholder="Nombre…"
+            onclick="event.stopPropagation()"
             onblur="updateUserNombre('${u.id}', this)"
             onkeydown="if(event.key==='Enter') this.blur()"
           />
-          <div class="user-email" title="${u.email}">${u.email}</div>
+          <div class="user-card-footer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>
+            </svg>
+            ${formatLastSeen(u.last_seen)}
+          </div>
         </div>
 
-        <span class="user-presence-dot ${online ? 'online' : ''}"
-              title="${online ? 'En línea' : 'Desconectado'}"
-              aria-label="${online ? 'En línea' : 'Desconectado'}"></span>
-      </div>
-
-      <div class="user-controls">
-
-        <div class="user-field-wrap">
-          <button type="button" tabindex="-1" class="user-badge badge-role">
-            ${ROLE_LABELS[u.role] || u.role}
-          </button>
-          <select
-            onchange="updateUserRole('${u.id}', this); this.previousElementSibling.textContent = this.options[this.selectedIndex].text;"
-            class="user-select-hidden select-role"
-            aria-label="Rol de ${u.email}">
-            <option value="admin"    ${u.role === 'admin'    ? 'selected' : ''}>Admin</option>
-            <option value="worker"   ${u.role === 'worker'   ? 'selected' : ''}>Worker</option>
-            <option value="viewer"   ${u.role === 'viewer'   ? 'selected' : ''}>Viewer</option>
-            <option value="finanzas" ${u.role === 'finanzas' ? 'selected' : ''}>Finanzas</option>
-          </select>
-        </div>
-
-        <div class="user-field-wrap">
-          <button type="button" tabindex="-1" class="user-badge badge-status" data-status="${u.status}">
-            ${u.status === 'enabled' ? 'Activo' : 'Inactivo'}
-          </button>
-          <select
-            onchange="updateUserStatus('${u.id}', this); this.previousElementSibling.textContent = this.options[this.selectedIndex].text; this.previousElementSibling.setAttribute('data-status', this.value);"
-            class="user-select-hidden select-status"
-            aria-label="Estado de ${u.email}">
-            <option value="enabled"  ${u.status === 'enabled'  ? 'selected' : ''}>Activo</option>
-            <option value="disabled" ${u.status === 'disabled' ? 'selected' : ''}>Inactivo</option>
-          </select>
-        </div>
-
-      </div>
-
-      <div class="user-card-footer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>
+        <svg class="user-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9"/>
         </svg>
-        ${formatLastSeen(u.last_seen)}
+      </summary>
+
+      <div class="user-card-body">
+
+        <div class="user-email" title="${u.email}">${u.email}</div>
+
+        <div class="user-controls">
+
+          <div class="user-field-wrap">
+            <button type="button" tabindex="-1" class="user-badge badge-role">
+              ${ROLE_LABELS[u.role] || u.role}
+            </button>
+            <select
+              onclick="event.stopPropagation()"
+              onchange="updateUserRole('${u.id}', this); this.previousElementSibling.textContent = this.options[this.selectedIndex].text;"
+              class="user-select-hidden select-role"
+              aria-label="Rol de ${u.email}">
+              <option value="admin"    ${u.role === 'admin'    ? 'selected' : ''}>Admin</option>
+              <option value="worker"   ${u.role === 'worker'   ? 'selected' : ''}>Worker</option>
+              <option value="viewer"   ${u.role === 'viewer'   ? 'selected' : ''}>Viewer</option>
+              <option value="finanzas" ${u.role === 'finanzas' ? 'selected' : ''}>Finanzas</option>
+            </select>
+          </div>
+
+          <div class="user-field-wrap">
+            <button type="button" tabindex="-1" class="user-badge badge-status" data-status="${u.status}">
+              ${u.status === 'enabled' ? 'Activo' : 'Inactivo'}
+            </button>
+            <select
+              onclick="event.stopPropagation()"
+              onchange="updateUserStatus('${u.id}', this); this.previousElementSibling.textContent = this.options[this.selectedIndex].text; this.previousElementSibling.setAttribute('data-status', this.value);"
+              class="user-select-hidden select-status"
+              aria-label="Estado de ${u.email}">
+              <option value="enabled"  ${u.status === 'enabled'  ? 'selected' : ''}>Activo</option>
+              <option value="disabled" ${u.status === 'disabled' ? 'selected' : ''}>Inactivo</option>
+            </select>
+          </div>
+
+        </div>
+
       </div>
 
-    </div>`;
+    </details>`;
   }).join("");
 }
 
