@@ -298,8 +298,22 @@ async function _enterAppImpl(user) {
   currentUserName = data.nombre || user.email.split("@")[0];
   currentStaffId  = data.id;
 
-  // Sincronizar foto de perfil de Google (si vino y cambió respecto a la guardada)
-  const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+  // Sincronizar foto de perfil de Google (si vino y cambió respecto a la guardada).
+  // user.user_metadata puede venir stale: Supabase lo llena en el primer
+  // signup y no lo refresca en logins posteriores a partir del objeto de
+  // sesión guardado en localStorage. getUser() sí pega contra el servidor
+  // y trae el metadata vigente del provider. Es una llamada de red extra,
+  // pero solo se paga una vez por enterApp() y no bloquea el resto del
+  // flujo (currentUserAvatar ya tiene un valor válido antes de que resuelva).
+  let freshMetadata = user.user_metadata;
+  try {
+    const { data: fresh, error: userErr } = await supabaseClient.auth.getUser();
+    if (!userErr && fresh?.user?.user_metadata) freshMetadata = fresh.user.user_metadata;
+  } catch (e) {
+    console.warn("No se pudo refrescar user_metadata, se usa el cacheado en sesión:", e);
+  }
+
+  const googleAvatar = freshMetadata?.avatar_url || freshMetadata?.picture || null;
   currentUserAvatar = data.avatar_url || googleAvatar || null;
   if (googleAvatar && googleAvatar !== data.avatar_url) {
     supabaseClient
