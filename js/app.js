@@ -1485,7 +1485,7 @@ async function renderDetalle(pasajeroId) {
 
   // ── Contacto de emergencia (FAB SOS) ───────────────
   setFabSosVisible(true);
-  cargarContactoEmergencia(p.id);
+  cargarContactoEmergencia(p);
 
   // ── Datos de viajes del pasajero ──────────────────
   document.getElementById("d-club-destino").textContent  = "…";
@@ -1649,6 +1649,14 @@ function mostrarFeedbackDetalle(msg, ok) {
 let _contactoActual = null; // fila actual en memoria, o null si no existe
 let _fabSosUltimoFoco = null; // elemento a devolver el foco al cerrar el modal
 
+// Deja solo dígitos: mismo criterio con el que se guarda "ci" en
+// reservas.bases_info_adicional. Se aplica siempre antes de comparar,
+// porque "Documento de Identidad" en pasajeros puede venir con puntos,
+// espacios o guiones según cómo lo haya tipeado quien cargó el registro.
+function normalizeCI(ci) {
+  return (ci || "").toString().replace(/\D+/g, "");
+}
+
 function _puedeEditarContacto() {
   return ["admin", "worker"].some(r =>
     Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
@@ -1707,7 +1715,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-async function cargarContactoEmergencia(pasajeroId) {
+async function cargarContactoEmergencia(pasajero) {
   const puede = _puedeEditarContacto();
 
   document.getElementById("contacto-fields-view").style.display = "";
@@ -1716,11 +1724,29 @@ async function cargarContactoEmergencia(pasajeroId) {
   document.getElementById("contacto-edit-actions").style.display = "none";
   document.getElementById("contacto-edit-feedback").style.display = "none";
 
+  const ci = normalizeCI(pasajero?.["Documento de Identidad"]);
+
+  // Sin CI no hay forma de vincular con bases_info_adicional.
+  if (!ci) {
+    _contactoActual = null;
+    document.getElementById("contacto-fields-view").style.display = "none";
+    document.getElementById("contacto-empty").style.display = "";
+    const btnEditar  = document.getElementById("btn-editar-contacto");
+    const btnAgregar = document.getElementById("btn-agregar-contacto");
+    if (btnEditar)  btnEditar.style.display  = "none";
+    if (btnAgregar) btnAgregar.style.display = "none"; // sin CI tampoco se puede crear
+    return;
+  }
+
+  // Puede haber más de un formulario cargado para el mismo CI (se puede
+  // completar el form varias veces): nos quedamos con el más reciente.
   const { data, error } = await supabaseClient
-    .from("contactos_emergencia")
+    .schema("reservas")
+    .from("bases_info_adicional")
     .select("*")
-    .eq("pasajero_id", pasajeroId)
-    .eq("es_principal", true)
+    .eq("ci", ci)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) {
@@ -1733,17 +1759,9 @@ async function cargarContactoEmergencia(pasajeroId) {
   const btnAgregar = document.getElementById("btn-agregar-contacto");
 
   if (_contactoActual) {
-    setField("c-nombre",      _contactoActual.nombre);
-    setField("c-telefono",    _contactoActual.telefono);
-    setField("c-parentesco",  _contactoActual.parentesco);
-
-    const obsWrap = document.getElementById("c-observaciones-wrap");
-    if (_contactoActual.observaciones) {
-      setField("c-observaciones", _contactoActual.observaciones);
-      obsWrap.style.display = "";
-    } else {
-      obsWrap.style.display = "none";
-    }
+    setField("c-nombre",      _contactoActual.contacto_emergencia_nombre);
+    setField("c-telefono",    _contactoActual.contacto_emergencia_telefono);
+    setField("c-parentesco",  _contactoActual.contacto_emergencia_parentesco);
 
     document.getElementById("contacto-fields-view").style.display = "";
     document.getElementById("contacto-empty").style.display = "none";
@@ -1759,10 +1777,9 @@ async function cargarContactoEmergencia(pasajeroId) {
 function activarEdicionContacto() {
   if (!_puedeEditarContacto()) return;
 
-  document.getElementById("ce-nombre").value        = _contactoActual?.nombre || "";
-  document.getElementById("ce-telefono").value       = _contactoActual?.telefono || "";
-  document.getElementById("ce-parentesco").value     = _contactoActual?.parentesco || "";
-  document.getElementById("ce-observaciones").value  = _contactoActual?.observaciones || "";
+  document.getElementById("ce-nombre").value      = _contactoActual?.contacto_emergencia_nombre || "";
+  document.getElementById("ce-telefono").value     = _contactoActual?.contacto_emergencia_telefono || "";
+  document.getElementById("ce-parentesco").value   = _contactoActual?.contacto_emergencia_parentesco || "";
   if (typeof initCustomSelect === "function") {
     initCustomSelect("ce-parentesco");
     refreshCustomSelect("ce-parentesco");
@@ -1800,6 +1817,12 @@ async function guardarContactoEmergencia() {
   const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
+  const ci = normalizeCI(p["Documento de Identidad"]);
+  if (!ci) {
+    mostrarFeedbackContacto("Este pasajero no tiene CI cargado; no se puede vincular el contacto.", false);
+    return;
+  }
+
   const nombre   = document.getElementById("ce-nombre").value.trim();
   const telefono = document.getElementById("ce-telefono").value.trim();
 
@@ -1813,23 +1836,23 @@ async function guardarContactoEmergencia() {
   btn.textContent = "Guardando…";
 
   const payload = {
-    pasajero_id:    p.id,
-    nombre,
-    telefono,
-    parentesco:     document.getElementById("ce-parentesco").value || null,
-    observaciones:  document.getElementById("ce-observaciones").value.trim() || null,
-    es_principal:   true,
+    ci,
+    contacto_emergencia_nombre:      nombre,
+    contacto_emergencia_telefono:    telefono,
+    contacto_emergencia_parentesco:  document.getElementById("ce-parentesco").value || null,
   };
 
   let error;
   if (_contactoActual) {
     ({ error } = await supabaseClient
-      .from("contactos_emergencia")
+      .schema("reservas")
+      .from("bases_info_adicional")
       .update(payload)
       .eq("id", _contactoActual.id));
   } else {
     ({ error } = await supabaseClient
-      .from("contactos_emergencia")
+      .schema("reservas")
+      .from("bases_info_adicional")
       .insert(payload));
   }
 
@@ -1842,7 +1865,7 @@ async function guardarContactoEmergencia() {
     return;
   }
 
-  await cargarContactoEmergencia(p.id);
+  await cargarContactoEmergencia(p);
   mostrarFeedbackContacto("Contacto guardado correctamente.", true);
 }
 
