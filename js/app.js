@@ -1647,6 +1647,7 @@ function mostrarFeedbackDetalle(msg, ok) {
 
 // ── Contacto de emergencia (FAB SOS + modal) ─────────────────
 let _contactoActual = null; // fila actual en memoria, o null si no existe
+let _contactoCiActual = null; // CI (normalizado) del pasajero del modal abierto, o null sin CI
 let _fabSosUltimoFoco = null; // elemento a devolver el foco al cerrar el modal
 
 // Deja solo dígitos: mismo criterio con el que se guarda "ci" en
@@ -1659,6 +1660,17 @@ function normalizeCI(ci) {
 
 function _puedeEditarContacto() {
   return ["admin", "worker"].some(r =>
+    Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
+  );
+}
+
+// Permiso para "Enviar link" de contacto de emergencia: más amplio que
+// _puedeEditarContacto() (que solo cubre Editar/Guardar/Agregar), porque
+// el RPC reservas.generar_link_contacto_emergencia también acepta
+// 'viewer'. Generar y compartir un link no implica poder editar el
+// contacto directamente, así que se mantiene como chequeo aparte.
+function _puedeEnviarLinkContacto() {
+  return ["admin", "worker", "viewer"].some(r =>
     Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
   );
 }
@@ -1717,6 +1729,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function cargarContactoEmergencia(pasajero) {
   const puede = _puedeEditarContacto();
+  const puedeLink = _puedeEnviarLinkContacto();
 
   document.getElementById("contacto-fields-view").style.display = "";
   document.getElementById("contacto-fields-edit").style.display = "none";
@@ -1725,8 +1738,12 @@ async function cargarContactoEmergencia(pasajero) {
   document.getElementById("contacto-edit-feedback").style.display = "none";
 
   const ci = normalizeCI(pasajero?.["Documento de Identidad"]);
+  _contactoCiActual = ci || null; // usado por generarYCompartirLinkContacto()
 
-  // Sin CI no hay forma de vincular con bases_info_adicional.
+  const btnLink = document.getElementById("btn-link-contacto");
+
+  // Sin CI no hay forma de vincular con bases_info_adicional, ni de
+  // generar un link (el RPC también lo necesita).
   if (!ci) {
     _contactoActual = null;
     document.getElementById("contacto-fields-view").style.display = "none";
@@ -1735,6 +1752,7 @@ async function cargarContactoEmergencia(pasajero) {
     const btnAgregar = document.getElementById("btn-agregar-contacto");
     if (btnEditar)  btnEditar.style.display  = "none";
     if (btnAgregar) btnAgregar.style.display = "none"; // sin CI tampoco se puede crear
+    if (btnLink)    btnLink.style.display    = "none";
     return;
   }
 
@@ -1757,6 +1775,11 @@ async function cargarContactoEmergencia(pasajero) {
 
   const btnEditar  = document.getElementById("btn-editar-contacto");
   const btnAgregar = document.getElementById("btn-agregar-contacto");
+
+  // "Enviar link" está disponible con CI presente, haya o no datos
+  // cargados todavía (sirve tanto para completar por primera vez como
+  // para reenviar y que actualice lo ya cargado).
+  if (btnLink) btnLink.style.display = puedeLink ? "" : "none";
 
   if (_contactoActual) {
     setField("c-nombre",      _contactoActual.contacto_emergencia_nombre);
@@ -1867,6 +1890,70 @@ async function guardarContactoEmergencia() {
 
   await cargarContactoEmergencia(p);
   mostrarFeedbackContacto("Contacto guardado correctamente.", true);
+}
+
+/**
+ * Genera un link personalizado (vía RPC reservas.generar_link_contacto_
+ * emergencia) para que el pasajero complete/actualice su propio contacto
+ * de emergencia desde contacto-emergencia.html, sin necesitar sesión.
+ * El RPC vive en el schema "reservas" (igual que bases_info_adicional),
+ * distinto del "public" que usa el resto de esta app por default.
+ *
+ * Al obtener el link, se intenta compartir directo con la Web Share API
+ * (mismo patrón ya usado para compartir la imagen de ranking de Club
+ * Destino) para que el usuario elija WhatsApp u otra app desde el
+ * selector nativo, sin necesitar el celular del pasajero acá. Si el
+ * navegador no soporta share(), se copia al portapapeles como respaldo.
+ */
+async function generarYCompartirLinkContacto() {
+  if (!_contactoCiActual) {
+    mostrarFeedbackContacto("Este pasajero no tiene CI cargado; no se puede generar el link.", false);
+    return;
+  }
+
+  const btn = document.getElementById("btn-link-contacto");
+  const textoOriginal = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = "Generando…";
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .schema("reservas")
+      .rpc("generar_link_contacto_emergencia", { p_ci: _contactoCiActual });
+
+    if (error) throw error;
+
+    const link = data;
+    const pasajero = allPassengers.find(x => x.id === selectedIdx);
+    const nombrePasajero = pasajero?.["Pasajero"] || "";
+    const mensaje = `Hola${nombrePasajero ? " " + nombrePasajero : ""}, te compartimos un link para completar el contacto de emergencia de tu viaje:\n${link}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: mensaje });
+      } catch (shareErr) {
+        // AbortError = el usuario cerró el selector sin elegir nada; no es un error real.
+        if (shareErr && shareErr.name !== "AbortError") {
+          console.error("Error al compartir:", shareErr);
+        }
+      }
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(mensaje);
+      mostrarFeedbackContacto("Link copiado al portapapeles.", true);
+    } else {
+      mostrarFeedbackContacto("No se pudo compartir automáticamente. Copiá este link: " + link, false);
+    }
+  } catch (err) {
+    console.error("Error al generar link de contacto de emergencia:", err);
+    mostrarFeedbackContacto("No se pudo generar el link. Intentá de nuevo.", false);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = textoOriginal;
+    }
+  }
 }
 
 function mostrarFeedbackContacto(msg, ok) {
