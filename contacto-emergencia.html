@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!-- Sin index, sin snippet: esta página solo debe ser accesible por link
+     directo con token, nunca por buscadores. -->
+<meta name="robots" content="noindex, nofollow" />
+<title>Contacto de emergencia — Destino Guaraní</title>
+
+<style>
+  /* ============================================================
+     Estilos propios y livianos — no depende de base.css/home.css
+     del SPA principal (esas clases viven en archivos que esta
+     página no carga). Paleta y tipografía alineadas a mano con el
+     resto de la marca para que se sienta parte de la misma familia
+     visual sin arrastrar el resto del bundle.
+     ============================================================ */
+  :root{
+    --bg:#f7f9fc; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+    --primary:#2c7be5; --success:#10b981; --danger:#ef4444;
+    --shadow:0 8px 20px rgba(17,24,39,.08);
+  }
+  *, *::before, *::after{ box-sizing:border-box; }
+  html, body{ height:100%; }
+  body{
+    margin:0; font-family: system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+    color:var(--text); background:var(--bg);
+    display:flex; justify-content:center;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  }
+  .wrap{ width:100%; max-width:480px; margin:auto 0; }
+
+  .card{
+    background:var(--card); border-radius:20px; box-shadow:var(--shadow);
+    padding:26px 22px; text-align:center;
+  }
+
+  .icon{
+    width:56px; height:56px; margin:0 auto 16px; border-radius:50%;
+    background:linear-gradient(145deg,#dbeafe,#bfdbfe); color:var(--primary);
+    display:grid; place-items:center;
+  }
+  .icon.success{ background:linear-gradient(145deg,#d1fae5,#a7f3d0); color:#047857; }
+  .icon.error{ background:linear-gradient(145deg,#fee2e2,#fecaca); color:#b91c1c; }
+
+  h1{ margin:0 0 8px; font-size:1.2rem; font-weight:800; }
+  .subtitle{ margin:0 0 22px; font-size:.9rem; line-height:1.5; color:var(--muted); }
+
+  .field{ text-align:left; margin-bottom:14px; }
+  .field label{ display:block; font-weight:700; font-size:.85rem; margin-bottom:6px; }
+  .field input{
+    width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:12px;
+    font-size:1rem; background:#fff; color:var(--text);
+  }
+  .field input.field-error{ border-color:var(--danger); box-shadow:0 0 0 2px rgba(239,68,68,.15); }
+
+  /* Confirmación de identidad: nombre + CI de solo lectura, arriba del form */
+  .identity-box{
+    text-align:left; background:#f9fafb; border:1.5px solid #e5e7eb; border-radius:14px;
+    padding:12px 14px; margin-bottom:18px;
+  }
+  .identity-row{ display:flex; justify-content:space-between; gap:10px; padding:4px 0; font-size:.9rem; }
+  .identity-label{ color:var(--muted); font-weight:600; }
+  .identity-value{ color:var(--text); font-weight:700; text-align:right; }
+
+  /* Cumpleaños: fila día/mes + aviso, mismo criterio visual que ByC */
+  .birthday-row{ display:flex; gap:10px; }
+  .birthday-row select{
+    flex:1; border:1px solid #e5e7eb; border-radius:10px; padding:12px;
+    font-size:1rem; background:#fff; color:var(--text);
+  }
+  .birthday-row select:invalid{ color:var(--muted); }
+  .birthday-notice{
+    margin:8px 0 0; font-size:.82rem; line-height:1.5; color:#92400e;
+    background:#fff8e1; border:1.5px solid #f9a825; border-radius:10px; padding:8px 10px;
+  }
+
+  .sheet-trigger{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    width:100%; border:1px solid #e5e7eb; border-radius:10px; padding:12px;
+    font-size:1rem; background:#fff; color:var(--text); text-align:left; cursor:pointer;
+  }
+  .sheet-trigger.field-error{ border-color:var(--danger); box-shadow:0 0 0 2px rgba(239,68,68,.15); }
+  .sheet-trigger svg{ flex-shrink:0; color:var(--muted); }
+
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    border:none; border-radius:10px; padding:14px; font-size:1rem; font-weight:700;
+    cursor:pointer; min-height:50px;
+  }
+  .btn.primary{ background:var(--primary); color:#fff; }
+  .btn.primary:disabled{ opacity:.6; cursor:not-allowed; }
+  .btn.ghost{ background:transparent; border:1px solid #e5e7eb; color:var(--text); margin-top:8px; }
+
+  .hidden{ display:none !important; }
+
+  .spinner{
+    width:34px; height:34px; border-radius:50%; margin:20px auto;
+    border:4px solid #c7d2fe; border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .spinner{ animation:none; } }
+
+  /* Bottom-sheet de parentesco: mismo patrón visual que el resto de la app */
+  .action-sheet{
+    position:fixed; inset:0; z-index:50; display:flex; align-items:flex-end; justify-content:center;
+    background:rgba(17,24,39,.45); opacity:0; pointer-events:none; transition:opacity .18s ease;
+  }
+  .action-sheet.show{ opacity:1; pointer-events:auto; }
+  .action-sheet-content{
+    width:100%; max-width:480px; background:var(--card); border-radius:20px 20px 0 0;
+    padding:20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    box-shadow:0 -8px 28px rgba(17,24,39,.18);
+    transform:translateY(100%); transition:transform .22s ease;
+  }
+  .action-sheet.show .action-sheet-content{ transform:translateY(0); }
+  .sheet-title{ font-size:1.05rem; font-weight:800; text-align:center; margin-bottom:16px; }
+  .sheet-options{ display:flex; flex-direction:column; gap:8px; margin-bottom:4px; }
+  .sheet-option{
+    width:100%; min-height:48px; border-radius:12px; border:1.5px solid #e5e7eb;
+    background:#f9fafb; color:var(--text); font-size:.96rem; font-weight:600; cursor:pointer;
+  }
+  .sheet-option:hover{ background:#f3f4f6; }
+  .sheet-option.selected{ border-color:var(--primary); background:#eff6ff; color:var(--primary); }
+
+  .snackbar{
+    position:fixed; left:50%; bottom:20px; transform:translateX(-50%);
+    background:#111827; color:#fff; padding:12px 16px; border-radius:12px;
+    box-shadow:var(--shadow); opacity:0; pointer-events:none; z-index:100;
+    max-width:90vw; text-align:center; font-size:.9rem;
+  }
+  .snackbar.show{ opacity:1; transition:opacity .2s ease; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- Estado: cargando (validando token) -->
+  <div class="card" id="stateLoading">
+    <div class="spinner" role="status" aria-label="Cargando"></div>
+    <p class="subtitle" style="margin:0;">Cargando tu información…</p>
+  </div>
+
+  <!-- Estado: token inválido o ya usado -->
+  <div class="card hidden" id="stateInvalid">
+    <div class="icon error" aria-hidden="true">
+      <svg fill="none" height="26" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="26"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    </div>
+    <h1>Este link ya no es válido</h1>
+    <p class="subtitle">Puede que ya hayas completado tus datos, o que el link haya expirado. Si necesitás actualizar tu contacto de emergencia, pedile a tu agente que te envíe un nuevo link.</p>
+  </div>
+
+  <!-- Estado: formulario -->
+  <div class="card hidden" id="stateForm">
+    <div class="icon" aria-hidden="true">
+      <svg fill="none" height="26" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="26"><path d="M14.5 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-9.5L14.5 2Z"/><path d="M14 2v6h6"/><circle cx="10" cy="16" r="1.5"/><path d="M15 20v-2.5a2.5 2.5 0 0 0-5 0V20"/></svg>
+    </div>
+    <h1>Contacto de emergencia</h1>
+    <p class="subtitle">Completá los datos de la persona a quien contactar en caso de emergencia durante tu viaje.</p>
+
+    <!-- Confirmación de identidad: quién es el pasajero de este link.
+         Solo lectura — si el nombre o CI no coinciden con la persona que
+         abrió el link, sabe de entrada que hay un error y puede avisar
+         a su agente en vez de completar datos que no le corresponden. -->
+    <div class="identity-box" id="identityBox">
+      <div class="identity-row">
+        <span class="identity-label">Nombre</span>
+        <span class="identity-value" id="identityNombre">—</span>
+      </div>
+      <div class="identity-row">
+        <span class="identity-label">CI</span>
+        <span class="identity-value" id="identityCi">—</span>
+      </div>
+    </div>
+
+    <form id="contactoForm" novalidate>
+      <div class="field">
+        <label>Cumpleaños (opcional)</label>
+        <div class="birthday-row">
+          <select id="fBirthDay" aria-label="Día">
+            <option value="">Día</option>
+          </select>
+          <select id="fBirthMonth" aria-label="Mes">
+            <option value="">Mes</option>
+            <option value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+          </select>
+        </div>
+        <p class="birthday-notice">🎁 En Destino nos complace darte un presente si tu cumpleaños cae en el mes de tu viaje.</p>
+      </div>
+
+      <div class="field">
+        <label for="fNombre">Nombre y apellido</label>
+        <input autocomplete="off" id="fNombre" placeholder="Ej: María Gómez" type="text" />
+      </div>
+
+      <div class="field">
+        <label for="fTelefono">Teléfono</label>
+        <input autocomplete="off" id="fTelefono" inputmode="numeric" placeholder="Ej: 099123456" type="text" />
+      </div>
+
+      <div class="field">
+        <label>Parentesco</label>
+        <button class="sheet-trigger" id="parentescoTrigger" type="button">
+          <span id="parentescoLabel">Seleccionar…</span>
+          <svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <input id="fParentesco" type="hidden" />
+      </div>
+
+      <button class="btn primary" id="submitBtn" type="submit">Guardar contacto</button>
+    </form>
+  </div>
+
+  <!-- Estado: confirmación -->
+  <div class="card hidden" id="stateDone">
+    <div class="icon success" aria-hidden="true">
+      <svg fill="none" height="28" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24" width="28"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <h1>¡Listo, gracias!</h1>
+    <p class="subtitle" style="margin-bottom:0;">Guardamos el contacto de emergencia. Ya podés cerrar esta página.</p>
+  </div>
+
+</div>
+
+<!-- Bottom-sheet: elegir parentesco -->
+<div class="action-sheet" id="parentescoSheet">
+  <div class="action-sheet-content">
+    <div class="sheet-title">Parentesco del contacto</div>
+    <div class="sheet-options" id="parentescoOptions"></div>
+    <button class="btn ghost" id="parentescoCancelBtn" type="button">Cancelar</button>
+  </div>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/supabase-client.js"></script>
+<script src="/js/contacto-emergencia.js"></script>
+</body>
+</html>
