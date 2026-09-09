@@ -1786,6 +1786,14 @@ async function cargarContactoEmergencia(pasajero) {
     setField("c-telefono",    _contactoActual.contacto_emergencia_telefono);
     setField("c-parentesco",  _contactoActual.contacto_emergencia_parentesco);
 
+    const obsWrap = document.getElementById("c-observaciones-wrap");
+    if (_contactoActual.observaciones) {
+      setField("c-observaciones", _contactoActual.observaciones);
+      obsWrap.style.display = "";
+    } else {
+      obsWrap.style.display = "none";
+    }
+
     document.getElementById("contacto-fields-view").style.display = "";
     document.getElementById("contacto-empty").style.display = "none";
     if (btnEditar) btnEditar.style.display = puede ? "" : "none";
@@ -1800,9 +1808,10 @@ async function cargarContactoEmergencia(pasajero) {
 function activarEdicionContacto() {
   if (!_puedeEditarContacto()) return;
 
-  document.getElementById("ce-nombre").value      = _contactoActual?.contacto_emergencia_nombre || "";
-  document.getElementById("ce-telefono").value     = _contactoActual?.contacto_emergencia_telefono || "";
-  document.getElementById("ce-parentesco").value   = _contactoActual?.contacto_emergencia_parentesco || "";
+  document.getElementById("ce-nombre").value        = _contactoActual?.contacto_emergencia_nombre || "";
+  document.getElementById("ce-telefono").value       = _contactoActual?.contacto_emergencia_telefono || "";
+  document.getElementById("ce-parentesco").value     = _contactoActual?.contacto_emergencia_parentesco || "";
+  document.getElementById("ce-observaciones").value  = _contactoActual?.observaciones || "";
   if (typeof initCustomSelect === "function") {
     initCustomSelect("ce-parentesco");
     refreshCustomSelect("ce-parentesco");
@@ -1863,6 +1872,7 @@ async function guardarContactoEmergencia() {
     contacto_emergencia_nombre:      nombre,
     contacto_emergencia_telefono:    telefono,
     contacto_emergencia_parentesco:  document.getElementById("ce-parentesco").value || null,
+    observaciones:                   document.getElementById("ce-observaciones").value.trim() || null,
   };
 
   let error;
