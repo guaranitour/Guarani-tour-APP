@@ -1937,8 +1937,9 @@ async function generarYCompartirLinkContacto() {
 
     const link = data;
     const pasajero = allPassengers.find(x => x.id === selectedIdx);
-    const nombrePasajero = pasajero?.["Pasajero"] || "";
-    const mensaje = `Hola${nombrePasajero ? " " + nombrePasajero : ""}, te compartimos un link para completar el contacto de emergencia de tu viaje:\n${link}`;
+    const nombreCompleto = pasajero?.["Pasajero"] || "";
+    const primerNombre = nombreCompleto.trim().split(/\s+/)[0] || ""; // solo nombre de pila, sin apellido
+    const mensaje = `Hola${primerNombre ? " " + primerNombre : ""}, te compartimos un link para completar o actualizar tu contacto de emergencia, que tendremos como referencia para acompañarte y cuidarte durante tus experiencias con Destino Guarani.\n\n👉 ${link}\n\n¡Gracias!`;
 
     if (navigator.share) {
       try {
