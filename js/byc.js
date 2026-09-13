@@ -2,30 +2,50 @@
 //  MÓDULO ESTADO BYC
 // ══════════════════════════════════════════════
 
-let todosLosRegistrosByc = [];
-let bycFiltrados = [];
-let _bycLoadToken = 0; // Descarta respuestas tardías de Supabase si ya salimos de la vista
+const BYC_PAGE_SIZE_INICIAL = 100;
+const BYC_PAGE_SIZE_MAS     = 50;
+const BYC_DEBOUNCE_MS       = 350;
+
+let bycFiltrados      = [];  // filas actualmente renderizadas (acumuladas)
+let _bycQuery         = '';
+let _bycOffset        = 0;
+let _bycHasMore       = false;
+let _bycTotalCount    = 0;   // total fijo de la tabla, no cambia con la búsqueda
+let _bycLoadToken     = 0;   // descarta respuestas tardías de Supabase si ya salimos de la vista
+let _bycSearchDebounce = null;
 
 // ── Inicializar vista ─────────────────────────
 function initBycView() {
   const search = document.getElementById('byc-search');
   if (search) search.value = '';
-  cargarByc();
+  _bycQuery = '';
+  _bycOffset = 0;
+  bycFiltrados = [];
+  cargarByc({ reset: true });
 }
 
-// ── Cargar datos ──────────────────────────────
-async function cargarByc() {
+// ── Cargar página desde el RPC ─────────────────
+// reset = true  → nueva búsqueda o entrada a la vista (reemplaza la lista)
+// reset = false → "Ver más" (acumula al final de la lista actual)
+async function cargarByc({ reset }) {
   const miToken = ++_bycLoadToken;
   const cont = document.getElementById('byc-cont');
-  cont.innerHTML = '<p class="byc-loading">Cargando registros…</p>';
 
-  const { data, error } = await supabaseClient
-    .from('basesycondiciones')
-    .select('id, nombre, ci, estado, email, email_disponible, correo_duplicado, link, estado_envio, created_at')
-    .order('created_at', { ascending: false });
+  if (reset) {
+    cont.innerHTML = '<p class="byc-loading">Cargando registros…</p>';
+    _bycOffset = 0;
+  }
 
-  // Si mientras esperábamos la respuesta el usuario navegó (atrás, u otra
-  // pestaña de módulo), este resultado ya es obsoleto: no tocar el DOM.
+  const limit = reset ? BYC_PAGE_SIZE_INICIAL : BYC_PAGE_SIZE_MAS;
+
+  const { data, error } = await supabaseClient.rpc('byc_buscar', {
+    p_query: _bycQuery,
+    p_limit: limit,
+    p_offset: _bycOffset
+  });
+
+  // Si mientras esperábamos la respuesta el usuario navegó o disparó
+  // otra búsqueda/carga, este resultado ya es obsoleto: no tocar el DOM.
   if (miToken !== _bycLoadToken) return;
   if (currentView !== 'byc') return;
 
@@ -34,29 +54,39 @@ async function cargarByc() {
     return;
   }
 
-  todosLosRegistrosByc = data || [];
-  bycFiltrados = [...todosLosRegistrosByc];
-  renderizarByc(bycFiltrados);
+  const lista = data || [];
+  _bycTotalCount = lista.length > 0 ? Number(lista[0].total_count) : (reset ? 0 : _bycTotalCount);
+  _bycHasMore = lista.length === limit;
+  _bycOffset += lista.length;
+
+  bycFiltrados = reset ? lista : [...bycFiltrados, ...lista];
+  renderizarByc(bycFiltrados, { append: !reset });
 }
 
-// ── Filtrar ───────────────────────────────────
+// ── Buscar (con debounce) ──────────────────────
 function filtrarByc() {
-  const q = (document.getElementById('byc-search')?.value || '').trim().toLowerCase();
+  const q = (document.getElementById('byc-search')?.value || '').trim();
+  clearTimeout(_bycSearchDebounce);
+  _bycSearchDebounce = setTimeout(() => {
+    _bycQuery = q;
+    cargarByc({ reset: true });
+  }, BYC_DEBOUNCE_MS);
+}
 
-  bycFiltrados = !q ? [...todosLosRegistrosByc] : todosLosRegistrosByc.filter(r =>
-    (r.nombre || '').toLowerCase().includes(q) ||
-    (r.ci     || '').toLowerCase().includes(q)
-  );
-
-  renderizarByc(bycFiltrados);
+// ── Cargar más resultados ──────────────────────
+function cargarMasByc() {
+  cargarByc({ reset: false });
 }
 
 // ── Renderizar lista ──────────────────────────
-function renderizarByc(lista) {
+function renderizarByc(lista, { append = false } = {}) {
   const cont = document.getElementById('byc-cont');
+
+  // El contador junto a "Listado" es el total fijo de la tabla:
+  // se pinta siempre igual, sin importar la búsqueda activa.
   const countEl = document.getElementById('byc-count');
   if (countEl) {
-    countEl.innerHTML = `Listado <span class="byc-count-num">${lista.length}</span>`;
+    countEl.innerHTML = `Listado <span class="byc-count-num">${_bycTotalCount}</span>`;
   }
 
   if (lista.length === 0) {
@@ -70,9 +100,14 @@ function renderizarByc(lista) {
     return;
   }
 
-  // Orden: más reciente primero (created_at desc, ya viene así desde la query)
-  cont.innerHTML = lista.map(r => renderBycRow(r)).join('');
+  const filas = lista.map(r => renderBycRow(r)).join('');
+  const verMasBtn = _bycHasMore
+    ? `<button type="button" class="byc-btn-ver-mas" id="byc-btn-ver-mas" onclick="cargarMasByc()">Ver más</button>`
+    : '';
+
+  cont.innerHTML = filas + verMasBtn;
 }
+
 
 // ── Formatear fecha y hora de aceptación ───────
 function formatearFechaHoraByc(createdAt) {
