@@ -259,6 +259,25 @@
   text-decoration: none;
 }
 
+/* ── Botón "Ver más" (paginación) ─────────────── */
+.byc-btn-ver-mas {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: .75rem 1rem;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: center;
+  transition: background .12s;
+}
+.byc-btn-ver-mas:hover {
+  background: var(--bg, #f7faf8);
+}
+
 /* ── Header toolbar (search + botón) ────────── */
 .byc-header-toolbar {
   display: flex;
