@@ -344,7 +344,7 @@
   <div class="main">
     <div class="page-header">
       <h1>Estado ByC</h1>
-      <p class="page-desc">Bases y condiciones por pasajero</p>
+      <p class="page-desc">Pasajeros que aceptaron bases y condiciones</p>
     </div>
     <div class="byc-header-toolbar">
       <div class="search-wrap">
@@ -353,10 +353,13 @@
         </svg>
         <input type="text" id="byc-search" placeholder="Buscar por nombre o CI…" oninput="filtrarByc()" />
       </div>
-      <button class="byc-btn-pendientes" onclick="abrirPendientesVincular()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        Pendientes de vincular
-      </button>
+      <div class="byc-toolbar-top">
+        <span class="byc-count-label" id="byc-count">Listado <span class="byc-count-num">0</span></span>
+        <button class="byc-btn-pendientes-link" onclick="abrirPendientesVincular()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Pendientes de vincular
+        </button>
+      </div>
     </div>
     <div id="byc-cont"></div>
   </div>
