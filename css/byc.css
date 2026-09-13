@@ -36,12 +36,34 @@
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
+  margin-top: .1rem;
 }
 
 .byc-count {
   font-size: .8rem;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* Variante con contador destacado, usada en el header de #byc-cont */
+.byc-count-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.byc-count-label .byc-count-num {
+  background: var(--accent);
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: .1rem .5rem;
+  border-radius: 20px;
+  letter-spacing: 0;
 }
 
 .byc-filters {
@@ -80,12 +102,26 @@
   padding: .7rem 1rem;
   border-bottom: 1px solid var(--border, #e8ede9);
   transition: background .12s;
+  position: relative;
 }
 .byc-row:last-child {
   border-bottom: none;
 }
 .byc-row:hover {
   background: var(--bg, #f7faf8);
+}
+/* Barra de acento a la izquierda al pasar el mouse (paridad con mockup) */
+.byc-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.byc-row:hover::before {
+  opacity: 1;
 }
 
 .byc-row-inner {
@@ -96,6 +132,29 @@
 }
 
 .byc-row-left {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-width: 0;
+}
+
+/* ── Avatar de iniciales ─────────────────────── */
+.byc-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-light, #e8f0eb);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  flex-shrink: 0;
+}
+
+.byc-row-text {
   display: flex;
   flex-direction: column;
   gap: .1rem;
@@ -114,6 +173,31 @@
 .byc-ci {
   font-size: .75rem;
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Check de aceptación ─────────────────────── */
+.byc-check {
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+  opacity: .55;
+  flex-shrink: 0;
+}
+
+/* ── Divisor alfabético ──────────────────────── */
+.byc-divider {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: .5rem 1rem .3rem;
+  background: var(--bg, #f7faf8);
+  border-bottom: 1px solid var(--border, #e8ede9);
+}
+.byc-divider:first-child {
+  border-top: none;
 }
 
 .byc-fecha-envio {
@@ -205,6 +289,25 @@
   background: var(--bg, #f0f5f2);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Variante compacta: link de texto junto al contador (paridad con mockup) */
+.byc-btn-pendientes-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.byc-btn-pendientes-link:hover {
+  text-decoration: underline;
 }
 
 /* ── Lista pendientes ────────────────────────── */
