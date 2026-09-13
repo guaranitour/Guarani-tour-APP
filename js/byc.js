@@ -55,8 +55,9 @@ function filtrarByc() {
 function renderizarByc(lista) {
   const cont = document.getElementById('byc-cont');
   const countEl = document.getElementById('byc-count');
-  if (countEl) countEl.textContent =
-    lista.length === 1 ? '1 registro' : `${lista.length} registros`;
+  if (countEl) {
+    countEl.innerHTML = `Listado <span class="byc-count-num">${lista.length}</span>`;
+  }
 
   if (lista.length === 0) {
     cont.innerHTML = `
@@ -69,7 +70,28 @@ function renderizarByc(lista) {
     return;
   }
 
-  cont.innerHTML = lista.map(r => renderBycRow(r)).join('');
+  // Agrupar por inicial del nombre (lista ya viene ordenada alfabéticamente desde la query)
+  let letraActual = null;
+  const partes = [];
+  for (const r of lista) {
+    const letra = ((r.nombre || '—').trim().charAt(0) || '—').toUpperCase();
+    if (letra !== letraActual) {
+      letraActual = letra;
+      partes.push(`<div class="byc-divider">${letra}</div>`);
+    }
+    partes.push(renderBycRow(r));
+  }
+
+  cont.innerHTML = partes.join('');
+}
+
+// ── Iniciales para el avatar ───────────────────
+function inicialesByc(nombre) {
+  const palabras = (nombre || '').trim().split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return '—';
+  const primera = palabras[0].charAt(0);
+  const segunda = palabras.length > 1 ? palabras[1].charAt(0) : (palabras[0].charAt(1) || '');
+  return (primera + segunda).toUpperCase();
 }
 
 // ── Fila de registro ──────────────────────────
@@ -79,14 +101,19 @@ function renderBycRow(r) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         Ver
       </a>`
-    : '';
+    : `<svg class="byc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Aceptado">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>`;
 
   return `
     <div class="byc-row">
       <div class="byc-row-inner">
         <div class="byc-row-left">
-          <span class="byc-nombre">${r.nombre || '—'}</span>
-          <span class="byc-ci">${r.ci || '—'}</span>
+          <div class="byc-avatar" aria-hidden="true">${inicialesByc(r.nombre)}</div>
+          <div class="byc-row-text">
+            <span class="byc-nombre">${r.nombre || '—'}</span>
+            <span class="byc-ci">${r.ci || '—'}</span>
+          </div>
         </div>
         <div class="byc-row-right">
           ${linkBtn}
