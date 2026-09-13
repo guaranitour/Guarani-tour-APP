@@ -21,8 +21,8 @@ async function cargarByc() {
 
   const { data, error } = await supabaseClient
     .from('basesycondiciones')
-    .select('id, nombre, ci, estado, email, email_disponible, correo_duplicado, link, estado_envio')
-    .order('nombre', { ascending: true });
+    .select('id, nombre, ci, estado, email, email_disponible, correo_duplicado, link, estado_envio, created_at')
+    .order('created_at', { ascending: false });
 
   // Si mientras esperábamos la respuesta el usuario navegó (atrás, u otra
   // pestaña de módulo), este resultado ya es obsoleto: no tocar el DOM.
@@ -70,19 +70,18 @@ function renderizarByc(lista) {
     return;
   }
 
-  // Agrupar por inicial del nombre (lista ya viene ordenada alfabéticamente desde la query)
-  let letraActual = null;
-  const partes = [];
-  for (const r of lista) {
-    const letra = ((r.nombre || '—').trim().charAt(0) || '—').toUpperCase();
-    if (letra !== letraActual) {
-      letraActual = letra;
-      partes.push(`<div class="byc-divider">${letra}</div>`);
-    }
-    partes.push(renderBycRow(r));
-  }
+  // Orden: más reciente primero (created_at desc, ya viene así desde la query)
+  cont.innerHTML = lista.map(r => renderBycRow(r)).join('');
+}
 
-  cont.innerHTML = partes.join('');
+// ── Formatear fecha y hora de aceptación ───────
+function formatearFechaHoraByc(createdAt) {
+  if (!createdAt) return null;
+  const f = new Date(createdAt);
+  if (isNaN(f)) return null;
+  const fecha = f.toLocaleDateString('es-PY', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
+  const hora = f.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+  return `${fecha}, ${hora}`;
 }
 
 // ── Iniciales para el avatar ───────────────────
@@ -105,6 +104,9 @@ function renderBycRow(r) {
         <polyline points="20 6 9 17 4 12"/>
       </svg>`;
 
+  const fechaHora = formatearFechaHoraByc(r.created_at);
+  const ciTexto = fechaHora ? `${r.ci || '—'} - ${fechaHora}` : (r.ci || '—');
+
   return `
     <div class="byc-row">
       <div class="byc-row-inner">
@@ -112,7 +114,7 @@ function renderBycRow(r) {
           <div class="byc-avatar" aria-hidden="true">${inicialesByc(r.nombre)}</div>
           <div class="byc-row-text">
             <span class="byc-nombre">${r.nombre || '—'}</span>
-            <span class="byc-ci">${r.ci || '—'}</span>
+            <span class="byc-ci">${ciTexto}</span>
           </div>
         </div>
         <div class="byc-row-right">
