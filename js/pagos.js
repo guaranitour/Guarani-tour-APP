@@ -818,6 +818,15 @@ function _esWorkerOAdminPagos() {
     : ["admin", "worker"].includes(currentUserRole);
 }
 
+// Igual que _esWorkerOAdminPagos, pero habilitando también a viewer:
+// se usa puntualmente para la asignación de servicios extra al pasajero,
+// que viewer sí puede gestionar (a diferencia del resto de este módulo).
+function _puedeGestionarExtrasPasajero() {
+  return _esWorkerOAdminPagos() || (Array.isArray(currentUserRole)
+    ? currentUserRole.includes("viewer")
+    : currentUserRole === "viewer");
+}
+
 /* Carga los extras ya asignados a este pasajero y pinta la sección.
    La sección completa queda oculta si el viaje no tiene
    extras_habilitados, sin importar el rol. */
@@ -835,7 +844,7 @@ async function loadExtrasPasajero() {
   }
   section.style.display = "";
 
-  const puedeEditar = _esWorkerOAdminPagos();
+  const puedeEditar = _puedeGestionarExtrasPasajero();
   if (btnAdd) btnAdd.style.display = puedeEditar ? "" : "none";
 
   const { data, error } = await supabaseClient
@@ -886,7 +895,7 @@ async function loadExtrasPasajero() {
 /* ── MODAL: AGREGAR SERVICIO EXTRA ──────────── */
 
 async function abrirModalAgregarExtraPasajero() {
-  if (!_esWorkerOAdminPagos()) return;
+  if (!_puedeGestionarExtrasPasajero()) return;
 
   pagosCtx.extraElegido = null;
 
@@ -960,7 +969,7 @@ function cerrarModalAgregarExtraPasajero(event) {
 }
 
 async function confirmarAgregarExtraPasajero() {
-  if (!_esWorkerOAdminPagos()) return;
+  if (!_puedeGestionarExtrasPasajero()) return;
 
   const servicio = pagosCtx.extraElegido;
   if (!servicio) return;
@@ -1003,7 +1012,7 @@ async function confirmarAgregarExtraPasajero() {
 }
 
 async function eliminarExtraPasajero(id) {
-  if (!_esWorkerOAdminPagos()) return;
+  if (!_puedeGestionarExtrasPasajero()) return;
 
   const asignado = pagosCtx.extrasAsignados.find(e => String(e.id) === String(id));
   const nombre = asignado?.servicios_extra?.nombre || "este servicio extra";
