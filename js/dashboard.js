@@ -270,12 +270,15 @@ function _skelComparativo() {
 }
 
 // Maqueta completa del panel: se inyecta en el primer frame.
-function _dashboardSkeletonHtml() {
+// esFinanzas/esViewer omiten el esqueleto de secciones que esos roles
+// nunca llegan a ver, evitando el parpadeo de un bloque que después
+// se vacía.
+function _dashboardSkeletonHtml(esFinanzas = false, esViewer = false) {
   return `
-    <div id="dash-slot-byc">${_skelKpiSection("Bases y condiciones", _dashIcons.byc, 2)}</div>
+    <div id="dash-slot-byc">${(esFinanzas || esViewer) ? "" : _skelKpiSection("Bases y condiciones", _dashIcons.byc, 2)}</div>
     <div id="dash-slot-viajes">${_skelListSection("Viajes activos", _dashIcons.viajes, 3)}</div>
     <div id="dash-slot-extra"></div>
-    <div id="dash-slot-club">${_skelClubDestino()}</div>
+    <div id="dash-slot-club">${esViewer ? "" : _skelClubDestino()}</div>
   `;
 }
 
@@ -326,24 +329,26 @@ async function loadDashboard() {
   const esWorkerOAdmin = ["admin", "worker"].includes(currentUserRole);
   const puedeVerComparativo = esWorkerOAdmin || currentUserRole === "finanzas";
   const esFinanzas = currentUserRole === "finanzas";
+  const esViewer = currentUserRole === "viewer";
   const teniaCache = _dashCacheReady();
 
   if (teniaCache) {
     // 1a) YA hay algo cacheado de una visita anterior: lo pintamos TAL
     //     CUAL, al instante, sin skeleton. El usuario ve el panel completo
     //     desde el primer frame como si nunca se hubiera ido.
-    // Excepción: BYC nunca se pinta desde caché para finanzas — el caché
-    // es global en memoria y podría venir de una sesión anterior con otro
-    // rol (mismo navegador sin recargar entre logins).
+    // Excepción: BYC y Club Destino nunca se pintan desde caché para
+    // finanzas/viewer — el caché es global en memoria y podría venir de
+    // una sesión anterior con otro rol (mismo navegador sin recargar
+    // entre logins).
     root.innerHTML = `
-      <div id="dash-slot-byc">${esFinanzas ? "" : _dashCache.byc}</div>
+      <div id="dash-slot-byc">${esFinanzas || esViewer ? "" : _dashCache.byc}</div>
       <div id="dash-slot-viajes">${_dashCache.viajes}</div>
       <div id="dash-slot-extra">${_dashCache.extra || ""}</div>
-      <div id="dash-slot-club">${_dashCache.club}</div>
+      <div id="dash-slot-club">${esViewer ? "" : _dashCache.club}</div>
     `;
   } else {
     // 1b) Primera vez en esta sesión: mostramos el esqueleto de carga.
-    root.innerHTML = _dashboardSkeletonHtml();
+    root.innerHTML = _dashboardSkeletonHtml(esFinanzas, esViewer);
   }
 
   const slotByc    = document.getElementById("dash-slot-byc");
@@ -355,9 +360,9 @@ async function loadDashboard() {
     // Revalidación pasiva: el contenido ya está a la vista, solo
     // marcamos con los tres puntos junto a cada título que se está
     // refrescando en segundo plano. La app sigue 100% usable.
-    _setSlotRevalidating(slotByc, true);
+    _setSlotRevalidating(slotByc, !esViewer);
     _setSlotRevalidating(slotViajes, true);
-    _setSlotRevalidating(slotClub, true);
+    _setSlotRevalidating(slotClub, !esViewer);
     if (puedeVerComparativo && _dashCache.extra) _setSlotRevalidating(slotExtra, true);
   }
 
@@ -413,7 +418,7 @@ async function loadDashboard() {
     //    Si veníamos de caché, _swapSlotIfChanged compara con lo anterior
     //    y solo toca el DOM si el HTML realmente cambió.
 
-    const htmlByc = esFinanzas ? "" : renderKpisByc(bycData || [], pasajerosData || []);
+    const htmlByc = (esFinanzas || esViewer) ? "" : renderKpisByc(bycData || [], pasajerosData || []);
     if (teniaCache) _swapSlotIfChanged(slotByc, htmlByc, "byc");
     else if (slotByc) slotByc.innerHTML = htmlByc;
     _dashCache.byc = htmlByc;
@@ -428,17 +433,20 @@ async function loadDashboard() {
 
     // Club Destino depende del ranking de puntos (incluye carga de avatares),
     // que puede tardar un poco más: se resuelve aparte y no frena a byc/viajes.
-    const clubDestinoPromise = calcularYCachearRankingPuntos2026(vpData || [], viajesMap)
-      .then(rankingPuntos => {
-        const htmlClub = renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
-        if (teniaCache) _swapSlotIfChanged(slotClub, htmlClub, "club");
-        else if (slotClub) slotClub.innerHTML = htmlClub;
-        _dashCache.club = htmlClub;
-      })
-      .catch(e => {
-        console.error("Error cargando Club Destino:", e);
-        marcarError(slotClub, "No se pudo cargar Club Destino.");
-      });
+    // Para viewer, la sección no se muestra: evitamos el cálculo por completo.
+    const clubDestinoPromise = esViewer
+      ? Promise.resolve()
+      : calcularYCachearRankingPuntos2026(vpData || [], viajesMap)
+          .then(rankingPuntos => {
+            const htmlClub = renderClubDestino(pasajerosData || [], vpData || [], rankingPuntos);
+            if (teniaCache) _swapSlotIfChanged(slotClub, htmlClub, "club");
+            else if (slotClub) slotClub.innerHTML = htmlClub;
+            _dashCache.club = htmlClub;
+          })
+          .catch(e => {
+            console.error("Error cargando Club Destino:", e);
+            marcarError(slotClub, "No se pudo cargar Club Destino.");
+          });
 
     // Comparativo + ranking de vendedores (solo admin/worker) requieren
     // dos queries adicionales (egresos, pagos): se resuelven en paralelo
@@ -480,6 +488,10 @@ async function loadDashboard() {
         });
     } else {
       _dashCache.extra = "";
+    }
+
+    if (esViewer) {
+      _dashCache.club = "";
     }
 
     // No es necesario await acá: cada promesa pinta su slot por su cuenta
