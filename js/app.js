@@ -676,6 +676,13 @@ function navigateTo(view, idx = null, _fromHash = false) {
     view = "dashboard";
   }
 
+  // Guard de acceso: viewer no puede entrar a clientes, byc/byc-vincular
+  // ni histórico (tampoco al alta de cliente), ni por menú ni por
+  // hash/URL directa ni por llamada programática.
+  if (currentUserRole === "viewer" && (view === "clientes" || view === "nuevo" || view === "byc" || view === "byc-vincular" || view === "historico")) {
+    view = "dashboard";
+  }
+
   const soportaVT = typeof document.startViewTransition === "function";
   const aplicaTransicion =
     soportaVT &&
@@ -2058,12 +2065,12 @@ function setField(id, value) {
 // cortos, sin descripción y en grid de 3.
 // ══════════════════════════════════════════════════════════
 const MODULOS_MENU = [
-  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", roles: ["admin", "worker", "viewer"] },
+  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", roles: ["admin", "worker"] },
   { slug: "viajes",             label: "Viajes",      img: "viajes.png",    bg: "rgba(45,106,79,.12)" },
   { slug: "recibos",            label: "Recibos",     img: "recibo.png",    bg: "rgba(201,168,76,.18)" },
   { slug: "movimientos",        label: "Movimientos", img: "bancario.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "finanzas"] },
-  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)", roles: ["admin", "worker", "viewer"] },
-  { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)" },
+  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)", roles: ["admin", "worker"] },
+  { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)", roles: ["admin", "worker", "finanzas"] },
   { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
   { slug: "legales",            label: "Legales",     img: "legales.png",   bg: "rgba(70,130,180,.15)", roles: ["admin", "worker"] },
