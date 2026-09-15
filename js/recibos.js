@@ -15,6 +15,28 @@ let _modoAgrupacionRecibos = 'todos';
 // ── Cargar y renderizar lista ─────────────────
 async function cargarRecibos() {
   const cont = document.getElementById('recibos-cont');
+
+  // El módulo de Recibos todavía no está habilitado para el rol viewer:
+  // se muestra un aviso en vez del listado real, y se ocultan el resumen,
+  // la búsqueda/botón "Nuevo" y los chips de agrupación (no aplican).
+  if (currentUserRole === 'viewer') {
+    const resumenEl = document.querySelector('#view-recibos .recibos-resumen');
+    const toolbarEl = document.querySelector('#view-recibos .recibos-toolbar');
+    const modoEl    = document.querySelector('#view-recibos .recibos-modo');
+    if (resumenEl) resumenEl.style.display = 'none';
+    if (toolbarEl) toolbarEl.style.display = 'none';
+    if (modoEl) modoEl.style.display = 'none';
+
+    cont.innerHTML = `
+      <div class="recibos-en-construccion">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/>
+        </svg>
+        <p>Estamos trabajando para brindarte acceso a los recibos de la operación. ¡Gracias por tu paciencia!</p>
+      </div>`;
+    return;
+  }
+
   cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
   _modoAgrupacionRecibos = 'todos';
 
