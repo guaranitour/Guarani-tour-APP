@@ -23,6 +23,23 @@
 .recibos-empty svg { opacity: .35; }
 .recibos-empty p { font-size: .9rem; margin: 0; }
 
+.recibos-en-construccion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .9rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--text-light, #888);
+}
+.recibos-en-construccion svg { color: var(--gold, #c9a24b); opacity: .8; }
+.recibos-en-construccion p {
+  font-size: .92rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 26rem;
+}
+
 /* ── Botón nuevo recibo ──────────────────────── */
 .recibos-toolbar {
   display: flex;
