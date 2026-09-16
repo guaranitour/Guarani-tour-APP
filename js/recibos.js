@@ -215,14 +215,17 @@ const _cacheArchivosCompartir = new Map(); // fileId -> Promise<File>
 function precargarComprobante(fileId) {
   if (!fileId || _cacheArchivosCompartir.has(fileId)) return;
 
-  const promesa = fetch(APPSCRIPT_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
+  const promesa = supabaseClient.functions.invoke('recibos', {
+    body: { action: 'descargar', fileId },
   })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.ok) throw new Error(data.error || 'No se pudo precargar el archivo');
+    .then(async ({ data, error }) => {
+      if (error || !data?.ok) {
+        let msg = data?.error || error?.message || 'No se pudo precargar el archivo';
+        if (!data && error?.context?.json) {
+          try { msg = (await error.context.json())?.error || msg; } catch {}
+        }
+        throw new Error(msg);
+      }
       const { base64, mimeType, nombre } = data.data;
       const blob = base64ToBlob(base64, mimeType || 'application/pdf');
       return new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
@@ -1021,9 +1024,6 @@ function actualizarPreviewLinkForm(url) {
   }
 }
 
-const APPSCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8i_g5g1iG7Yb9xYq34dWv4UIq9CoAszM0sy_uKZfrRIEgGJaGgxAFBFBQ5b7bLAvRUw/exec';
-const APPSCRIPT_TOKEN = 'MI_TOKEN_SECRETO'; // ⚠️ debe coincidir con el token en Apps Script
-
 async function guardarNuevoRecibo() {
   const btn = document.getElementById('btn-guardar-recibo');
   const errEl = document.getElementById('form-recibo-error');
@@ -1051,79 +1051,41 @@ async function guardarNuevoRecibo() {
   btn.disabled = true;
   btn.textContent = 'Generando recibo…';
 
-  // ── 1. Llamar a Apps Script para generar el PDF ──────────────────────
-  let linkPdf = null;
-  let recibo_nro = null;
-
-  try {
-    const gsPayload = {
-      token:       APPSCRIPT_TOKEN,
-      cliente,
-      monto:       Number(monto),
-      fecha,
-      ci:          ci,
-      concepto:    concepto,
-      metodo_pago: forma_pago || '',
-      banco:       document.getElementById('frec-banco').value.trim()       || '',
-      comprobante: document.getElementById('frec-comprobante').value.trim() || '',
-      email:       correo,
-      es_solidario, // Apps Script decide la plantilla del PDF/correo según este flag
-    };
-
-    const gsRes = await fetch(APPSCRIPT_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'text/plain' }, // Apps Script requiere text/plain para evitar preflight CORS
-      body:    JSON.stringify(gsPayload),
-    });
-
-    const gsData = await gsRes.json();
-
-    if (!gsData.ok) throw new Error(gsData.error || 'Error en Apps Script');
-
-    linkPdf   = gsData.data.url   || null;
-    recibo_nro = gsData.data.recibo || null;
-
-  } catch (e) {
-    // Si falla el PDF, preguntamos si igual quiere guardar sin él
-    const continuar = confirm(`⚠️ No se pudo generar el PDF del recibo:\n${e.message}\n\n¿Guardar el registro igualmente?`);
-    if (!continuar) {
-      btn.disabled = false;
-      btn.textContent = 'Guardar recibo';
-      return;
-    }
-  }
-
-  // ── 2. Guardar en Supabase ───────────────────────────────────────────
-  btn.textContent = 'Guardando…';
-
   const payload = {
+    action:      'generar',
     cliente,
-    monto:               Number(monto),
+    monto:       Number(monto),
     fecha,
-    ci:                  ci                || null,
-    correo_beneficiario: correo            || null,
-    concepto:            concepto          || null,
-    forma_pago,
-    banco:               document.getElementById('frec-banco').value.trim()       || null,
-    comprobante:         document.getElementById('frec-comprobante').value.trim() || null,
-    abona_por:           abona_por,
+    ci,
+    email:       correo,
+    concepto,
+    metodo_pago: forma_pago,
+    banco:       document.getElementById('frec-banco').value.trim()       || '',
+    comprobante: document.getElementById('frec-comprobante').value.trim() || '',
+    abona_por,
     es_solidario,
-    usuario:             currentUserName || null,
-    link:                linkPdf || null,
-    ...(recibo_nro && { recibo_nro }),
+    usuario:     currentUserName || null,
   };
 
-  const { error } = await supabaseClient.from('recibos').insert([payload]);
+  const { data, error } = await supabaseClient.functions.invoke('recibos', { body: payload });
 
   btn.disabled = false;
   btn.textContent = 'Guardar recibo';
 
-  if (error) {
-    errEl.textContent = 'Error al guardar: ' + error.message;
+  if (error || !data?.ok) {
+    let msg = data?.error || error?.message || 'Error desconocido';
+    // En FunctionsHttpError (status 4xx/5xx), supabase-js no siempre
+    // parsea el body automáticamente — data puede venir null. Intentamos
+    // leer el JSON de la Edge Function ahí también, sin romper si
+    // error.context no es un Response válido en esta versión de la lib.
+    if (!data && error?.context?.json) {
+      try { msg = (await error.context.json())?.error || msg; } catch {}
+    }
+    errEl.textContent = 'Error al generar el recibo: ' + msg;
     return;
   }
 
-  if (linkPdf) mostrarToastRecibo('✅ Recibo generado y guardado');
+  mostrarToastRecibo('✅ Recibo generado y guardado');
   navigateTo('recibos');
 }
 
@@ -1246,13 +1208,16 @@ async function compartirComprobante(url, btn) {
         // Samsung Internet por el mismo motivo, pero sigue funcionando
         // en Chrome y cae al fallback de link de forma segura en todos.
         ponerCargando();
-        const gsRes = await fetch(APPSCRIPT_URL, {
-          method:  'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body:    JSON.stringify({ token: APPSCRIPT_TOKEN, action: 'download', fileId }),
+        const { data: gsData, error: gsError } = await supabaseClient.functions.invoke('recibos', {
+          body: { action: 'descargar', fileId },
         });
-        const gsData = await gsRes.json();
-        if (!gsData.ok) throw new Error(gsData.error || 'No se pudo obtener el archivo');
+        if (gsError || !gsData?.ok) {
+          let msg = gsData?.error || gsError?.message || 'No se pudo obtener el archivo';
+          if (!gsData && gsError?.context?.json) {
+            try { msg = (await gsError.context.json())?.error || msg; } catch {}
+          }
+          throw new Error(msg);
+        }
         const { base64, mimeType, nombre } = gsData.data;
         const blob = base64ToBlob(base64, mimeType || 'application/pdf');
         archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
