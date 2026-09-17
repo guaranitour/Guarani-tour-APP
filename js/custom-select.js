@@ -175,13 +175,20 @@ function _csPopupContainer(trigger) {
 function _openDropdown(sel, trigger, options, onSelect) {
   const rect = trigger.getBoundingClientRect();
 
+  // Margen de seguridad contra el borde del viewport (evita que el
+  // dropdown quede pegado o cortado en pantallas angostas / mobile).
+  const EDGE_MARGIN = 12;
+  const maxLeft = window.innerWidth - rect.width - EDGE_MARGIN;
+  const left = Math.max(EDGE_MARGIN, Math.min(rect.left, maxLeft));
+
   const dropdown = document.createElement("div");
   dropdown.className = "cs-dropdown";
   dropdown.style.cssText = `
     position: fixed;
     top: ${rect.bottom + 4}px;
-    left: ${rect.left}px;
+    left: ${left}px;
     width: ${rect.width}px;
+    max-width: calc(100vw - ${EDGE_MARGIN * 2}px);
   `;
 
   // Si se sale de la pantalla por abajo, abrirlo hacia arriba
