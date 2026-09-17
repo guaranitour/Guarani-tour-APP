@@ -2027,8 +2027,6 @@
     <div class="recibos-modo">
       <button type="button" class="recibos-modo-chip activo" data-modo="todos" onclick="cambiarModoAgrupacionRecibos('todos')">Todos</button>
       <button type="button" class="recibos-modo-chip" data-modo="viaje" onclick="cambiarModoAgrupacionRecibos('viaje')">Por viaje</button>
-      <button type="button" class="recibos-modo-chip" data-modo="comercial" onclick="cambiarModoAgrupacionRecibos('comercial')">Pagos</button>
-      <button type="button" class="recibos-modo-chip" data-modo="solidario" onclick="cambiarModoAgrupacionRecibos('solidario')">Solidaridad</button>
     </div>
     <div id="recibos-cont"></div>
   </div>
@@ -2110,13 +2108,12 @@
           <textarea id="frec-concepto" rows="2" placeholder="Descripción del pago…"></textarea>
         </div>
 
-        <label class="frec-solidario-check" for="frec-es-solidario">
-          <input type="checkbox" id="frec-es-solidario" onchange="onToggleSolidario(this.checked)" />
-          <span>
-            <strong>Es una donación solidaria</strong>
-            <small>El cliente no está pagando un servicio: es un aporte voluntario. Se usará una plantilla de recibo distinta.</small>
-          </span>
-        </label>
+        <div class="form-recibo-field">
+          <label for="frec-tipo-recibo">Tipo de recibo *</label>
+          <select id="frec-tipo-recibo" onchange="onCambioTipoRecibo(this.value)">
+            <option value="">Cargando tipos…</option>
+          </select>
+        </div>
 
         <hr class="form-recibo-sep" />
 
