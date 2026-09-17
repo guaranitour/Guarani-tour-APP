@@ -6,10 +6,8 @@ let todosLosRecibos = [];
 let recibosFiltrados = [];
 
 // Modo de vista de la lista: 'todos' (sin agrupar, más reciente primero,
-// es el default) | 'viaje' (agrupado por abona_por) | 'comercial' (solo
-// es_solidario=false/null, sin agrupar) | 'solidario' (solo
-// es_solidario=true, sin agrupar). Se resetea a 'todos' cada vez que se
-// entra al módulo.
+// es el default) | 'viaje' (agrupado por abona_por). Se resetea a
+// 'todos' cada vez que se entra al módulo.
 let _modoAgrupacionRecibos = 'todos';
 
 // ── Cargar y renderizar lista ─────────────────
@@ -42,7 +40,7 @@ async function cargarRecibos() {
 
   const { data, error } = await supabaseClient
     .from('recibos')
-    .select('*')
+    .select('*, tipo_recibos(id, tipo)')
     .order('fecha', { ascending: false });
 
   if (error) {
@@ -108,22 +106,10 @@ function renderizarRecibos(lista) {
 
   // Modo "Todos": lista plana, sin agrupar (ya viene ordenada por fecha
   // desc desde la carga; al filtrar se preserva ese orden).
-  // Modos "comercial"/"solidario": mismo render plano que "Todos", pero
-  // sobre un subconjunto filtrado por es_solidario — no son agrupadores,
-  // son filtros rápidos (a diferencia de "Por viaje").
-  if (_modoAgrupacionRecibos === 'todos' || _modoAgrupacionRecibos === 'comercial' || _modoAgrupacionRecibos === 'solidario') {
-    const listaModo = _modoAgrupacionRecibos === 'comercial' ? lista.filter(r => !r.es_solidario)
-                     : _modoAgrupacionRecibos === 'solidario' ? lista.filter(r => r.es_solidario)
-                     : lista;
-
-    if (listaModo.length === 0) {
-      cont.innerHTML = '<div class="recibos-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><p>No se encontraron recibos</p></div>';
-      return;
-    }
-
+  if (_modoAgrupacionRecibos === 'todos') {
     cont.innerHTML = `<div class="recibos-grupo recibos-grupo--abierto recibos-grupo--plana">
       <div class="recibos-grupo-body">
-        ${listaModo.map(r => renderReciboCard(r)).join('')}
+        ${lista.map(r => renderReciboCard(r)).join('')}
       </div>
     </div>`;
     return;
@@ -174,8 +160,12 @@ function renderReciboCard(r) {
   const metodoBadge = r.forma_pago
     ? `<span class="recibo-metodo-badge recibo-metodo-${slugMetodo(r.forma_pago)}">${r.forma_pago}</span>`
     : '';
-  const solidarioBadge = r.es_solidario
-    ? `<span class="recibo-metodo-badge recibo-metodo-solidario">Solidario</span>`
+  // Se muestra el tipo como badge salvo que sea "Pago" (el tipo
+  // neutro/default no necesita distinguirse visualmente, igual que antes
+  // es_solidario=false no mostraba badge).
+  const tipoNombre = r.tipo_recibos?.tipo || null;
+  const tipoBadge = (tipoNombre && tipoNombre !== 'Pago')
+    ? `<span class="recibo-metodo-badge recibo-metodo-solidario">${tipoNombre}</span>`
     : '';
 
   // En cualquier modo que no agrupe por viaje, el viaje no está implícito
@@ -197,7 +187,7 @@ function renderReciboCard(r) {
         </div>
         <div class="recibo-card-linea2">
           <span class="recibo-meta">${metaTexto || '—'}</span>
-          <span class="recibo-card-badges">${solidarioBadge}${metodoBadge}</span>
+          <span class="recibo-card-badges">${tipoBadge}${metodoBadge}</span>
         </div>
       </div>
     </div>`;
@@ -322,7 +312,7 @@ function initReciboDetalleView(id) {
       <div class="recibo-doc-header">
         <div class="recibo-doc-empresa">
           <span class="recibo-doc-logo-text">Guarani Tour</span>
-          <span class="recibo-doc-subtitulo">${recibo.es_solidario ? 'Comprobante de donación' : 'Comprobante de pago'}</span>
+          <span class="recibo-doc-subtitulo">${recibo.tipo_recibos?.tipo === 'Donación solidaria' ? 'Comprobante de donación' : 'Comprobante de pago'}</span>
         </div>
         <div class="recibo-doc-nro-bloque">
           <span class="recibo-doc-nro-label">RECIBO</span>
@@ -421,10 +411,9 @@ async function initReciboNuevoView() {
   if (chipsCont) chipsCont.innerHTML = '';
   _viajeIdSeleccionadoRecibo = null;
 
-  // Reset del checkbox "Es donación solidaria" y su efecto en el form
-  const chkSolidario = document.getElementById('frec-es-solidario');
-  if (chkSolidario) chkSolidario.checked = false;
-  onToggleSolidario(false);
+  // Reset del select "Tipo de recibo" (se recarga y reselecciona el
+  // default más abajo, junto con el resto de los datos del form)
+  _tipoReciboSeleccionadoId = null;
 
   // Ocultar grupo transferencia explícitamente
   const grupo = document.getElementById('frec-grupo-transferencia');
@@ -445,7 +434,7 @@ async function initReciboNuevoView() {
   });
 
   // Cargar datos
-  await Promise.all([cargarViajesActivosEnSelect(), cargarBancosEnSelect(), cargarClientesCache()]);
+  await Promise.all([cargarTiposReciboEnSelect(), cargarViajesActivosEnSelect(), cargarBancosEnSelect(), cargarClientesCache()]);
 
   initCustomSelect("frec-forma-pago");
   initCustomSelect("frec-abona-por");
@@ -650,15 +639,53 @@ function _esAdminRecibos() {
     : currentUserRole === 'admin';
 }
 
-// ── Checkbox "Es una donación solidaria" ──────
-// Al tildarse: oculta el bloque de frases rápidas (aunque haya viaje
-// elegido) y cambia el label/placeholder del concepto para guiar qué
-// escribir. abona_por sigue siendo obligatorio en ambos casos —no se
-// toca su validación ni su combo.
-let _esRecibosSolidario = false;
+// ── Select "Tipo de recibo" ───────────────────
+// Al elegir un tipo distinto de "Pago": oculta el bloque de frases
+// rápidas (aunque haya viaje elegido) y cambia el label/placeholder del
+// concepto para guiar qué escribir. abona_por sigue siendo obligatorio
+// en todos los casos —no se toca su validación ni su combo.
+let _tiposRecibosCache = []; // [{id, tipo, template_id}, ...]
+let _tipoReciboSeleccionadoId = null;
 
-function onToggleSolidario(checked) {
-  _esRecibosSolidario = checked;
+async function cargarTiposReciboEnSelect() {
+  const sel = document.getElementById('frec-tipo-recibo');
+  if (!sel) return;
+
+  const { data, error } = await supabaseClient
+    .from('tipo_recibos')
+    .select('id, tipo, template_id')
+    .eq('estado', 'enabled')
+    .order('tipo');
+
+  if (error || !data) {
+    sel.innerHTML = '<option value="">Error al cargar tipos</option>';
+    return;
+  }
+
+  _tiposRecibosCache = data;
+
+  if (data.length === 0) {
+    sel.innerHTML = '<option value="">Sin tipos configurados</option>';
+    return;
+  }
+
+  sel.innerHTML = '<option value="">Seleccioná un tipo…</option>' +
+    data.map(t => `<option value="${t.id}">${t.tipo}</option>`).join('');
+
+  // Preseleccionar "Pago" si existe, como default razonable (mismo
+  // comportamiento que antes: el checkbox arrancaba destildado).
+  const pago = data.find(t => t.tipo === 'Pago');
+  if (pago) {
+    sel.value = String(pago.id);
+    onCambioTipoRecibo(String(pago.id));
+  }
+}
+
+function onCambioTipoRecibo(idStr) {
+  _tipoReciboSeleccionadoId = idStr ? Number(idStr) : null;
+
+  const tipoObj = _tiposRecibosCache.find(t => t.id === _tipoReciboSeleccionadoId);
+  const esTipoEspecial = !!tipoObj && tipoObj.tipo !== 'Pago';
 
   const wrap  = document.getElementById('frec-speeches-wrap');
   if (wrap) wrap.style.display = 'none';
@@ -667,8 +694,8 @@ function onToggleSolidario(checked) {
 
   const label = document.getElementById('frec-concepto-label');
   const campo = document.getElementById('frec-concepto');
-  if (label) label.textContent = checked ? 'Motivo de la donación *' : 'Concepto *';
-  if (campo) campo.placeholder = checked
+  if (label) label.textContent = esTipoEspecial ? 'Motivo *' : 'Concepto *';
+  if (campo) campo.placeholder = esTipoEspecial
     ? 'Ej: Aporte solidario para la campaña de fin de año…'
     : 'Descripción del pago…';
 }
@@ -689,9 +716,12 @@ async function onCambioViajeRecibo(nombreViaje) {
   const viajeId = nombreViaje ? _viajesRecibosPorNombre[nombreViaje] : null;
   _viajeIdSeleccionadoRecibo = viajeId || null;
 
-  // Si es donación solidaria, nunca mostramos frases rápidas por viaje:
-  // el concepto de una donación se escribe a mano, no se sugiere.
-  if (!viajeId || _esRecibosSolidario) {
+  // Si el tipo elegido no es "Pago", nunca mostramos frases rápidas por
+  // viaje: el concepto de un tipo especial (donación, etc) se escribe a
+  // mano, no se sugiere.
+  const tipoObj = _tiposRecibosCache.find(t => t.id === _tipoReciboSeleccionadoId);
+  const esTipoEspecial = !!tipoObj && tipoObj.tipo !== 'Pago';
+  if (!viajeId || esTipoEspecial) {
     wrap.style.display = 'none';
     chips.innerHTML = '';
     return;
@@ -1037,7 +1067,7 @@ async function guardarNuevoRecibo() {
   const concepto   = document.getElementById('frec-concepto').value.trim();
   const forma_pago = document.getElementById('frec-forma-pago').value || null;
   const abona_por  = document.getElementById('frec-abona-por').value || null;
-  const es_solidario = document.getElementById('frec-es-solidario').checked;
+  const tipo_recibo_id = document.getElementById('frec-tipo-recibo').value || null;
 
   if (!cliente)                        { errEl.textContent = 'El nombre del cliente es obligatorio.'; return; }
   if (!ci)                             { errEl.textContent = 'El CI es obligatorio.'; return; }
@@ -1047,6 +1077,7 @@ async function guardarNuevoRecibo() {
   if (!concepto)                       { errEl.textContent = 'El concepto es obligatorio.'; return; }
   if (!forma_pago)                     { errEl.textContent = 'Seleccioná una forma de pago.'; return; }
   if (!abona_por)                      { errEl.textContent = 'Seleccioná el viaje (abona por).'; return; }
+  if (!tipo_recibo_id)                 { errEl.textContent = 'Seleccioná el tipo de recibo.'; return; }
 
   btn.disabled = true;
   btn.textContent = 'Generando recibo…';
@@ -1063,7 +1094,7 @@ async function guardarNuevoRecibo() {
     banco:       document.getElementById('frec-banco').value.trim()       || '',
     comprobante: document.getElementById('frec-comprobante').value.trim() || '',
     abona_por,
-    es_solidario,
+    tipo_recibo_id: Number(tipo_recibo_id),
     usuario:     currentUserName || null,
   };
 
