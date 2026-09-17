@@ -1116,7 +1116,11 @@ async function guardarNuevoRecibo() {
     return;
   }
 
-  mostrarToastRecibo('✅ Recibo generado y guardado');
+  if (data.data?.email_enviado === false) {
+    mostrarToastRecibo('⚠️ Recibo guardado, pero el email no se pudo enviar');
+  } else {
+    mostrarToastRecibo('✅ Recibo generado y guardado');
+  }
   navigateTo('recibos');
 }
 
