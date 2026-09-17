@@ -436,6 +436,7 @@ async function initReciboNuevoView() {
   // Cargar datos
   await Promise.all([cargarTiposReciboEnSelect(), cargarViajesActivosEnSelect(), cargarBancosEnSelect(), cargarClientesCache()]);
 
+  initCustomSelect("frec-tipo-recibo");
   initCustomSelect("frec-forma-pago");
   initCustomSelect("frec-abona-por");
 }
@@ -677,6 +678,7 @@ async function cargarTiposReciboEnSelect() {
   const pago = data.find(t => t.tipo === 'Pago');
   if (pago) {
     sel.value = String(pago.id);
+    if (typeof refreshCustomSelect === "function") refreshCustomSelect("frec-tipo-recibo");
     onCambioTipoRecibo(String(pago.id));
   }
 }
