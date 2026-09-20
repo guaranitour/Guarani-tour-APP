@@ -108,7 +108,9 @@ async function loadUsersReservas() {
   }
 
   list.innerHTML = data.map(u => `
-    <div class="user-card">
+    <div class="user-card-flat">
+      <div class="user-avatar-static" aria-hidden="true">${getInitialsReservas(u.email)}</div>
+
       <div class="user-info">
         <div class="user-email" title="${u.email}">
           ${u.email}
@@ -117,27 +119,29 @@ async function loadUsersReservas() {
             : '<span class="user-status-dot" title="Pendiente: aún no inició sesión" style="color:#c9a227">●</span>'
           }
         </div>
-        <div class="user-controls">
-          <select
-            onchange="updateUserRoleReservas('${u.email}', this)"
-            class="user-select select-role"
-            title="Rol">
-            <option value="staff" ${u.role === 'staff' ? 'selected' : ''}>Staff</option>
-            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
-          </select>
+      </div>
 
-          <button
-            class="btn-icon-danger"
-            title="Quitar acceso"
-            onclick="deleteUserReservas('${u.email}', this)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/>
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-            </svg>
-          </button>
-        </div>
+      <div class="user-controls">
+        <select
+          onchange="updateUserRoleReservas('${u.email}', this)"
+          class="user-select select-role"
+          aria-label="Rol de ${u.email}">
+          <option value="staff" ${u.role === 'staff' ? 'selected' : ''}>Staff</option>
+          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+        </select>
+
+        <button
+          class="btn-icon-danger"
+          title="Quitar acceso"
+          aria-label="Quitar acceso de ${u.email}"
+          onclick="deleteUserReservas('${u.email}', this)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </button>
       </div>
     </div>
   `).join("");
@@ -181,6 +185,10 @@ async function createUserReservas() {
   }
 
   document.getElementById("ur-email").value = "";
+
+  const toggle = document.getElementById("ur-add-toggle");
+  if (toggle) toggle.open = false;
+
   loadUsersReservas();
 }
 

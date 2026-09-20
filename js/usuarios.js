@@ -233,6 +233,10 @@ async function createUser() {
 
   document.getElementById("u-nombre").value = "";
   document.getElementById("u-email").value = "";
+
+  const toggle = document.getElementById("u-add-toggle");
+  if (toggle) toggle.open = false;
+
   loadUsers();
 }
 
