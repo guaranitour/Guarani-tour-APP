@@ -150,6 +150,7 @@
   gap: .4rem;
   margin-bottom: 1rem;
   overflow-x: auto;
+  overflow-y: visible;
   scrollbar-width: none;
 }
 .recibos-modo::-webkit-scrollbar { display: none; }
@@ -193,15 +194,20 @@
   border-color: var(--primary, #2d6a4f);
   color: #fff;
 }
+/* position: fixed (no absolute) a propósito: el dropdown vive FUERA de
+   .recibos-modo en el HTML, porque ese contenedor tiene overflow-x:auto
+   y recortaría un elemento absolute posicionado dentro de él, incluso
+   con overflow-y:visible (comportamiento real del spec CSS, no todos
+   los navegadores lo respetan igual). Sus coordenadas top/left se
+   calculan en JS (toggleFiltroTipoRecibo) desde la posición real del
+   botón #btn-filtro-tipo en cada apertura. */
 .recibos-tipo-filtro-dropdown {
-  position: absolute;
-  top: calc(100% + .4rem);
-  right: 0;
-  z-index: 20;
+  position: fixed;
+  z-index: 200;
   background: var(--surface, #fff);
   border: 1px solid var(--border, #e8ede9);
   border-radius: .6rem;
-  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
   min-width: 11rem;
   overflow: hidden;
 }
