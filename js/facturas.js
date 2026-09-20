@@ -3,6 +3,8 @@
 
    admin/worker: cargan comprobantes (quedan en estado "pendiente").
    finanzas: solo puede marcarlos como "verificado" (no edita datos).
+   Excepción: jcpalacios9830@gmail.com también puede verificar,
+   aunque su rol no sea "finanzas" (ver _puedeVerificarFacturas).
    Todos los roles habilitados (admin/worker/finanzas) pueden ver
    la lista agrupada por mes de fecha_emision.
 
@@ -29,7 +31,15 @@ function _puedeCargarFacturas() {
   return _rolesFacturas().some(r => ["admin", "worker"].includes(r));
 }
 function _puedeVerificarFacturas() {
-  return _rolesFacturas().includes("finanzas");
+  if (_rolesFacturas().includes("finanzas")) return true;
+
+  // Excepción puntual: este staff member puede verificar comprobantes
+  // aunque su rol no sea "finanzas". Guard de UI únicamente — si hay
+  // una policy RLS en Supabase que exige rol finanzas para el UPDATE
+  // de "estado", también hay que sumar esta excepción ahí (ver nota
+  // en verificarFactura más abajo).
+  const email = document.getElementById("user-email")?.textContent?.trim().toLowerCase();
+  return email === "jcpalacios9830@gmail.com";
 }
 
 // ── Punto de entrada de la vista ────────────────────────────
@@ -261,7 +271,7 @@ async function _facturasObtenerJwt() {
   return token;
 }
 
-// ── Verificar (solo finanzas) ───────────────────────────────
+// ── Verificar (finanzas + excepción jcpalacios9830@gmail.com) ──
 async function verificarFactura(id, btnEl) {
   if (!_puedeVerificarFacturas()) return; // guarda extra, RLS/trigger igual lo bloquearía
 
