@@ -375,6 +375,15 @@ function initReciboDetalleView(id) {
 
 // ── Vista nuevo recibo (página completa) ──────
 async function initReciboNuevoView() {
+  // Reset del botón guardar: puede haber quedado deshabilitado y en
+  // "Enviando…" de un guardado anterior, ya que ese guardado navega
+  // fuera del form antes de tener la respuesta de la Edge Function.
+  const btnGuardar = document.getElementById('btn-guardar-recibo');
+  if (btnGuardar) {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = 'Guardar recibo';
+  }
+
   // Reset manual de campos
   const ids = ['frec-cliente','frec-monto',
                 'frec-concepto','frec-comprobante','frec-banco-input','frec-banco'];
