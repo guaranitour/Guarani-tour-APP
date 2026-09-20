@@ -484,3 +484,129 @@
 .usuarios-tab-panel {
   animation: rowIn .25s both;
 }
+
+/* ── Tarjeta de usuario SIN colapso (reservas.staff) ─────────────────────
+   Mismo lenguaje visual que .user-card (avatar, header, controles), pero
+   todo el contenido siempre visible: no hay <details>/<summary> porque acá
+   no hay nada que ocultar (sin selects de "estado" ni cuerpo secundario). */
+.user-card-flat {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .85rem 1.1rem;
+  background: var(--row-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: .6rem;
+  transition: background .15s, box-shadow .15s;
+  animation: rowIn .3s both;
+}
+
+.user-card-flat:hover {
+  box-shadow: 0 4px 14px var(--shadow-soft);
+}
+
+.user-card-flat .user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card-flat .user-email {
+  margin-bottom: 0;
+  padding-top: 0;
+  border-top: none;
+  display: flex;
+  align-items: center;
+}
+
+.user-card-flat .user-controls {
+  flex-shrink: 0;
+  gap: .5rem;
+}
+
+/* Avatar de solo-iniciales (sin foto/dot: reservas.staff no tiene
+   avatar_url ni last_seen). Mismo tamaño y tipografía que .user-avatar
+   para que ambas vistas se vean del mismo módulo. */
+.user-avatar-static {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--info-bg);
+  color: var(--info-text);
+  font-family: 'Roboto', sans-serif;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+@media (max-width: 480px) {
+  .user-card-flat {
+    flex-wrap: wrap;
+  }
+  .user-card-flat .user-controls {
+    flex-basis: 100%;
+    justify-content: flex-end;
+    margin-left: calc(40px + .7rem); /* alinea con el email, no con el avatar */
+  }
+}
+
+/* ── Botón "Agregar usuario" / "Dar acceso" — toggle centrado ────────────
+   <details> nativo, igual patrón que .user-card: sin JS de estado, con
+   teclado y aria-expanded gratis. El <summary> se ve como un botón pill
+   centrado; al abrirlo, el form aparece inline debajo. */
+.user-add-toggle {
+  background: var(--row-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: .9rem;
+  overflow: hidden;
+}
+
+.user-add-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  padding: .8rem 1.1rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Roboto', sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--accent);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.user-add-summary::-webkit-details-marker,
+.user-add-summary::marker {
+  display: none;
+  content: "";
+}
+
+.user-add-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.user-add-summary:hover {
+  background: var(--surface-hover);
+}
+
+.user-add-summary svg {
+  flex-shrink: 0;
+  transition: transform .2s ease;
+}
+
+.user-add-toggle[open] .user-add-summary svg {
+  transform: rotate(45deg); /* + → × */
+}
+
+.user-add-body {
+  padding: .2rem 1.1rem 1.1rem;
+  border-top: 1px solid var(--border);
+  animation: rowIn .2s both;
+}
