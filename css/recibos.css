@@ -176,6 +176,82 @@
   color: #fff;
 }
 
+/* ── Filtro por tipo (ícono + con dropdown) ──── */
+.recibos-tipo-filtro-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.recibos-tipo-filtro-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  padding: .4rem;
+}
+.recibos-tipo-filtro-btn.activo {
+  background: var(--primary, #2d6a4f);
+  border-color: var(--primary, #2d6a4f);
+  color: #fff;
+}
+.recibos-tipo-filtro-dropdown {
+  position: absolute;
+  top: calc(100% + .4rem);
+  right: 0;
+  z-index: 20;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e8ede9);
+  border-radius: .6rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  min-width: 11rem;
+  overflow: hidden;
+}
+.recibos-tipo-filtro-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: .6rem .9rem;
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text, #1a1a1a);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.recibos-tipo-filtro-item:hover {
+  background: var(--bg, #f7faf8);
+}
+.recibos-tipo-filtro-item.activo {
+  color: var(--primary, #2d6a4f);
+  font-weight: 700;
+}
+
+/* ── Ver más (paginación) ────────────────────── */
+.recibos-ver-mas-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+.recibos-ver-mas-btn {
+  border: 1px solid var(--border, #e8ede9);
+  background: var(--surface, #fff);
+  color: var(--primary, #2d6a4f);
+  font-size: .82rem;
+  font-weight: 600;
+  padding: .55rem 1.4rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s;
+}
+.recibos-ver-mas-btn:hover {
+  background: var(--bg, #f7faf8);
+}
+.recibos-ver-mas-btn:disabled {
+  opacity: .6;
+  cursor: default;
+}
+
 /* ── Grupo (accordion) ───────────────────────── */
 .recibos-grupo {
   border: 1px solid var(--border, #e8ede9);
