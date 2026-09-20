@@ -2,13 +2,43 @@
 //  MÓDULO RECIBOS
 // ══════════════════════════════════════════════
 
-let todosLosRecibos = [];
-let recibosFiltrados = [];
+const PAGE_SIZE_RECIBOS = 50;
+const PAGE_SIZE_VIAJES  = 6;
 
-// Modo de vista de la lista: 'todos' (sin agrupar, más reciente primero,
-// es el default) | 'viaje' (agrupado por abona_por). Se resetea a
-// 'todos' cada vez que se entra al módulo.
+// Recibos actualmente en pantalla (acumulados página a página, según
+// el modo/filtro activo). Se resetea cada vez que cambia el modo, el
+// filtro de tipo, o se hace una nueva búsqueda.
+let recibosEnPantalla = [];
+
+// Cache liviana id -> recibo, para que initReciboDetalleView encuentre
+// el recibo sin round-trip cuando ya fue visto en esta sesión. Se va
+// completando con cada página cargada (de cualquier modo/búsqueda).
+let _recibosCacheById = new Map();
+
+// Estado de paginación del listado activo (todos / por tipo / búsqueda)
+let _paginacionRecibos = { offset: 0, hayMas: true, cargando: false };
+
+// Estado de paginación de "Por viaje" (los VIAJES se paginan, no los
+// recibos sueltos — cada viaje trae sus recibos aparte, al expandir)
+let _paginacionViajes = { offset: 0, hayMas: true, cargando: false };
+let _viajesEnPantalla = []; // [{abona_por, cantidad, total_gs, fecha_mas_reciente}]
+
+// Cache de recibos ya cargados por viaje (abona_por -> array), para no
+// re-pedir al RPC si el usuario colapsa y vuelve a expandir el mismo
+// grupo en la misma sesión de la vista.
+let _recibosPorViajeCache = new Map();
+
+// Modo de vista de la lista: 'todos' (paginado, más reciente primero,
+// es el default) | 'viaje' (grupos paginados, recibos bajo demanda).
+// Se resetea a 'todos' cada vez que se entra al módulo.
 let _modoAgrupacionRecibos = 'todos';
+
+// Tipo de recibo por el que se está filtrando en modo "todos" (null =
+// sin filtro). Se aplica vía el ícono "+" junto a los chips.
+let _filtroTipoReciboId = null;
+
+// Texto de búsqueda activo (server-side). Vacío = sin búsqueda.
+let _busquedaRecibosActiva = '';
 
 // ── Cargar y renderizar lista ─────────────────
 async function cargarRecibos() {
@@ -35,63 +65,163 @@ async function cargarRecibos() {
     return;
   }
 
+  // Reset completo de estado al entrar a la vista
   cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
   _modoAgrupacionRecibos = 'todos';
-
-  const { data, error } = await supabaseClient
-    .from('recibos')
-    .select('*, tipo_recibos(id, tipo)')
-    .order('fecha', { ascending: false });
-
-  if (error) {
-    cont.innerHTML = `<p class="recibos-error">Error al cargar recibos: ${error.message}</p>`;
-    return;
-  }
-
-  todosLosRecibos = data || [];
-  recibosFiltrados = [...todosLosRecibos];
+  _filtroTipoReciboId = null;
+  _busquedaRecibosActiva = '';
+  const searchInput = document.getElementById('recibos-search');
+  if (searchInput) searchInput.value = '';
+  recibosEnPantalla = [];
+  _recibosCacheById = new Map();
+  _viajesEnPantalla = [];
+  _recibosPorViajeCache = new Map();
   actualizarChipsModoRecibos();
-  actualizarResumenMesRecibos();
-  renderizarRecibos(recibosFiltrados);
+  ocultarDropdownFiltroTipo();
+
+  // El resumen ("Este mes"/"Recibos") es siempre íntegro —vía su propio
+  // RPC, independiente de cualquier filtro/paginación de la lista— así
+  // que se dispara en paralelo con la primera página del listado.
+  await Promise.all([
+    actualizarResumenMesRecibos(),
+    cargarPrimeraPaginaRecibos(),
+    cargarTiposEnFiltro(),
+  ]);
 }
 
-// Totales del mes en curso (calendario, no "últimos 30 días"), sobre el
-// total de recibos cargados —no sobre recibosFiltrados— para que una
-// búsqueda activa no altere el resumen mostrado arriba.
-function actualizarResumenMesRecibos() {
+// Resumen del mes actual, siempre sobre TODA la tabla (RPC dedicado,
+// nunca se recalcula en base a filtros/paginación de la lista).
+async function actualizarResumenMesRecibos() {
   const totalEl = document.getElementById('recibos-resumen-total');
   const cantEl  = document.getElementById('recibos-resumen-cantidad');
   if (!totalEl || !cantEl) return;
 
-  const hoy = new Date();
-  const anioActual = hoy.getFullYear();
-  const mesActual  = hoy.getMonth(); // 0-11
+  const { data, error } = await supabaseClient.rpc('recibos_resumen_mes');
+  if (error || !data || !data[0]) {
+    totalEl.textContent = 'Gs. 0';
+    cantEl.textContent  = '0';
+    return;
+  }
 
-  const delMes = todosLosRecibos.filter(r => {
-    if (!r.fecha) return false;
-    const d = new Date(r.fecha + 'T00:00:00');
-    return d.getFullYear() === anioActual && d.getMonth() === mesActual;
-  });
-
-  const totalGs = delMes.reduce((s, r) => s + (Number(r.monto) || 0), 0);
-
-  totalEl.textContent = formatGs(totalGs);
-  cantEl.textContent  = delMes.length;
+  totalEl.textContent = formatGs(Number(data[0].total_gs) || 0);
+  cantEl.textContent  = data[0].cantidad ?? 0;
 }
 
-// Llamado desde los chips "Todos" / "Por viaje" / "Por cliente"
-function cambiarModoAgrupacionRecibos(modo) {
+// Primera página del modo/filtro activo (todos, por tipo, o búsqueda).
+// Resetea la paginación y reemplaza recibosEnPantalla desde cero.
+async function cargarPrimeraPaginaRecibos() {
+  _paginacionRecibos = { offset: 0, hayMas: true, cargando: false };
+  recibosEnPantalla = [];
+  await cargarSiguientePaginaRecibos();
+}
+
+async function cargarSiguientePaginaRecibos() {
+  if (_paginacionRecibos.cargando || !_paginacionRecibos.hayMas) return;
+  _paginacionRecibos.cargando = true;
+  actualizarBotonVerMas();
+
+  const { data, error } = await obtenerPaginaRecibosActual();
+
+  _paginacionRecibos.cargando = false;
+
+  if (error) {
+    document.getElementById('recibos-cont').innerHTML =
+      `<p class="recibos-error">Error al cargar recibos: ${error.message}</p>`;
+    return;
+  }
+
+  const pagina = data || [];
+  pagina.forEach(r => _recibosCacheById.set(r.id, r));
+  recibosEnPantalla = recibosEnPantalla.concat(pagina);
+  _paginacionRecibos.offset += pagina.length;
+  _paginacionRecibos.hayMas = pagina.length === PAGE_SIZE_RECIBOS;
+
+  renderizarRecibos(recibosEnPantalla);
+  actualizarBotonVerMas();
+}
+
+// Elige el RPC correcto según si hay búsqueda activa o filtro de tipo.
+// La búsqueda tiene prioridad sobre el filtro de tipo si ambos están
+// activos (buscar ya cubre todos los tipos; simplifica la UI no tener
+// que combinar ambos con un RPC nuevo por ahora).
+function obtenerPaginaRecibosActual() {
+  const { offset } = _paginacionRecibos;
+
+  if (_busquedaRecibosActiva) {
+    return supabaseClient.rpc('recibos_buscar', {
+      p_query: _busquedaRecibosActiva,
+      p_limit: PAGE_SIZE_RECIBOS,
+      p_offset: offset,
+    });
+  }
+  if (_filtroTipoReciboId) {
+    return supabaseClient.rpc('recibos_listar_por_tipo', {
+      p_tipo_recibo_id: _filtroTipoReciboId,
+      p_limit: PAGE_SIZE_RECIBOS,
+      p_offset: offset,
+    });
+  }
+  return supabaseClient.rpc('recibos_listar_todos', {
+    p_limit: PAGE_SIZE_RECIBOS,
+    p_offset: offset,
+  });
+}
+
+function cargarMasRecibos() {
+  if (_modoAgrupacionRecibos === 'viaje') {
+    cargarSiguientePaginaViajes();
+  } else {
+    cargarSiguientePaginaRecibos();
+  }
+}
+
+function actualizarBotonVerMas() {
+  const wrap = document.getElementById('recibos-ver-mas-wrap');
+  const btn  = document.getElementById('btn-recibos-ver-mas');
+  if (!wrap || !btn) return;
+
+  const est = _modoAgrupacionRecibos === 'viaje' ? _paginacionViajes : _paginacionRecibos;
+
+  wrap.style.display = est.hayMas ? 'flex' : 'none';
+  btn.disabled = est.cargando;
+  btn.textContent = est.cargando ? 'Cargando…' : 'Ver más';
+}
+
+// Llamado desde los chips "Todos" / "Por viaje"
+async function cambiarModoAgrupacionRecibos(modo) {
+  if (_modoAgrupacionRecibos === modo) return;
   _modoAgrupacionRecibos = modo;
   actualizarChipsModoRecibos();
-  renderizarRecibos(recibosFiltrados);
+
+  const cont = document.getElementById('recibos-cont');
+
+  if (modo === 'viaje') {
+    // El filtro de tipo y la búsqueda no aplican en modo "Por viaje" por
+    // ahora (los RPCs de viajes agrupan sobre toda la tabla) — se
+    // limpian para que el usuario no crea que siguen activos.
+    _filtroTipoReciboId = null;
+    _busquedaRecibosActiva = '';
+    const searchInput = document.getElementById('recibos-search');
+    if (searchInput) searchInput.value = '';
+    actualizarChipActivoFiltroTipo();
+
+    cont.innerHTML = '<p class="recibos-loading">Cargando viajes…</p>';
+    _paginacionViajes = { offset: 0, hayMas: true, cargando: false };
+    _viajesEnPantalla = [];
+    await cargarSiguientePaginaViajes();
+  } else {
+    cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
+    await cargarPrimeraPaginaRecibos();
+  }
 }
 
 function actualizarChipsModoRecibos() {
-  document.querySelectorAll('.recibos-modo-chip').forEach(chip => {
+  document.querySelectorAll('.recibos-modo-chip[data-modo]').forEach(chip => {
     chip.classList.toggle('activo', chip.dataset.modo === _modoAgrupacionRecibos);
   });
 }
 
+// ── Modo "Todos" (lista plana paginada) ───────
 function renderizarRecibos(lista) {
   const cont = document.getElementById('recibos-cont');
 
@@ -104,56 +234,129 @@ function renderizarRecibos(lista) {
     return;
   }
 
-  // Modo "Todos": lista plana, sin agrupar (ya viene ordenada por fecha
-  // desc desde la carga; al filtrar se preserva ese orden).
-  if (_modoAgrupacionRecibos === 'todos') {
-    cont.innerHTML = `<div class="recibos-grupo recibos-grupo--abierto recibos-grupo--plana">
-      <div class="recibos-grupo-body">
-        ${lista.map(r => renderReciboCard(r)).join('')}
-      </div>
-    </div>`;
+  // Lista plana, sin agrupar — ya viene ordenada por fecha desc desde
+  // el RPC, y se van acumulando páginas de 50 al presionar "Ver más".
+  cont.innerHTML = `<div class="recibos-grupo recibos-grupo--abierto recibos-grupo--plana">
+    <div class="recibos-grupo-body">
+      ${lista.map(r => renderReciboCard(r)).join('')}
+    </div>
+  </div>`;
+}
+
+// ── Modo "Por viaje" (grupos paginados, recibos bajo demanda) ─
+async function cargarSiguientePaginaViajes() {
+  if (_paginacionViajes.cargando || !_paginacionViajes.hayMas) return;
+  _paginacionViajes.cargando = true;
+  actualizarBotonVerMas();
+
+  const { data, error } = await supabaseClient.rpc('recibos_listar_viajes', {
+    p_limit: PAGE_SIZE_VIAJES,
+    p_offset: _paginacionViajes.offset,
+  });
+
+  _paginacionViajes.cargando = false;
+
+  if (error) {
+    document.getElementById('recibos-cont').innerHTML =
+      `<p class="recibos-error">Error al cargar viajes: ${error.message}</p>`;
     return;
   }
 
-  const campoClave = 'abona_por';
-  const etiquetaSinDato = '(Sin viaje)';
+  const pagina = data || [];
+  _viajesEnPantalla = _viajesEnPantalla.concat(pagina);
+  _paginacionViajes.offset += pagina.length;
+  _paginacionViajes.hayMas = pagina.length === PAGE_SIZE_VIAJES;
 
-  const grupos = {};
-  for (const r of lista) {
-    const clave = r[campoClave] || etiquetaSinDato;
-    if (!grupos[clave]) grupos[clave] = [];
-    grupos[clave].push(r);
+  renderizarViajes(_viajesEnPantalla);
+  actualizarBotonVerMas();
+}
+
+function renderizarViajes(viajes) {
+  const cont = document.getElementById('recibos-cont');
+
+  const countEl = document.getElementById('recibos-count');
+  if (countEl) countEl.textContent =
+    viajes.length === 1 ? '1 viaje' : `${viajes.length} viajes`;
+
+  if (viajes.length === 0) {
+    cont.innerHTML = '<div class="recibos-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><p>No se encontraron recibos</p></div>';
+    return;
   }
 
-  const claves = Object.keys(grupos).sort((a, b) => {
-    if (a === etiquetaSinDato) return 1;
-    if (b === etiquetaSinDato) return -1;
-    return a.localeCompare(b);
-  });
+  const iconoSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>';
+  const etiquetaSinDato = '(Sin viaje)';
 
-  cont.innerHTML = claves.map(clave => {
-    const items = grupos[clave];
-    const totalGs = items.reduce((s, r) => s + (Number(r.monto) || 0), 0);
-    const iconoSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>';
+  cont.innerHTML = viajes.map(v => {
+    const clave = v.abona_por || etiquetaSinDato;
+    // data-abona-por vacío representa NULL (sin viaje) — se distingue de
+    // un abona_por real al leerlo de vuelta en toggleGrupoRecibos.
+    const dataAttr = v.abona_por ? `data-abona-por="${escapeHtmlAttr(v.abona_por)}"` : `data-abona-por=""`;
 
     return `
-      <div class="recibos-grupo">
+      <div class="recibos-grupo" ${dataAttr}>
         <div class="recibos-grupo-header" onclick="toggleGrupoRecibos(this)">
           <div class="recibos-grupo-icono">${iconoSvg}</div>
           <div class="recibos-grupo-datos">
             <span class="recibos-grupo-nombre">${clave}</span>
-            <span class="recibos-grupo-sub">${items.length} recibo${items.length !== 1 ? 's' : ''}</span>
+            <span class="recibos-grupo-sub">${v.cantidad} recibo${v.cantidad !== 1 ? 's' : ''}</span>
           </div>
           <div class="recibos-grupo-total">
-            <span class="recibos-grupo-total-valor">${formatGs(totalGs)}</span>
+            <span class="recibos-grupo-total-valor">${formatGs(Number(v.total_gs) || 0)}</span>
           </div>
           <svg class="recibos-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </div>
-        <div class="recibos-grupo-body">
-          ${items.map(r => renderReciboCard(r)).join('')}
+        <div class="recibos-grupo-body" data-cargado="0">
+          <p class="recibos-loading">Cargando…</p>
         </div>
       </div>`;
   }).join('');
+}
+
+// Al expandir un grupo de viaje por primera vez, trae sus recibos vía
+// RPC (carga bajo demanda). Si ya se expandió antes en esta sesión de
+// la vista, usa la cache en memoria y no vuelve a pedir al servidor.
+async function toggleGrupoRecibos(headerEl) {
+  const grupo = headerEl.closest('.recibos-grupo');
+  const estabaAbierto = grupo.classList.contains('recibos-grupo--abierto');
+  grupo.classList.toggle('recibos-grupo--abierto');
+
+  if (estabaAbierto) return; // se está colapsando, nada más que hacer
+
+  const body = grupo.querySelector('.recibos-grupo-body');
+  if (body.dataset.cargado === '1') return; // ya tiene los recibos cargados
+
+  const abonaPorAttr = grupo.dataset.abonaPor;
+  const abonaPor = abonaPorAttr === '' ? null : abonaPorAttr;
+  const claveCache = abonaPor === null ? '__sin_viaje__' : abonaPor;
+
+  if (_recibosPorViajeCache.has(claveCache)) {
+    const recibos = _recibosPorViajeCache.get(claveCache);
+    body.innerHTML = recibos.map(r => renderReciboCard(r)).join('');
+    body.dataset.cargado = '1';
+    return;
+  }
+
+  const { data, error } = await supabaseClient.rpc('recibos_viaje_detalle', {
+    p_abona_por: abonaPor,
+  });
+
+  if (error) {
+    body.innerHTML = `<p class="recibos-error">Error al cargar: ${error.message}</p>`;
+    return;
+  }
+
+  const recibos = data || [];
+  recibos.forEach(r => _recibosCacheById.set(r.id, r));
+  _recibosPorViajeCache.set(claveCache, recibos);
+
+  body.innerHTML = recibos.map(r => renderReciboCard(r)).join('');
+  body.dataset.cargado = '1';
+}
+
+// Escapa comillas dobles para uso seguro en un atributo HTML (nombres de
+// viaje pueden contener caracteres especiales).
+function escapeHtmlAttr(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
 function renderReciboCard(r) {
@@ -163,7 +366,7 @@ function renderReciboCard(r) {
   // Se muestra el tipo como badge salvo que sea "Pago" (el tipo
   // neutro/default no necesita distinguirse visualmente, igual que antes
   // es_solidario=false no mostraba badge).
-  const tipoNombre = r.tipo_recibos?.tipo || null;
+  const tipoNombre = r.tipo_recibo_nombre || null;
   const tipoBadge = (tipoNombre && tipoNombre !== 'Pago')
     ? `<span class="recibo-metodo-badge recibo-metodo-solidario">${tipoNombre}</span>`
     : '';
@@ -231,10 +434,34 @@ function precargarComprobante(fileId) {
 }
 
 // ── Vista detalle (página completa) ──────────
-function initReciboDetalleView(id) {
-  const recibo = todosLosRecibos.find(r => r.id === id);
+async function initReciboDetalleView(id) {
   const cont = document.getElementById('recibo-detalle-cont');
   if (!cont) return;
+
+  cont.innerHTML = '<p class="recibos-loading">Cargando…</p>';
+
+  let recibo = _recibosCacheById.get(id);
+
+  // Si no está en memoria (puede pasar: paginación, o se entró directo
+  // por un id que no está entre las páginas ya cargadas), se hace un
+  // fetch puntual por ese id específico.
+  if (!recibo) {
+    const { data, error } = await supabaseClient
+      .from('recibos')
+      .select('*, tipo_recibos(id, tipo)')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      cont.innerHTML = '<p class="recibos-error">Recibo no encontrado.</p>';
+      return;
+    }
+    // Normalizamos al mismo shape que devuelven los RPCs (tipo_recibo_nombre
+    // en vez del objeto anidado tipo_recibos), para que el resto de esta
+    // función funcione igual sin importar de dónde vino el recibo.
+    recibo = { ...data, tipo_recibo_nombre: data.tipo_recibos?.tipo || null };
+    _recibosCacheById.set(id, recibo);
+  }
 
   if (!recibo) {
     cont.innerHTML = '<p class="recibos-error">Recibo no encontrado.</p>';
@@ -312,7 +539,7 @@ function initReciboDetalleView(id) {
       <div class="recibo-doc-header">
         <div class="recibo-doc-empresa">
           <span class="recibo-doc-logo-text">Guarani Tour</span>
-          <span class="recibo-doc-subtitulo">${recibo.tipo_recibos?.tipo === 'Donación solidaria' ? 'Comprobante de donación' : 'Comprobante de pago'}</span>
+          <span class="recibo-doc-subtitulo">${recibo.tipo_recibo_nombre === 'Donación solidaria' ? 'Comprobante de donación' : 'Comprobante de pago'}</span>
         </div>
         <div class="recibo-doc-nro-bloque">
           <span class="recibo-doc-nro-label">RECIBO</span>
@@ -1159,28 +1386,101 @@ async function procesarGeneracionReciboEnSegundoPlano(payload) {
   }
 }
 
-// ── Búsqueda / filtro ─────────────────────────
-function filtrarRecibos() {
-  const q = document.getElementById('recibos-search').value.trim().toLowerCase();
-  if (!q) {
-    recibosFiltrados = [...todosLosRecibos];
-  } else {
-    recibosFiltrados = todosLosRecibos.filter(r =>
-      (r.cliente    || '').toLowerCase().includes(q) ||
-      (r.ci         || '').toLowerCase().includes(q) ||
-      (r.abona_por  || '').toLowerCase().includes(q) ||
-      (r.concepto   || '').toLowerCase().includes(q) ||
-      (r.recibo_nro || '').toString().includes(q)    ||
-      (r.forma_pago || '').toLowerCase().includes(q)
-    );
-  }
-  renderizarRecibos(recibosFiltrados);
+// ── Filtro por tipo (ícono + junto a los chips) ─
+let _tiposFiltroCache = []; // [{id, tipo}, ...] — solo los tipos habilitados
+
+async function cargarTiposEnFiltro() {
+  const dropdown = document.getElementById('recibos-tipo-filtro-dropdown');
+  if (!dropdown) return;
+
+  const { data, error } = await supabaseClient
+    .from('tipo_recibos')
+    .select('id, tipo')
+    .eq('estado', 'enabled')
+    .order('tipo');
+
+  if (error || !data) return;
+  _tiposFiltroCache = data;
+
+  const itemTodos = `<button type="button" class="recibos-tipo-filtro-item${_filtroTipoReciboId === null ? ' activo' : ''}" onclick="aplicarFiltroTipoRecibo(null)">Todos los tipos</button>`;
+  const items = _tiposFiltroCache.map(t =>
+    `<button type="button" class="recibos-tipo-filtro-item${_filtroTipoReciboId === t.id ? ' activo' : ''}" onclick="aplicarFiltroTipoRecibo(${t.id})">${t.tipo}</button>`
+  ).join('');
+
+  dropdown.innerHTML = itemTodos + items;
 }
 
-// ── Accordion ─────────────────────────────────
-function toggleGrupoRecibos(header) {
-  const grupo = header.closest('.recibos-grupo');
-  grupo.classList.toggle('recibos-grupo--abierto');
+function toggleFiltroTipoRecibo() {
+  const dropdown = document.getElementById('recibos-tipo-filtro-dropdown');
+  const btn = document.getElementById('btn-filtro-tipo');
+  if (!dropdown || !btn) return;
+
+  const abierto = dropdown.style.display !== 'none';
+  dropdown.style.display = abierto ? 'none' : 'block';
+  btn.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+}
+
+function ocultarDropdownFiltroTipo() {
+  const dropdown = document.getElementById('recibos-tipo-filtro-dropdown');
+  const btn = document.getElementById('btn-filtro-tipo');
+  if (dropdown) dropdown.style.display = 'none';
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+// Cierra el dropdown si se hace clic fuera de él
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.recibos-tipo-filtro-wrap');
+  if (wrap && !wrap.contains(e.target)) ocultarDropdownFiltroTipo();
+});
+
+function aplicarFiltroTipoRecibo(tipoId) {
+  _filtroTipoReciboId = tipoId;
+  ocultarDropdownFiltroTipo();
+
+  // El filtro de tipo, igual que la búsqueda, solo tiene sentido en
+  // modo "Todos" — si el usuario lo aplica desde "Por viaje", pasamos a
+  // "Todos" para que se note el efecto.
+  if (_modoAgrupacionRecibos === 'viaje') {
+    _modoAgrupacionRecibos = 'todos';
+    actualizarChipsModoRecibos();
+  }
+
+  actualizarChipActivoFiltroTipo();
+  cargarPrimeraPaginaRecibos();
+}
+
+function actualizarChipActivoFiltroTipo() {
+  const btn = document.getElementById('btn-filtro-tipo');
+  if (btn) btn.classList.toggle('activo', _filtroTipoReciboId !== null);
+
+  document.querySelectorAll('.recibos-tipo-filtro-item').forEach((item, idx) => {
+    // idx 0 es "Todos los tipos"; el resto sigue el orden de _tiposFiltroCache
+    const esTodos = idx === 0;
+    const tipoDeEsteItem = esTodos ? null : _tiposFiltroCache[idx - 1]?.id;
+    item.classList.toggle('activo', tipoDeEsteItem === _filtroTipoReciboId);
+  });
+}
+
+// ── Búsqueda (server-side, con debounce) ──────
+let _debounceBusquedaRecibos = null;
+
+function filtrarRecibos() {
+  const q = document.getElementById('recibos-search').value.trim();
+
+  // La búsqueda solo aplica en modo "Todos" — en "Por viaje" los RPCs
+  // agrupan sobre toda la tabla y no tiene una forma natural de combinar
+  // ambos todavía. Si el usuario escribe estando en "Por viaje", lo
+  // pasamos a "Todos" para que la búsqueda tenga efecto visible.
+  if (_modoAgrupacionRecibos === 'viaje' && q) {
+    _modoAgrupacionRecibos = 'todos';
+    actualizarChipsModoRecibos();
+  }
+
+  clearTimeout(_debounceBusquedaRecibos);
+  _debounceBusquedaRecibos = setTimeout(() => {
+    _busquedaRecibosActiva = q;
+    cargarPrimeraPaginaRecibos();
+  }, 350);
 }
 
 // ── Helpers ───────────────────────────────────
