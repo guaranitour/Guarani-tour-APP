@@ -1061,6 +1061,13 @@ async function guardarNuevoRecibo() {
   const errEl = document.getElementById('form-recibo-error');
   errEl.textContent = '';
 
+  // El botón puede haber quedado en estado "Enviando…" de un guardado
+  // anterior (no se resetea al terminar, porque ya navegamos fuera del
+  // form antes de tener la respuesta) — lo normalizamos acá, al empezar
+  // un guardado nuevo.
+  btn.disabled = false;
+  btn.textContent = 'Guardar recibo';
+
   const cliente    = document.getElementById('frec-cliente').value.trim();
   const ci         = document.getElementById('frec-ci').value.trim();
   const correo     = document.getElementById('frec-correo').value.trim();
@@ -1081,9 +1088,6 @@ async function guardarNuevoRecibo() {
   if (!abona_por)                      { errEl.textContent = 'Seleccioná el viaje (abona por).'; return; }
   if (!tipo_recibo_id)                 { errEl.textContent = 'Seleccioná el tipo de recibo.'; return; }
 
-  btn.disabled = true;
-  btn.textContent = 'Generando recibo…';
-
   const payload = {
     action:      'generar',
     cliente,
@@ -1100,10 +1104,24 @@ async function guardarNuevoRecibo() {
     usuario:     currentUserName || null,
   };
 
-  const { data, error } = await supabaseClient.functions.invoke('recibos', { body: payload });
+  // No bloqueamos la UI esperando la respuesta: la generación (Apps
+  // Script + validaciones) puede tardar. Navegamos de inmediato y
+  // procesamos el resultado en segundo plano, avise donde avise el
+  // usuario para entonces.
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
 
-  btn.disabled = false;
-  btn.textContent = 'Guardar recibo';
+  procesarGeneracionReciboEnSegundoPlano(payload);
+
+  mostrarToastRecibo('🕐 Recibo enviado a procesar. Por seguridad puede demorar hasta 1 minuto en aparecer en la lista — no cierres la app mientras tanto.', 4500);
+  navigateTo('recibos');
+}
+
+// Corre la llamada a la Edge Function sin bloquear la navegación. Se
+// mantiene viva en memoria mientras la SPA no se cierre (no sobrevive a
+// cerrar la pestaña/app — ver aviso al usuario en el toast).
+async function procesarGeneracionReciboEnSegundoPlano(payload) {
+  const { data, error } = await supabaseClient.functions.invoke('recibos', { body: payload });
 
   if (error || !data?.ok) {
     let msg = data?.error || error?.message || 'Error desconocido';
@@ -1114,7 +1132,7 @@ async function guardarNuevoRecibo() {
     if (!data && error?.context?.json) {
       try { msg = (await error.context.json())?.error || msg; } catch {}
     }
-    errEl.textContent = 'Error al generar el recibo: ' + msg;
+    mostrarToastRecibo('❌ Error al generar el recibo: ' + msg, 5000);
     return;
   }
 
@@ -1123,7 +1141,13 @@ async function guardarNuevoRecibo() {
   } else {
     mostrarToastRecibo('✅ Recibo generado y guardado');
   }
-  navigateTo('recibos');
+
+  // Si el usuario sigue (o volvió a estar) en la vista de listado,
+  // refrescamos para que el recibo nuevo aparezca sin recargar a mano.
+  const vistaListado = document.getElementById('view-recibos');
+  if (vistaListado && vistaListado.style.display !== 'none') {
+    cargarRecibos();
+  }
 }
 
 // ── Búsqueda / filtro ─────────────────────────
@@ -1292,7 +1316,7 @@ async function compartirComprobante(url, btn) {
   }
 }
 
-function mostrarToastRecibo(msg) {
+function mostrarToastRecibo(msg, duracionMs = 2500) {
   let t = document.getElementById('recibo-toast');
   if (!t) {
     t = document.createElement('div');
@@ -1302,5 +1326,6 @@ function mostrarToastRecibo(msg) {
   }
   t.textContent = msg;
   t.classList.add('recibo-toast--visible');
-  setTimeout(() => t.classList.remove('recibo-toast--visible'), 2500);
+  clearTimeout(t._ocultarTimeout);
+  t._ocultarTimeout = setTimeout(() => t.classList.remove('recibo-toast--visible'), duracionMs);
 }
