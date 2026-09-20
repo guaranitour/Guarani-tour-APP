@@ -2037,8 +2037,17 @@
     <div class="recibos-modo">
       <button type="button" class="recibos-modo-chip activo" data-modo="todos" onclick="cambiarModoAgrupacionRecibos('todos')">Todos</button>
       <button type="button" class="recibos-modo-chip" data-modo="viaje" onclick="cambiarModoAgrupacionRecibos('viaje')">Por viaje</button>
+      <div class="recibos-tipo-filtro-wrap">
+        <button type="button" class="recibos-modo-chip recibos-tipo-filtro-btn" id="btn-filtro-tipo" onclick="toggleFiltroTipoRecibo()" title="Filtrar por tipo de recibo" aria-haspopup="true" aria-expanded="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="recibos-tipo-filtro-dropdown" id="recibos-tipo-filtro-dropdown" style="display:none"></div>
+      </div>
     </div>
     <div id="recibos-cont"></div>
+    <div id="recibos-ver-mas-wrap" class="recibos-ver-mas-wrap" style="display:none">
+      <button type="button" class="recibos-ver-mas-btn" id="btn-recibos-ver-mas" onclick="cargarMasRecibos()">Ver más</button>
+    </div>
   </div>
 </div>
 
