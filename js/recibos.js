@@ -1416,8 +1416,24 @@ function toggleFiltroTipoRecibo() {
   if (!dropdown || !btn) return;
 
   const abierto = dropdown.style.display !== 'none';
-  dropdown.style.display = abierto ? 'none' : 'block';
-  btn.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+
+  if (abierto) {
+    dropdown.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
+    return;
+  }
+
+  // Se hace visible PRIMERO (con offsetWidth aún no confiable, se
+  // vuelve a leer después) para poder medir su ancho real: un elemento
+  // con display:none siempre da offsetWidth 0, así que calcular la
+  // posición antes de mostrarlo daría un left incorrecto.
+  dropdown.style.display = 'block';
+
+  const rect = btn.getBoundingClientRect();
+  dropdown.style.top = `${rect.bottom + 6}px`;
+  dropdown.style.left = `${rect.right - dropdown.offsetWidth}px`;
+
+  btn.setAttribute('aria-expanded', 'true');
 }
 
 function ocultarDropdownFiltroTipo() {
