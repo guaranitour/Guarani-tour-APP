@@ -23,13 +23,19 @@ async function loadResumen(viajeId) {
   // corresponder todavía al viaje que se está cargando).
   const vpIds = (vpRows || []).map(v => v.id);
 
+  // El viaje puede o no tener habilitados los servicios extra —
+  // determina si se consultan y si se muestra la sección en el resumen.
+  const extrasHabilitados = !!viajeActualData?.extras_habilitados;
+
   /* ── Resto de queries en paralelo ────────────── */
   const [
     { data: pagosRows },
     { data: egresosRows },
     { data: presRows },
     { data: catRows },
-    { data: metodosRows }
+    { data: metodosRows },
+    { data: extrasVpRows },
+    { data: serviciosExtraRows }
   ] = await Promise.all([
     // Todos los pagos de este viaje: monto, tipo y método
     supabaseClient
@@ -57,7 +63,26 @@ async function loadResumen(viajeId) {
     // Nombres de métodos de pago
     supabaseClient
       .from("metodos_de_pago")
-      .select("id, metodo_de_pago")
+      .select("id, metodo_de_pago"),
+
+    // Servicios extra asignados a pasajeros de este viaje (para sumar al
+    // total esperado y para el conteo por servicio). Solo si el viaje
+    // tiene la función habilitada.
+    extrasHabilitados
+      ? supabaseClient
+          .from("servicio_extra_pasajeros")
+          .select("viaje_pasajero_id, servicio_extra_id, precio_venta_real")
+          .in("viaje_pasajero_id", vpIds.length > 0 ? vpIds : ["__none__"])
+      : Promise.resolve({ data: [] }),
+
+    // Catálogo de servicios extra del viaje (nombre por id), para mostrar
+    // la sección aunque todavía no tenga ningún extra asignado.
+    extrasHabilitados
+      ? supabaseClient
+          .from("servicios_extra")
+          .select("id, nombre")
+          .eq("viaje_id", viajeId)
+      : Promise.resolve({ data: [] })
   ]);
 
   /* ── Mapas de lookup ─────────────────────────── */
@@ -67,10 +92,41 @@ async function loadResumen(viajeId) {
   /* ── Cálculos de pasajeros ───────────────────── */
   const totalPasajeros = (vpRows || []).length;
   const totalAsisten   = (vpRows || []).filter(p => p.asistencia === "Asiste").length;
-  // Solo cuenta como "esperado" lo de pasajeros que van a asistir.
+
+  // Ids de viaje_pasajeros que asisten, para filtrar extras por asistencia.
+  const vpIdsAsisten = new Set(
+    (vpRows || [])
+      .filter(p => p.asistencia === "Asiste")
+      .map(p => String(p.id))
+  );
+
+  // Solo extras de pasajeros que asisten cuentan en el total esperado y en
+  // el conteo por servicio (misma regla que el resto del resumen).
+  const extrasVpAsisten = (extrasVpRows || [])
+    .filter(e => vpIdsAsisten.has(String(e.viaje_pasajero_id)));
+
+  const totalExtras = extrasVpAsisten
+    .reduce((s, e) => s + (e.precio_venta_real || 0), 0);
+
+  // Solo cuenta como "esperado" lo de pasajeros que van a asistir,
+  // incluyendo los servicios extra que tengan asignados.
   const totalEsperado  = (vpRows || [])
     .filter(p => p.asistencia === "Asiste")
-    .reduce((s, p) => s + (p.total_a_pagar || 0), 0);
+    .reduce((s, p) => s + (p.total_a_pagar || 0), 0) + totalExtras;
+
+  // Conteo de pasajeros (que asisten) por servicio extra contratado.
+  // Se listan todos los servicios del catálogo del viaje, aunque tengan 0.
+  const conteoPorServicio = {};
+  (serviciosExtraRows || []).forEach(s => {
+    conteoPorServicio[s.id] = { nombre: s.nombre, cantidad: 0 };
+  });
+  extrasVpAsisten.forEach(e => {
+    const key = e.servicio_extra_id;
+    if (!conteoPorServicio[key]) conteoPorServicio[key] = { nombre: "Servicio eliminado", cantidad: 0 };
+    conteoPorServicio[key].cantidad++;
+  });
+  const serviciosExtraEntries = Object.values(conteoPorServicio)
+    .sort((a, b) => b.cantidad - a.cantidad);
 
   // Desglose por sexo — solo pasajeros que asisten
   const porSexo = { M: 0, F: 0, otro: 0 };
@@ -214,6 +270,7 @@ async function loadResumen(viajeId) {
   const icoTarjeta = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
   const icoEstrella = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
   const icoUsuarios = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+  const icoExtra = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`;
 
   cont.innerHTML = `
 
@@ -239,7 +296,7 @@ async function loadResumen(viajeId) {
       <div class="resumen-card">
         <span class="resumen-card-label">Total esperado</span>
         <span class="resumen-card-value">Gs. ${fmt(totalEsperado)}</span>
-        <span class="resumen-card-sub">solo pasajeros que asisten</span>
+        <span class="resumen-card-sub">pasajeros que asisten${totalExtras > 0 ? " + extras" : ""}</span>
       </div>
       <div class="resumen-card">
         <span class="resumen-card-label">Saldo pendiente</span>
@@ -310,6 +367,20 @@ async function loadResumen(viajeId) {
         <span class="resumen-card-sub">~${fmt(ptsPorMiembro)} pts/miembro</span>
       </div>
     </div>
+
+    ${extrasHabilitados ? `
+    <!-- ══ SERVICIOS EXTRA ══ -->
+    <div class="resumen-section-title" style="margin-top:1.25rem">${icoExtra} Servicios extra</div>
+    ${serviciosExtraEntries.length > 0 ? `
+    <div>
+      ${serviciosExtraEntries.map(s => `
+      <div class="resumen-desglose-row">
+        <span class="resumen-desglose-nombre">${_escapeHtml(s.nombre)}</span>
+        <span class="resumen-pill${s.cantidad > 0 ? " asiste" : ""}">${s.cantidad} pasajero${s.cantidad === 1 ? "" : "s"}</span>
+      </div>`).join("")}
+    </div>` : `
+    <div class="viaje-pasajeros-empty">Sin servicios extra registrados</div>`}
+    ` : ""}
 
     <!-- ══ DETALLE (colapsado por defecto) ══ -->
     <div class="resumen-section-title" style="margin-top:1.5rem">Detalle</div>
