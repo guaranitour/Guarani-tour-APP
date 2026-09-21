@@ -991,22 +991,23 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     : currentUserRole === "admin";
 
   infoEl.innerHTML = `
-    <span class="viaje-pill ${estado}" style="font-size:.75rem">${estado}</span>
-    ${viaje.puntos_destino ? `<span class="viaje-puntos viaje-puntos-claro" style="margin-left:.4rem">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
-    ${viaje.fecha_salida ? `<span style="margin-left:.4rem;font-size:.8rem;color:var(--text-muted)">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
+    <span class="viaje-pill ${estado}">${estado}</span>
+    ${viaje.fecha_salida ? `<span class="detalle-meta-pill">📅 ${formatFecha(viaje.fecha_salida)}${viaje.fecha_regreso ? " → " + formatFecha(viaje.fecha_regreso) : ""}</span>` : ""}
+    ${viaje.puntos_destino ? `<span class="detalle-meta-pill detalle-meta-pill-puntos">⭐ ${viaje.puntos_destino} pts base</span>` : ""}
   `;
 
   const editBtnSlot = document.getElementById("detalle-viaje-edit-btn");
   if (editBtnSlot) {
     editBtnSlot.innerHTML = esAdminDetalle ? `
       <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
-        Editar
+        Editar viaje
       </button>` : "";
   }
+  _actualizarFilaAccionesDetalle();
 
   if (errPasajeros) { console.error("Error cargando pasajeros:", errPasajeros); }
 
@@ -1199,6 +1200,7 @@ function _renderAlertasViaje() {
 
   if (conDeuda.length === 0 && sinByc.length === 0 && reservados.length === 0) {
     slot.innerHTML = "";
+    _actualizarFilaAccionesDetalle();
     return;
   }
 
@@ -1226,6 +1228,20 @@ function _renderAlertasViaje() {
           <span>${reservados.length} pasajero${reservados.length === 1 ? "" : "s"} marcado${reservados.length === 1 ? "" : "s"} como reservado${reservados.length === 1 ? "" : "s"}</span>
         </div>` : ""}
     </div>`;
+  _actualizarFilaAccionesDetalle();
+}
+
+// Fila de acciones del detalle (Editar viaje / Alertas): marca qué botones hay
+// para que el CSS reparta el ancho (2 columnas, o 1 centrada si falta uno) y
+// oculte la fila entera si no hay ninguno.
+function _actualizarFilaAccionesDetalle() {
+  const fila = document.getElementById("detalle-viaje-acciones");
+  if (!fila) return;
+  const hayEditar  = !!document.querySelector("#detalle-viaje-edit-btn .btn-editar-viaje");
+  const hayAlertas = !!document.querySelector("#detalle-viaje-alertas-btn .btn-alertas-viaje");
+  fila.classList.toggle("sin-editar",  !hayEditar);
+  fila.classList.toggle("sin-alertas", !hayAlertas);
+  fila.style.display = (hayEditar || hayAlertas) ? "" : "none";
 }
 
 function toggleAlertasPanel(event) {
