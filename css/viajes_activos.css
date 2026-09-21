@@ -901,31 +901,47 @@
 .viaje-tabs-scroll::-webkit-scrollbar { display: none; }
 
 .viaje-tabs {
-  display: inline-flex;   /* en línea para que el scroll funcione */
+  display: flex;
   flex-wrap: nowrap;      /* nunca saltar de línea */
-  gap: .25rem;
+  gap: 0;
   min-width: 100%;        /* ocupa al menos el ancho del scroll */
-  border-bottom: 2px solid var(--border, #e8ede9);
+  width: max-content;     /* si no caben, el scroll horizontal sigue funcionando */
+  border-bottom: 1px solid var(--border, #e8ede9);
   margin: 0;
 }
 .viaje-tab {
-  display: inline-flex; align-items: center; gap: .4rem;
-  padding: .55rem 1rem;
-  font-size: .82rem; font-family: inherit; font-weight: 500;
+  position: relative;
+  flex: 1 0 auto;         /* se reparten el ancho; los ocultos por rol no ocupan lugar */
+  display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .3rem;
+  min-width: 76px;
+  padding: .65rem .9rem .8rem;
+  font-size: .72rem; font-family: inherit; font-weight: 500;
+  letter-spacing: .01em;
   color: var(--text-muted, #888);
   background: transparent;
-  border: none; border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
+  border: none;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
-  transition: color .15s, border-color .15s;
+  transition: color .15s;
 }
-.viaje-tab svg { opacity: .7; }
+/* Subrayado corto y centrado en el tab activo */
+.viaje-tab::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: -1px;
+  width: 0; height: 3px;
+  transform: translateX(-50%);
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+  transition: width .2s ease;
+}
+.viaje-tab svg { opacity: .75; transition: opacity .15s; }
 .viaje-tab.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  font-weight: 600;
 }
+.viaje-tab.active::after { width: 60%; max-width: 44px; }
 .viaje-tab.active svg { opacity: 1; }
 .viaje-tab:hover:not(.active) { color: var(--text-mid); }
 
@@ -1308,28 +1324,96 @@
 
 .btn-filtro-aplicar:hover { background: #245c41; }
 
-/* ── TÍTULO + BOTÓN EDITAR ──────────────────── */
+/* ── HEADER DEL DETALLE (atrás + título, meta, acciones) ─── */
+.detalle-header {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 1.1rem;
+}
 .detalle-titulo-row {
   display: flex;
   align-items: center;
   gap: .6rem;
-  flex-wrap: wrap;
 }
 .detalle-titulo-row h1 {
   margin: 0;
+  min-width: 0;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
+.btn-detalle-atras {
+  flex-shrink: 0;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-main, inherit);
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.btn-detalle-atras:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Estado · fechas · puntos en pills, debajo del título */
+.detalle-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+}
+.detalle-meta:empty { display: none; }
+.detalle-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .22rem .65rem;
+  border-radius: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  font-size: .74rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.detalle-meta-pill-puntos { font-weight: 600; }
+
+/* Fila de acciones: Editar viaje | Alertas (2 columnas; 1 centrada si falta una) */
+.detalle-acciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+}
+.detalle-acciones.sin-editar,
+.detalle-acciones.sin-alertas { grid-template-columns: 1fr; }
+.detalle-acciones.sin-editar  .detalle-accion-slot:first-child,
+.detalle-acciones.sin-alertas .detalle-accion-slot:last-child { display: none; }
+/* Solo alertas (roles sin editar): centrado y sin estirarse a todo el ancho */
+.detalle-acciones.sin-editar { justify-items: center; }
+.detalle-acciones.sin-editar .detalle-accion-slot { width: min(100%, 320px); }
+.detalle-accion-slot { display: block; min-width: 0; }
+.detalle-accion-slot .btn-editar-viaje,
+.detalle-accion-slot .btn-alertas-viaje { width: 100%; min-height: 42px; box-sizing: border-box; }
 
 /* ── BOTÓN Y PANEL DE ALERTAS DEL VIAJE ─────── */
 .btn-alertas-viaje {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
-  padding: .3rem .7rem;
+  justify-content: center;
+  gap: .4rem;
+  padding: .6rem .9rem;
   background: #fff4e5;
   border: 1px solid #f2b84b;
-  border-radius: 6px;
+  border-radius: 10px;
   color: #92610c;
-  font-size: .75rem;
+  font-size: .82rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -1343,10 +1427,10 @@
   background: #d9480f;
   color: #fff;
   border-radius: 50%;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  font-size: .65rem;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: .68rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1359,6 +1443,7 @@
   right: 0;
   z-index: 40;
   min-width: 240px;
+  width: max(100%, 240px);
   max-width: 90vw;
   background: var(--surface-1, #fff);
   border: 1px solid var(--glass-border, #e5e5e5);
@@ -1392,15 +1477,17 @@
 .btn-editar-viaje {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
+  justify-content: center;
+  gap: .4rem;
   margin-left: 0;
-  padding: .3rem .7rem;
+  padding: .6rem .9rem;
   background: transparent;
   border: 1px solid var(--border, #d0d7de);
-  border-radius: 6px;
-  color: var(--text-muted, #57606a);
-  font-size: .75rem;
-  font-weight: 500;
+  border-radius: 10px;
+  color: var(--text-mid, #57606a);
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 600;
   cursor: pointer;
   vertical-align: middle;
   transition: background .15s, color .15s, border-color .15s;
