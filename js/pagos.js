@@ -363,6 +363,26 @@ document.getElementById("pago-foto-quitar")?.addEventListener("click", () => {
   _actualizarNombreArchivo("pago-foto", "pago-foto-nombre");
 });
 
+// Formatea el input de monto con puntos de miles mientras se escribe
+// (ej: 1.660.000). Es solo visual: el valor real (sin puntos) se obtiene
+// con _leerMontoInput() al leer/guardar, así que en la BD sigue llegando
+// el número tal cual, sin puntos.
+function _formatearInputMiles(el) {
+  const soloDigitos = el.value.replace(/\D/g, "");
+  const posCursorDesdeElFinal = el.value.length - el.selectionStart;
+  el.value = soloDigitos === "" ? "" : Number(soloDigitos).toLocaleString("es-PY");
+  const nuevaPos = Math.max(0, el.value.length - posCursorDesdeElFinal);
+  el.setSelectionRange(nuevaPos, nuevaPos);
+}
+document.getElementById("pago-monto")?.addEventListener("input", (e) => _formatearInputMiles(e.target));
+
+// Lee un input formateado con puntos de miles y devuelve el número limpio
+// (o NaN si está vacío/ inválido), listo para guardar en la BD sin puntos.
+function _leerMontoInput(id) {
+  const raw = (document.getElementById(id)?.value || "").replace(/\D/g, "");
+  return raw === "" ? NaN : parseInt(raw, 10);
+}
+
 function mostrarFormPago() {
   ["pago-monto","pago-comprobante","pago-observacion"].forEach(id => {
     const el = document.getElementById(id);
@@ -456,7 +476,7 @@ async function subirFotoComprobante(file) {
 
 /* ── GUARDAR PAGO ───────────────────────────── */
 async function guardarPago() {
-  const monto    = parseInt(document.getElementById("pago-monto").value);
+  const monto    = _leerMontoInput("pago-monto");
   const tipo     = document.getElementById("pago-tipo").value;
   const metodoid = document.getElementById("pago-metodo").value || null;
   const bancoId  = document.getElementById("pago-banco").value  || null;
