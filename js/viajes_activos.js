@@ -1048,6 +1048,8 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   if (tabPresEarly) tabPresEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabResEarly = document.getElementById("tab-resumen");
   if (tabResEarly) tabResEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
+  const tabTransfEarly = document.getElementById("tab-transferencias");
+  if (tabTransfEarly) tabTransfEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabExtraEarly = document.getElementById("tab-extra");
   if (tabExtraEarly) {
     tabExtraEarly.style.display = (esWorkerOAdminEarly && !!viajeActualData?.extras_habilitados) ? "" : "none";
@@ -2069,7 +2071,7 @@ function switchViajeTab(tab) {
   if (esFinanzas) {
     // Finanzas: solo egresos/presupuesto/resumen. Nunca pasajeros ni extra.
     if (tab === "pasajeros" || tab === "extra") tab = "resumen";
-  } else if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra")) {
+  } else if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra" || tab === "transferencias")) {
     tab = "pasajeros";
   }
   // Extra requiere además que el viaje lo tenga habilitado
@@ -2084,6 +2086,8 @@ function switchViajeTab(tab) {
   if (tabPres) tabPres.classList.toggle("active", tab === "presupuesto");
   const tabRes = document.getElementById("tab-resumen");
   if (tabRes) tabRes.classList.toggle("active", tab === "resumen");
+  const tabTransf = document.getElementById("tab-transferencias");
+  if (tabTransf) tabTransf.classList.toggle("active", tab === "transferencias");
   const tabExtra = document.getElementById("tab-extra");
   if (tabExtra) tabExtra.classList.toggle("active", tab === "extra");
 
@@ -2094,14 +2098,17 @@ function switchViajeTab(tab) {
   if (panelPres) panelPres.style.display = tab === "presupuesto" ? "" : "none";
   const panelRes = document.getElementById("panel-resumen");
   if (panelRes) panelRes.style.display = tab === "resumen" ? "" : "none";
+  const panelTransf = document.getElementById("panel-transferencias");
+  if (panelTransf) panelTransf.style.display = tab === "transferencias" ? "" : "none";
   const panelExtra = document.getElementById("panel-extra");
   if (panelExtra) panelExtra.style.display = tab === "extra" ? "" : "none";
 
-  if (tab === "pasajeros")   _refrescarPasajerosSiCorresponde();
-  if (tab === "egresos")     loadEgresos(viajeActualId);
-  if (tab === "presupuesto") loadPresupuesto(viajeActualId);
-  if (tab === "resumen")     loadResumen(viajeActualId);
-  if (tab === "extra")       loadExtras(viajeActualId);
+  if (tab === "pasajeros")      _refrescarPasajerosSiCorresponde();
+  if (tab === "egresos")        loadEgresos(viajeActualId);
+  if (tab === "presupuesto")    loadPresupuesto(viajeActualId);
+  if (tab === "resumen")        loadResumen(viajeActualId);
+  if (tab === "transferencias") loadTransferencias(viajeActualId);
+  if (tab === "extra")          loadExtras(viajeActualId);
 }
 
 // Al volver al tab Pasajeros desde otro tab (egresos/presupuesto/resumen),
@@ -2166,7 +2173,7 @@ function _initSwipeTabsViaje() {
 }
 
 function _cambiarTabViajePorSwipe(direccion) {
-  const ordenTabs = ["pasajeros", "egresos", "presupuesto", "resumen", "extra"];
+  const ordenTabs = ["pasajeros", "egresos", "presupuesto", "resumen", "transferencias", "extra"];
 
   // Solo se consideran las tabs visibles según el rol del usuario
   const visibles = ordenTabs.filter(t => {

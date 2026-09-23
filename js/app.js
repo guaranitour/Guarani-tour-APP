@@ -602,7 +602,7 @@ window.addEventListener("popstate", (event) => {
   // guarda datos); egreso-detalle no tiene contexto en memoria para
   // reconstruirse, así que va al padre. viaje-pasajero-pagos sí lo tiene
   // (pagosCtx), así que se resuelve más abajo, junto con pago-detalle.
-  const objectIdxViews = ["egreso-detalle"];
+  const objectIdxViews = ["egreso-detalle", "transferencia-detalle"];
   if (objectIdxViews.includes(view)) {
     navigateTo("viajes", null, true);
     return;
@@ -663,9 +663,9 @@ const _vistasConTransicion = new Set([
   "byc", "byc-vincular", "clientes", "club-destino", "dashboard", "detalle",
   "egreso-detalle", "historial-viajes", "historico", "movimiento-nuevo",
   "movimientos", "nuevo", "pago-detalle", "ranking-puntos", "recibo-detalle",
-  "recibo-nuevo", "recibos", "seleccion-asiento", "usuarios", "viaje-detalle",
-  "viaje-editar", "viaje-nuevo", "viaje-pasajero-nuevo", "viaje-pasajero-pagos",
-  "viajes",
+  "recibo-nuevo", "recibos", "seleccion-asiento", "transferencia-detalle",
+  "usuarios", "viaje-detalle", "viaje-editar", "viaje-nuevo",
+  "viaje-pasajero-nuevo", "viaje-pasajero-pagos", "viajes",
 ]);
 
 function navigateTo(view, idx = null, _fromHash = false) {
@@ -746,6 +746,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vpd) _vpd.style.display = "none";
   const _ved = document.getElementById("view-egreso-detalle");
   if (_ved) _ved.style.display = "none";
+  const _vtd = document.getElementById("view-transferencia-detalle");
+  if (_vtd) _vtd.style.display = "none";
   const _vve = document.getElementById("view-viaje-editar");
   if (_vve) _vve.style.display = "none";
   const _vrec = document.getElementById("view-recibos");
@@ -1122,6 +1124,19 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Egreso" }
     ]);
     initEgresoDetalleView(idx);
+
+  }
+
+  else if (view === "transferencia-detalle") {
+
+    showEl("view-transferencia-detalle");
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
+      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
+      { label: "Transferencia" }
+    ]);
+    initTransferenciaDetalleView(idx);
 
   }
 
