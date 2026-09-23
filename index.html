@@ -439,6 +439,10 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         Resumen
       </button>
+      <button class="viaje-tab" id="tab-transferencias" onclick="switchViajeTab('transferencias')" style="display:none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Transferencias
+      </button>
     </div>
     </div>
 
@@ -620,6 +624,72 @@
     <div id="panel-resumen" class="viaje-tab-panel" style="display:none">
       <div class="detalle-section">
         <div id="resumen-cont"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: TRANSFERENCIAS INTERNAS -->
+    <div id="panel-transferencias" class="viaje-tab-panel" style="display:none">
+      <div class="detalle-section">
+        <div id="transferencias-list">
+          <div class="viaje-pasajeros-empty">Cargando…</div>
+        </div>
+
+        <button class="btn-agregar-pasajero" id="btn-agregar-transferencia" onclick="mostrarFormTransferencia()" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Registrar transferencia
+        </button>
+
+        <!-- Formulario nueva transferencia interna (inline) -->
+        <div id="form-nueva-transferencia" style="display:none">
+          <div class="pago-form-inner">
+            <div class="detail-grid">
+
+              <div class="form-field">
+                <label class="form-label">De <span class="req">*</span></label>
+                <select id="transferencia-de" class="form-input">
+                  <option value="">— Cargando… —</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">A <span class="req">*</span></label>
+                <select id="transferencia-a" class="form-input">
+                  <option value="">— Cargando… —</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Monto (Gs.) <span class="req">*</span></label>
+                <input type="number" id="transferencia-monto" class="form-input" placeholder="Ej: 250000" min="1" />
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Fecha <span class="req">*</span></label>
+                <input type="date" id="transferencia-fecha" class="form-input" />
+              </div>
+
+              <div class="form-field full">
+                <label class="form-label">Nota</label>
+                <input type="text" id="transferencia-nota" class="form-input" placeholder="Detalle opcional de la transferencia" />
+              </div>
+
+              <div class="form-field full">
+                <label class="form-label">Comprobante</label>
+                <input type="file" id="transferencia-archivo" class="form-input" accept="image/*,application/pdf">
+              </div>
+
+            </div>
+
+            <div class="form-actions" style="margin-top:.75rem">
+              <button class="btn-cancel" onclick="cerrarFormTransferencia()">Cancelar</button>
+              <button class="btn-save" id="btn-guardar-transferencia" onclick="guardarTransferencia()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2014,6 +2084,17 @@
   </div>
 </div>
 
+<!-- VISTA: DETALLE TRANSFERENCIA INTERNA -->
+<div id="view-transferencia-detalle" style="display:none">
+  <div class="main">
+    <div class="form-page-header">
+      <h1>Detalle de transferencia</h1>
+      <p class="page-desc">Información completa de la transferencia interna registrada</p>
+    </div>
+    <div id="transferencia-detalle-cont"></div>
+  </div>
+</div>
+
 <!-- VISTA RECIBOS -->
 <div id="view-recibos" style="display:none">
   <div class="main">
@@ -2561,6 +2642,7 @@
   <script src="js/viajes_activos.js"></script>
   <script src="js/historial_pdf.js"></script>
   <script src="js/viajes_egresos.js"></script>
+  <script src="js/viajes_transferencias.js"></script>
   <script src="js/viajes_presupuesto.js"></script>
   <script src="js/usuarios.js"></script>
   <script src="js/usuarios-reservas.js"></script>
