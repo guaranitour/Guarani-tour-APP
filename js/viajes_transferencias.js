@@ -1,23 +1,24 @@
 // ══════════════════════════════════════════════════════════════════════
-//  TRANSFERENCIAS INTERNAS (entre staff)
+//  TRANSFERENCIAS INTERNAS (entre cajas / métodos de pago)
 //  Mismo patrón que viajes_egresos.js: archivo separado, cargado junto
 //  a viajes_activos.js en index.html.
 //
-//  Registra cuando un miembro del staff le pasa plata a otro dentro del
-//  contexto de un viaje (ej. alguien cobra en efectivo y le transfiere
-//  la parte a otro vendedor). No es un cobro a pasajero: no toca la
-//  tabla "pagos" ni el resumen de recaudación del viaje.
+//  Registra cuando se mueve plata de una caja a otra dentro del viaje
+//  (ej. de Efectivo a Transferencia). Existe para que el resumen del
+//  viaje no cuente esa plata como si estuviera en las dos cajas a la
+//  vez. No es un cobro a pasajero: no toca la tabla "pagos".
+//
+//  de_caja / a_caja son metodos_de_pago.id — la misma tabla que ya usa
+//  pagos.metodo_pago_id.
 //
 //  Dependencias globales (definidas en otros scripts, cargados antes en
 //  index.html): supabaseClient, currentUserRole, viajeActualId,
-//  navigateTo().
+//  navigateTo(), getMetodosPago().
 // ══════════════════════════════════════════════════════════════════════
 
 /* ── TRANSFERENCIAS INTERNAS ───────────────── */
 
-// Caché para el select de staff del form
-let _transfStaffList  = [];
-let _transfLoadToken  = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
+let _transfLoadToken = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
 
 async function loadTransferencias(viajeId) {
   const miToken = ++_transfLoadToken;
@@ -36,7 +37,7 @@ async function loadTransferencias(viajeId) {
   // Query principal de transferencias
   const { data, error } = await supabaseClient
     .from("transferencias_internas")
-    .select("id, monto, nota, fecha, de_staff, a_staff, creado_por, comprobante_url")
+    .select("id, monto, nota, fecha, de_caja, a_caja, creado_por, comprobante_url")
     .eq("viaje_id", viajeId)
     .order("fecha", { ascending: false });
 
@@ -52,15 +53,13 @@ async function loadTransferencias(viajeId) {
     return;
   }
 
-  // Nombres de staff (sin cache, igual que categorías en egresos)
-  const { data: staffData } = await supabaseClient
-    .from("staff")
-    .select("id, nombre");
+  // Nombres de caja/método de pago (cacheados globalmente)
+  const metodos = await getMetodosPago();
 
   if (miToken !== _transfLoadToken) return;
   if (viajeId !== viajeActualId) return;
 
-  const staffMap = Object.fromEntries((staffData || []).map(s => [s.id, s.nombre]));
+  const cajaMap = Object.fromEntries((metodos || []).map(m => [String(m.id), m.metodo_de_pago]));
 
   if (!data || data.length === 0) {
     listEl.innerHTML = `
@@ -82,8 +81,8 @@ async function loadTransferencias(viajeId) {
       <span class="egresos-total-valor">Gs. ${totalTransferencias.toLocaleString("es-PY")}</span>
     </div>
     ${data.map(t => {
-      const de     = staffMap[t.de_staff] || "—";
-      const a      = staffMap[t.a_staff]  || "—";
+      const de     = cajaMap[String(t.de_caja)] || "—";
+      const a      = cajaMap[String(t.a_caja)]  || "—";
       const fecha  = t.fecha ? t.fecha.split("T")[0].split("-").reverse().join("/") : "—";
       return `
   <div class="egreso-row" style="cursor:pointer"
@@ -112,19 +111,14 @@ async function loadTransferencias(viajeId) {
 }
 
 async function _cargarOpcionesFormTransferencia() {
-  // Staff habilitado, para los selects "De" y "A" — siempre re-consultado
-  const { data: staffData } = await supabaseClient
-    .from("staff")
-    .select("id, nombre")
-    .eq("status", "enabled")
-    .order("nombre", { ascending: true });
-
-  _transfStaffList = staffData || [];
+  const metodos = await getMetodosPago();
 
   const selDe = document.getElementById("transferencia-de");
   const selA  = document.getElementById("transferencia-a");
 
-  const opciones = _transfStaffList.map(s => `<option value="${s.id}">${s.nombre}</option>`).join("");
+  const opciones = (metodos || [])
+    .map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`)
+    .join("");
 
   if (selDe) {
     selDe.innerHTML = `<option value="">— Seleccionar —</option>` + opciones;
@@ -190,8 +184,8 @@ async function uploadTransferenciaFile(file) {
 }
 
 async function guardarTransferencia() {
-  const deStaff   = document.getElementById("transferencia-de")?.value;
-  const aStaff    = document.getElementById("transferencia-a")?.value;
+  const deCaja    = document.getElementById("transferencia-de")?.value;
+  const aCaja     = document.getElementById("transferencia-a")?.value;
   const monto     = parseInt(document.getElementById("transferencia-monto")?.value);
   const fecha     = document.getElementById("transferencia-fecha")?.value || null;
   const nota      = document.getElementById("transferencia-nota")?.value.trim() || null;
@@ -199,17 +193,17 @@ async function guardarTransferencia() {
 
   // Validaciones
   let valido = true;
-  if (!deStaff) {
+  if (!deCaja) {
     document.getElementById("transferencia-de")?.classList.add("error");
     valido = false;
   }
-  if (!aStaff) {
+  if (!aCaja) {
     document.getElementById("transferencia-a")?.classList.add("error");
     valido = false;
   }
-  if (deStaff && aStaff && deStaff === aStaff) {
+  if (deCaja && aCaja && deCaja === aCaja) {
     document.getElementById("transferencia-a")?.classList.add("error");
-    alert("El staff de origen y destino no pueden ser el mismo.");
+    alert("La caja de origen y destino no pueden ser la misma.");
     valido = false;
   }
   if (!monto || monto <= 0) {
@@ -244,8 +238,8 @@ async function guardarTransferencia() {
     .from("transferencias_internas")
     .insert([{
       viaje_id: viajeActualId,
-      de_staff: deStaff,
-      a_staff: aStaff,
+      de_caja: deCaja,
+      a_caja: aCaja,
       monto,
       fecha,
       nota,
@@ -280,12 +274,12 @@ async function initTransferenciaDetalleView({ transferenciaId, viajeId }) {
 
   cont.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
-  const [{ data: t, error }, { data: staffData }] = await Promise.all([
+  const [{ data: t, error }, metodos] = await Promise.all([
     supabaseClient.from("transferencias_internas")
-      .select("id, monto, nota, fecha, de_staff, a_staff, creado_por, comprobante_url")
+      .select("id, monto, nota, fecha, de_caja, a_caja, creado_por, comprobante_url")
       .eq("id", transferenciaId)
       .single(),
-    supabaseClient.from("staff").select("id, nombre")
+    getMetodosPago()
   ]);
 
   if (error || !t) {
@@ -293,10 +287,10 @@ async function initTransferenciaDetalleView({ transferenciaId, viajeId }) {
     return;
   }
 
-  const staffMap = Object.fromEntries((staffData || []).map(s => [s.id, s.nombre]));
+  const cajaMap = Object.fromEntries((metodos || []).map(m => [String(m.id), m.metodo_de_pago]));
 
-  const de        = staffMap[t.de_staff] || "—";
-  const a         = staffMap[t.a_staff]  || "—";
+  const de        = cajaMap[String(t.de_caja)] || "—";
+  const a         = cajaMap[String(t.a_caja)]  || "—";
   const fecha     = t.fecha ? t.fecha.split("T")[0].split("-").reverse().join("/") : "—";
   const monto     = (t.monto || 0).toLocaleString("es-PY");
   const nota      = t.nota || "—";
@@ -327,11 +321,11 @@ async function initTransferenciaDetalleView({ transferenciaId, viajeId }) {
       </div>
       <div class="egreso-det-grid">
         <div class="egreso-det-field">
-          <span class="egreso-det-label">De</span>
+          <span class="egreso-det-label">De (caja)</span>
           <span class="egreso-det-value">${de}</span>
         </div>
         <div class="egreso-det-field">
-          <span class="egreso-det-label">A</span>
+          <span class="egreso-det-label">A (caja)</span>
           <span class="egreso-det-value">${a}</span>
         </div>
         <div class="egreso-det-field">
