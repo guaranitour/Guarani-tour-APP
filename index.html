@@ -2035,6 +2035,11 @@
     <p class="fact-desc-pildora">Facturación electrónica registrada en la SET</p>
 
     <div class="fact-toolbar">
+      <div class="informes-tabs fact-tabs">
+        <button type="button" class="informes-tab-btn active" data-periodo="actual" onclick="cambiarTabMarangatu('actual')">Actual</button>
+        <button type="button" class="informes-tab-btn" data-periodo="historico" onclick="cambiarTabMarangatu('historico')">Histórico</button>
+      </div>
+
       <button type="button" class="btn-subir-doc fact-btn-subir-full" id="btn-subir-marangatu" style="display:none" onclick="abrirModalMarangatu()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Cargar factura
