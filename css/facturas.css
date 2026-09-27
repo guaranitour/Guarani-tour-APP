@@ -18,6 +18,70 @@
   text-align: center;
 }
 
+/* ── Hub de selección: Internas / Marangatu ── */
+.fact-hub-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.fact-hub-card {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  width: 100%;
+  padding: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, border-color .15s;
+}
+.fact-hub-card:hover { background: var(--surface-hover); }
+.fact-hub-card:focus-visible {
+  outline: 2px solid var(--accent, #2d6a4f);
+  outline-offset: -2px;
+}
+
+.fact-hub-card-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-light, rgba(45,106,79,.12));
+  color: var(--accent, #2d6a4f);
+}
+
+.fact-hub-card-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+
+.fact-hub-card-titulo {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fact-hub-card-desc {
+  font-size: .8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.fact-hub-card-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
 .fact-toolbar {
   display: flex;
   flex-direction: column;
