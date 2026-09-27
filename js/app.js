@@ -725,6 +725,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   setFabSosVisible(false); // solo se re-muestra dentro de Detalle de pasajero
   const _modalSos = document.getElementById("modal-contacto");
   if (_modalSos && _modalSos.open) _modalSos.close();
+  const _modalMarangatu = document.getElementById("marangatu-modal");
+  if (_modalMarangatu && _modalMarangatu.open) _modalMarangatu.close();
   hideEl("view-clientes");
   hideEl("view-detalle");
   hideEl("view-nuevo");
@@ -985,6 +987,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Facturas", action: () => navigateTo("facturas") },
       { label: "Marangatu" }
     ]);
+    loadMarangatu();
 
   }
 
