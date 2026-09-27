@@ -782,6 +782,10 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vleg) _vleg.style.display = "none";
   const _vfact = document.getElementById("view-facturas");
   if (_vfact) _vfact.style.display = "none";
+  const _vfactint = document.getElementById("view-facturas-internas");
+  if (_vfactint) _vfactint.style.display = "none";
+  const _vfactmar = document.getElementById("view-facturas-marangatu");
+  if (_vfactmar) _vfactmar.style.display = "none";
   const _vinf = document.getElementById("view-informes");
   if (_vinf) _vinf.style.display = "none";
 
@@ -954,9 +958,33 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-facturas");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
-      { label: "Facturas y tickets" }
+      { label: "Facturas" }
+    ]);
+
+  }
+
+  else if (view === "facturas-internas") {
+
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    showEl("view-facturas-internas");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Facturas", action: () => navigateTo("facturas") },
+      { label: "Internas" }
     ]);
     loadFacturas();
+
+  }
+
+  else if (view === "facturas-marangatu") {
+
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    showEl("view-facturas-marangatu");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Facturas", action: () => navigateTo("facturas") },
+      { label: "Marangatu" }
+    ]);
 
   }
 

@@ -76,7 +76,7 @@ async function _cargarFacturas() {
 
 function cambiarTabFacturas(estado) {
   _facturasFiltroEstado = estado;
-  document.querySelectorAll("#view-facturas .informes-tab-btn").forEach(b => {
+  document.querySelectorAll("#view-facturas-internas .informes-tab-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.estado === estado);
   });
   _renderFacturas();
