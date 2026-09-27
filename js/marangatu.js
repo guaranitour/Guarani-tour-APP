@@ -18,6 +18,7 @@
 
 let _marangatuCache = [];          // última lista cargada desde Supabase
 let _marangatuFilePendiente = null; // File entre selección y confirmación del modal
+let _marangatuFiltroPeriodo = "actual"; // tab inicial: "Actual" (mes en curso)
 
 function _rolesMarangatu() {
   return Array.isArray(currentUserRole) ? currentUserRole : [currentUserRole];
@@ -61,6 +62,22 @@ async function _cargarMarangatu() {
   _renderMarangatu();
 }
 
+function cambiarTabMarangatu(periodo) {
+  _marangatuFiltroPeriodo = periodo;
+  document.querySelectorAll("#view-facturas-marangatu .informes-tab-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.periodo === periodo);
+  });
+  _renderMarangatu();
+}
+
+// "Actual" = mes en curso según fecha_emision; "Histórico" = todo lo
+// anterior. Se compara como string "YYYY-MM" para evitar líos de
+// huso horario con new Date().
+function _mesActualMarangatu() {
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
+}
+
 // ── Render agrupado por mes de fecha_emision ────────────────
 // Idéntico criterio de agrupación que facturas.js (mismo formato
 // visual, mismas clases .fact-mes-*), pero sin badge de estado ni
@@ -69,10 +86,17 @@ function _renderMarangatu() {
   const cont = document.getElementById("marangatu-lista");
   if (!cont) return;
 
-  const items = _marangatuCache;
+  const mesActual = _mesActualMarangatu();
+  const items = _marangatuCache.filter(f => {
+    const esMesActual = f.fecha_emision.slice(0, 7) === mesActual;
+    return _marangatuFiltroPeriodo === "actual" ? esMesActual : !esMesActual;
+  });
 
   if (items.length === 0) {
-    cont.innerHTML = `<div class="fact-empty">No hay facturas Marangatu cargadas.</div>`;
+    const mensaje = _marangatuFiltroPeriodo === "actual"
+      ? "No hay facturas cargadas este mes."
+      : "No hay facturas históricas.";
+    cont.innerHTML = `<div class="fact-empty">${mensaje}</div>`;
     return;
   }
 
@@ -122,7 +146,6 @@ function _renderMarangatuRow(item) {
     <span class="fact-row-icon">${_iconoMarangatu()}</span>
     <div class="fact-row-info">
       <div class="fact-row-titulo">
-        <span class="fact-tipo-badge is-factura">Factura</span>
         <span class="fact-row-monto">${_formatMontoMarangatu(item.monto)}</span>
       </div>
       <div class="fact-row-meta">
