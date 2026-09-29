@@ -1647,6 +1647,7 @@ function mostrarToastRecibo(msg, duracionMs = 2500) {
     t = document.createElement('div');
     t.id = 'recibo-toast';
     t.className = 'recibo-toast';
+    t.setAttribute('role', 'status');
     document.body.appendChild(t);
   }
   t.textContent = msg;
