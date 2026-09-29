@@ -1016,24 +1016,30 @@
 /* ── Toast ───────────────────────────────────── */
 .recibo-toast {
   position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(1rem);
+  left: 0;
+  right: 0;
+  bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  margin-inline: auto;
+  width: fit-content;
+  max-width: min(92vw, 26rem);
+  transform: translateY(1rem);
   background: #1a2e1e;
   color: #fff;
-  padding: .55rem 1.1rem;
-  border-radius: 20px;
+  padding: .65rem 1.1rem;
+  border-radius: 16px;
   font-size: .82rem;
   font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: anywhere;
   opacity: 0;
   transition: opacity .2s, transform .2s;
   pointer-events: none;
   z-index: 2000;
-  white-space: nowrap;
 }
 .recibo-toast--visible {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 
 /* ── Autocomplete banco ───────────────────────── */
