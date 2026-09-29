@@ -35,7 +35,8 @@ async function loadResumen(viajeId) {
     { data: catRows },
     { data: metodosRows },
     { data: extrasVpRows },
-    { data: serviciosExtraRows }
+    { data: serviciosExtraRows },
+    { data: transfRows, error: transfError }
   ] = await Promise.all([
     // Todos los pagos de este viaje: monto, tipo y método
     supabaseClient
@@ -82,8 +83,18 @@ async function loadResumen(viajeId) {
           .from("servicios_extra")
           .select("id, nombre")
           .eq("viaje_id", viajeId)
-      : Promise.resolve({ data: [] })
+      : Promise.resolve({ data: [] }),
+
+    // Transferencias internas entre cajas del viaje. No son cobros ni
+    // egresos: solo mueven plata de una caja a otra (resta en de_caja,
+    // suma en a_caja) para el desglose por método de pago.
+    supabaseClient
+      .from("transferencias_internas")
+      .select("monto, de_caja, a_caja")
+      .eq("viaje_id", viajeId)
   ]);
+
+  if (transfError) console.error("Error cargando transferencias internas para el resumen:", transfError);
 
   /* ── Mapas de lookup ─────────────────────────── */
   const catMap = Object.fromEntries((catRows    || []).map(c => [String(c.id), c.nombre]));
@@ -233,17 +244,39 @@ async function loadResumen(viajeId) {
     egresosPorMetodo[nombre] = (egresosPorMetodo[nombre] || 0) + (e.monto || 0);
   });
 
+  // Transferencias internas: la caja de origen pierde y la de destino gana.
+  // Para el saldo global del viaje el efecto neto es cero (sale de una caja
+  // y entra en otra); solo cambia cómo se reparte entre métodos de pago.
+  const transfEnviadasPorMetodo  = {};
+  const transfRecibidasPorMetodo = {};
+  (transfRows || []).forEach(t => {
+    const de = metMap[String(t.de_caja)] || "Sin método";
+    const a  = metMap[String(t.a_caja)]  || "Sin método";
+    transfEnviadasPorMetodo[de]  = (transfEnviadasPorMetodo[de]  || 0) + (t.monto || 0);
+    transfRecibidasPorMetodo[a]  = (transfRecibidasPorMetodo[a]  || 0) + (t.monto || 0);
+  });
+
   const todosMetodos = new Set([
     ...Object.keys(cobradoPorMetodo),
-    ...Object.keys(egresosPorMetodo)
+    ...Object.keys(egresosPorMetodo),
+    ...Object.keys(transfEnviadasPorMetodo),
+    ...Object.keys(transfRecibidasPorMetodo)
   ]);
   const saldoPorMetodoEntries = [...todosMetodos]
-    .map(nombre => ({
-      nombre,
-      cobrado: cobradoPorMetodo[nombre] || 0,
-      egresos: egresosPorMetodo[nombre] || 0,
-      saldo:  (cobradoPorMetodo[nombre] || 0) - (egresosPorMetodo[nombre] || 0)
-    }))
+    .map(nombre => {
+      const cobrado   = cobradoPorMetodo[nombre]        || 0;
+      const egresos   = egresosPorMetodo[nombre]        || 0;
+      const transfIn  = transfRecibidasPorMetodo[nombre] || 0;
+      const transfOut = transfEnviadasPorMetodo[nombre]  || 0;
+      return {
+        nombre,
+        cobrado,
+        egresos,
+        transfIn,
+        transfOut,
+        saldo: cobrado - egresos + transfIn - transfOut
+      };
+    })
     .sort((a, b) => b.cobrado - a.cobrado);
 
   const egresosPorCat = {};
@@ -411,6 +444,11 @@ async function loadResumen(viajeId) {
               </span>
             </div>
           </div>
+          ${r.transfIn > 0 || r.transfOut > 0 ? `
+          <div class="resumen-metodo-transf">
+            ${r.transfIn > 0  ? `<div class="resumen-mov-row"><span>Transf. recibidas</span><span class="positivo">+ Gs. ${fmt(r.transfIn)}</span></div>` : ""}
+            ${r.transfOut > 0 ? `<div class="resumen-mov-row"><span>Transf. enviadas</span><span class="negativo">− Gs. ${fmt(r.transfOut)}</span></div>` : ""}
+          </div>` : ""}
         </div>`).join("")}
       </div>
     </details>
