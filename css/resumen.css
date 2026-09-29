@@ -261,6 +261,13 @@
 .resumen-metodo-col-value.positivo  { color: var(--success, #2e7d52); }
 .resumen-metodo-col-value.negativo  { color: var(--danger,  #c0392b); }
 
+/* Transferencias internas dentro de la card de cada método */
+.resumen-metodo-transf {
+  margin-top: .55rem;
+  padding-top: .3rem;
+  border-top: 1px dashed var(--border, #e8ede9);
+}
+
 /* ── Pills vendedor ──────────────────────────── */
 .resumen-vendedor-pills {
   display: flex;
