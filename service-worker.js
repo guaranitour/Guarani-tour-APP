@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v130';
+const CACHE_NAME    = 'guarani-tour-v131';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
