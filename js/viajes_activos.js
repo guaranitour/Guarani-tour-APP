@@ -16,6 +16,26 @@ let reemplazoCtx = {
 // CIs normalizados presentes en basesycondiciones (aceptaron ByC)
 let _bycAceptados = new Set();
 
+// Caché en memoria de la lista de CIs de basesycondiciones. Es la misma para
+// todos los viajes, así que no hace falta bajarla completa en cada entrada al
+// detalle de un viaje ni en cada vuelta al tab Pasajeros. TTL de 5 minutos;
+// llamar a _invalidarBycCache() si se necesita forzar una lectura nueva.
+let _bycCache = { data: null, ts: 0 };
+const BYC_TTL_MS = 5 * 60 * 1000;
+
+function _invalidarBycCache() {
+  _bycCache = { data: null, ts: 0 };
+}
+
+async function _getBycCis() {
+  if (_bycCache.data && Date.now() - _bycCache.ts < BYC_TTL_MS) {
+    return { data: _bycCache.data, error: null };
+  }
+  const res = await supabaseClient.from("basesycondiciones").select("ci");
+  if (!res.error && res.data) _bycCache = { data: res.data, ts: Date.now() };
+  return res;
+}
+
 // Cache en memoria del detalle de viaje, por viajeId. Vive solo mientras
 // la app sigue abierta (se pierde al recargar). Permite pintar la vista
 // al instante al volver de un pasajero/pago, mientras se refresca de
@@ -927,9 +947,7 @@ async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
         pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
       `)
       .eq("viaje_id", viajeId),
-    supabaseClient
-      .from("basesycondiciones")
-      .select("ci"),
+    _getBycCis(),
   ]);
 
   // Si el usuario ya navegó a otro viaje mientras esta carga estaba en
