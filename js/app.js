@@ -1643,7 +1643,7 @@ async function guardarEdicionDetalle() {
   const ci     = document.getElementById("e-ci").value.trim();
   const sexo   = document.getElementById("e-sexo").value;
 
-  if (!nombre || !ci || !sexo) {
+  if (!nombre || !sexo) {
     mostrarFeedbackDetalle("Completá los campos obligatorios.", false);
     return;
   }
@@ -1659,7 +1659,7 @@ async function guardarEdicionDetalle() {
 
   const updates = {
     "Pasajero":               nombre,
-    "Documento de Identidad": ci,
+    "Documento de Identidad": ci || null,
     "Sexo":                   sexo,
     "Fecha de nacimiento":    document.getElementById("e-fecha").value || null,
     "E-mail":                 document.getElementById("e-email").value.trim() || null,
