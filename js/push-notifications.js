@@ -117,7 +117,7 @@ async function retryPushPermission(staffId) {
   if (typeof showToast === "function") {
     showToast(mensaje, "error");
   } else {
-    alert(mensaje);
+    showToast(mensaje, "error");
   }
   return result;
 }

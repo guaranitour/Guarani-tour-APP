@@ -1240,7 +1240,7 @@ async function agregarSpeech() {
 }
 
 async function borrarSpeech(speechId) {
-  if (!confirm('¿Eliminar esta frase para este viaje?')) return;
+  if (!(await confirmar({ titulo: 'Eliminar frase', mensaje: '¿Eliminar esta frase para este viaje?', confirmarTexto: 'Eliminar', peligro: true }))) return;
 
   const { error } = await supabaseClient
     .from('recibo_speeches')
@@ -1642,16 +1642,5 @@ async function compartirComprobante(url, btn) {
 }
 
 function mostrarToastRecibo(msg, duracionMs = 2500) {
-  let t = document.getElementById('recibo-toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'recibo-toast';
-    t.className = 'recibo-toast';
-    t.setAttribute('role', 'status');
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.classList.add('recibo-toast--visible');
-  clearTimeout(t._ocultarTimeout);
-  t._ocultarTimeout = setTimeout(() => t.classList.remove('recibo-toast--visible'), duracionMs);
+  showToast(msg, undefined, duracionMs);
 }

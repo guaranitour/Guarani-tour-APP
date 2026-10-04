@@ -203,7 +203,7 @@ async function guardarTransferencia() {
   }
   if (deCaja && aCaja && deCaja === aCaja) {
     document.getElementById("transferencia-a")?.classList.add("error");
-    alert("La caja de origen y destino no pueden ser la misma.");
+    showToast("La caja de origen y destino no pueden ser la misma.", "warning");
     valido = false;
   }
   if (!monto || monto <= 0) {
@@ -228,7 +228,7 @@ async function guardarTransferencia() {
       comprobante_url = await uploadTransferenciaFile(archivo);
     } catch (e) {
       console.error(e);
-      alert("Error subiendo comprobante");
+      showToast("Error subiendo comprobante", "error");
       if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
       return;
     }
@@ -254,10 +254,11 @@ async function guardarTransferencia() {
 
   if (error) {
     console.error("Error guardando transferencia interna:", error);
-    alert("Error al guardar la transferencia. Revisá los datos e intentá de nuevo.");
+    showToast("Error al guardar la transferencia. Revisá los datos e intentá de nuevo.", "error");
     return;
   }
 
+  showToast("Transferencia registrada", "success");
   cerrarFormTransferencia();
   loadTransferencias(viajeActualId);
 }

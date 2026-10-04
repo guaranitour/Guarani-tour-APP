@@ -550,6 +550,7 @@ async function guardarNuevoCliente() {
   allPassengers.sort((a, b) => (a.Pasajero || "").localeCompare(b.Pasajero || ""));
   allPassengers.forEach((p, i) => p._idx = i);
 
+  showToast("Cliente creado", "success");
   navigateTo("clientes");
 }
 

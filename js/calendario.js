@@ -614,19 +614,7 @@ function _escapeHtml(str) {
   return div.innerHTML;
 }
 
-/* Toast mínimo propio (no se asume un sistema global de toasts para
-   no depender de un módulo no incluido en este cambio). */
+/* Toast: usa el del sistema (showToast, app.js). */
 function _calendarioToast(msg, esError = false) {
-  const el = document.createElement("div");
-  el.textContent = msg;
-  el.setAttribute("role", "status");
-  el.style.cssText = `
-    position:fixed; left:50%; bottom:calc(6rem + env(safe-area-inset-bottom,0px));
-    transform:translateX(-50%); z-index:400;
-    background:${esError ? "var(--danger)" : "var(--accent)"}; color:#fff;
-    padding:.65rem 1.1rem; border-radius:10px; font-size:.85rem;
-    box-shadow:var(--shadow-md); max-width:calc(100vw - 2rem); text-align:center;
-  `;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2600);
+  showToast(msg, esError ? "error" : "success");
 }

@@ -443,26 +443,56 @@ function _mostrarErrorConexionEnterApp() {
 
 // Toast mínimo, sin dependencias de otros módulos (calendario.js define
 // uno similar para su propio uso; este es el genérico de app.js).
-function _appToast(msg, esError = false) {
-  // Un solo toast a la vez; entra y sale con animación (css/native.css).
-  document.querySelectorAll(".app-toast").forEach(t => t.remove());
+// ── Toast del sistema ──────────────────────────────────────
+// Único mecanismo de avisos de la app (estilos en css/native.css). Tipos:
+// "success" | "error" | "warning" | "info". Si no se indica, se deduce del
+// emoji inicial del mensaje (✅ ❌ ⚠️ 🕐 ℹ️) y, si no hay, es "success".
+// Acepta también el booleano true como "error" (firma antigua de _appToast).
+const _TOAST_ICONOS = {
+  success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  error:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  warning: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  info:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+};
+const _TOAST_EMOJI_RE = /^(✅|❌|⚠️?|🕐|ℹ️?)\s*/u;
+
+function _appToast(msg, tipo, duracionMs = 3200) {
+  let texto = String(msg ?? "");
+  let t = tipo === true ? "error" : (typeof tipo === "string" ? tipo : "");
+  if (!_TOAST_ICONOS[t]) {
+    const m = texto.match(_TOAST_EMOJI_RE);
+    if (!m) t = "success";
+    else if (m[1] === "✅") t = "success";
+    else if (m[1] === "❌") t = "error";
+    else if (m[1].startsWith("⚠")) t = "warning";
+    else t = "info";
+  }
+  texto = texto.replace(_TOAST_EMOJI_RE, ""); // el ícono ya lo pone el toast
+
+  // Un solo toast a la vez; entra y sale con animación.
+  document.querySelectorAll(".app-toast").forEach(x => x.remove());
   const el = document.createElement("div");
-  el.className = "app-toast" + (esError ? " error" : "");
-  el.textContent = msg;
-  el.setAttribute("role", "status");
+  el.className = "app-toast " + t;
+  el.setAttribute("role", t === "error" ? "alert" : "status");
+  const ico = document.createElement("span");
+  ico.className = "app-toast-ico";
+  ico.innerHTML = _TOAST_ICONOS[t];
+  const txt = document.createElement("span");
+  txt.textContent = texto;
+  el.append(ico, txt);
   document.body.appendChild(el);
+  if (t === "error" && typeof haptic === "function") haptic([30, 40, 30]);
+
   setTimeout(() => {
     el.classList.add("saliendo");
     el.addEventListener("animationend", () => el.remove(), { once: true });
     setTimeout(() => el.remove(), 400); // por si la animación no corre (reduced motion)
-  }, 3200);
+  }, duracionMs);
 }
 
-// Varios módulos (usuarios-reservas.js, extras.js) llaman showToast(), que no
-// estaba definida en ningún lado: con "showToast?.()" eso lanza ReferenceError.
-// El segundo parámetro acepta true o el string "error" (como lo usa extras.js).
-function showToast(msg, tipo = false) {
-  _appToast(msg, tipo === true || tipo === "error");
+// Usado por varios módulos; el segundo parámetro acepta true o el tipo.
+function showToast(msg, tipo, duracionMs) {
+  _appToast(msg, tipo, duracionMs);
 }
 
 function showAccessDenied(reason) {

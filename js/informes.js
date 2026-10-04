@@ -114,8 +114,8 @@ function _abrirRangoPersonalizado() {
 function confirmarRangoPersonalizadoInformes() {
   const desde = document.getElementById("informes-rango-desde").value;
   const hasta = document.getElementById("informes-rango-hasta").value;
-  if (!desde || !hasta) { alert("Selecciona ambas fechas."); return; }
-  if (desde > hasta) { alert("La fecha 'desde' no puede ser posterior a 'hasta'."); return; }
+  if (!desde || !hasta) { showToast("Selecciona ambas fechas.", "warning"); return; }
+  if (desde > hasta) { showToast("La fecha 'desde' no puede ser posterior a 'hasta'.", "warning"); return; }
 
   _informesRango = { tipo: "custom", desde, hasta };
   document.querySelectorAll("#view-informes .informes-range-chip").forEach(b => {

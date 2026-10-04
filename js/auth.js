@@ -12,7 +12,7 @@ async function loginWithGoogle() {
     }
   });
   if (error) {
-    alert("Error al iniciar sesión");
+    showToast("Error al iniciar sesión", "error");
     console.error(error);
   }
 }

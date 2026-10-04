@@ -170,7 +170,7 @@ async function compartirHistorialImagen(event, vpId, nombrePasajero) {
 
   } catch (err) {
     console.error("Error generando el historial:", err);
-    alert("No se pudo generar el historial: " + err.message);
+    showToast("No se pudo generar el historial: " + err.message, "error");
   } finally {
     if (hoja && hoja.parentElement) hoja.parentElement.remove(); // saca la jaula completa
     btn.disabled = false;

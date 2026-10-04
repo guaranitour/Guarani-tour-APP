@@ -971,7 +971,7 @@ async function compartirPuntosPasajero(pasajeroId) {
           .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero )"),
       ]);
       if (errViajes || errVp) {
-        alert("No se pudo generar la imagen. Intentá de nuevo.");
+        showToast("No se pudo generar la imagen. Intentá de nuevo.", "error");
         return;
       }
       const viajesMap = {};
@@ -981,7 +981,7 @@ async function compartirPuntosPasajero(pasajeroId) {
     }
 
     if (!registro || registro.viajes.length === 0) {
-      alert("Este pasajero todavía no tiene viajes asistidos en 2026.");
+      showToast("Este pasajero todavía no tiene viajes asistidos en 2026.", "info");
       return;
     }
 
@@ -1011,7 +1011,7 @@ async function compartirPuntosPasajero(pasajeroId) {
   } catch (e) {
     if (e?.name !== "AbortError") {
       console.error("Error al compartir puntos del pasajero:", e);
-      alert("No se pudo generar la imagen para compartir.");
+      showToast("No se pudo generar la imagen para compartir.", "error");
     }
   } finally {
     if (btn) btn.disabled = false;

@@ -213,7 +213,7 @@ async function guardarExtra() {
     if (typeof showToast === "function") {
       showToast("Error al guardar el servicio extra", "error");
     } else {
-      alert("Error al guardar el servicio extra");
+      showToast("Error al guardar el servicio extra", "error");
     }
     return;
   }
@@ -232,7 +232,7 @@ async function eliminarExtra(id) {
   const servicio = _extrasData.find(s => String(s.id) === String(id));
   const nombre = servicio ? servicio.nombre : "este servicio extra";
 
-  if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`)) return;
+  if (!(await confirmar({ titulo: "Eliminar servicio extra", mensaje: `¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`, confirmarTexto: "Eliminar", peligro: true }))) return;
 
   const { error } = await supabaseClient
     .from("servicios_extra")
@@ -244,7 +244,7 @@ async function eliminarExtra(id) {
     if (typeof showToast === "function") {
       showToast("Error al eliminar el servicio extra", "error");
     } else {
-      alert("Error al eliminar el servicio extra");
+      showToast("Error al eliminar el servicio extra", "error");
     }
     return;
   }

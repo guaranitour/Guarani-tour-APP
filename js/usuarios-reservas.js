@@ -189,6 +189,7 @@ async function createUserReservas() {
   const toggle = document.getElementById("ur-add-toggle");
   if (toggle) toggle.open = false;
 
+  showToast("Acceso otorgado", "success");
   loadUsersReservas();
 }
 
@@ -204,7 +205,7 @@ async function updateUserRoleReservas(email, selectEl) {
 }
 
 async function deleteUserReservas(email, btnEl) {
-  if (!confirm(`¿Quitar el acceso de ${email} a Destino Guaraní?`)) return;
+  if (!(await confirmar({ titulo: "Quitar acceso", mensaje: `¿Quitar el acceso de ${email} a Destino Guaraní?`, confirmarTexto: "Quitar acceso", peligro: true }))) return;
 
   btnEl.disabled = true;
 
@@ -220,5 +221,6 @@ async function deleteUserReservas(email, btnEl) {
     return;
   }
 
+  showToast("Acceso quitado", "success");
   loadUsersReservas();
 }

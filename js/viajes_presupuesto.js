@@ -365,10 +365,11 @@ async function guardarPresupuesto() {
 
   if (error) {
     console.error("Error guardando presupuesto:", error);
-    alert("Error al guardar. Revisá los datos e intentá de nuevo.");
+    showToast("Error al guardar. Revisá los datos e intentá de nuevo.", "error");
     return;
   }
 
+  showToast("Presupuesto guardado", "success");
   cerrarFormPresupuesto();
   loadPresupuesto(viajeActualId);
 }
@@ -400,7 +401,7 @@ async function agregarCatExtra() {
 
   if (error) {
     console.error("Error al crear categoría extra:", JSON.stringify(error));
-    alert("Error: " + (error.message || error.details || JSON.stringify(error)));
+    showToast("Error: " + (error.message || error.details || JSON.stringify(error)), "error");
     return;
   }
 

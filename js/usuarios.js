@@ -237,6 +237,7 @@ async function createUser() {
   const toggle = document.getElementById("u-add-toggle");
   if (toggle) toggle.open = false;
 
+  showToast("Usuario agregado", "success");
   loadUsers();
 }
 

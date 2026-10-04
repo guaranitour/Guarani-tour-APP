@@ -636,7 +636,7 @@ async function crearViaje() {
         btn.disabled = false;
         btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar viaje`;
       }
-      alert("Error subiendo imagen");
+      showToast("Error subiendo imagen", "error");
       return;
     }
   }
@@ -659,13 +659,14 @@ async function crearViaje() {
       btn.disabled = false;
       btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar viaje`;
     }
-    alert("Error al guardar viaje");
+    showToast("Error al guardar viaje", "error");
     return;
   }
 
   // Viaje nuevo: invalidamos el caché de la lista para que al volver se
   // vea reflejado de una, en vez de mostrar la lista vieja un instante.
   _viajesListaCache = null;
+  showToast("Viaje creado", "success");
   navigateTo("viajes");
 }
 
@@ -691,7 +692,7 @@ async function initFormEditarViaje(viajeId) {
     viaje = data;
   }
 
-  if (!viaje) { alert("No se pudo cargar el viaje"); return; }
+  if (!viaje) { showToast("No se pudo cargar el viaje", "error"); return; }
 
   viajeActualData = viaje;
 
@@ -797,7 +798,7 @@ async function guardarEditarViaje() {
   const extras_habilitados = document.getElementById("ve-extras-habilitados").checked;
   const file    = document.getElementById("ve-imagen").files[0];
 
-  if (!nombre) { alert("El nombre es obligatorio"); return; }
+  if (!nombre) { showToast("El nombre es obligatorio", "warning"); return; }
 
   const btn = document.getElementById("btn-guardar-editar-viaje");
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
@@ -815,7 +816,7 @@ async function guardarEditarViaje() {
       imagen_url = await uploadViajeImage(file, `viaje_${viajeActualId}`);
     } catch (e) {
       console.error(e);
-      alert("Error subiendo imagen: " + (e?.message || JSON.stringify(e)));
+      showToast("Error subiendo imagen: " + (e?.message || JSON.stringify(e)), "error");
       if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
       return;
     }
@@ -830,7 +831,7 @@ async function guardarEditarViaje() {
 
   if (error) {
     console.error(error);
-    alert("Error al guardar cambios");
+    showToast("Error al guardar cambios", "error");
     return;
   }
 
@@ -856,6 +857,7 @@ async function guardarEditarViaje() {
   // o salir de ahí): se descarta para que se recargue al volver.
   _historicoData = [];
 
+  showToast("Cambios guardados", "success");
   navigateTo("viaje-detalle", viajeActualId);
 }
 
@@ -1825,10 +1827,11 @@ async function guardarEdicionVP(vpId) {
   btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`;
 
   if (error) {
-    alert("Error al guardar. Intentá de nuevo.");
+    showToast("Error al guardar. Intentá de nuevo.", "error");
     return;
   }
 
+  showToast("Pasajero actualizado", "success");
   cerrarEdicionVP();
   loadViajeDetalle(viajeActualId);
 }

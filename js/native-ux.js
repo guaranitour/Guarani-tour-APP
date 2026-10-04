@@ -5,6 +5,7 @@
 //   · estado "guardando" (spinner) en los botones .btn-save
 //   · pull-to-refresh en las listas principales
 //   · skeletons de filas para vistas que cargaban con texto plano
+//   · confirmar(): diálogo propio que reemplaza a window.confirm
 // La animación entre vistas vive en app.js/navigateTo + css/native.css, y el
 // arrastre del sheet de módulos en modulos-menu.js.
 
@@ -41,6 +42,70 @@
         </div>
       </div>`;
     return `<div class="skel-lista" role="status" aria-label="Cargando">${fila.repeat(n)}</div>`;
+  };
+
+  // ── Confirmación propia (reemplaza a window.confirm) ───────
+  // Devuelve una promesa: true si el usuario confirma, false si cancela, toca
+  // fuera o pulsa Esc. Uso:  if (!(await confirmar({ mensaje: "…" }))) return;
+  // Reutiliza el estilo de .legal-fecha-modal y las animaciones de <dialog>
+  // de native.css.
+  window.confirmar = function ({
+    titulo = "¿Confirmar?",
+    mensaje = "",
+    confirmarTexto = "Confirmar",
+    cancelarTexto = "Cancelar",
+    peligro = false,
+  } = {}) {
+    return new Promise((resolve) => {
+      const dlg = document.createElement("dialog");
+      dlg.className = "legal-fecha-modal confirm-modal";
+      dlg.setAttribute("aria-labelledby", "confirm-modal-titulo");
+
+      const form = document.createElement("form");
+      form.method = "dialog";
+
+      const h = document.createElement("h3");
+      h.className = "legal-fecha-modal-titulo";
+      h.id = "confirm-modal-titulo";
+      h.textContent = titulo;
+
+      const p = document.createElement("p");
+      p.className = "legal-fecha-modal-sub";
+      p.style.marginBottom = "1.3rem";
+      p.textContent = mensaje;
+
+      const acciones = document.createElement("div");
+      acciones.className = "legal-fecha-modal-actions";
+
+      const btnNo = document.createElement("button");
+      btnNo.type = "submit";
+      btnNo.value = "no";
+      btnNo.className = "legal-fecha-modal-cancelar";
+      btnNo.textContent = cancelarTexto;
+
+      const btnSi = document.createElement("button");
+      btnSi.type = "submit";
+      btnSi.value = "si";
+      btnSi.className = "legal-fecha-modal-confirmar" + (peligro ? " confirm-peligro" : "");
+      btnSi.textContent = confirmarTexto;
+
+      acciones.append(btnNo, btnSi);
+      form.append(h, p, acciones);
+      dlg.appendChild(form);
+      document.body.appendChild(dlg);
+
+      // Tocar el fondo oscuro (fuera de la tarjeta) cancela
+      dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close("no"); });
+
+      dlg.addEventListener("close", () => {
+        resolve(dlg.returnValue === "si");
+        // Se retira cuando termina la animación de salida
+        setTimeout(() => dlg.remove(), 350);
+      }, { once: true });
+
+      dlg.showModal();
+      (peligro ? btnNo : btnSi).focus();
+    });
   };
 
   // ── Indicador deslizante en tabs ───────────────────────────

@@ -303,7 +303,7 @@ async function guardarEgreso() {
 
     if (errCat || !nuevaCat) {
       console.error("Error creando categoría:", errCat);
-      alert("Error al crear el tipo de egreso. Intentá de nuevo.");
+      showToast("Error al crear el tipo de egreso. Intentá de nuevo.", "error");
       if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
       return;
     }
@@ -321,7 +321,7 @@ async function guardarEgreso() {
       comprobante_url = await uploadEgresoFile(archivo);
     } catch (e) {
       console.error(e);
-      alert("Error subiendo comprobante");
+      showToast("Error subiendo comprobante", "error");
       if (btn) { btn.disabled = false; btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Guardar`; }
       return;
     }
@@ -348,10 +348,11 @@ async function guardarEgreso() {
 
   if (error) {
     console.error("Error guardando egreso:", error);
-    alert("Error al guardar el egreso. Revisá los datos e intentá de nuevo.");
+    showToast("Error al guardar el egreso. Revisá los datos e intentá de nuevo.", "error");
     return;
   }
 
+  showToast("Egreso registrado", "success");
   cerrarFormEgreso();
   loadEgresos(viajeActualId);
 }

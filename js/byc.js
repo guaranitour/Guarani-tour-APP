@@ -459,14 +459,5 @@ function volverPaso1() {
 
 // ── Toast ─────────────────────────────────────
 function mostrarToastByc(msg) {
-  let t = document.getElementById('byc-toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'byc-toast';
-    t.className = 'recibo-toast';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.classList.add('recibo-toast--visible');
-  setTimeout(() => t.classList.remove('recibo-toast--visible'), 2500);
+  showToast(msg);
 }

@@ -490,7 +490,7 @@ async function guardarPago() {
   montoEl.classList.remove("input-error");
 
   if (tipo === "Transferencia" && !pagosCtx.pasajeroDestino) {
-    alert("Seleccioná el pasajero destino de la transferencia");
+    showToast("Seleccioná el pasajero destino de la transferencia", "warning");
     return;
   }
 
@@ -541,12 +541,13 @@ async function guardarPago() {
       if (error) throw error;
     }
 
+    showToast("Pago guardado", "success");
     ocultarFormPago();
     await loadPagosPasajero();
 
   } catch (e) {
     console.error("Error guardando pago:", e);
-    alert("Error al guardar: " + (e.message || "Intentá de nuevo"));
+    showToast("Error al guardar: " + (e.message || "Intentá de nuevo"), "error");
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar pago`;
@@ -761,7 +762,7 @@ async function confirmarTransferirPago() {
       .single();
 
     if (eVp || !vpDest) {
-      alert("El pasajero seleccionado no está inscripto en este viaje.");
+      showToast("El pasajero seleccionado no está inscripto en este viaje.", "warning");
       return;
     }
 
@@ -806,6 +807,7 @@ async function confirmarTransferirPago() {
       .eq("id", regOrigen.id);
     if (e3) throw e3;
 
+    showToast("Pago transferido", "success");
     cerrarModalTransferirPagoDirecto();
     // Volver a la lista de pagos del pasajero original
     navigateTo("viaje-pasajero-pagos", {
@@ -817,7 +819,7 @@ async function confirmarTransferirPago() {
 
   } catch (e) {
     console.error("Error al transferir pago:", e);
-    alert("Error al transferir: " + (e.message || "Intentá de nuevo"));
+    showToast("Error al transferir: " + (e.message || "Intentá de nuevo"), "error");
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg> Confirmar transferencia`;
@@ -1021,7 +1023,7 @@ async function confirmarAgregarExtraPasajero() {
   if (error) {
     console.error("Error agregando servicio extra al pasajero:", error);
     if (typeof showToast === "function") showToast("Error al agregar el servicio extra", "error");
-    else alert("Error al agregar el servicio extra");
+    else showToast("Error al agregar el servicio extra", "error");
     return;
   }
 
@@ -1037,7 +1039,7 @@ async function eliminarExtraPasajero(id) {
   const asignado = pagosCtx.extrasAsignados.find(e => String(e.id) === String(id));
   const nombre = asignado?.servicios_extra?.nombre || "este servicio extra";
 
-  if (!confirm(`¿Quitar "${nombre}" de este pasajero? Se descontará del total a pagar.`)) return;
+  if (!(await confirmar({ titulo: "Quitar servicio extra", mensaje: `¿Quitar "${nombre}" de este pasajero? Se descontará del total a pagar.`, confirmarTexto: "Quitar", peligro: true }))) return;
 
   const { error } = await supabaseClient
     .from("servicio_extra_pasajeros")
@@ -1047,7 +1049,7 @@ async function eliminarExtraPasajero(id) {
   if (error) {
     console.error("Error quitando servicio extra del pasajero:", error);
     if (typeof showToast === "function") showToast("Error al quitar el servicio extra", "error");
-    else alert("Error al quitar el servicio extra");
+    else showToast("Error al quitar el servicio extra", "error");
     return;
   }
 
