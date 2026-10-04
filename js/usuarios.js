@@ -296,3 +296,31 @@ async function updateUserStatus(id, selectEl) {
     }
   }
 }
+
+// ── Tabs de la vista Usuarios (App / Selección de asientos) ────────────────
+// Carga perezosa: cada tab sólo pide sus datos a Supabase la primera vez
+// que se abre, para no pegarle a ambos backends si el admin sólo usa uno.
+const _usuariosTabsLoaded = { app: false, reservas: false };
+let _usuariosTabActual = "app";
+
+function switchUsuariosTab(tab, opts = {}) {
+  const isApp = tab === "app";
+  _usuariosTabActual = tab;
+
+  document.getElementById("tab-panel-app").style.display = isApp ? "" : "none";
+  document.getElementById("tab-panel-reservas").style.display = isApp ? "none" : "";
+
+  document.getElementById("tab-btn-app").classList.toggle("active", isApp);
+  document.getElementById("tab-btn-reservas").classList.toggle("active", !isApp);
+  document.getElementById("tab-btn-app").setAttribute("aria-selected", String(isApp));
+  document.getElementById("tab-btn-reservas").setAttribute("aria-selected", String(!isApp));
+
+  if (opts.force || !_usuariosTabsLoaded[tab]) {
+    if (isApp) {
+      loadUsers();
+    } else {
+      loadUsersReservas();
+    }
+    _usuariosTabsLoaded[tab] = true;
+  }
+}
