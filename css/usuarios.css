@@ -521,7 +521,32 @@
 
 .user-card-flat .user-controls {
   flex-shrink: 0;
+  flex-wrap: nowrap;
   gap: .5rem;
+  position: relative;
+}
+
+/* El email es un contenedor flex: el ellipsis tiene que ir en el span
+   interno (un nodo de texto suelto no se trunca dentro de un flex). */
+.user-email-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-card-flat .user-status-dot {
+  flex-shrink: 0;
+}
+
+/* El feedback "✓ Guardado" se superpone en vez de empujar el layout */
+.user-card-flat .user-feedback {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: .2rem;
+  white-space: nowrap;
+  z-index: 1;
 }
 
 /* Avatar de solo-iniciales (sin foto/dot: reservas.staff no tiene
@@ -546,11 +571,34 @@
 @media (max-width: 480px) {
   .user-card-flat {
     flex-wrap: wrap;
+    padding: .8rem .9rem;
+  }
+  .user-card-flat .user-info {
+    flex: 1 1 0;
   }
   .user-card-flat .user-controls {
-    flex-basis: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
     margin-left: calc(40px + .7rem); /* alinea con el email, no con el avatar */
+    width: calc(100% - 40px - .7rem);
+  }
+  .usuarios-tab {
+    padding: .55rem .4rem;
+    font-size: .78rem;
+    line-height: 1.2;
+  }
+  #view-usuarios .section-title {
+    line-height: 1.3;
+    flex-wrap: wrap;
+  }
+  .user-card-flat .user-controls .user-select {
+    flex: 1;
+    min-height: 36px;
+    font-size: .82rem;
+  }
+  .user-card-flat .btn-icon-danger {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
   }
 }
 

@@ -113,7 +113,7 @@ async function loadUsersReservas() {
 
       <div class="user-info">
         <div class="user-email" title="${u.email}">
-          ${u.email}
+          <span class="user-email-text">${u.email}</span>
           ${u.user_id
             ? '<span class="user-status-dot" title="Ya inició sesión" style="color:#2e9c5c">●</span>'
             : '<span class="user-status-dot" title="Pendiente: aún no inició sesión" style="color:#c9a227">●</span>'
