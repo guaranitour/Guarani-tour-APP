@@ -66,7 +66,8 @@ html {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none; /* sin rebote/glow ni pull-to-refresh del navegador */
 }
-body { overscroll-behavior-y: none; }
+/* Solo en html: en body (que es contenedor de scroll por el overflow de
+   html) cortaba el encadenamiento de la rueda del mouse en escritorio. */
 
 :where(button, a[href], summary, label[for], [role="button"], [onclick], .bn-item):not(:disabled) {
   touch-action: manipulation; /* sin retardo de toque ni zoom por doble toque */
