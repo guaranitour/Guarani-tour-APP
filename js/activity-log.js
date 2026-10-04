@@ -57,7 +57,10 @@ let _activityLogState = {
 let _activityLogUsuariosCargados = false;
 let _activityLogUsuariosOpciones = [];
 
-async function loadActivityLog({ reset = false } = {}) {
+async function loadActivityLog({ reset = false, restaurar = false } = {}) {
+  // Al volver con "atrás": si ya hay filas cargadas, se deja la lista, los
+  // filtros y la paginación tal cual estaban (el scroll lo restaura app.js).
+  if (restaurar && _activityLogState.offset > 0) return;
   if (reset) {
     _activityLogState = {
       offset: 0, dimension: "todo", usuario: "", fechaInicio: "", fechaFin: "",

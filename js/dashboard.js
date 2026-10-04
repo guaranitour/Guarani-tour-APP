@@ -785,12 +785,14 @@ function _renderClubDestinoRows(lista) {
     </div>`).join("");
 }
 
-async function loadClubDestino() {
+async function loadClubDestino({ conservarBusqueda = false } = {}) {
   const root = document.getElementById("club-destino-list");
   if (!root) return;
 
+  // Al volver con "atrás" se conserva la búsqueda que había escrita.
   const searchEl = document.getElementById("club-destino-search");
-  if (searchEl) searchEl.value = "";
+  if (searchEl && !conservarBusqueda) searchEl.value = "";
+  const _qPrevio = searchEl ? searchEl.value : "";
 
   root.innerHTML = `<div class="dash-state">⏳ Cargando miembros…</div>`;
 
@@ -837,6 +839,7 @@ async function loadClubDestino() {
   if (countEl) countEl.textContent = `${_clubDestinoCompleto.length} miembro${_clubDestinoCompleto.length !== 1 ? "s" : ""}`;
 
   root.innerHTML = _renderClubDestinoRows(_clubDestinoCompleto);
+  if (_qPrevio) filtrarClubDestino();
 }
 
 // Filtro en vivo por nombre dentro de Club Destino
@@ -858,12 +861,14 @@ function filtrarClubDestino() {
 }
 
 // ── Vista de ranking completo de puntos (1ro al último) ──────
-async function loadRankingPuntos() {
+async function loadRankingPuntos({ conservarBusqueda = false } = {}) {
   const root = document.getElementById("ranking-puntos-list");
   if (!root) return;
 
+  // Al volver con "atrás" se conserva la búsqueda que había escrita.
   const searchEl = document.getElementById("ranking-puntos-search");
-  if (searchEl) searchEl.value = "";
+  if (searchEl && !conservarBusqueda) searchEl.value = "";
+  const _qPrevio = searchEl ? searchEl.value : "";
 
   // Si el dashboard ya se cargó en esta sesión, reutilizamos el cálculo.
   // Si no (ej. acceso directo por hash), lo recalculamos desde cero.
@@ -900,6 +905,7 @@ async function loadRankingPuntos() {
   root.innerHTML = `<div class="dash-state">⏳ Cargando avatares…</div>`;
   await _cargarDashAvatares(_rankingPuntosCompleto.map(r => r.pasajeroId));
   root.innerHTML = _renderRankRows(_rankingPuntosCompleto);
+  if (_qPrevio) filtrarRankingPuntos();
 }
 
 // Filtro en vivo por nombre dentro del ranking completo

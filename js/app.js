@@ -713,8 +713,13 @@ function navigateTo(view, idx = null, _fromHash = false) {
   });
 }
 
+// true cuando la vista se abre volviendo con "atrás"/adelante: los loaders
+// lo usan para conservar filtros, búsqueda, pestaña y paginación.
+let _navVolviendo = false;
+
 function _navigateToImpl(view, idx = null, _fromHash = false) {
 
+  _navVolviendo = !!_fromHash;
   currentView = view;
   selectedIdx = idx;
 
@@ -822,7 +827,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Panel de control", action: () => navigateTo("dashboard") },
       { label: "Ranking de puntos" }
     ]);
-    loadRankingPuntos();
+    loadRankingPuntos({ conservarBusqueda: _navVolviendo });
 
   }
 
@@ -834,7 +839,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Panel de control", action: () => navigateTo("dashboard") },
       { label: "Club Destino" }
     ]);
-    loadClubDestino();
+    loadClubDestino({ conservarBusqueda: _navVolviendo });
 
   }
 
@@ -860,12 +865,32 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       }
     };
 
+    // Al volver con "atrás" el buscador conserva su texto: la lista se
+    // vuelve a filtrar con él en vez de mostrarse completa.
+    const _searchEl = document.getElementById("search-input");
+    // Entrando "de cero" (menú, botón) se limpia, para que el texto no
+    // quede mostrado con la lista completa.
+    if (_searchEl && !_navVolviendo) _searchEl.value = "";
+    const _qBuscador = _navVolviendo ? (_searchEl?.value.trim() || "") : "";
+
     if (allPassengers.length === 0) {
       // loadPassengers es async: la fila no existe todavía cuando este
       // callback síncrono termine, así que el navegador tomaría el
       // snapshot "after" sin la fila y el morph no ocurriría. Por eso
       // esperamos a que termine de pintar antes de nombrar el elemento.
-      loadPassengers().then(_asignarNombreAvatar);
+      loadPassengers().then(() => {
+        _asignarNombreAvatar();
+        if (_qBuscador) filterPassengers();
+      });
+    } else if (_qBuscador) {
+      // Filtrado local inmediato (sin parpadeo) y luego se refina con la
+      // búsqueda del servidor, igual que al tipear.
+      const _ql = _qBuscador.toLowerCase();
+      renderList(allPassengers.filter(p =>
+        (p.Pasajero || "").toLowerCase().includes(_ql) ||
+        String(p["Documento de Identidad"] || "").toLowerCase().includes(_ql)));
+      _asignarNombreAvatar();
+      filterPassengers();
     } else {
       renderList(allPassengers);
       _asignarNombreAvatar();
@@ -911,7 +936,9 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Usuarios" }
     ]);
-    switchUsuariosTab("app", { force: true });
+    // Al volver con "atrás" se reabre la pestaña en la que estaba, sin
+    // recargar su lista (switchUsuariosTab solo carga si no estaba cargada).
+    switchUsuariosTab(_navVolviendo ? _usuariosTabActual : "app", { force: !_navVolviendo });
     initCustomSelect("u-role");
     initCustomSelect("u-status");
     initCustomSelect("ur-role");
@@ -926,7 +953,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Registro de actividad" }
     ]);
-    loadActivityLog({ reset: true });
+    loadActivityLog({ reset: true, restaurar: _navVolviendo });
 
   }
 
@@ -1021,9 +1048,16 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Histórico de viajes" }
     ]);
-    const _hs = document.getElementById("historico-search");
-    if (_hs) _hs.value = "";
-    loadViajes("historico");
+    if (_navVolviendo && _historicoData.length > 0) {
+      // Volviendo con "atrás": se conserva lo ya cargado (bloques de "Ver
+      // más") y la búsqueda; solo se reaplica el filtro sobre el acumulado.
+      allViajes = _historicoData;
+      filtrarHistorico();
+    } else {
+      const _hs = document.getElementById("historico-search");
+      if (_hs) _hs.value = "";
+      loadViajes("historico");
+    }
 
   }
 
@@ -2504,9 +2538,11 @@ async function loadHistorialViajes(pasajeroId) {
 // Carga perezosa: cada tab sólo pide sus datos a Supabase la primera vez
 // que se abre, para no pegarle a ambos backends si el admin sólo usa uno.
 const _usuariosTabsLoaded = { app: false, reservas: false };
+let _usuariosTabActual = "app";
 
 function switchUsuariosTab(tab, opts = {}) {
   const isApp = tab === "app";
+  _usuariosTabActual = tab;
 
   document.getElementById("tab-panel-app").style.display = isApp ? "" : "none";
   document.getElementById("tab-panel-reservas").style.display = isApp ? "none" : "";
