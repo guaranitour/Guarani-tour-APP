@@ -243,18 +243,32 @@ function filtrarPendientes() {
 function renderPendientes(lista) {
   const cont = document.getElementById('byc-pendientes-cont');
   if (lista.length === 0) {
-    cont.innerHTML = '<div class="byc-empty" style="padding:1.5rem"><p>Sin pendientes 🎉</p></div>';
+    cont.innerHTML = `
+      <div class="byc-pend-vacio">
+        <div class="byc-pend-vacio-ico">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <strong>Todo vinculado</strong>
+        <span>No hay registros ByC pendientes.</span>
+      </div>`;
     return;
   }
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const iniciales = n => (String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
   cont.innerHTML = `
+    <div class="byc-pend-resumen">${lista.length} ${lista.length === 1 ? 'pendiente' : 'pendientes'}</div>
     <div class="byc-pendientes-list">
       ${lista.map(r => `
-        <div class="byc-pendiente-row" data-id="${r.id}">
+        <div class="byc-pendiente-row" data-id="${r.id}" role="button" tabindex="0">
+          <div class="byc-pend-avatar">${esc(iniciales(r.nombre))}</div>
           <div class="byc-row-left">
-            <span class="byc-nombre">${r.nombre || '—'}</span>
-            <span class="byc-ci">${r.ci || '—'}</span>
+            <span class="byc-nombre">${esc(r.nombre) || '—'}</span>
+            <span class="byc-pend-meta">
+              <span class="byc-pend-chip">${esc(r.ci) || 'Sin CI'}</span>
+              ${r.email ? `<span class="byc-pend-email">${esc(r.email)}</span>` : ''}
+            </span>
           </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#aaa;flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>
+          <svg class="byc-pend-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </div>`).join('')}
     </div>`;
 
@@ -273,6 +287,9 @@ function renderPendientes(lista) {
     // Solo activo en desktop (en móvil el touchend ya previno el click)
     row.addEventListener('click', () => {
       if (!_bycTouchBlocked) seleccionarPendiente(id);
+    });
+    row.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seleccionarPendiente(id); }
     });
   });
 }
@@ -306,6 +323,7 @@ async function seleccionarPendiente(id) {
   const info = document.getElementById('byc-paso2-info');
   if (info) info.innerHTML = `
     <div class="byc-paso2-tag">
+      <span class="byc-paso2-eyebrow">Registro ByC</span>
       <strong>${_pendienteSeleccionado.nombre || '—'}</strong>
       <span>${_pendienteSeleccionado.ci || ''}</span>
       ${_pendienteSeleccionado.email ? `<span>${_pendienteSeleccionado.email}</span>` : ''}
