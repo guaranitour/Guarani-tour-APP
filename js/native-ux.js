@@ -127,12 +127,16 @@
         ind.style.transition = animar && !reducido.matches ? "" : "none";
         ind.style.width = activa.offsetWidth + "px";
         ind.style.translate = activa.offsetLeft + "px 0";
-        ind.classList.add("listo");
+        if (!ind.classList.contains("listo")) ind.classList.add("listo");
         if (!animar) { void ind.offsetWidth; ind.style.transition = ""; }
       };
 
       new ResizeObserver(() => colocar(false)).observe(host);
-      new MutationObserver(() => colocar(true)).observe(host, {
+      // Se ignoran los cambios del propio indicador: colocar() le toca la
+      // clase "listo", lo que re-disparaba este observer en bucle infinito.
+      new MutationObserver((muts) => {
+        if (muts.some((m) => m.target !== ind)) colocar(true);
+      }).observe(host, {
         attributes: true, attributeFilter: ["class"], subtree: true,
       });
       colocar(false);
