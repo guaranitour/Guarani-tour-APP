@@ -39,6 +39,10 @@
   width: 100%;
   height: 150px;
   overflow: hidden;
+  /* Las tarjetas fuera de pantalla no se pintan ni decodifican hasta que
+     se acercan al viewport (altura fija, así no cambia el scroll). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
 }
 
 .viaje-card-img {

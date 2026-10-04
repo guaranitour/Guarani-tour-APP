@@ -316,7 +316,7 @@ function renderViajeCards(data) {
   return `
   <div class="viaje-card" data-viaje-id="${v.id}" onclick="openViajeDetalle('${v.id}')">
     <div class="viaje-card-media">
-      ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" />` : placeholder}
+      ${v.imagen_url ? `<img src="${v.imagen_url}" class="viaje-card-img" alt="" loading="lazy" decoding="async" />` : placeholder}
       <div class="viaje-card-overlay">
         <div class="viaje-card-nombre">${v.nombre}</div>
         <div class="viaje-card-meta">
@@ -543,12 +543,40 @@ function formatFecha(val) {
 }
 
 /* ── SUBIR IMAGEN ─────────────────────────── */
-async function uploadViajeImage(file, fixedName = null) {
-  const fileName = fixedName || `${Date.now()}_${file.name}`;
+// Las portadas se muestran a ~150px de alto; subir la foto original (varios
+// MB) obliga al celular a decodificarla entera por cada tarjeta, que es lo
+// que genera los tirones. Se reescala (máx. 1000px de ancho) y se recomprime
+// a WebP antes de subir. Si algo falla se sube el archivo original.
+async function _comprimirImagenViaje(file, maxW = 1000, calidad = 0.82) {
+  try {
+    if (!file.type.startsWith("image/") || file.type === "image/svg+xml" || file.type === "image/gif") return file;
+    const bmp = await createImageBitmap(file);
+    const escala = Math.min(1, maxW / bmp.width);
+    const w = Math.round(bmp.width * escala);
+    const h = Math.round(bmp.height * escala);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    canvas.getContext("2d").drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const blob = await new Promise(res => canvas.toBlob(res, "image/webp", calidad));
+    // Si el navegador no soporta WebP devuelve PNG: no sirve para ahorrar peso
+    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+    return blob;
+  } catch (e) {
+    console.warn("No se pudo comprimir la imagen, se sube la original:", e);
+    return file;
+  }
+}
+
+async function uploadViajeImage(fileOriginal, fixedName = null) {
+  const file = await _comprimirImagenViaje(fileOriginal);
+  const esWebp = file !== fileOriginal;
+  const baseNombre = esWebp ? fileOriginal.name.replace(/\.[^.]+$/, "") + ".webp" : fileOriginal.name;
+  const fileName = fixedName || `${Date.now()}_${baseNombre}`;
 
   const { error } = await supabaseClient.storage
     .from("viajes")
-    .upload(fileName, file, { upsert: !!fixedName });
+    .upload(fileName, file, { upsert: !!fixedName, contentType: esWebp ? "image/webp" : fileOriginal.type });
 
   if (error) throw error;
 
