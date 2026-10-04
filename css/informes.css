@@ -118,7 +118,8 @@
   margin-top: .8rem;
 }
 
-#modal-rango-informes .modal-box { max-width: 340px; }
+/* El <dialog> usa .legal-fecha-modal (legales.css): centrado, fondo y botones */
+#modal-rango-informes { width: min(340px, calc(100vw - 2.4rem)); }
 .informes-rango-field { margin-bottom: .9rem; }
 .informes-rango-field label {
   display: block;

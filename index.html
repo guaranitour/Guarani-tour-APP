@@ -2161,9 +2161,9 @@
     </div>
 
     <!-- MODAL: rango personalizado -->
-    <dialog id="modal-rango-informes">
-      <form method="dialog" class="modal-box">
-        <h3 style="margin:0 0 1rem;font-size:1rem">Rango personalizado</h3>
+    <dialog id="modal-rango-informes" class="legal-fecha-modal" aria-labelledby="modal-rango-informes-titulo">
+      <form method="dialog">
+        <h3 class="legal-fecha-modal-titulo" id="modal-rango-informes-titulo" style="margin-bottom:1.1rem">Rango personalizado</h3>
         <div class="informes-rango-field">
           <label for="informes-rango-desde">Desde</label>
           <input type="date" id="informes-rango-desde" />
@@ -2172,9 +2172,9 @@
           <label for="informes-rango-hasta">Hasta</label>
           <input type="date" id="informes-rango-hasta" />
         </div>
-        <div style="display:flex;gap:.6rem;justify-content:flex-end">
-          <button type="button" onclick="document.getElementById('modal-rango-informes').close()">Cancelar</button>
-          <button type="button" class="btn-subir-doc" onclick="confirmarRangoPersonalizadoInformes()">Aplicar</button>
+        <div class="legal-fecha-modal-actions" style="margin-top:.4rem">
+          <button type="button" class="legal-fecha-modal-cancelar" onclick="document.getElementById('modal-rango-informes').close()">Cancelar</button>
+          <button type="button" class="legal-fecha-modal-confirmar" onclick="confirmarRangoPersonalizadoInformes()">Aplicar</button>
         </div>
       </form>
     </dialog>
