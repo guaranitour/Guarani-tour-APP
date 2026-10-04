@@ -604,14 +604,14 @@ window.addEventListener("popstate", (event) => {
   // (pagosCtx), así que se resuelve más abajo, junto con pago-detalle.
   const objectIdxViews = ["egreso-detalle", "transferencia-detalle"];
   if (objectIdxViews.includes(view)) {
-    navigateTo("viajes", null, true);
+    navigateTo(_origenListaViajes().view, null, true);
     return;
   }
   if (view === "viaje-pasajero-pagos") {
     if (pagosCtx?.viajeId) {
       navigateTo("viaje-detalle", pagosCtx.viajeId, true);
     } else {
-      navigateTo("viajes", null, true);
+      navigateTo(_origenListaViajes().view, null, true);
     }
     return;
   }
@@ -624,7 +624,7 @@ window.addEventListener("popstate", (event) => {
         nombrePasajero  : pagosCtx.nombrePasajero,
       }, true);
     } else {
-      navigateTo("viajes", null, true);
+      navigateTo(_origenListaViajes().view, null, true);
     }
     return;
   }
@@ -1105,7 +1105,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-viaje-nuevo");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
-      { label: "Viajes", action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Nuevo viaje" }
     ]);
     initCustomSelect("v-estado");
@@ -1118,7 +1118,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-viaje-editar");
     updateBreadcrumb([
       { label: "Inicio",  action: () => navigateTo("dashboard") },
-      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
       { label: "Editar viaje" }
     ]);
@@ -1131,7 +1131,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-viaje-detalle");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
-      { label: "Viajes", action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle" }
     ]);
     loadViajeDetalle(idx);
@@ -1143,7 +1143,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-viaje-pasajero-nuevo");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
-      { label: "Viajes", action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx) },
       { label: "Agregar pasajero" }
     ]);
@@ -1157,7 +1157,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-viaje-pasajero-pagos");
     updateBreadcrumb([
       { label: "Inicio",  action: () => navigateTo("dashboard") },
-      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", viajeId) },
       { label: nombrePasajero || "Pagos" }
     ]);
@@ -1170,7 +1170,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-pago-detalle");
     updateBreadcrumb([
       { label: "Inicio",  action: () => navigateTo("dashboard") },
-      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", pagosCtx?.viajeId) },
       { label: pagosCtx?.nombrePasajero || "Pagos", action: () => navigateTo("viaje-pasajero-pagos", pagosCtx) },
       { label: "Detalle pago" }
@@ -1184,7 +1184,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-egreso-detalle");
     updateBreadcrumb([
       { label: "Inicio",  action: () => navigateTo("dashboard") },
-      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
       { label: "Egreso" }
     ]);
@@ -1197,7 +1197,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     showEl("view-transferencia-detalle");
     updateBreadcrumb([
       { label: "Inicio",  action: () => navigateTo("dashboard") },
-      { label: "Viajes",  action: () => navigateTo("viajes") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
       { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
       { label: "Transferencia" }
     ]);

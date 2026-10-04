@@ -63,6 +63,33 @@ let allViajes = [];
 let _historicoOffset     = 0;
 let _historicoAgotado    = false;
 let _historicoData       = []; // acumulado de todos los viajes cargados
+let _historicoCargando   = false; // evita cargas simultáneas (doble clic en "Ver más")
+
+/* ── ORIGEN DEL DETALLE DE VIAJE ───────────── */
+// El detalle (y sus subvistas) se abre desde "Viajes activos" o desde el
+// "Histórico". Se recuerda para que "atrás" y las migas de pan vuelvan a
+// la lista de la que se vino. Se persiste en sessionStorage para que
+// sobreviva a una recarga estando en #viaje-detalle/N.
+let _viajeOrigenVista = "viajes";
+try {
+  if (sessionStorage.getItem("gt-viaje-origen") === "historico") _viajeOrigenVista = "historico";
+} catch (_) { /* sessionStorage no disponible: queda el valor por defecto */ }
+
+function _setViajeOrigen(vista) {
+  _viajeOrigenVista = vista === "historico" ? "historico" : "viajes";
+  try { sessionStorage.setItem("gt-viaje-origen", _viajeOrigenVista); } catch (_) {}
+}
+
+// { view, label } de la lista de viajes de la que se vino
+function _origenListaViajes() {
+  return _viajeOrigenVista === "historico"
+    ? { view: "historico", label: "Histórico" }
+    : { view: "viajes",    label: "Viajes" };
+}
+
+function volverAListaViajes() {
+  navigateTo(_origenListaViajes().view);
+}
 
 /* ── CARGAR VIAJES ─────────────────────────── */
 // modo: "activos" (default) → estado activo
@@ -77,6 +104,9 @@ async function loadViajes(modo = "activos") {
     _historicoOffset  = 0;
     _historicoAgotado = false;
     _historicoData    = [];
+    // Quita el "Ver más" de una visita anterior: si no, quedaría activo
+    // (y clickeable) mientras se recarga la lista desde cero.
+    document.getElementById("historico-ver-mas")?.remove();
     list.innerHTML    = "Cargando…";
     await _cargarBloqueHistorico(list);
     return;
@@ -192,6 +222,16 @@ function _viajesListaSkeletonHtml(cantidad = 6) {
 async function _cargarBloqueHistorico(list) {
   if (!list) list = document.getElementById("historico-list");
   if (!list) return;
+  if (_historicoCargando) return;
+  _historicoCargando = true;
+  try {
+    await _cargarBloqueHistoricoImpl(list);
+  } finally {
+    _historicoCargando = false;
+  }
+}
+
+async function _cargarBloqueHistoricoImpl(list) {
 
   const hoy   = new Date();
   const desde = new Date(hoy);
@@ -219,29 +259,37 @@ async function _cargarBloqueHistorico(list) {
 
   if (error) {
     console.error(error);
-    list.innerHTML = "Error al cargar histórico";
+    // Si ya había viajes cargados no se borra la lista: solo se repone el
+    // botón "Ver más" para poder reintentar.
+    if (_historicoData.length === 0) {
+      list.innerHTML = "Error al cargar histórico";
+    } else {
+      renderHistorico(_historicoData);
+    }
     return;
   }
 
   const nuevos = data || [];
   _historicoData = [..._historicoData, ...nuevos];
   allViajes      = _historicoData; // para que filtrarHistorico funcione sobre el acumulado
+  _historicoOffset++;
 
-  // Si vino vacío, marcar como agotado y seguir buscando hacia atrás (puede haber huecos)
-  if (nuevos.length === 0) {
-    // Comprobamos si hay algo más antiguo aún
-    const { count } = await supabaseClient
-      .from("viajes")
-      .select("id", { count: "exact", head: true })
-      .in("estado", ["completado", "cancelado"])
-      .lt("fecha_salida", desdeStr);
+  // ¿Queda algo más antiguo que este bloque? Se consulta siempre (no solo
+  // con bloques vacíos) para que "Ver más" desaparezca apenas se llega al
+  // final, en vez de hacer falta un clic extra que no trae nada.
+  const { count } = await supabaseClient
+    .from("viajes")
+    .select("id", { count: "exact", head: true })
+    .in("estado", ["completado", "cancelado"])
+    .lt("fecha_salida", desdeStr);
 
-    if (!count || count === 0) {
-      _historicoAgotado = true;
-    }
-    _historicoOffset++;
-  } else {
-    _historicoOffset++;
+  _historicoAgotado = !count;
+
+  // Bloque vacío pero con viajes más antiguos (huecos de 6+ meses): seguir
+  // buscando hacia atrás en vez de mostrar "Sin resultados" sin salida.
+  if (nuevos.length === 0 && !_historicoAgotado) {
+    await _cargarBloqueHistoricoImpl(list);
+    return;
   }
 
   renderHistorico(_historicoData);
@@ -249,7 +297,7 @@ async function _cargarBloqueHistorico(list) {
 
 /* ── BOTÓN VER MÁS DEL HISTÓRICO ──────────── */
 async function cargarMasHistorico() {
-  if (_historicoAgotado) return;
+  if (_historicoAgotado || _historicoCargando) return;
   const btn = document.getElementById("historico-ver-mas");
   if (btn) { btn.disabled = true; btn.textContent = "Cargando…"; }
   await _cargarBloqueHistorico();
@@ -447,14 +495,19 @@ function renderHistorico(data) {
   const btnAnterior = document.getElementById("historico-ver-mas");
   if (btnAnterior) btnAnterior.remove();
 
-  if (!data || data.length === 0) {
+  // Respeta la búsqueda activa: "Ver más" no debe mostrar la lista sin
+  // filtrar mientras el buscador conserva su texto.
+  const q = document.getElementById("historico-search")?.value.toLowerCase().trim() || "";
+  const visibles = q ? (data || []).filter(v => (v.nombre || "").toLowerCase().includes(q)) : (data || []);
+
+  if (visibles.length === 0) {
     list.innerHTML = `<div class="users-empty">Sin resultados</div>`;
-    return;
+  } else {
+    list.innerHTML = renderViajeCards(visibles);
   }
 
-  list.innerHTML = renderViajeCards(data);
-
-  // Agregar botón "Ver más" si hay más datos para cargar
+  // Agregar botón "Ver más" si hay más datos para cargar (también cuando no
+  // hay resultados visibles: puede haber coincidencias en bloques más viejos)
   if (!_historicoAgotado) {
     const btn = document.createElement("button");
     btn.id        = "historico-ver-mas";
@@ -771,6 +824,9 @@ async function guardarEditarViaje() {
   // También invalidamos la lista: nombre/imagen/fecha/estado son
   // justo los campos que se ven en la tarjeta de la grilla.
   _viajesListaCache = null;
+  // Y el histórico acumulado (el estado pudo pasar a completado/cancelado
+  // o salir de ahí): se descarta para que se recargue al volver.
+  _historicoData = [];
 
   navigateTo("viaje-detalle", viajeActualId);
 }
@@ -863,6 +919,8 @@ function cancelarAltaPasajero() {
 }
 
 function openViajeDetalle(viajeId) {
+  // Desde el histórico, "atrás" debe volver al histórico y no a Viajes activos
+  _setViajeOrigen(currentView === "historico" ? "historico" : "viajes");
   navigateTo("viaje-detalle", parseInt(viajeId, 10));
 }
 async function loadViajeDetalle(viajeId) {
