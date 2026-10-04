@@ -1,0 +1,215 @@
+/* ══════════════════════════════════════════════════════════
+   native.css — capa de "sensación de app nativa" (Android/Chrome)
+   Se carga al final: solo agrega movimiento y comportamiento táctil,
+   no redefine el diseño de ningún módulo. Todo respeta
+   prefers-reduced-motion (ver bloque final).
+═══════════════════════════════════════════════════════════ */
+
+/* ── 1. Transición direccional entre vistas ──────────────────
+   navigateTo() (app.js) marca <html data-vt="forward|back|fade"> según
+   la profundidad de la vista origen y destino:
+     forward → la vista nueva entra desde la derecha (push)
+     back    → la vista actual sale hacia la derecha (pop)
+     fade    → mismo nivel (ej. entre módulos): fundido corto
+   Topbar y navbar inferior tienen su propio nombre de transición para
+   quedarse quietos mientras el contenido se desliza. */
+.topbar     { view-transition-name: topbar; }
+.bottom-nav { view-transition-name: bottom-nav; }
+
+::view-transition-group(topbar),
+::view-transition-group(bottom-nav) {
+  animation: none;
+}
+
+html[data-vt] ::view-transition-old(root),
+html[data-vt] ::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+
+html[data-vt="forward"]::view-transition-old(root) {
+  animation: vtShiftOutLeft .34s cubic-bezier(.32,.72,0,1) both;
+}
+html[data-vt="forward"]::view-transition-new(root) {
+  animation: vtSlideInRight .34s cubic-bezier(.32,.72,0,1) both;
+  box-shadow: -10px 0 28px rgba(0,0,0,.14);
+  z-index: 2;
+}
+
+html[data-vt="back"]::view-transition-old(root) {
+  animation: vtSlideOutRight .3s cubic-bezier(.32,.72,0,1) both;
+  box-shadow: -10px 0 28px rgba(0,0,0,.14);
+  z-index: 2;
+}
+html[data-vt="back"]::view-transition-new(root) {
+  animation: vtShiftInLeft .3s cubic-bezier(.32,.72,0,1) both;
+}
+
+html[data-vt="fade"]::view-transition-old(root) {
+  animation: vtFadeOut .16s ease both;
+}
+html[data-vt="fade"]::view-transition-new(root) {
+  animation: vtFadeIn .2s ease both;
+}
+
+@keyframes vtSlideInRight  { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes vtSlideOutRight { from { transform: translateX(0); }    to { transform: translateX(100%); } }
+@keyframes vtShiftOutLeft  { from { transform: translateX(0); opacity: 1; }       to { transform: translateX(-22%); opacity: .55; } }
+@keyframes vtShiftInLeft   { from { transform: translateX(-22%); opacity: .55; }   to { transform: translateX(0); opacity: 1; } }
+@keyframes vtFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes vtFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── 2. Feedback táctil global ───────────────────────────────
+   Se usa la propiedad individual "scale" (no "transform") para no pisar
+   transforms que cada componente ya define, y :where() para que tenga
+   especificidad 0: cualquier :active propio de un componente gana. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none; /* sin rebote/glow ni pull-to-refresh del navegador */
+}
+body { overscroll-behavior-y: none; }
+
+:where(button, a[href], summary, label[for], [role="button"], [onclick], .bn-item):not(:disabled) {
+  touch-action: manipulation; /* sin retardo de toque ni zoom por doble toque */
+}
+
+:where(button, a[href], summary, [role="button"], [onclick]):not(:disabled, input, select, textarea, [class*="overlay"]):active {
+  scale: .97;
+  opacity: .88;
+}
+
+/* Superficies grandes: hundimiento más sutil */
+:where(.viaje-card, .passenger-row, .user-card-header, .dash-viaje-card, .dash-comp-card):active {
+  scale: .985;
+  opacity: .92;
+}
+
+:where(button, a[href], summary, [role="button"], [onclick]) {
+  transition: scale .14s cubic-bezier(.2,.8,.2,1), opacity .14s ease;
+}
+
+/* La UI de la app no se selecciona al mantener presionado (los datos y
+   campos de texto sí: no se toca ni body ni los contenedores de contenido). */
+:where(button, summary, .topbar, .bottom-nav, .breadcrumb-bar, .bn-item,
+       .modulo-item, .fab, .fab-sos, .viaje-card-overlay, .usuarios-tab,
+       .informes-tab-btn, .informes-range-chip) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+:where(input, textarea, select, [contenteditable="true"]) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ── 3. <dialog>: entrada y salida animadas ──────────────────
+   "overlay" + "display" con allow-discrete permiten animar también el
+   cierre (Chrome/Edge 117+). Se usan propiedades individuales
+   (opacity/translate/scale) para no chocar con transforms de los modales. */
+dialog {
+  opacity: 0;
+  translate: 0 16px;
+  scale: .97;
+  transition:
+    opacity .2s ease,
+    translate .26s cubic-bezier(.32,.72,0,1),
+    scale .26s cubic-bezier(.32,.72,0,1),
+    overlay .26s allow-discrete,
+    display .26s allow-discrete;
+}
+dialog[open] {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    translate: 0 16px;
+    scale: .97;
+  }
+}
+
+dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity .24s ease,
+    overlay .24s allow-discrete,
+    display .24s allow-discrete;
+}
+dialog[open]::backdrop { opacity: 1; }
+@starting-style {
+  dialog[open]::backdrop { opacity: 0; }
+}
+
+/* Reemplazan a las animaciones de entrada que ya traían algunos modales
+   (si no, la entrada se animaría dos veces). */
+.legal-fecha-modal[open],
+.modal-sos[open] .modal-sos-card { animation: none; }
+.modal-sos::backdrop { animation: none; }
+
+/* Sheet de módulos: mientras se arrastra con el dedo no debe haber
+   transición (la maneja modulos-menu.js con estilos en línea). */
+.modulos-sheet.arrastrando { transition: none; }
+
+/* ── 4. Entrada escalonada de listas ─────────────────────────
+   Solo opacity + translate (propiedad individual) y fill "backwards":
+   al terminar no queda ningún valor retenido que pise hover/active. */
+@keyframes listItemIn {
+  from { opacity: 0; translate: 0 10px; }
+}
+
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > * {
+  animation: listItemIn .32s cubic-bezier(.2,.8,.2,1) backwards;
+  animation-delay: 280ms; /* del 9.º en adelante: aparecen juntos */
+}
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(1) { animation-delay: 0ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(2) { animation-delay: 35ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(3) { animation-delay: 70ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(4) { animation-delay: 105ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(5) { animation-delay: 140ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(6) { animation-delay: 175ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(7) { animation-delay: 210ms; }
+:is(#passenger-list, #viajes-list, #historico-list, #users-list,
+    #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+    #marangatu-lista, #activity-log-list) > :nth-child(8) { animation-delay: 245ms; }
+
+/* Las tarjetas de viaje ya traen su propio animation (skeleton/updating) */
+#viajes-list > .viaje-card-skel { animation: none; }
+
+/* ── Reduced motion: sin movimiento, solo cambios de estado ── */
+@media (prefers-reduced-motion: reduce) {
+  html[data-vt]::view-transition-old(root),
+  html[data-vt]::view-transition-new(root) {
+    animation: none !important;
+  }
+  :where(button, a[href], summary, [role="button"], [onclick]):active,
+  :where(.viaje-card, .passenger-row, .user-card-header,
+         .dash-viaje-card, .dash-comp-card):active {
+    scale: 1;
+  }
+  dialog, dialog::backdrop {
+    transition: none;
+    translate: 0 0;
+    scale: 1;
+  }
+  :is(#passenger-list, #viajes-list, #historico-list, #users-list,
+      #users-reservas-list, #recibos-cont, #mov-list, #facturas-lista,
+      #marangatu-lista, #activity-log-list) > * {
+    animation: none;
+  }
+}

@@ -126,3 +126,71 @@ function _updateBottomNavActiveState(view) {
 function onShortcutTap() {
   navigateTo("calendario");
 }
+
+// ── Arrastrar el sheet hacia abajo para cerrarlo ───────────
+// Se arrastra desde el asa/encabezado, o desde cualquier parte si la
+// grilla está en su tope. El sheet sigue al dedo (sin transición) y al
+// soltar se cierra si se bajó lo suficiente o con un gesto rápido; si no,
+// vuelve a su lugar.
+(function () {
+  const UMBRAL_PX = 110;       // distancia que cierra
+  const UMBRAL_VELOCIDAD = .6; // px/ms que cierra aunque la distancia sea corta
+
+  let sheet = null, overlay = null;
+  let inicioY = 0, inicioT = 0, dy = 0, arrastrando = false, candidato = false;
+
+  function limpiar() {
+    sheet.classList.remove("arrastrando");
+    overlay.style.opacity = "";
+  }
+
+  function onStart(e) {
+    if (!sheet.classList.contains("open") || e.touches.length !== 1) return;
+    const enCabecera = !!e.target.closest(".modulos-sheet-handle, .modulos-sheet-header");
+    candidato = enCabecera || sheet.scrollTop <= 0;
+    inicioY = e.touches[0].clientY;
+    inicioT = e.timeStamp;
+    dy = 0;
+    arrastrando = false;
+  }
+
+  function onMove(e) {
+    if (!candidato) return;
+    const delta = e.touches[0].clientY - inicioY;
+    if (!arrastrando) {
+      if (delta < 8) return;      // hacia arriba o movimiento mínimo: es scroll/toque
+      arrastrando = true;
+      sheet.classList.add("arrastrando");
+    }
+    dy = Math.max(0, delta);
+    e.preventDefault();           // evita que el scroll compita con el arrastre
+    sheet.style.transform = "translateY(" + dy + "px)";
+    overlay.style.opacity = String(Math.max(0, 1 - dy / sheet.offsetHeight));
+  }
+
+  function onEnd(e) {
+    if (!arrastrando) { candidato = false; return; }
+    const velocidad = dy / Math.max(1, e.timeStamp - inicioT);
+    arrastrando = false;
+    candidato = false;
+
+    // Se devuelve la transición CSS (con un reflow en el medio) para que el
+    // cierre o el rebote partan de la posición actual del dedo.
+    limpiar();
+    void sheet.offsetWidth;
+    sheet.style.transform = "";
+    if (dy > UMBRAL_PX || velocidad > UMBRAL_VELOCIDAD) {
+      closeModulosSheet();
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    sheet = document.getElementById("modulos-sheet");
+    overlay = document.getElementById("modulos-overlay");
+    if (!sheet || !overlay) return;
+    sheet.addEventListener("touchstart", onStart, { passive: true });
+    sheet.addEventListener("touchmove", onMove, { passive: false });
+    sheet.addEventListener("touchend", onEnd, { passive: true });
+    sheet.addEventListener("touchcancel", onEnd, { passive: true });
+  });
+})();

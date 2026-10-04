@@ -666,7 +666,33 @@ const _vistasConTransicion = new Set([
   "recibo-nuevo", "recibos", "seleccion-asiento", "transferencia-detalle",
   "usuarios", "viaje-detalle", "viaje-editar", "viaje-nuevo",
   "viaje-pasajero-nuevo", "viaje-pasajero-pagos", "viajes",
+  "activity-log", "calendario", "facturas", "facturas-internas",
+  "facturas-marangatu", "informes", "legales",
 ]);
+
+// Profundidad de cada vista para elegir la dirección de la transición
+// (ver css/native.css): 0 = inicio, 1 = lista/módulo, 2+ = detalle y
+// subniveles. Las vistas no listadas cuentan como nivel 1.
+const _NIVEL_VISTA = {
+  "dashboard": 0,
+  "detalle": 2, "nuevo": 2, "viaje-nuevo": 2, "viaje-detalle": 2,
+  "historial-viajes": 2, "byc-vincular": 2, "recibo-detalle": 2,
+  "recibo-nuevo": 2, "movimiento-nuevo": 2,
+  "facturas-internas": 2, "facturas-marangatu": 2,
+  "viaje-editar": 3, "viaje-pasajero-nuevo": 3, "viaje-pasajero-pagos": 3,
+  "egreso-detalle": 3, "transferencia-detalle": 3,
+  "pago-detalle": 4,
+};
+
+// "forward" (entra desde la derecha), "back" (sale hacia la derecha) o
+// "fade" (mismo nivel, ej. entre módulos desde el menú).
+function _direccionTransicion(desde, hacia) {
+  const a = _NIVEL_VISTA[desde] ?? 1;
+  const b = _NIVEL_VISTA[hacia] ?? 1;
+  if (b > a) return "forward";
+  if (b < a) return "back";
+  return "fade";
+}
 
 function navigateTo(view, idx = null, _fromHash = false) {
   // Guard de acceso: finanzas no puede entrar a clientes, usuarios, byc
@@ -701,6 +727,11 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // en el mismo callback síncrono en que se quita del elemento anterior.
   // Así nunca hay dos elementos con el mismo nombre vivos a la vez
   // (eso hace que el navegador aborte la transición con AbortError).
+  // La dirección se publica en <html data-vt> mientras dura la transición;
+  // css/native.css la usa para elegir la animación de "root".
+  const _root = document.documentElement;
+  _root.dataset.vt = _direccionTransicion(currentView, view);
+
   document.startViewTransition(() => {
     try {
       _navigateToImpl(view, idx, _fromHash);
@@ -710,6 +741,8 @@ function navigateTo(view, idx = null, _fromHash = false) {
     }
   }).finished.catch((err) => {
     console.error('[VT] transición abortada:', err);
+  }).finally(() => {
+    delete _root.dataset.vt;
   });
 }
 
