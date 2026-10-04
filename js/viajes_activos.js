@@ -107,7 +107,7 @@ async function loadViajes(modo = "activos") {
     // Quita el "Ver más" de una visita anterior: si no, quedaría activo
     // (y clickeable) mientras se recarga la lista desde cero.
     document.getElementById("historico-ver-mas")?.remove();
-    list.innerHTML    = "Cargando…";
+    list.innerHTML    = _viajesListaSkeletonHtml();
     await _cargarBloqueHistorico(list);
     return;
   }

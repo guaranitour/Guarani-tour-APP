@@ -444,18 +444,25 @@ function _mostrarErrorConexionEnterApp() {
 // Toast mínimo, sin dependencias de otros módulos (calendario.js define
 // uno similar para su propio uso; este es el genérico de app.js).
 function _appToast(msg, esError = false) {
+  // Un solo toast a la vez; entra y sale con animación (css/native.css).
+  document.querySelectorAll(".app-toast").forEach(t => t.remove());
   const el = document.createElement("div");
+  el.className = "app-toast" + (esError ? " error" : "");
   el.textContent = msg;
   el.setAttribute("role", "status");
-  el.style.cssText = `
-    position:fixed; left:50%; bottom:calc(6rem + env(safe-area-inset-bottom,0px));
-    transform:translateX(-50%); z-index:400;
-    background:${esError ? "var(--danger)" : "var(--accent)"}; color:#fff;
-    padding:.65rem 1.1rem; border-radius:10px; font-size:.85rem;
-    box-shadow:var(--shadow-md); max-width:calc(100vw - 2rem); text-align:center;
-  `;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3200);
+  setTimeout(() => {
+    el.classList.add("saliendo");
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 400); // por si la animación no corre (reduced motion)
+  }, 3200);
+}
+
+// Varios módulos (usuarios-reservas.js, extras.js) llaman showToast(), que no
+// estaba definida en ningún lado: con "showToast?.()" eso lanza ReferenceError.
+// El segundo parámetro acepta true o el string "error" (como lo usa extras.js).
+function showToast(msg, tipo = false) {
+  _appToast(msg, tipo === true || tipo === "error");
 }
 
 function showAccessDenied(reason) {

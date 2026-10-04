@@ -108,11 +108,7 @@ async function cargarMovimientos() {
   // Mostrar tarjeta con ceros mientras carga
   _renderTarjetaBanco(0, 0, 0);
 
-  listEl.innerHTML = `
-    <div class="mov-estado">
-      <div class="icon">⏳</div>
-      <p>Cargando movimientos…</p>
-    </div>`;
+  listEl.innerHTML = skeletonFilas(6);
 
   const { data, error } = await supabaseClient
     .from("movimientos_bancarios")

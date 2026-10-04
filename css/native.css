@@ -213,3 +213,120 @@ dialog[open]::backdrop { opacity: 1; }
     animation: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   Segunda tanda
+═══════════════════════════════════════════════════════════ */
+
+/* ── 8a. Indicador deslizante en tabs ────────────────────────
+   js/native-ux.js inserta <span.tab-indicator> y lo mueve hasta la tab
+   activa. El estilo "activo" propio de cada tab se apaga para que solo se
+   vea el indicador. */
+.tab-slider-host { position: relative; }
+
+.tab-indicator {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: translate .3s cubic-bezier(.32,.72,0,1), width .3s cubic-bezier(.32,.72,0,1);
+}
+.tab-indicator.listo { opacity: 1; }
+
+/* Variante subrayado (Informes, Facturas) */
+.informes-tabs.tab-slider-host .tab-indicator {
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+.informes-tabs.tab-slider-host .informes-tab-btn.active { border-bottom-color: transparent; }
+.informes-tabs.tab-slider-host .informes-tab-btn { transition: color .2s ease; }
+
+/* Variante píldora (Usuarios) */
+.usuarios-tabs.tab-slider-host .tab-indicator {
+  top: .3rem;
+  bottom: .3rem;
+  background: var(--row-bg);
+  border-radius: 9px;
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+.usuarios-tabs.tab-slider-host .usuarios-tab { position: relative; z-index: 1; }
+.usuarios-tabs.tab-slider-host .usuarios-tab.active { background: transparent; box-shadow: none; }
+
+/* ── 8b. Botón guardar: spinner mientras guarda ─────────────── */
+.btn-save.btn-cargando { position: relative; pointer-events: none; }
+.btn-save.btn-cargando::before {
+  content: "";
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btnSpin .7s linear infinite;
+}
+@keyframes btnSpin { to { rotate: 360deg; } }
+
+/* ── 6. Pull-to-refresh ──────────────────────────────────────
+   Indicador circular que baja desde debajo del topbar. */
+.ptr {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  margin-left: -19px;
+  width: 38px; height: 38px;
+  z-index: 90;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--surface, var(--bg));
+  color: var(--accent);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  opacity: 0;
+  translate: 0 -44px;
+  transition: translate .28s cubic-bezier(.32,.72,0,1), opacity .2s ease;
+}
+.ptr.arrastrando { transition: none; }
+.ptr svg { rotate: var(--ptr-rot, 0deg); }
+.ptr.cargando svg { animation: btnSpin .8s linear infinite; }
+
+/* ── Skeleton de filas (reemplaza "Cargando…" en texto) ─────── */
+.skel-lista { display: flex; flex-direction: column; gap: .6rem; }
+.skel-fila {
+  display: flex; align-items: center; gap: .8rem;
+  padding: .85rem 1.1rem;
+  background: var(--row-bg, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.skel-circulo { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.skel-lineas { flex: 1; display: flex; flex-direction: column; gap: .5rem; }
+.skel-linea { height: 11px; border-radius: 6px; }
+
+/* ── Toasts: entrada y salida ───────────────────────────────── */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  translate: -50% 0;
+  z-index: 400;
+  color: #fff;
+  padding: .65rem 1.1rem;
+  border-radius: 10px;
+  font-size: .85rem;
+  box-shadow: var(--shadow-md);
+  max-width: calc(100vw - 2rem);
+  text-align: center;
+  background: var(--accent);
+  animation: toastIn .3s cubic-bezier(.32,.72,0,1) both;
+}
+.app-toast.error { background: var(--danger); }
+.app-toast.saliendo { animation: toastOut .22s ease-in both; }
+@keyframes toastIn  { from { opacity: 0; translate: -50% 16px; scale: .96; } }
+@keyframes toastOut { to   { opacity: 0; translate: -50% 10px; scale: .97; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-indicator, .ptr { transition: none; }
+  .btn-save.btn-cargando::before, .ptr.cargando svg { animation-duration: 1.6s; }
+  .app-toast, .app-toast.saliendo { animation: none; }
+}

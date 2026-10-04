@@ -66,7 +66,7 @@ async function cargarRecibos() {
   }
 
   // Reset completo de estado al entrar a la vista
-  cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
+  cont.innerHTML = skeletonFilas(6);
   _modoAgrupacionRecibos = 'todos';
   _filtroTipoReciboId = null;
   _busquedaRecibosActiva = '';
@@ -205,12 +205,12 @@ async function cambiarModoAgrupacionRecibos(modo) {
     if (searchInput) searchInput.value = '';
     actualizarChipActivoFiltroTipo();
 
-    cont.innerHTML = '<p class="recibos-loading">Cargando viajes…</p>';
+    cont.innerHTML = skeletonFilas(6);
     _paginacionViajes = { offset: 0, hayMas: true, cargando: false };
     _viajesEnPantalla = [];
     await cargarSiguientePaginaViajes();
   } else {
-    cont.innerHTML = '<p class="recibos-loading">Cargando recibos…</p>';
+    cont.innerHTML = skeletonFilas(6);
     await cargarPrimeraPaginaRecibos();
   }
 }
