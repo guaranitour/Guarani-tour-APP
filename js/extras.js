@@ -234,18 +234,28 @@ async function eliminarExtra(id) {
 
   if (!(await confirmar({ titulo: "Eliminar servicio extra", mensaje: `¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`, confirmarTexto: "Eliminar", peligro: true }))) return;
 
-  const { error } = await supabaseClient
+  const { data: borrados, error } = await supabaseClient
     .from("servicios_extra")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
 
   if (error) {
     console.error("Error eliminando servicio extra:", error);
-    if (typeof showToast === "function") {
-      showToast("Error al eliminar el servicio extra", "error");
-    } else {
-      showToast("Error al eliminar el servicio extra", "error");
-    }
+    // 23503: el servicio ya está asignado a pasajeros (clave foránea)
+    showToast(
+      error.code === "23503"
+        ? "No se puede eliminar: el servicio está asignado a pasajeros"
+        : "Error al eliminar el servicio extra",
+      "error"
+    );
+    return;
+  }
+
+  // Sin error pero sin filas borradas: la política RLS lo bloqueó en silencio
+  if (!borrados || borrados.length === 0) {
+    console.error("Eliminar servicio extra: 0 filas afectadas (¿RLS?)", id);
+    showToast("No se pudo eliminar el servicio extra (sin permisos)", "error");
     return;
   }
 
