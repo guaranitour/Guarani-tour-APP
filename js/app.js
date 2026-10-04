@@ -950,7 +950,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       // esperamos a que termine de pintar antes de nombrar el elemento.
       loadPassengers().then(() => {
         _asignarNombreAvatar();
-        if (_qBuscador) filterPassengers();
+        if (_qBuscador) filterPassengers(true);
       });
     } else if (_qBuscador) {
       // Filtrado local inmediato (sin parpadeo) y luego se refina con la
@@ -960,7 +960,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
         (p.Pasajero || "").toLowerCase().includes(_ql) ||
         String(p["Documento de Identidad"] || "").toLowerCase().includes(_ql)));
       _asignarNombreAvatar();
-      filterPassengers();
+      filterPassengers(true);
     } else {
       renderList(allPassengers);
       _asignarNombreAvatar();

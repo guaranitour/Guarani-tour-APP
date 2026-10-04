@@ -113,7 +113,9 @@ function setListState(type) {
 let searchTimer = null;
 let searchToken = 0; // evita que una respuesta vieja pise a una más nueva
 
-function filterPassengers() {
+// silencioso: refina con el servidor sin pasar por "Cargando…" (al volver
+// con "atrás" la lista ya está pintada y no debe parpadear).
+function filterPassengers(silencioso = false) {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(async () => {
     const q = document.getElementById("search-input").value.trim();
@@ -125,7 +127,7 @@ function filterPassengers() {
     }
 
     const myToken = ++searchToken;
-    setListState("loading");
+    if (!silencioso) setListState("loading");
 
     const { data, error } = await supabaseClient
       .rpc("buscar_pasajeros", { busqueda: q });
