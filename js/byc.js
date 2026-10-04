@@ -462,12 +462,27 @@ function mostrarPaso1() {
   document.getElementById('byc-paso2').style.display = 'none';
 }
 
+// Entrada de historial "de más" al entrar al paso 2, para que atrás
+// (botón/gesto) vuelva a la lista de pendientes en vez de salir de la
+// vista. La consume el listener de popstate de app.js.
+let _bycPaso2HistoryOpen = false;
+
 function mostrarPaso2() {
   document.getElementById('byc-paso1').style.display = 'none';
   document.getElementById('byc-paso2').style.display = '';
+  if (!_bycPaso2HistoryOpen) {
+    history.pushState({ bycPaso2: true }, '', location.hash);
+    _bycPaso2HistoryOpen = true;
+  }
 }
 
 function volverPaso1() {
+  // Con la entrada extra abierta, history.back() dispara popstate, que
+  // apaga la bandera y vuelve a llamar acá para hacer el cambio de paso.
+  if (_bycPaso2HistoryOpen) {
+    history.back();
+    return;
+  }
   _pendienteSeleccionado = null;
   _pasajeroSeleccionado = null;
   _bycTouchBlocked = true;

@@ -632,6 +632,11 @@ window.addEventListener("popstate", (event) => {
   // se dispara una navegación real del SPA antes de que custom-select.js
   // llegue a frenarla con stopImmediatePropagation().
   if (window._csSheetOpen) return;
+  // Paso 2 de "Pendientes de vincular": atrás vuelve a la lista (paso 1).
+  if (typeof _bycPaso2HistoryOpen !== "undefined" && _bycPaso2HistoryOpen) {
+    _bycPaso2HistoryOpen = false;
+    if (currentView === "byc-vincular") { volverPaso1(); return; }
+  }
   const { view, idx } = _parseHash(location.hash);
   // Scroll guardado para esta entrada del historial (si existe)
   _pendingScrollY = (event.state && typeof event.state.scrollY === "number") ? event.state.scrollY : null;
@@ -1150,6 +1155,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Estado ByC", action: () => navigateTo("byc") },
       { label: "Pendientes de vincular" }
     ]);
+    _bycPaso2HistoryOpen = false;
     mostrarPaso1();
     cargarPendientes();
 
