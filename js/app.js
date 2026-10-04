@@ -632,6 +632,12 @@ window.addEventListener("popstate", (event) => {
   // se dispara una navegación real del SPA antes de que custom-select.js
   // llegue a frenarla con stopImmediatePropagation().
   if (window._csSheetOpen) return;
+  // Panel de filtros del registro de actividad: atrás lo cierra (cancela).
+  if (typeof _alDrawerHistoryOpen !== "undefined" && _alDrawerHistoryOpen) {
+    _alDrawerHistoryOpen = false;
+    _cerrarDrawerUIAL();
+    return;
+  }
   // Paso 2 de "Pendientes de vincular": atrás vuelve a la lista (paso 1).
   if (typeof _bycPaso2HistoryOpen !== "undefined" && _bycPaso2HistoryOpen) {
     _bycPaso2HistoryOpen = false;

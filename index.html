@@ -1827,21 +1827,12 @@
 <div id="view-activity-log" style="display:none">
   <div class="main">
     <div class="al-toolbar-filters" id="activity-log-filters">
-      <div class="al-filter-dropdown" id="al-filter-dropdown">
-        <button type="button" class="al-filter-icon-btn" id="al-filter-toggle" onclick="toggleActivityLogFilterMenu()" aria-haspopup="true" aria-expanded="false" title="Filtrar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          <span class="al-filter-badge" id="al-filter-badge" style="display:none"></span>
-        </button>
-        <div class="al-filter-menu" id="al-filter-menu" style="display:none">
-          <button type="button" class="al-filter-menu-item is-active" data-dim="todo" onclick="seleccionarDimensionActivityLog('todo')">Todo</button>
-          <button type="button" class="al-filter-menu-item" data-dim="usuario" onclick="seleccionarDimensionActivityLog('usuario')">Usuario</button>
-          <button type="button" class="al-filter-menu-item" data-dim="fecha" onclick="seleccionarDimensionActivityLog('fecha')">Fecha</button>
-          <button type="button" class="al-filter-menu-item" data-dim="tipo" onclick="seleccionarDimensionActivityLog('tipo')">Tipo</button>
-          <button type="button" class="al-filter-menu-item" data-dim="tabla" onclick="seleccionarDimensionActivityLog('tabla')">Tabla</button>
-        </div>
-      </div>
-
-      <div class="al-filter-dynamic" id="al-filter-dynamic"></div>
+      <button type="button" class="al-filter-btn" id="al-filter-toggle" onclick="abrirFiltrosActivityLog()" aria-haspopup="dialog">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filtros
+        <span class="al-filter-count" id="al-filter-badge" style="display:none"></span>
+      </button>
+      <span class="al-filter-resumen" id="al-filter-resumen"></span>
     </div>
 
     <div id="activity-log-list"></div>
@@ -2657,6 +2648,20 @@
       <span id="bn-shortcut-label">Calendario</span>
     </button>
   </nav>
+
+  <!-- ── PANEL LATERAL DE FILTROS (Registro de actividad) ─────── -->
+  <div class="al-drawer-overlay" id="al-drawer-overlay" onclick="cancelarFiltrosActivityLog()"></div>
+  <aside class="al-drawer" id="al-drawer" role="dialog" aria-modal="true" aria-labelledby="al-drawer-title" aria-hidden="true">
+    <div class="al-drawer-header">
+      <h2 id="al-drawer-title">Filtros</h2>
+      <button type="button" class="al-drawer-limpiar" onclick="limpiarFiltrosBorradorActivityLog()">Limpiar</button>
+    </div>
+    <div class="al-drawer-body" id="al-drawer-body"></div>
+    <div class="al-drawer-footer">
+      <button type="button" class="al-btn-cancelar" onclick="cancelarFiltrosActivityLog()">Cancelar</button>
+      <button type="button" class="al-btn-aceptar" onclick="aplicarFiltrosActivityLog()">Aceptar</button>
+    </div>
+  </aside>
 
   <!-- ── SHEET DE MÓDULOS (Menú) ──────────────────────────────── -->
   <div class="modulos-overlay" id="modulos-overlay" onclick="closeModulosSheet()"></div>
