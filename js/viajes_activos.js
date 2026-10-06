@@ -538,7 +538,8 @@ function filtrarHistorico() {
 /* ── FORMATEAR FECHA ───────────────────────── */
 function formatFecha(val) {
   if (!val) return "—";
-  const d = new Date(val);
+  // "YYYY-MM-DD" se parsea como UTC y retrocede un día en zona local; se fuerza hora local
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(val) ? new Date(val + "T00:00:00") : new Date(val);
   return d.toLocaleDateString("es-PY");
 }
 
