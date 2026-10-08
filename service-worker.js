@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v144';
+const CACHE_NAME    = 'guarani-tour-v145';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -19,6 +19,7 @@ const STATIC_ASSETS = [
   '/css/calendario.css',
   '/css/activity-log.css',
   '/css/legales.css',
+  '/css/encuesta.css',
   '/css/native.css',
   '/js/app.js',
   '/js/tema.js',
@@ -47,6 +48,7 @@ const STATIC_ASSETS = [
   '/js/calendario.js',
   '/js/activity-log.js',
   '/js/legales.js',
+  '/js/encuesta.js',
   '/firebase-config.js',
   '/favicon.ico',
   '/icons/favicon-16x16.png',
