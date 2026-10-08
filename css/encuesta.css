@@ -1,0 +1,35 @@
+/* ── encuesta.css — Vista Encuesta (respuestas Tally) ───────── */
+.enc-toolbar {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  margin-bottom: .9rem;
+}
+.enc-btn {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 10px; padding: .5rem .9rem;
+  font: inherit; font-size: .85rem; font-weight: 500;
+  text-decoration: none; cursor: pointer;
+}
+.enc-btn-sec { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+.enc-total { margin-left: auto; font-size: .8rem; color: var(--text-muted); }
+
+.enc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; margin-bottom: .6rem; overflow: hidden;
+}
+.enc-card summary {
+  display: flex; flex-direction: column; gap: .15rem;
+  padding: .7rem 1rem; cursor: pointer; list-style: none;
+}
+.enc-card summary::-webkit-details-marker { display: none; }
+.enc-fecha { font-size: .9rem; font-weight: 500; color: var(--text); }
+.enc-resumen { font-size: .78rem; color: var(--text-muted); }
+.enc-body { padding: .2rem 1rem .9rem; border-top: 1px solid var(--border); }
+.enc-row { padding: .55rem 0; border-bottom: 1px solid var(--border); }
+.enc-row:last-child { border-bottom: none; }
+.enc-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); margin-bottom: .25rem; }
+.enc-val { font-size: .88rem; color: var(--text); white-space: pre-wrap; }
+.enc-chip {
+  display: inline-block; background: var(--accent-light); color: var(--accent);
+  border-radius: 999px; padding: .15rem .6rem; margin: 0 .3rem .3rem 0; font-size: .78rem;
+}
+.enc-empty { color: var(--text-muted); font-size: .88rem; text-align: center; padding: 1.5rem 0; }

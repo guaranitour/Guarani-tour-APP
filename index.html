@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="css/calendario.css" />
   <link rel="stylesheet" href="css/activity-log.css" />
   <link rel="stylesheet" href="css/legales.css" />
+  <link rel="stylesheet" href="css/encuesta.css" />
   <link rel="stylesheet" href="css/informes.css" />
   <link rel="stylesheet" href="css/native.css" />
   <link rel="stylesheet" href="css/facturas.css" />
@@ -176,6 +177,13 @@
               <polyline points="10 9 9 9 8 9"/>
             </svg>
             Registro de actividad
+          </button>
+          <button class="menu-item" id="menu-encuesta-btn" style="display:none" onclick="navigateTo('encuesta'); closeMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            Encuesta
           </button>
           <button class="menu-item" onclick="abrirAcercaDe(); closeMenu()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1843,6 +1851,18 @@
   </div>
 </div>
 
+<!-- VISTA: ENCUESTA (respuestas de Tally → encuesta_respuestas) -->
+<div id="view-encuesta" style="display:none">
+  <div class="main">
+    <div class="enc-toolbar">
+      <a class="enc-btn" href="https://tally.so/r/Ek4o8X" target="_blank" rel="noopener">Abrir encuesta</a>
+      <button type="button" class="enc-btn enc-btn-sec" onclick="copiarLinkEncuesta()">Copiar link</button>
+      <span class="enc-total" id="encuesta-total"></span>
+    </div>
+    <div id="encuesta-list" aria-live="polite"></div>
+  </div>
+</div>
+
 <!-- VISTA: LEGALES -->
 <div id="view-legales" style="display:none">
   <div class="main">
@@ -2773,6 +2793,7 @@
   <script src="js/calendario.js"></script>
   <script src="js/activity-log.js"></script>
   <script src="js/legales.js"></script>
+  <script src="js/encuesta.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="js/informes.js"></script>
   <script src="js/facturas.js"></script>

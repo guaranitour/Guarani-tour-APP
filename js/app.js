@@ -155,7 +155,7 @@ function _staffCacheClear(email) {
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
   "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-  "activity-log","legales","informes"
+  "activity-log","legales","informes","encuesta"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -200,6 +200,8 @@ function _pintarShellOptimista(user) {
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = cached.role === "admin" ? "" : "none";
+  const menuEncuesta = document.getElementById("menu-encuesta-btn");
+  if (menuEncuesta) menuEncuesta.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -368,6 +370,8 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = data.role === "admin" ? "" : "none";
+  const menuEncuesta = document.getElementById("menu-encuesta-btn");
+  if (menuEncuesta) menuEncuesta.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -715,7 +719,7 @@ const _vistasConTransicion = new Set([
   "usuarios", "viaje-detalle", "viaje-editar", "viaje-nuevo",
   "viaje-pasajero-nuevo", "viaje-pasajero-pagos", "viajes",
   "activity-log", "calendario", "facturas", "facturas-internas",
-  "facturas-marangatu", "informes", "legales",
+  "facturas-marangatu", "informes", "legales", "encuesta",
 ]);
 
 // Profundidad de cada vista para elegir la dirección de la transición
@@ -868,6 +872,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_val) _val.style.display = "none";
   const _vleg = document.getElementById("view-legales");
   if (_vleg) _vleg.style.display = "none";
+  const _venc = document.getElementById("view-encuesta");
+  if (_venc) _venc.style.display = "none";
   const _vfact = document.getElementById("view-facturas");
   if (_vfact) _vfact.style.display = "none";
   const _vfactint = document.getElementById("view-facturas-internas");
@@ -1035,6 +1041,18 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Registro de actividad" }
     ]);
     loadActivityLog({ reset: true, restaurar: _navVolviendo });
+
+  }
+
+  else if (view === "encuesta") {
+
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    showEl("view-encuesta");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Encuesta" }
+    ]);
+    loadEncuesta();
 
   }
 
