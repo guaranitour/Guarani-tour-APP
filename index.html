@@ -1860,7 +1860,11 @@
       <span class="enc-total" id="encuesta-total"></span>
     </div>
     <div id="encuesta-list" aria-live="polite"></div>
+    <div id="encuesta-stats" style="display:none"></div>
   </div>
+  <button type="button" class="encuesta-fab" id="encuesta-fab" onclick="toggleEncuestaStats()" aria-label="Ver estadísticas">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="9"/></svg>
+  </button>
 </div>
 
 <!-- VISTA: LEGALES -->
@@ -2794,6 +2798,7 @@
   <script src="js/activity-log.js"></script>
   <script src="js/legales.js"></script>
   <script src="js/encuesta.js"></script>
+  <script src="js/encuesta-stats.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="js/informes.js"></script>
   <script src="js/facturas.js"></script>

@@ -30,6 +30,8 @@ function _valorEnc(col, v) {
   return _escEnc(v);
 }
 
+let _encData = [];
+
 async function loadEncuesta() {
   const listEl = document.getElementById("encuesta-list");
   const totalEl = document.getElementById("encuesta-total");
@@ -45,7 +47,9 @@ async function loadEncuesta() {
     listEl.innerHTML = `<p class="enc-empty">Error al cargar: ${_escEnc(error.message)}</p>`;
     return;
   }
+  _encData = data;
   if (totalEl) totalEl.textContent = `${data.length} respuesta${data.length === 1 ? "" : "s"}`;
+  if (typeof _encAplicarModo === "function") _encAplicarModo();
   if (!data.length) {
     listEl.innerHTML = `<p class="enc-empty">Todavía no hay respuestas.</p>`;
     return;

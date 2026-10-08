@@ -1,4 +1,4 @@
-const CACHE_NAME    = 'guarani-tour-v145';
+const CACHE_NAME    = 'guarani-tour-v146';
 const CACHE_IMAGES  = 'guarani-tour-images-v1';
 const CACHE_EXTERN  = 'guarani-tour-extern-v1';
 
@@ -49,6 +49,7 @@ const STATIC_ASSETS = [
   '/js/activity-log.js',
   '/js/legales.js',
   '/js/encuesta.js',
+  '/js/encuesta-stats.js',
   '/firebase-config.js',
   '/favicon.ico',
   '/icons/favicon-16x16.png',
