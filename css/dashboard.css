@@ -308,6 +308,30 @@
   flex-shrink: 0;
 }
 
+/* ── Dinero por método de pago (viajes activos) ─────────── */
+.dash-caja-total {
+  display: flex; align-items: baseline; justify-content: space-between; gap: .6rem;
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.dash-caja-total .dash-kpi-label { margin-bottom: 0; }
+.dash-caja-total-valor {
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.25rem; font-weight: 700;
+  color: var(--accent2);
+}
+.dash-caja-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: .88rem;
+}
+.dash-caja-row:last-child { border-bottom: none; }
+.dash-caja-nombre { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-caja-monto { font-weight: 600; white-space: nowrap; color: var(--text); }
+.dash-caja-monto.negativo,
+.dash-caja-total-valor.negativo { color: var(--danger); }
+
 /* ── Ranking de pasajeros (puntos) ─────────────────────── */
 .dash-card {
   background: var(--row-bg);

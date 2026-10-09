@@ -178,6 +178,8 @@ async function loadResumen(viajeId) {
   // Pagado por pasajero (solo tipo "Pago" menos "Devolución" y "Transferencia")
   const pagadoPorVP = {};
   const cobradoPorMetodo = {};
+  const devueltoPorMetodo = {};
+  const cedidoPorMetodo = {}; // señas transferidas a otro pasajero (sale de su caja)
   let totalCobrado = 0, totalDevuelto = 0, totalTransferido = 0;
 
   (pagosRows || []).forEach(pg => {
@@ -193,10 +195,14 @@ async function loadResumen(viajeId) {
     if (pg.tipo === "Devolución") {
       totalDevuelto += pg.monto || 0;
       pagadoPorVP[vpId] -= pg.monto || 0;
+      const nombre = metMap[String(pg.metodo_pago_id)] || "Sin método";
+      devueltoPorMetodo[nombre] = (devueltoPorMetodo[nombre] || 0) + (pg.monto || 0);
     }
     if (pg.tipo === "Transferencia") {
       totalTransferido += pg.monto || 0;
       pagadoPorVP[vpId] -= pg.monto || 0;
+      const nombre = metMap[String(pg.metodo_pago_id)] || "Sin método";
+      cedidoPorMetodo[nombre] = (cedidoPorMetodo[nombre] || 0) + (pg.monto || 0);
     }
   });
 
@@ -258,6 +264,8 @@ async function loadResumen(viajeId) {
 
   const todosMetodos = new Set([
     ...Object.keys(cobradoPorMetodo),
+    ...Object.keys(devueltoPorMetodo),
+    ...Object.keys(cedidoPorMetodo),
     ...Object.keys(egresosPorMetodo),
     ...Object.keys(transfEnviadasPorMetodo),
     ...Object.keys(transfRecibidasPorMetodo)
@@ -265,16 +273,20 @@ async function loadResumen(viajeId) {
   const saldoPorMetodoEntries = [...todosMetodos]
     .map(nombre => {
       const cobrado   = cobradoPorMetodo[nombre]        || 0;
+      const devuelto  = devueltoPorMetodo[nombre]       || 0;
+      const cedido    = cedidoPorMetodo[nombre]         || 0;
       const egresos   = egresosPorMetodo[nombre]        || 0;
       const transfIn  = transfRecibidasPorMetodo[nombre] || 0;
       const transfOut = transfEnviadasPorMetodo[nombre]  || 0;
       return {
         nombre,
         cobrado,
+        devuelto,
+        cedido,
         egresos,
         transfIn,
         transfOut,
-        saldo: cobrado - egresos + transfIn - transfOut
+        saldo: cobrado - devuelto - cedido - egresos + transfIn - transfOut
       };
     })
     .sort((a, b) => b.cobrado - a.cobrado);
@@ -444,8 +456,10 @@ async function loadResumen(viajeId) {
               </span>
             </div>
           </div>
-          ${r.transfIn > 0 || r.transfOut > 0 ? `
+          ${r.devuelto > 0 || r.cedido > 0 || r.transfIn > 0 || r.transfOut > 0 ? `
           <div class="resumen-metodo-transf">
+            ${r.devuelto > 0  ? `<div class="resumen-mov-row"><span>Devoluciones</span><span class="negativo">− Gs. ${fmt(r.devuelto)}</span></div>` : ""}
+            ${r.cedido > 0    ? `<div class="resumen-mov-row"><span>Señas cedidas</span><span class="negativo">− Gs. ${fmt(r.cedido)}</span></div>` : ""}
             ${r.transfIn > 0  ? `<div class="resumen-mov-row"><span>Transf. recibidas</span><span class="positivo">+ Gs. ${fmt(r.transfIn)}</span></div>` : ""}
             ${r.transfOut > 0 ? `<div class="resumen-mov-row"><span>Transf. enviadas</span><span class="negativo">− Gs. ${fmt(r.transfOut)}</span></div>` : ""}
           </div>` : ""}

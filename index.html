@@ -2873,9 +2873,23 @@
         return;
       }
       document.getElementById('sw-update-btn').disabled = true;
+      mostrarOverlayActualizando();
       waiting.postMessage({ type: 'SKIP_WAITING' });
       // La recarga real la dispara 'controllerchange' más arriba.
+      // Red de seguridad: si por algún motivo no llega, recargamos igual
+      // para que el overlay no quede colgado.
+      setTimeout(() => window.location.reload(), 15000);
     };
+  }
+
+  // Overlay a pantalla completa mientras el nuevo SW toma control y la
+  // página se recarga. Usa solo animaciones de transform/opacity para que
+  // siga fluido aunque el hilo principal esté ocupado.
+  function mostrarOverlayActualizando() {
+    const ov = document.getElementById('sw-updating-overlay');
+    if (!ov) return;
+    ov.classList.add('sw-updating-visible');
+    ov.setAttribute('aria-hidden', 'false');
   }
 </script>
 
@@ -2886,7 +2900,56 @@
     <button type="button" id="sw-update-btn" class="sw-update-btn">Actualizar</button>
   </div>
 </div>
+<!-- ══ OVERLAY: actualizando la app ══════════════════════════ -->
+<div id="sw-updating-overlay" class="sw-updating-overlay" role="alert" aria-live="assertive" aria-hidden="true">
+  <div class="sw-updating-box">
+    <div class="sw-updating-spinner"></div>
+    <div class="sw-updating-title">Actualizando la app…</div>
+    <div class="sw-updating-sub">Un momento, se reiniciará sola.</div>
+  </div>
+</div>
 <style>
+  .sw-updating-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg, rgba(15,18,24,.92));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .sw-updating-overlay.sw-updating-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sw-updating-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text, #fff);
+  }
+  .sw-updating-spinner {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 4px solid var(--border, rgba(255,255,255,.18));
+    border-top-color: var(--accent, #2f8f5b);
+    animation: sw-updating-spin .8s linear infinite;
+    margin-bottom: .4rem;
+  }
+  .sw-updating-title { font-size: 1rem; font-weight: 600; }
+  .sw-updating-sub { font-size: .82rem; color: var(--text-muted, rgba(255,255,255,.65)); }
+  @keyframes sw-updating-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .sw-updating-spinner { animation-duration: 2s; }
+  }
+
   .sw-update-banner {
     position: fixed;
     left: 50%;

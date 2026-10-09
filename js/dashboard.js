@@ -14,6 +14,7 @@ const _dashIcons = {
   cerrar: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
   flecha: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
   byc:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  caja:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
 };
 
 // ── Pill de aviso en el Home ────────────────────────────────
@@ -273,10 +274,11 @@ function _skelComparativo() {
 // esFinanzas/esViewer omiten el esqueleto de secciones que esos roles
 // nunca llegan a ver, evitando el parpadeo de un bloque que después
 // se vacía.
-function _dashboardSkeletonHtml(esFinanzas = false, esViewer = false) {
+function _dashboardSkeletonHtml(esFinanzas = false, esViewer = false, puedeVerCaja = false) {
   return `
     <div id="dash-slot-byc">${(esFinanzas || esViewer) ? "" : _skelKpiSection("Bases y condiciones", _dashIcons.byc, 2)}</div>
     <div id="dash-slot-viajes">${_skelListSection("Viajes activos", _dashIcons.viajes, 3)}</div>
+    <div id="dash-slot-caja">${puedeVerCaja ? _skelListSection("Dinero por método de pago", _dashIcons.caja, 3) : ""}</div>
     <div id="dash-slot-extra"></div>
     <div id="dash-slot-club">${esViewer ? "" : _skelClubDestino()}</div>
   `;
@@ -343,16 +345,18 @@ async function loadDashboard() {
     root.innerHTML = `
       <div id="dash-slot-byc">${esFinanzas || esViewer ? "" : _dashCache.byc}</div>
       <div id="dash-slot-viajes">${_dashCache.viajes}</div>
+      <div id="dash-slot-caja">${puedeVerComparativo ? (_dashCache.caja || "") : ""}</div>
       <div id="dash-slot-extra">${_dashCache.extra || ""}</div>
       <div id="dash-slot-club">${esViewer ? "" : _dashCache.club}</div>
     `;
   } else {
     // 1b) Primera vez en esta sesión: mostramos el esqueleto de carga.
-    root.innerHTML = _dashboardSkeletonHtml(esFinanzas, esViewer);
+    root.innerHTML = _dashboardSkeletonHtml(esFinanzas, esViewer, puedeVerComparativo);
   }
 
   const slotByc    = document.getElementById("dash-slot-byc");
   const slotViajes = document.getElementById("dash-slot-viajes");
+  const slotCaja   = document.getElementById("dash-slot-caja");
   const slotExtra  = document.getElementById("dash-slot-extra");
   const slotClub   = document.getElementById("dash-slot-club");
 
@@ -362,6 +366,7 @@ async function loadDashboard() {
     // refrescando en segundo plano. La app sigue 100% usable.
     _setSlotRevalidating(slotByc, !esViewer);
     _setSlotRevalidating(slotViajes, true);
+    if (puedeVerComparativo && _dashCache.caja) _setSlotRevalidating(slotCaja, true);
     _setSlotRevalidating(slotClub, !esViewer);
     if (puedeVerComparativo && _dashCache.extra) _setSlotRevalidating(slotExtra, true);
   }
@@ -403,6 +408,7 @@ async function loadDashboard() {
         // quitamos los indicadores de carga.
         _setSlotRevalidating(slotByc, false);
         _setSlotRevalidating(slotViajes, false);
+        _setSlotRevalidating(slotCaja, false);
         _setSlotRevalidating(slotClub, false);
         _setSlotRevalidating(slotExtra, false);
       }
@@ -411,7 +417,7 @@ async function loadDashboard() {
     if (errByc) console.warn("No se pudo cargar BYC:", errByc);
 
     // Si no había caché aún, inicializamos el objeto para ir completándolo.
-    if (!_dashCache) _dashCache = { byc: "", viajes: "", extra: "", club: "" };
+    if (!_dashCache) _dashCache = { byc: "", viajes: "", caja: "", extra: "", club: "" };
 
     // 3) A partir de acá, cada sección se resuelve y pinta de forma
     //    independiente. Si una tarda o falla, no bloquea a las demás.
@@ -427,6 +433,24 @@ async function loadDashboard() {
     if (teniaCache) _swapSlotIfChanged(slotViajes, htmlViajes, "viajes");
     else if (slotViajes) slotViajes.innerHTML = htmlViajes;
     _dashCache.viajes = htmlViajes;
+
+    // Dinero por método de pago de los viajes activos (admin/worker/finanzas).
+    // Se resuelve aparte para no frenar al resto de las secciones.
+    let cajaPromise = Promise.resolve();
+    if (puedeVerComparativo) {
+      cajaPromise = _cargarCajaViajesActivos(viajesData || [], vpData || [])
+        .then(htmlCaja => {
+          if (teniaCache) _swapSlotIfChanged(slotCaja, htmlCaja, "caja");
+          else if (slotCaja) slotCaja.innerHTML = htmlCaja;
+          _dashCache.caja = htmlCaja;
+        })
+        .catch(e => {
+          console.error("Error cargando dinero por método de pago:", e);
+          marcarError(slotCaja, "No se pudo cargar el dinero por método de pago.");
+        });
+    } else {
+      _dashCache.caja = "";
+    }
 
     const viajesMap = {};
     (viajesData || []).forEach(v => { viajesMap[v.id] = v; });
@@ -496,7 +520,7 @@ async function loadDashboard() {
 
     // No es necesario await acá: cada promesa pinta su slot por su cuenta
     // apenas resuelve, en el orden en que vayan llegando.
-    await Promise.allSettled([clubDestinoPromise, extraPromise]);
+    await Promise.allSettled([clubDestinoPromise, extraPromise, cajaPromise]);
 
     // Persistir a localStorage recién ahora que las 4 secciones están
     // resueltas (evita 4 escrituras por carga) y solo si tenemos con qué
@@ -509,6 +533,7 @@ async function loadDashboard() {
     else {
       _setSlotRevalidating(slotByc, false);
       _setSlotRevalidating(slotViajes, false);
+      _setSlotRevalidating(slotCaja, false);
       _setSlotRevalidating(slotClub, false);
       _setSlotRevalidating(slotExtra, false);
     }
@@ -679,6 +704,108 @@ function renderViajesActivos(viajesData, vpData) {
       <span class="dash-section-count">${activos.length}</span>
     </div>
     ${body}
+  </div>`;
+}
+
+// ── Dinero que debe haber por método de pago (viajes activos) ──
+// Misma fórmula que "Por método de pago" del Resumen de cada viaje
+// (resumen.js): cobrado − devoluciones − señas transferidas − egresos
+// + transf. internas recibidas − transf. internas enviadas, sumado de
+// todos los viajes con estado "activo". Incluye pasajeros que asisten y
+// no asisten: una seña no devuelta de alguien que no va sigue en caja.
+async function _cargarCajaViajesActivos(viajesData, vpData) {
+  const viajeIds = viajesData
+    .filter(v => (v.estado || "activo") === "activo")
+    .map(v => v.id);
+
+  if (viajeIds.length === 0) return renderCajaViajesActivos([], 0);
+
+  const viajeIdSet = new Set(viajeIds);
+  const vpIds = vpData.filter(vp => viajeIdSet.has(vp.viaje_id)).map(vp => vp.id);
+
+  // Supabase corta en 1000 filas por consulta: se pagina para no perder pagos.
+  const traerTodosLosPagos = async () => {
+    if (vpIds.length === 0) return [];
+    const PAGINA = 1000;
+    const filas = [];
+    for (let desde = 0; ; desde += PAGINA) {
+      const { data, error } = await supabaseClient
+        .from("pagos")
+        .select("monto, tipo, metodo_pago_id")
+        .in("viaje_pasajero_id", vpIds)
+        .order("id", { ascending: true })
+        .range(desde, desde + PAGINA - 1);
+      if (error) throw error;
+      filas.push(...(data || []));
+      if (!data || data.length < PAGINA) break;
+    }
+    return filas;
+  };
+
+  const [pagos, egresosRes, transfRes, metodosRes] = await Promise.all([
+    traerTodosLosPagos(),
+    supabaseClient.from("egresos").select("monto, caja_saliente").in("viaje_id", viajeIds),
+    supabaseClient.from("transferencias_internas").select("monto, de_caja, a_caja").in("viaje_id", viajeIds),
+    supabaseClient.from("metodos_de_pago").select("id, metodo_de_pago"),
+  ]);
+
+  if (egresosRes.error) throw egresosRes.error;
+  if (transfRes.error)  throw transfRes.error;
+  if (metodosRes.error) throw metodosRes.error;
+
+  const metMap = Object.fromEntries((metodosRes.data || []).map(m => [String(m.id), m.metodo_de_pago]));
+  const nombreMetodo = id => metMap[String(id)] || "Sin método";
+
+  const saldos = {};
+  const sumar = (nombre, monto) => { saldos[nombre] = (saldos[nombre] || 0) + (monto || 0); };
+
+  // "Pago" suma; "Devolución" (seña devuelta) y "Transferencia" (seña cedida
+  // a otro pasajero, que ya entra como "Pago" del destino) restan de su caja.
+  pagos.forEach(p => {
+    const signo = p.tipo === "Pago" ? 1
+                : (p.tipo === "Devolución" || p.tipo === "Transferencia") ? -1
+                : 0;
+    if (signo) sumar(nombreMetodo(p.metodo_pago_id), signo * (p.monto || 0));
+  });
+  (egresosRes.data || []).forEach(e => sumar(nombreMetodo(e.caja_saliente), -(e.monto || 0)));
+  (transfRes.data || []).forEach(t => {
+    sumar(nombreMetodo(t.de_caja), -(t.monto || 0));
+    sumar(nombreMetodo(t.a_caja),  t.monto || 0);
+  });
+
+  const filas = Object.entries(saldos)
+    .map(([nombre, saldo]) => ({ nombre, saldo }))
+    .sort((a, b) => b.saldo - a.saldo);
+
+  return renderCajaViajesActivos(filas, viajeIds.length);
+}
+
+function renderCajaViajesActivos(filas, cantViajes) {
+  const fmt = n => (n || 0).toLocaleString("es-PY");
+  const total = filas.reduce((s, f) => s + f.saldo, 0);
+
+  const body = filas.length === 0
+    ? `<div class="dash-state">Sin movimientos en viajes activos.</div>`
+    : `
+      <div class="dash-caja-total">
+        <span class="dash-kpi-label">Total en cajas</span>
+        <span class="dash-caja-total-valor ${total < 0 ? "negativo" : ""}">Gs. ${fmt(total)}</span>
+      </div>
+      ${filas.map(f => `
+      <div class="dash-caja-row">
+        <span class="dash-caja-nombre">${f.nombre}</span>
+        <span class="dash-caja-monto ${f.saldo < 0 ? "negativo" : ""}">${f.saldo < 0 ? "− " : ""}Gs. ${fmt(Math.abs(f.saldo))}</span>
+      </div>`).join("")}`;
+
+  return `
+  <div class="dash-section">
+    <div class="dash-section-title">
+      <span class="dash-icon">${_dashIcons.caja}</span>
+      Dinero por método de pago
+      <span class="dash-section-count">${cantViajes}</span>
+    </div>
+    <div class="dash-section-sub">Cobrado − devoluciones − egresos ± transferencias internas · solo viajes activos</div>
+    <div class="dash-card dash-caja-card">${body}</div>
   </div>`;
 }
 
