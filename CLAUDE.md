@@ -16,7 +16,7 @@ Guaraní Tour staff portal: a build-less, framework-less PWA (vanilla JS + one b
 
 ## Service worker (`service-worker.js`) — important when shipping changes
 
-- Static JS/CSS/HTML are served **cache-first** from `CACHE_NAME` (`guarani-tour-vNNN`). **Bump `CACHE_NAME` on every deploy that changes cached assets** (recent commits are exactly this), otherwise users keep seeing old code.
+- Static JS/CSS/HTML are served **cache-first** from `CACHE_NAME` (`guarani-tour-vNNN`). **NO modificar `CACHE_NAME` tras cada cambio**; solo se cambia cuando el usuario lo pida explícitamente.
 - New files must be added to `STATIC_ASSETS` (note: `informes`, `facturas`, `marangatu` JS/CSS and some images are currently not listed there; missing ones are still cached lazily only for `/img/`).
 - A new SW stays in "waiting" until the app banner sends `SKIP_WAITING` (no automatic `skipWaiting`); the client reloads on `controllerchange`.
 - Supabase Storage images: cache-first in `CACHE_IMAGES`; other Supabase API calls: network only; CDN/fonts: cache-first in `CACHE_EXTERN`.
