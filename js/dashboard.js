@@ -167,7 +167,13 @@ function _setSlotRevalidating(slotEl, on) {
 // Si es idéntico, no toca el DOM (evita parpadeo/pérdida de scroll).
 function _swapSlotIfChanged(slotEl, newHtml, cacheKey) {
   if (!slotEl) return;
-  const prev = _dashCache ? _dashCache[cacheKey] : undefined;
+  // Se compara contra lo que ESTE slot tiene pintado realmente (no contra
+  // _dashCache, que otra llamada concurrente a loadDashboard() pudo haber
+  // actualizado ya, dejando este slot vacío sin que nadie lo repinte).
+  const prev = slotEl._dashPainted !== undefined
+    ? slotEl._dashPainted
+    : (_dashCache ? _dashCache[cacheKey] : undefined);
+  slotEl._dashPainted = newHtml;
   _setSlotRevalidating(slotEl, false);
   if (prev === newHtml) return; // sin cambios: no re-renderizamos nada
   slotEl.innerHTML = newHtml;
@@ -361,6 +367,13 @@ async function loadDashboard() {
   const slotClub   = document.getElementById("dash-slot-club");
 
   if (teniaCache) {
+    // Registramos qué HTML quedó pintado en cada slot (ver _swapSlotIfChanged).
+    if (slotByc)    slotByc._dashPainted    = esFinanzas || esViewer ? "" : _dashCache.byc;
+    if (slotViajes) slotViajes._dashPainted = _dashCache.viajes;
+    if (slotCaja)   slotCaja._dashPainted   = puedeVerComparativo ? (_dashCache.caja || "") : "";
+    if (slotExtra)  slotExtra._dashPainted  = _dashCache.extra || "";
+    if (slotClub)   slotClub._dashPainted   = esViewer ? "" : _dashCache.club;
+
     // Revalidación pasiva: el contenido ya está a la vista, solo
     // marcamos con los tres puntos junto a cada título que se está
     // refrescando en segundo plano. La app sigue 100% usable.
