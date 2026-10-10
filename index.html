@@ -210,7 +210,27 @@
             </svg>
             <span id="theme-toggle-label">Modo oscuro</span>
           </button>
-          <button class="menu-item danger" onclick="logout(); closeMenu()">
+        </div>
+      </div>
+
+      <button class="topbar-brand" onclick="navigateTo('dashboard')" aria-label="Ir al inicio">
+        <span class="topbar-brand-title">GUARANI TOUR</span>
+        <span class="topbar-brand-subtitle">APP</span>
+      </button>
+
+      <div class="profile-wrap">
+        <button class="topbar-profile" onclick="toggleProfileMenu()" aria-label="Abrir menú de perfil" aria-haspopup="true" aria-expanded="false" aria-controls="profile-menu">
+          <span>--</span>
+        </button>
+        <div class="hamburger-menu profile-menu" id="profile-menu" role="menu">
+          <button class="menu-item" role="menuitem" onclick="navigateTo('perfil'); closeProfileMenu()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Perfil
+          </button>
+          <button class="menu-item danger" role="menuitem" onclick="logout(); closeProfileMenu()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
@@ -220,15 +240,6 @@
           </button>
         </div>
       </div>
-
-      <button class="topbar-brand" onclick="navigateTo('dashboard')" aria-label="Ir al inicio">
-        <span class="topbar-brand-title">GUARANI TOUR</span>
-        <span class="topbar-brand-subtitle">APP</span>
-      </button>
-
-      <button class="topbar-profile" onclick="toggleMenu()" aria-label="Abrir menú de usuario" aria-haspopup="true" aria-expanded="false" aria-controls="hamburger-menu">
-        <span>--</span>
-      </button>
     </header>
 
     <div class="breadcrumb-bar">
@@ -1830,6 +1841,31 @@
       </div>
     </div>
   </div>
+
+<!-- VISTA: PERFIL -->
+<div id="view-perfil" style="display:none">
+  <div class="main">
+    <div class="perfil-card">
+      <div class="perfil-avatar" id="perfil-avatar"></div>
+      <h1 class="perfil-nombre" id="perfil-nombre">—</h1>
+      <span class="perfil-rol" id="perfil-rol">—</span>
+      <div class="perfil-datos">
+        <div class="perfil-dato">
+          <span class="perfil-dato-label">Nombre</span>
+          <span class="perfil-dato-valor" id="perfil-dato-nombre">—</span>
+        </div>
+        <div class="perfil-dato">
+          <span class="perfil-dato-label">Correo</span>
+          <span class="perfil-dato-valor" id="perfil-dato-correo">—</span>
+        </div>
+        <div class="perfil-dato">
+          <span class="perfil-dato-label">Rol</span>
+          <span class="perfil-dato-valor" id="perfil-dato-rol">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- VISTA: REGISTRO DE ACTIVIDAD (activity_log) -->
 <div id="view-activity-log" style="display:none">

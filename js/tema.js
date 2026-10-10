@@ -10,6 +10,22 @@ function closeMenu() {
   document.getElementById("hamburger-menu").classList.remove("open");
 }
 
+// ── Menú del avatar (Perfil / Cerrar sesión) ───────────────
+function toggleProfileMenu() {
+  closeMenu();
+  const menu = document.getElementById("profile-menu");
+  const open = menu.classList.toggle("open");
+  const btn = document.querySelector(".topbar-profile");
+  if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function closeProfileMenu() {
+  const menu = document.getElementById("profile-menu");
+  if (menu) menu.classList.remove("open");
+  const btn = document.querySelector(".topbar-profile");
+  if (btn) btn.setAttribute("aria-expanded", "false");
+}
+
 // ── Tema claro/oscuro ──────────────────────────────────────
 const THEME_KEY = "gt-theme";
 const THEME_COLOR_LIGHT = "#1a3a2a";
@@ -89,6 +105,6 @@ function cerrarAcercaDe(e) {
 
 // Cerrar al hacer click fuera
 document.addEventListener("click", (e) => {
-  const wrap = document.getElementById("hamburger-wrap") || e.target.closest(".hamburger-wrap");
   if (!e.target.closest(".hamburger-wrap")) closeMenu();
+  if (!e.target.closest(".profile-wrap")) closeProfileMenu();
 });

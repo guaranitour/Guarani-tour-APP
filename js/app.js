@@ -102,6 +102,34 @@ function renderTopbarProfile() {
   }
 }
 
+const _ROL_LABEL = { admin: "Administrador", worker: "Worker", finanzas: "Finanzas", viewer: "Viewer" };
+
+function renderPerfil() {
+  const nombre = currentUserName || "—";
+  const correo = document.getElementById("user-email")?.textContent || "—";
+  const rol = _ROL_LABEL[currentUserRole] || currentUserRole || "—";
+  const avatar = document.getElementById("perfil-avatar");
+  if (avatar) {
+    avatar.textContent = "";
+    if (currentUserAvatar) {
+      const img = document.createElement("img");
+      img.src = currentUserAvatar;
+      img.alt = nombre;
+      img.referrerPolicy = "no-referrer";
+      img.onerror = () => { avatar.textContent = getInitials(currentUserName); };
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = getInitials(currentUserName);
+    }
+  }
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set("perfil-nombre", nombre);
+  set("perfil-rol", rol);
+  set("perfil-dato-nombre", nombre);
+  set("perfil-dato-correo", correo);
+  set("perfil-dato-rol", rol);
+}
+
 // ── Caché de perfil de staff (arranque optimista) ────────────
 // Guarda en localStorage lo mínimo necesario para pintar la app (topbar,
 // nav, permisos por rol) SIN esperar la consulta de red a "staff". Se
@@ -155,7 +183,7 @@ function _staffCacheClear(email) {
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
   "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-  "activity-log","legales","informes","encuesta"
+  "activity-log","legales","informes","encuesta","perfil"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -573,7 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Navegación por hash ────────────────────────────────────
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
-const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino","byc","byc-vincular"];
+const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino","byc","byc-vincular","perfil"];
 const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
 // Vistas con idx objeto, pero que SÍ necesitan un hash distinto por
 // instancia (si no, dos pantallas distintas comparten el mismo hash
@@ -719,7 +747,7 @@ const _vistasConTransicion = new Set([
   "usuarios", "viaje-detalle", "viaje-editar", "viaje-nuevo",
   "viaje-pasajero-nuevo", "viaje-pasajero-pagos", "viajes",
   "activity-log", "calendario", "facturas", "facturas-internas",
-  "facturas-marangatu", "informes", "legales", "encuesta",
+  "facturas-marangatu", "informes", "legales", "encuesta", "perfil",
 ]);
 
 // Profundidad de cada vista para elegir la dirección de la transición
@@ -817,6 +845,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_modalSos && _modalSos.open) _modalSos.close();
   const _modalMarangatu = document.getElementById("marangatu-modal");
   if (_modalMarangatu && _modalMarangatu.open) _modalMarangatu.close();
+  const _vperf = document.getElementById("view-perfil");
+  if (_vperf) _vperf.style.display = "none";
   hideEl("view-clientes");
   hideEl("view-detalle");
   hideEl("view-nuevo");
@@ -1029,6 +1059,17 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
     initCustomSelect("u-role");
     initCustomSelect("u-status");
     initCustomSelect("ur-role");
+
+  }
+
+  else if (view === "perfil") {
+
+    showEl("view-perfil");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Perfil" }
+    ]);
+    renderPerfil();
 
   }
 

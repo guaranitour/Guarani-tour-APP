@@ -442,8 +442,10 @@ h2 {
 .hamburger-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
 
 /* ── PERFIL (derecha) ────────────────────────────────────── */
+.profile-wrap { position: relative; grid-column: 3; justify-self: end; }
+.profile-menu { left: auto; right: 0; }
+
 .topbar-profile {
-  grid-column: 3; justify-self: end;
   width: 38px; height: 38px; border-radius: 50%;
   border: none; padding: 0; cursor: pointer;
   background: var(--accent2);
@@ -1391,3 +1393,32 @@ body { padding-bottom: 0; }
   line-height: 1.4;
 }
 
+
+/* ── VISTA PERFIL ────────────────────────────────────────── */
+.perfil-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .5rem; padding: 1.5rem 1rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: var(--shadow-md);
+  max-width: 420px; margin: 0 auto;
+}
+.perfil-avatar {
+  width: 96px; height: 96px; border-radius: 50%; overflow: hidden;
+  background: var(--accent2); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-weight: 700;
+}
+.perfil-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.perfil-nombre { font-size: 1.25rem; font-weight: 700; margin: .4rem 0 0; text-align: center; }
+.perfil-rol {
+  font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  padding: .2rem .7rem; border-radius: 999px;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.perfil-datos { width: 100%; margin-top: 1rem; display: flex; flex-direction: column; }
+.perfil-dato {
+  display: flex; flex-direction: column; gap: .15rem;
+  padding: .75rem 0; border-top: 1px solid var(--border);
+}
+.perfil-dato-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.perfil-dato-valor { font-size: .92rem; color: var(--text); word-break: break-word; }
