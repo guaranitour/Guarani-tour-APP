@@ -257,13 +257,11 @@ function renderPendientes(lista) {
     return;
   }
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const iniciales = n => (String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
   cont.innerHTML = `
     <div class="byc-pend-resumen">${lista.length} ${lista.length === 1 ? 'pendiente' : 'pendientes'}</div>
     <div class="byc-pendientes-list">
       ${lista.map(r => `
         <div class="byc-pendiente-row" data-id="${r.id}" role="button" tabindex="0">
-          <div class="byc-pend-avatar">${esc(iniciales(r.nombre))}</div>
           <div class="byc-row-left">
             <span class="byc-nombre">${esc(r.nombre) || '—'}</span>
             <span class="byc-pend-meta">
