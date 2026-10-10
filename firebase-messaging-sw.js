@@ -27,14 +27,14 @@ messaging.onBackgroundMessage((payload) => {
       icon: data.icon || "/icons/guaranitour_192.png",
       badge: "/icons/badge_96.png",
       image: data.image || undefined,
-      data: { link: data.link || "/#viajes" }
+      data: { link: data.link || "/?goto=viajes" }
     }
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/#viajes";
+  const link = event.notification.data?.link || "/?goto=viajes";
   const [targetPath, targetHash = ""] = link.split("#");
 
   event.waitUntil(
