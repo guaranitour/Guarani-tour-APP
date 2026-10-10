@@ -207,7 +207,10 @@ async function cargarPendientes() {
 
   // Traer todos los CI de byc y de pasajeros y comparar en cliente
   const [bycRes, pasRes] = await Promise.all([
-    supabaseClient.from('basesycondiciones').select('id, nombre, ci, email').order('nombre'),
+    // Más recientes primero (created_at; id como desempate si coinciden)
+    supabaseClient.from('basesycondiciones').select('id, nombre, ci, email, created_at')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false }),
     supabaseClient.from('pasajeros').select('"Documento de Identidad"')
   ]);
 
