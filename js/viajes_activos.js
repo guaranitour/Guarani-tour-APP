@@ -2194,6 +2194,11 @@ function capitalizarNombre(str) {
 }
 
 /* ── TABS VIAJE DETALLE ────────────────────── */
+// Mismo orden que los botones en index.html: lo usan el swipe y la
+// animación de entrada para decidir la dirección del deslizamiento.
+const _ORDEN_TABS_VIAJE = ["pasajeros", "egresos", "presupuesto", "extra", "resumen", "transferencias"];
+let _tabViajeActual = null;
+
 function switchViajeTab(tab) {
   // Redirigir según rol si intenta acceder a un tab restringido
   const esFinanzas = currentUserRole === "finanzas";
@@ -2235,6 +2240,23 @@ function switchViajeTab(tab) {
   if (panelTransf) panelTransf.style.display = tab === "transferencias" ? "" : "none";
   const panelExtra = document.getElementById("panel-extra");
   if (panelExtra) panelExtra.style.display = tab === "extra" ? "" : "none";
+
+  // Animación de deslizamiento: el panel entra desde el lado hacia el que
+  // se movió el usuario (aplica a tap en el tab y a swipe, todos los tabs).
+  const previo = _tabViajeActual;
+  _tabViajeActual = tab;
+  if (previo && previo !== tab) {
+    const dir = _ORDEN_TABS_VIAJE.indexOf(tab) > _ORDEN_TABS_VIAJE.indexOf(previo) ? "der" : "izq";
+    const panelNuevo = document.getElementById("panel-" + tab);
+    if (panelNuevo) {
+      panelNuevo.classList.remove("tab-entra-der", "tab-entra-izq");
+      void panelNuevo.offsetWidth; // reinicia la animación si se repite rápido
+      panelNuevo.classList.add("tab-entra-" + dir);
+      panelNuevo.addEventListener("animationend", (ev) => {
+        if (ev.target === panelNuevo) panelNuevo.classList.remove("tab-entra-der", "tab-entra-izq");
+      });
+    }
+  }
 
   if (tab === "pasajeros")      _refrescarPasajerosSiCorresponde();
   if (tab === "egresos")        loadEgresos(viajeActualId);
@@ -2306,10 +2328,8 @@ function _initSwipeTabsViaje() {
 }
 
 function _cambiarTabViajePorSwipe(direccion) {
-  const ordenTabs = ["pasajeros", "egresos", "presupuesto", "resumen", "transferencias", "extra"];
-
   // Solo se consideran las tabs visibles según el rol del usuario
-  const visibles = ordenTabs.filter(t => {
+  const visibles = _ORDEN_TABS_VIAJE.filter(t => {
     const btn = document.getElementById("tab-" + t);
     return btn && btn.style.display !== "none";
   });

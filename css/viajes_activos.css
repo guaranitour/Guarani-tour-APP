@@ -953,6 +953,26 @@
    gestione el gesto horizontal para cambiar de tab */
 #viaje-tab-panels {
   touch-action: pan-y;
+  /* Alto mínimo: en tabs con poco contenido (Extra, Transferencias) el swipe
+     también responde sobre el espacio vacío, no solo sobre las cards. */
+  min-height: 55vh;
+  overflow-x: clip; /* evita scroll horizontal mientras el panel desliza */
+}
+
+/* Entrada deslizada del panel al cambiar de tab (tap o swipe) */
+@keyframes viaje-tab-entra-der {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes viaje-tab-entra-izq {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: none; }
+}
+.viaje-tab-panel.tab-entra-der { animation: viaje-tab-entra-der .22s ease-out; }
+.viaje-tab-panel.tab-entra-izq { animation: viaje-tab-entra-izq .22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .viaje-tab-panel.tab-entra-der,
+  .viaje-tab-panel.tab-entra-izq { animation: none; }
 }
 
 /* ── EGRESOS ─────────────────────────────────── */

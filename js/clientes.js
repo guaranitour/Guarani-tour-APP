@@ -421,23 +421,23 @@ async function handleAvatarUpload(event) {
   if (!p) return;
   event.target.value = "";
 
-  // Mostrar preview inmediato mientras sube
-  const reader = new FileReader();
-  reader.onload = e => {
-    avatarCache[idx] = e.target.result;
-    renderDetalle(p.id);
-    const row = document.querySelector(`.passenger-row[data-idx="${idx}"]`);
-    if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
-  };
-  reader.readAsDataURL(file);
+  // Preview inmediato (object URL, sin leer el archivo a base64)
+  avatarCache[idx] = URL.createObjectURL(file);
+  renderDetalle(p.id);
+  const row = document.querySelector(`.passenger-row[data-idx="${idx}"]`);
+  if (row) row.querySelector(".p-avatar").innerHTML = `<img src="${avatarCache[idx]}" alt="" />`;
 
-  // Subir a Supabase Storage
-  const ext      = file.name.split(".").pop();
-  const filePath = `${p.id}.${ext}`;
+  // Convertir a WebP (512 px alcanza para el avatar) y subir a Supabase Storage.
+  // Nombre único por subida: evita servir un avatar viejo desde caché y no
+  // depende de upsert (que exigiría una policy SELECT sobre el bucket).
+  const fileWebp = (await precomprimirImagen(file, { maxW: 512, calidad: 0.85 })) || file;
+  const ext      = (fileWebp.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const filePath = `${p.id}_${Date.now()}.${ext}`;
+  const pathAnterior = p.avatar_path || null;
 
   const { error: upError } = await supabaseClient.storage
     .from("avatars")
-    .upload(filePath, file, { upsert: true, contentType: file.type });
+    .upload(filePath, fileWebp, { contentType: fileWebp.type });
 
   if (upError) {
     console.error("Error subiendo avatar:", upError);
@@ -459,6 +459,11 @@ async function handleAvatarUpload(event) {
 
   p.avatar_path = filePath;
   mostrarFeedbackDetalle("Foto actualizada correctamente.", true);
+
+  // Limpieza best-effort del avatar anterior (si no hay policy DELETE, se ignora)
+  if (pathAnterior && pathAnterior !== filePath) {
+    supabaseClient.storage.from("avatars").remove([pathAnterior]).catch(() => {});
+  }
 }
 
 // ── Vendedores ─────────────────────────────────────────────
