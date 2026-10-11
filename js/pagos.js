@@ -465,10 +465,13 @@ function seleccionarPasajeroDestino(id, nombre) {
 }
 
 /* ── SUBIR FOTO ─────────────────────────────── */
-async function subirFotoComprobante(file) {
-  const ext = file.name.split(".").pop();
-  const fileName = `${Date.now()}.${ext}`;
-  const { error } = await supabaseClient.storage.from("pagos").upload(fileName, file);
+// Los comprobantes quedan en una carpeta por viaje: pagos/{viajeId}/{timestamp}.{ext}
+async function subirFotoComprobante(fileOriginal) {
+  const file = await _optimizarComprobante(fileOriginal);
+  const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const carpeta = pagosCtx.viajeId ? `${pagosCtx.viajeId}/` : "";
+  const fileName = `${carpeta}${Date.now()}.${ext}`;
+  const { error } = await supabaseClient.storage.from("pagos").upload(fileName, file, { contentType: file.type || undefined });
   if (error) throw error;
   const { data } = supabaseClient.storage.from("pagos").getPublicUrl(fileName);
   return data.publicUrl;

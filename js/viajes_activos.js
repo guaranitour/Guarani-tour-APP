@@ -548,9 +548,16 @@ function formatFecha(val) {
 // MB) obliga al celular a decodificarla entera por cada tarjeta, que es lo
 // que genera los tirones. Se reescala (máx. 1000px de ancho) y se recomprime
 // a WebP antes de subir. Si algo falla se sube el archivo original.
-async function _comprimirImagenViaje(file, maxW = 1000, calidad = 0.82) {
+// Helper compartido (viajes, pagos, egresos, transferencias). Devuelve un File
+// WebP (mismo nombre base, extensión .webp) o el original si no es imagen
+// convertible (PDF, SVG, GIF), si falla, o si el WebP no ahorra peso.
+// La conversión se cachea por File: se dispara al elegir el archivo
+// (precomprimirImagen) y al guardar solo se espera el resultado.
+const _imgOptCache = new WeakMap();
+
+async function _convertirAWebp(file, maxW, calidad) {
   try {
-    if (!file.type.startsWith("image/") || file.type === "image/svg+xml" || file.type === "image/gif") return file;
+    if (!file.type.startsWith("image/") || ["image/svg+xml", "image/gif", "image/webp"].includes(file.type)) return file;
     const bmp = await createImageBitmap(file);
     const escala = Math.min(1, maxW / bmp.width);
     const w = Math.round(bmp.width * escala);
@@ -562,22 +569,45 @@ async function _comprimirImagenViaje(file, maxW = 1000, calidad = 0.82) {
     const blob = await new Promise(res => canvas.toBlob(res, "image/webp", calidad));
     // Si el navegador no soporta WebP devuelve PNG: no sirve para ahorrar peso
     if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
-    return blob;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
   } catch (e) {
-    console.warn("No se pudo comprimir la imagen, se sube la original:", e);
+    console.warn("No se pudo convertir la imagen, se sube la original:", e);
     return file;
   }
 }
 
+// Inicia la conversión en segundo plano y devuelve la promesa (cacheada).
+function precomprimirImagen(file, { maxW = 1000, calidad = 0.82 } = {}) {
+  if (!file) return Promise.resolve(null);
+  if (!_imgOptCache.has(file)) _imgOptCache.set(file, _convertirAWebp(file, maxW, calidad));
+  return _imgOptCache.get(file);
+}
+
+// Quita tildes/espacios/símbolos que Storage puede rechazar en la key.
+function _nombreArchivoSeguro(nombre) {
+  return nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.\-]+/g, "_");
+}
+
+// Comprobantes (egresos, transferencias, pagos): más resolución que las
+// portadas para que el texto siga legible. Se dispara apenas se elige el archivo.
+const _INPUTS_COMPROBANTE = ["egreso-archivo", "transferencia-archivo", "pago-foto"];
+document.addEventListener("change", (e) => {
+  if (_INPUTS_COMPROBANTE.includes(e.target?.id)) {
+    precomprimirImagen(e.target.files?.[0], { maxW: 1800, calidad: 0.85 });
+  }
+});
+
+async function _optimizarComprobante(file) {
+  return (await precomprimirImagen(file, { maxW: 1800, calidad: 0.85 })) || file;
+}
+
 async function uploadViajeImage(fileOriginal, fixedName = null) {
-  const file = await _comprimirImagenViaje(fileOriginal);
-  const esWebp = file !== fileOriginal;
-  const baseNombre = esWebp ? fileOriginal.name.replace(/\.[^.]+$/, "") + ".webp" : fileOriginal.name;
-  const fileName = fixedName || `${Date.now()}_${baseNombre}`;
+  const file = await precomprimirImagen(fileOriginal);
+  const fileName = fixedName || `${Date.now()}_${_nombreArchivoSeguro(file.name)}`;
 
   const { error } = await supabaseClient.storage
     .from("viajes")
-    .upload(fileName, file, { upsert: !!fixedName, contentType: esWebp ? "image/webp" : fileOriginal.type });
+    .upload(fileName, file, { upsert: !!fixedName, contentType: file.type });
 
   if (error) throw error;
 
@@ -587,12 +617,13 @@ async function uploadViajeImage(fileOriginal, fixedName = null) {
 
   return fixedName ? `${data.publicUrl}?t=${Date.now()}` : data.publicUrl;
 }
-async function uploadEgresoFile(file) {
-  const fileName = `${viajeActualId}/${Date.now()}_${file.name}`;
+async function uploadEgresoFile(fileOriginal) {
+  const file = await _optimizarComprobante(fileOriginal);
+  const fileName = `${viajeActualId}/${Date.now()}_${_nombreArchivoSeguro(file.name)}`;
 
   const { error } = await supabaseClient.storage
     .from("egresos")
-    .upload(fileName, file);
+    .upload(fileName, file, { contentType: file.type || undefined });
 
   if (error) throw error;
 
@@ -867,16 +898,18 @@ function previewViajeImgEditar(event) {
   if (!file) return;
   const preview = document.querySelector("#view-viaje-editar .viaje-imagen-preview");
   const overlay = document.getElementById("ve-img-overlay");
-  const reader  = new FileReader();
-  reader.onload = (e) => {
-    const prev = preview.querySelector("img");
-    if (prev) prev.remove();
-    const img = document.createElement("img");
-    img.src = e.target.result;
-    preview.appendChild(img);
-    if (overlay) overlay.style.display = "none";
-  };
-  reader.readAsDataURL(file);
+  _mostrarPreviewImagen(file, preview, overlay);
+  precomprimirImagen(file); // convierte a WebP en segundo plano
+}
+
+// Preview instantáneo con object URL (sin leer el archivo a base64).
+function _mostrarPreviewImagen(file, preview, overlay) {
+  const prev = preview.querySelector("img");
+  if (prev) { URL.revokeObjectURL(prev.src); prev.remove(); }
+  const img = document.createElement("img");
+  img.src = URL.createObjectURL(file);
+  preview.appendChild(img);
+  if (overlay) overlay.style.display = "none";
 }
 
 /* ── PREVIEW IMAGEN FORMULARIO ─────────────── */
@@ -885,16 +918,8 @@ function previewViajeImg(event) {
   if (!file) return;
   const preview = document.querySelector("#view-viaje-nuevo .viaje-imagen-preview");
   const overlay = document.getElementById("viaje-img-overlay");
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const prev = preview.querySelector("img");
-    if (prev) prev.remove();
-    const img = document.createElement("img");
-    img.src = e.target.result;
-    preview.appendChild(img);
-    if (overlay) overlay.style.display = "none";
-  };
-  reader.readAsDataURL(file);
+  _mostrarPreviewImagen(file, preview, overlay);
+  precomprimirImagen(file); // convierte a WebP en segundo plano
 }
 
 /* ── FAB HANDLER ──────────────────────────── */

@@ -327,48 +327,16 @@ async function onArchivoFacturaSeleccionado(inputEl) {
     return;
   }
 
-  // Las imágenes (no el PDF, que no aplica) se convierten a WebP antes de
-  // subir: mismo contenido visual, bastante menos peso en R2. Si algo falla
-  // (navegador viejo, memoria, etc.) seguimos con el archivo original tal
-  // cual — la carga nunca debe romperse por una optimización que no salió.
-  const esImagenConvertible = file.type !== "application/pdf" && file.type !== "image/webp";
-  const fileFinal = esImagenConvertible ? await _convertirImagenAWebp(file) : file;
-
-  _facturaFilePendiente = fileFinal;
-  _abrirModalDatosFactura(fileFinal);
+  // Las imágenes se convierten a WebP (helper compartido de viajes_activos.js)
+  // en segundo plano mientras el usuario completa el modal; al confirmar solo
+  // se espera el resultado. Si algo falla se sube el original (PDF no aplica).
+  _facturaFilePendiente = file;
+  precomprimirImagen(file, FACTURAS_OPT_IMG);
+  _abrirModalDatosFactura(file);
 }
 
-// Convierte una imagen a WebP vía <canvas>. Devuelve un nuevo File con
-// mismo nombre base pero extensión .webp, o el archivo original sin
-// tocar si la conversión falla o no reduce el tamaño.
-async function _convertirImagenAWebp(file) {
-  try {
-    const bitmap = await createImageBitmap(file);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(bitmap, 0, 0);
-    bitmap.close?.();
-
-    const blob = await new Promise(resolve =>
-      canvas.toBlob(resolve, "image/webp", 0.85)
-    );
-    if (!blob) return file; // navegador sin soporte de encoder webp en toBlob
-
-    // Si por algún motivo el webp salió más pesado que el original
-    // (raro, pero puede pasar con imágenes ya muy comprimidas), no
-    // tiene sentido quedarse con la versión más grande.
-    if (blob.size >= file.size) return file;
-
-    const nombreBase = file.name.replace(/\.[^.]+$/, "");
-    return new File([blob], `${nombreBase}.webp`, { type: "image/webp" });
-  } catch (err) {
-    console.error("[facturas] no se pudo convertir a webp, se sube el original:", err);
-    return file;
-  }
-}
+// Resolución alta: son comprobantes fiscales y el texto debe seguir legible.
+const FACTURAS_OPT_IMG = { maxW: 2400, calidad: 0.85 };
 
 function _abrirModalDatosFactura(file) {
   const modal = document.getElementById("factura-modal");
@@ -395,11 +363,11 @@ function cancelarCargaFactura() {
 async function confirmarCargaFactura(ev) {
   ev.preventDefault();
 
-  const file = _facturaFilePendiente;
+  const fileOriginal = _facturaFilePendiente;
   const fechaEmision = document.getElementById("factura-fecha-input")?.value;
   const monto = document.getElementById("factura-monto-input")?.value;
   const tipoInput = document.querySelector('input[name="factura-tipo"]:checked');
-  if (!file || !fechaEmision || !monto || !tipoInput) return; // required ya cubre el flujo normal
+  if (!fileOriginal || !fechaEmision || !monto || !tipoInput) return; // required ya cubre el flujo normal
 
   const esFactura = tipoInput.value === "factura";
 
@@ -411,6 +379,9 @@ async function confirmarCargaFactura(ev) {
   if (btnSubir) btnSubir.disabled = true;
 
   try {
+    // Normalmente ya terminó de convertirse mientras se completaba el modal.
+    const file = (await precomprimirImagen(fileOriginal, FACTURAS_OPT_IMG)) || fileOriginal;
+
     // Path: año/mes/timestamp_nombre-saneado — coincide con la
     // agrupación por mes y evita colisiones de nombre.
     const [anio, mes] = fechaEmision.split("-");

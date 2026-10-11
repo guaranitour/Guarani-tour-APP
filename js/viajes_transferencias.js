@@ -167,12 +167,13 @@ function cerrarFormTransferencia() {
   });
 }
 
-async function uploadTransferenciaFile(file) {
-  const fileName = `${viajeActualId}/${Date.now()}_${file.name}`;
+async function uploadTransferenciaFile(fileOriginal) {
+  const file = await _optimizarComprobante(fileOriginal);
+  const fileName = `${viajeActualId}/${Date.now()}_${_nombreArchivoSeguro(file.name)}`;
 
   const { error } = await supabaseClient.storage
     .from("transferencias")
-    .upload(fileName, file);
+    .upload(fileName, file, { contentType: file.type || undefined });
 
   if (error) throw error;
 
