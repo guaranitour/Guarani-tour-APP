@@ -3,8 +3,8 @@
 
    admin/worker: cargan comprobantes (quedan en estado "pendiente").
    finanzas: solo puede marcarlos como "verificado" (no edita datos).
-   Excepción: jcpalacios9830@gmail.com también puede verificar,
-   aunque su rol no sea "finanzas" (ver _puedeVerificarFacturas).
+   La tarea facturas.verificar también se puede conceder a un usuario
+   puntual desde staff_permisos (ver _puedeVerificarFacturas).
    Todos los roles habilitados (admin/worker/finanzas) pueden ver
    la lista agrupada por mes de fecha_emision.
 
@@ -24,22 +24,20 @@ let _facturaFilePendiente = null; // File entre selección y confirmación del m
 function _rolesFacturas() {
   return Array.isArray(currentUserRole) ? currentUserRole : [currentUserRole];
 }
+// Híbrido: tarea (can) OR rol legacy. Al quitar la parte de rol
+// el módulo queda 100% por tareas (ver sql/permisos_facturas.sql).
 function _puedeVerFacturas() {
-  return _rolesFacturas().some(r => ["admin", "worker", "finanzas"].includes(r));
+  return can("facturas.ver")
+    || _rolesFacturas().some(r => ["admin", "worker", "finanzas"].includes(r));
 }
 function _puedeCargarFacturas() {
-  return _rolesFacturas().some(r => ["admin", "worker"].includes(r));
+  return can("facturas.cargar")
+    || _rolesFacturas().some(r => ["admin", "worker"].includes(r));
 }
 function _puedeVerificarFacturas() {
-  if (_rolesFacturas().includes("finanzas")) return true;
-
-  // Excepción puntual: este staff member puede verificar comprobantes
-  // aunque su rol no sea "finanzas". Guard de UI únicamente — si hay
-  // una policy RLS en Supabase que exige rol finanzas para el UPDATE
-  // de "estado", también hay que sumar esta excepción ahí (ver nota
-  // en verificarFactura más abajo).
-  const email = document.getElementById("user-email")?.textContent?.trim().toLowerCase();
-  return email === "jcpalacios9830@gmail.com";
+  // Tarea facturas.verificar (por rol o concedida a un usuario puntual
+  // en staff_permisos) OR rol legacy "finanzas".
+  return can("facturas.verificar") || _rolesFacturas().includes("finanzas");
 }
 
 // ── Punto de entrada de la vista ────────────────────────────

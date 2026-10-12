@@ -23,11 +23,14 @@ let _marangatuFiltroPeriodo = "actual"; // tab inicial: "Actual" (mes en curso)
 function _rolesMarangatu() {
   return Array.isArray(currentUserRole) ? currentUserRole : [currentUserRole];
 }
+// Híbrido: tarea (can) OR rol legacy.
 function _puedeVerMarangatu() {
-  return _rolesMarangatu().some(r => ["admin", "worker", "finanzas"].includes(r));
+  return can("marangatu.ver")
+    || _rolesMarangatu().some(r => ["admin", "worker", "finanzas"].includes(r));
 }
 function _puedeCargarMarangatu() {
-  return _rolesMarangatu().some(r => ["admin", "finanzas"].includes(r));
+  return can("marangatu.cargar")
+    || _rolesMarangatu().some(r => ["admin", "finanzas"].includes(r));
 }
 
 // ── Punto de entrada de la vista ────────────────────────────

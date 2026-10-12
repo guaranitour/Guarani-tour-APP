@@ -92,6 +92,28 @@ let currentUserName = null;
 let currentUserAvatar = null;
 let currentStaffId = null;
 
+// ── Permisos por tareas (híbrido con currentUserRole) ────────
+// Set de códigos 'modulo.accion' del usuario (ver sql/permisos_por_tareas.sql).
+// Mientras un módulo no esté migrado, sigue decidiéndose por currentUserRole.
+let userPermisos = new Set();
+
+function can(codigo) {
+  return userPermisos.has(codigo);
+}
+
+// Carga los permisos vía RPC. Si falla (red, RPC aún no creado) se
+// conserva lo que hubiera (caché) y nunca bloquea el arranque.
+async function cargarPermisos() {
+  try {
+    const { data, error } = await supabaseClient.rpc("mis_permisos");
+    if (error) throw error;
+    userPermisos = new Set(Array.isArray(data) ? data : []);
+  } catch (e) {
+    console.warn("No se pudieron cargar los permisos por tareas:", e);
+  }
+  return [...userPermisos];
+}
+
 function renderTopbarProfile() {
   const btn = document.querySelector(".topbar-profile");
   if (!btn) return;
@@ -217,6 +239,7 @@ function _pintarShellOptimista(user) {
   currentUserName   = cached.nombre || user.email.split("@")[0];
   currentUserAvatar = cached.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
   currentStaffId    = cached.id;
+  userPermisos      = new Set(cached.permisos || []);
 
   hideEl("login-view");
   showEl("app-view");
@@ -327,6 +350,7 @@ async function _enterAppImpl(user) {
   currentUserRole = data.role;
   currentUserName = data.nombre || user.email.split("@")[0];
   currentStaffId  = data.id;
+  const permisos = await cargarPermisos();
 
   // Sincronizar foto de perfil de Google (si vino y cambió respecto a la guardada).
   // user.user_metadata puede venir stale: Supabase lo llena en el primer
@@ -366,7 +390,8 @@ async function _enterAppImpl(user) {
     role: data.role,
     status: data.status,
     nombre: data.nombre,
-    avatar_url: currentUserAvatar
+    avatar_url: currentUserAvatar,
+    permisos
   });
 
   // Registrar última conexión (no bloqueante: si falla, no debe afectar el login)
@@ -1123,7 +1148,16 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "facturas") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    // Híbrido: tarea OR rol legacy. El hub muestra solo las tarjetas
+    // a las que el usuario tiene acceso.
+    const _rolFact = ["admin", "worker", "finanzas"].includes(currentUserRole);
+    const _verInternas  = _rolFact || can("facturas.ver");
+    const _verMarangatu = _rolFact || can("marangatu.ver");
+    if (!_verInternas && !_verMarangatu) return;
+    const _cardInt = document.getElementById("fact-hub-card-internas");
+    const _cardMar = document.getElementById("fact-hub-card-marangatu");
+    if (_cardInt) _cardInt.style.display = _verInternas ? "" : "none";
+    if (_cardMar) _cardMar.style.display = _verMarangatu ? "" : "none";
     showEl("view-facturas");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
@@ -1134,7 +1168,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "facturas-internas") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole) && !can("facturas.ver")) return;
     showEl("view-facturas-internas");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
@@ -1147,7 +1181,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "facturas-marangatu") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    if (!["admin", "worker", "finanzas"].includes(currentUserRole) && !can("marangatu.ver")) return;
     showEl("view-facturas-marangatu");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },

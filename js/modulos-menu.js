@@ -18,7 +18,7 @@ const MODULOS_MENU = [
   { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
   { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
   { slug: "legales",            label: "Legales",     img: "legales.png",   bg: "rgba(70,130,180,.15)", roles: ["admin", "worker"] },
-  { slug: "facturas",           label: "Facturas",    img: "facturas.png",  bg: "rgba(201,168,76,.18)", roles: ["admin", "worker", "finanzas"] },
+  { slug: "facturas",           label: "Facturas",    img: "facturas.png",  bg: "rgba(201,168,76,.18)", roles: ["admin", "worker", "finanzas"], permisos: ["facturas.ver", "marangatu.ver"] },
   { slug: "informes",           label: "Informes",    img: "informes.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "finanzas"], beta: true },
 ];
 
@@ -36,14 +36,24 @@ function _precargarIconosModulos() {
   if (_modulosIconosPrecargados) return;
   _modulosIconosPrecargados = true;
   MODULOS_MENU
-    .filter(m => !m.roles || m.roles.includes(currentUserRole))
+    .filter(_moduloVisible)
     .forEach(m => { new Image().src = `/img/${m.img}`; });
+}
+
+// Híbrido: un módulo es visible si no restringe, si el rol está en
+// "roles" o si el usuario tiene alguna tarea de "permisos". Los módulos
+// ya migrados declaran "permisos"; los demás siguen solo por "roles".
+function _moduloVisible(m) {
+  if (!m.roles && !m.permisos) return true;
+  if (m.roles && m.roles.includes(currentUserRole)) return true;
+  if (m.permisos && m.permisos.some(p => can(p))) return true;
+  return false;
 }
 
 function _renderModulosSheet() {
   const grid = document.getElementById("modulos-sheet-grid");
   if (!grid) return;
-  const visibles = MODULOS_MENU.filter(m => !m.roles || m.roles.includes(currentUserRole));
+  const visibles = MODULOS_MENU.filter(_moduloVisible);
   grid.innerHTML = visibles.map(m => `
     <button type="button" class="modulo-item" style="--modulo-icon-bg:${m.bg}" onclick="navigateTo('${m.slug}'); closeModulosSheet();">
       ${m.beta ? `<span class="modulo-item-badge">Beta</span>` : ""}
