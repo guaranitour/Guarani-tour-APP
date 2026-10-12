@@ -1148,11 +1148,10 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "facturas") {
 
-    // Híbrido: tarea OR rol legacy. El hub muestra solo las tarjetas
-    // a las que el usuario tiene acceso.
-    const _rolFact = ["admin", "worker", "finanzas"].includes(currentUserRole);
-    const _verInternas  = _rolFact || can("facturas.ver");
-    const _verMarangatu = _rolFact || can("marangatu.ver");
+    // Por tareas: el hub muestra solo las tarjetas a las que el usuario
+    // tiene acceso.
+    const _verInternas  = can("facturas.ver");
+    const _verMarangatu = can("marangatu.ver");
     if (!_verInternas && !_verMarangatu) return;
     const _cardInt = document.getElementById("fact-hub-card-internas");
     const _cardMar = document.getElementById("fact-hub-card-marangatu");
@@ -1168,7 +1167,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "facturas-internas") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole) && !can("facturas.ver")) return;
+    if (!can("facturas.ver")) return;
     showEl("view-facturas-internas");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
@@ -1181,7 +1180,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "facturas-marangatu") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole) && !can("marangatu.ver")) return;
+    if (!can("marangatu.ver")) return;
     showEl("view-facturas-marangatu");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },

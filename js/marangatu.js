@@ -20,17 +20,12 @@ let _marangatuCache = [];          // última lista cargada desde Supabase
 let _marangatuFilePendiente = null; // File entre selección y confirmación del modal
 let _marangatuFiltroPeriodo = "actual"; // tab inicial: "Actual" (mes en curso)
 
-function _rolesMarangatu() {
-  return Array.isArray(currentUserRole) ? currentUserRole : [currentUserRole];
-}
-// Híbrido: tarea (can) OR rol legacy.
+// Módulo 100% por tareas (ver sql/permisos_facturas*.sql).
 function _puedeVerMarangatu() {
-  return can("marangatu.ver")
-    || _rolesMarangatu().some(r => ["admin", "worker", "finanzas"].includes(r));
+  return can("marangatu.ver");
 }
 function _puedeCargarMarangatu() {
-  return can("marangatu.cargar")
-    || _rolesMarangatu().some(r => ["admin", "finanzas"].includes(r));
+  return can("marangatu.cargar");
 }
 
 // ── Punto de entrada de la vista ────────────────────────────

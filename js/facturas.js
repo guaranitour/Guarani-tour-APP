@@ -21,23 +21,16 @@ let _facturasCache = [];          // última lista cargada desde Supabase
 let _facturasFiltroEstado = "pendiente"; // tab inicial: "Sin verificar"
 let _facturaFilePendiente = null; // File entre selección y confirmación del modal
 
-function _rolesFacturas() {
-  return Array.isArray(currentUserRole) ? currentUserRole : [currentUserRole];
-}
-// Híbrido: tarea (can) OR rol legacy. Al quitar la parte de rol
-// el módulo queda 100% por tareas (ver sql/permisos_facturas.sql).
+// Módulo 100% por tareas (ver sql/permisos_facturas*.sql). Cada tarea
+// llega por el paquete del rol o concedida a un usuario en staff_permisos.
 function _puedeVerFacturas() {
-  return can("facturas.ver")
-    || _rolesFacturas().some(r => ["admin", "worker", "finanzas"].includes(r));
+  return can("facturas.ver");
 }
 function _puedeCargarFacturas() {
-  return can("facturas.cargar")
-    || _rolesFacturas().some(r => ["admin", "worker"].includes(r));
+  return can("facturas.cargar");
 }
 function _puedeVerificarFacturas() {
-  // Tarea facturas.verificar (por rol o concedida a un usuario puntual
-  // en staff_permisos) OR rol legacy "finanzas".
-  return can("facturas.verificar") || _rolesFacturas().includes("finanzas");
+  return can("facturas.verificar");
 }
 
 // ── Punto de entrada de la vista ────────────────────────────
