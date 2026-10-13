@@ -164,14 +164,14 @@ function renderEncuestaStats() {
   const nube = palabras.length ? `<section class="enc-stat-card"><h3>Palabras más mencionadas</h3><div>${palabras.map(([w, n]) =>
     `<span class="enc-chip">${_escEnc(w)} <b>${n}</b></span>`).join("")}</div></section>` : "";
   const comentarios = (col, titulo) => {
-    const items = rows.filter(r => r[col] && String(r[col]).trim()).slice(0, 5);
+    const items = rows.filter(r => r[col] && String(r[col]).trim());
     if (!items.length) return "";
     return `<section class="enc-stat-card"><h3>${titulo}</h3>${items.map(r =>
       `<blockquote class="enc-quote">${_escEnc(r[col])}<footer>${_escEnc(new Date(r.submitted_at).toLocaleDateString("es-PY", { dateStyle: "medium" }))}${typeof r.probabilidad_volver === "number" ? " · " + r.probabilidad_volver + " ★" : ""}</footer></blockquote>`).join("")}</section>`;
   };
 
   el.innerHTML = filtro + `<p class="enc-ultima">Última respuesta: ${_escEnc(ultima)}</p>` + kpis +
-    `<div class="enc-grid">${estrellas}${cruce}${evolucion}${bloques}${nube}${comentarios("que_mejorar", "Qué mejorar (recientes)")}${comentarios("que_hace_bien", "Lo que hacemos bien (recientes)")}</div>`;
+    `<div class="enc-grid">${estrellas}${cruce}${evolucion}${bloques}${nube}${comentarios("que_mejorar", "Qué mejorar")}${comentarios("que_hace_bien", "Lo que hacemos bien")}</div>`;
 }
 
 function exportarEncuestaCSV() {
