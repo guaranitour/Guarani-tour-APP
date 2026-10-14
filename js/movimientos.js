@@ -101,9 +101,9 @@ async function cargarMovimientos() {
   const listEl = document.getElementById("mov-list");
   if (!listEl) return;
 
-  // Finanzas tiene acceso de solo lectura a Movimientos: no puede registrar nuevos.
+  // Solo quien tiene la tarea movimientos.cargar puede registrar nuevos.
   const btnNuevoMov = document.getElementById("btn-nuevo-movimiento");
-  if (btnNuevoMov) btnNuevoMov.style.display = currentUserRole === "finanzas" ? "none" : "";
+  if (btnNuevoMov) btnNuevoMov.style.display = can("movimientos.cargar") ? "" : "none";
 
   // Mostrar tarjeta con ceros mientras carga
   _renderTarjetaBanco(0, 0, 0);
@@ -351,6 +351,12 @@ function abrirDetalleMovimiento(id) {
         <div class="pd-row"><span class="pd-label">Cuenta beneficiaria</span><span class="pd-value">${m.cuenta_beneficiaria || "—"}</span></div>
         <div class="pd-row"><span class="pd-label">Registrado por</span><span class="pd-value">${m.usuario || "—"}</span></div>
       </div>
+      ${(can("movimientos.editar") || can("movimientos.eliminar")) ? `
+      <p class="form-recibo-error" id="mov-detalle-error"></p>
+      <div class="form-recibo-actions">
+        ${can("movimientos.eliminar") ? `<button type="button" class="btn-recibo-cancelar" id="btn-eliminar-movimiento" onclick="eliminarMovimiento('${m.id}')">Eliminar</button>` : ""}
+        ${can("movimientos.editar") ? `<button type="button" class="btn-recibo-guardar" onclick="abrirEditarMovimiento('${m.id}')">Editar</button>` : ""}
+      </div>` : ""}
     </div>`;
 
   document.body.appendChild(overlay);
@@ -360,13 +366,183 @@ function cerrarDetalleMovimiento() {
   document.getElementById("mov-detalle-overlay")?.remove();
 }
 
+// ── Editar / eliminar (tareas movimientos.editar / movimientos.eliminar) ──
+function _escMov(v) {
+  return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function _optsMov(lista, actual) {
+  const l = actual && !lista.includes(actual) ? [actual, ...lista] : lista;
+  return l.map(v => `<option value="${_escMov(v)}"${v === actual ? " selected" : ""}>${_escMov(v)}</option>`).join("");
+}
+
+// Cuentas permitidas según el tipo (mismas reglas que el alta).
+function _cuentasPorTipoMov(tipo) {
+  return tipo === "ingreso"
+    ? { emisora: ["UENO JAMIL", "UENO OSCAR"], beneficiaria: ["Caja E.A.S"] }
+    : { emisora: ["Caja E.A.S", "Club Destino"], beneficiaria: ["UENO JAMIL", "UENO OSCAR"] };
+}
+
+function abrirEditarMovimiento(id) {
+  if (!can("movimientos.editar")) return;
+  const m = _todosMovimientos.find(x => String(x.id) === String(id));
+  if (!m) return;
+
+  const cuentas = _cuentasPorTipoMov(m.tipo);
+  const cats    = _catPorTipo[m.tipo] || [];
+
+  cerrarDetalleMovimiento();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-transferir-overlay";
+  overlay.id = "mov-editar-overlay";
+  overlay.onclick = (e) => { if (e.target === overlay) cerrarEditarMovimiento(); };
+
+  overlay.innerHTML = `
+    <div class="modal-transferir-card">
+      <div class="modal-transferir-header">
+        <div class="modal-transferir-titulo"><span>Editar movimiento (${m.tipo === "ingreso" ? "Ingreso" : "Egreso"})</span></div>
+        <button class="modal-transferir-close" onclick="cerrarEditarMovimiento()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:.9rem;">
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="mem-fecha">Fecha *</label>
+            <input id="mem-fecha" type="date" value="${_escMov(m.fecha || "")}" />
+          </div>
+          <div class="form-recibo-field">
+            <label for="mem-monto">Monto (Gs.) *</label>
+            <input id="mem-monto" type="number" min="0" value="${_escMov(m.monto)}" />
+          </div>
+        </div>
+        <div class="form-recibo-field">
+          <label for="mem-categoria">Categoría *</label>
+          <select id="mem-categoria">${_optsMov(cats, m.categoria)}</select>
+        </div>
+        <div class="form-recibo-field">
+          <label for="mem-descripcion">Descripción *</label>
+          <textarea id="mem-descripcion" rows="2">${_escMov(m.descripcion || "")}</textarea>
+        </div>
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
+            <label for="mem-emisora">Cuenta emisora *</label>
+            <select id="mem-emisora">${_optsMov(cuentas.emisora, m.cuenta_emisora)}</select>
+          </div>
+          <div class="form-recibo-field">
+            <label for="mem-beneficiaria">Cuenta beneficiaria *</label>
+            <select id="mem-beneficiaria">${_optsMov(cuentas.beneficiaria, m.cuenta_beneficiaria)}</select>
+          </div>
+        </div>
+        <p class="form-recibo-error" id="mem-error"></p>
+        <div class="form-recibo-actions">
+          <button type="button" class="btn-recibo-cancelar" onclick="cerrarEditarMovimiento()">Cancelar</button>
+          <button type="button" class="btn-recibo-guardar" id="btn-guardar-edicion-mov" onclick="guardarEdicionMovimiento('${m.id}')">Guardar cambios</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function cerrarEditarMovimiento() {
+  document.getElementById("mov-editar-overlay")?.remove();
+}
+
+async function guardarEdicionMovimiento(id) {
+  const errEl = document.getElementById("mem-error");
+  if (errEl) errEl.textContent = "";
+  if (!can("movimientos.editar")) {
+    if (errEl) errEl.textContent = "No tenés permiso para editar movimientos.";
+    return;
+  }
+
+  const fecha       = document.getElementById("mem-fecha")?.value;
+  const monto       = document.getElementById("mem-monto")?.value;
+  const categoria   = document.getElementById("mem-categoria")?.value;
+  const descripcion = document.getElementById("mem-descripcion")?.value.trim();
+  const emisora     = document.getElementById("mem-emisora")?.value;
+  const beneficiaria = document.getElementById("mem-beneficiaria")?.value;
+
+  if (!fecha || !monto || !categoria || !descripcion || !emisora || !beneficiaria) {
+    if (errEl) errEl.textContent = "Completá todos los campos obligatorios.";
+    return;
+  }
+
+  const btn = document.getElementById("btn-guardar-edicion-mov");
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+
+  // .select() permite detectar 0 filas afectadas (RLS bloquea sin error).
+  const { data, error } = await supabaseClient
+    .from("movimientos_bancarios")
+    .update({
+      fecha,
+      categoria,
+      descripcion,
+      monto:               Number(monto),
+      cuenta_emisora:      emisora,
+      cuenta_beneficiaria: beneficiaria,
+    })
+    .eq("id", id)
+    .select("id");
+
+  if (error || !data?.length) {
+    if (errEl) errEl.textContent = error ? "Error al guardar. Intentá de nuevo." : "No tenés permiso para editar este movimiento.";
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
+    return;
+  }
+
+  cerrarEditarMovimiento();
+  showToast("Movimiento actualizado.", "success");
+  cargarMovimientos();
+}
+
+async function eliminarMovimiento(id) {
+  if (!can("movimientos.eliminar")) return;
+  const btn   = document.getElementById("btn-eliminar-movimiento");
+  const errEl = document.getElementById("mov-detalle-error");
+
+  // Confirmación en dos pasos: el primer toque arma el botón.
+  if (btn && btn.dataset.confirmar !== "1") {
+    btn.dataset.confirmar = "1";
+    btn.textContent = "¿Eliminar definitivamente?";
+    setTimeout(() => {
+      if (btn.isConnected && btn.dataset.confirmar === "1") {
+        btn.dataset.confirmar = "";
+        btn.textContent = "Eliminar";
+      }
+    }, 4000);
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = "Eliminando…"; }
+
+  const { data, error } = await supabaseClient
+    .from("movimientos_bancarios")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error || !data?.length) {
+    if (errEl) errEl.textContent = error ? "Error al eliminar. Intentá de nuevo." : "No tenés permiso para eliminar este movimiento.";
+    if (btn) { btn.disabled = false; btn.dataset.confirmar = ""; btn.textContent = "Eliminar"; }
+    return;
+  }
+
+  cerrarDetalleMovimiento();
+  showToast("Movimiento eliminado.", "success");
+  cargarMovimientos();
+}
+
 async function guardarMovimiento() {
   const errEl = document.getElementById("mnv-error");
   if (errEl) errEl.textContent = "";
 
-  // Defensa en el cliente (el control real de escritura debe estar en las
-  // RLS policies de Supabase — esto solo evita el flujo normal desde la UI).
-  if (currentUserRole === "finanzas") {
+  // Defensa en el cliente (el control real está en las RLS policies:
+  // movimientos.cargar — esto solo evita el flujo normal desde la UI).
+  if (!can("movimientos.cargar")) {
     if (errEl) errEl.textContent = "No tenés permiso para registrar movimientos.";
     return;
   }

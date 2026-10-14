@@ -396,51 +396,6 @@ function renderReciboCard(r) {
     </div>`;
 }
 
-// ── Precarga de comprobantes (Samsung Internet fix) ──────────
-// navigator.share() con archivos exige que el llamado ocurra dentro
-// del "user activation" del click, sin awaits previos. Algunos
-// navegadores (Samsung Internet) son estrictos y lo invalidan si pasa
-// tiempo/await de por medio → NotAllowedError. Por eso descargamos el
-// PDF en segundo plano apenas se abre el recibo, así al presionar
-// "Compartir" el share sale sin ningún await antes.
-const _cacheArchivosCompartir = new Map(); // fileId -> Promise<File>
-// fileId -> File ya resuelto. Permite llamar a navigator.share() de forma
-// síncrona en el click (ni siquiera un `await` sobre una promesa resuelta
-// es seguro en Samsung Internet).
-const _archivosCompartirListos = new Map();
-
-function precargarComprobante(fileId) {
-  if (!fileId) return null;
-  if (_cacheArchivosCompartir.has(fileId)) return _cacheArchivosCompartir.get(fileId);
-
-  const promesa = supabaseClient.functions.invoke('recibos', {
-    body: { action: 'descargar', fileId },
-  })
-    .then(async ({ data, error }) => {
-      if (error || !data?.ok) {
-        let msg = data?.error || error?.message || 'No se pudo precargar el archivo';
-        if (!data && error?.context?.json) {
-          try { msg = (await error.context.json())?.error || msg; } catch {}
-        }
-        throw new Error(msg);
-      }
-      const { base64, mimeType, nombre } = data.data;
-      const blob = base64ToBlob(base64, mimeType || 'application/pdf');
-      const archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
-      _archivosCompartirListos.set(fileId, archivo);
-      return archivo;
-    })
-    .catch(() => {
-      // Si falla la precarga, no pasa nada: compartirComprobante vuelve
-      // a intentarlo al momento de compartir, como respaldo.
-      _cacheArchivosCompartir.delete(fileId);
-      return null;
-    });
-
-  _cacheArchivosCompartir.set(fileId, promesa);
-  return promesa;
-}
-
 // ── Vista detalle (página completa) ──────────
 async function initReciboDetalleView(id) {
   const cont = document.getElementById('recibo-detalle-cont');
@@ -498,10 +453,6 @@ async function initReciboDetalleView(id) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               Abrir
             </a>
-            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}', this)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              Compartir
-            </button>
           </div>
         </div>`;
     } else if (esPdf || esDrive) {
@@ -516,10 +467,6 @@ async function initReciboDetalleView(id) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               Abrir
             </a>
-            <button class="recibo-btn-compartir" onclick="compartirComprobante('${url}', this)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              Compartir
-            </button>
           </div>
         </div>`;
     } else {
@@ -532,12 +479,6 @@ async function initReciboDetalleView(id) {
         </div>`;
     }
 
-    // Precarga en segundo plano (Samsung Internet fix): así el botón
-    // "Compartir" puede llamar a navigator.share() sin awaits previos.
-    if (esDrive) {
-      const fileIdPrecarga = extraerFileIdDrive(url);
-      if (fileIdPrecarga) precargarComprobante(fileIdPrecarga);
-    }
   }
 
   cont.innerHTML = `
@@ -1540,126 +1481,6 @@ function inicialRecibo(nombre) {
 
 function slugMetodo(m) {
   return (m || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-}
-
-// ── Compartir comprobante ─────────────────────
-
-// Convierte base64 → Blob por chunks, más eficiente para archivos grandes que atob() directo a un solo array
-function base64ToBlob(base64, mimeType) {
-  const byteChars = atob(base64);
-  const byteArrays = [];
-
-  for (let offset = 0; offset < byteChars.length; offset += 512) {
-    const slice = byteChars.slice(offset, offset + 512);
-    const byteNumbers = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
-    byteArrays.push(new Uint8Array(byteNumbers));
-  }
-
-  return new Blob(byteArrays, { type: mimeType });
-}
-
-function extraerFileIdDrive(url) {
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  return match ? match[1] : null;
-}
-
-async function compartirComprobante(url, btn) {
-  const esDrive = url.includes('drive.google.com') || url.includes('docs.google.com');
-  const fileId  = esDrive ? extraerFileIdDrive(url) : null;
-
-  const textoOriginal = btn ? btn.innerHTML : null;
-  function ponerCargando() {
-    if (!btn) return;
-    btn.disabled = true;
-    btn.classList.add('recibo-btn-compartir--cargando');
-    btn.innerHTML = '<span class="recibo-spinner" aria-hidden="true"></span> Preparando…';
-  }
-  function restaurarBoton() {
-    if (!btn) return;
-    btn.disabled = false;
-    btn.classList.remove('recibo-btn-compartir--cargando');
-    btn.innerHTML = textoOriginal;
-  }
-
-  const puedeCompartirArchivos = (f) => {
-    try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [f] })); }
-    catch { return false; }
-  };
-
-  // Intentar compartir como archivo real (PDF/imagen) vía Web Share API
-  let errorArchivo = null; // motivo por el que no se pudo compartir el archivo (diagnóstico)
-  if (fileId && navigator.share) {
-    try {
-      // Camino feliz (Samsung Internet): el archivo ya está resuelto en
-      // memoria, así que navigator.share() se llama SIN ningún await
-      // previo y conserva el "user activation" del click.
-      const listo = _archivosCompartirListos.get(fileId);
-      if (listo && !puedeCompartirArchivos(listo)) {
-        errorArchivo = `canShare=false (${listo.type || 'sin tipo'}, ${Math.round(listo.size / 1024)} KB)`;
-      }
-      if (listo && !errorArchivo) {
-        try {
-          await navigator.share({ files: [listo], title: 'Comprobante' });
-          return;
-        } catch (e) {
-          if (e.name === 'AbortError') return;
-          console.error('[recibos] share archivo falló:', e);
-          errorArchivo = `${e.name}: ${e.message} (${listo.type || 'sin tipo'}, ${Math.round(listo.size / 1024)} KB)`;
-        }
-      }
-
-      // Respaldo: la precarga no terminó (o falló). Esperamos con estado
-      // de carga. Después del await el share puede ser rechazado por falta
-      // de activación: en ese caso se avisa y el próximo toque sale directo
-      // (archivo ya en memoria) en vez de copiar el link.
-      if (!listo) {
-        ponerCargando();
-        const archivo = await precargarComprobante(fileId);
-        restaurarBoton();
-        if (archivo && puedeCompartirArchivos(archivo)) {
-          try {
-            await navigator.share({ files: [archivo], title: 'Comprobante' });
-            return;
-          } catch (e) {
-            if (e.name === 'AbortError') return;
-            if (e.name === 'NotAllowedError') {
-              mostrarToastRecibo('Comprobante listo. Tocá Compartir de nuevo');
-              return;
-            }
-            throw e;
-          }
-        }
-      }
-    } catch (e) {
-      if (e.name === 'AbortError') return; // usuario canceló el share sheet
-      // Otro error (archivo muy grande, sin soporte, etc.): caer al fallback de link
-    } finally {
-      restaurarBoton();
-    }
-  }
-
-  // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive).
-  // Si el share del archivo ya falló, la activación está consumida: se salta.
-  if (navigator.share && !errorArchivo) {
-    try {
-      await navigator.share({ url, title: 'Comprobante' });
-      return;
-    } catch (e) {
-      if (e.name === 'AbortError') return;
-    }
-  }
-
-  // Fallback 2: copiar al portapapeles
-  try {
-    await navigator.clipboard.writeText(url);
-    mostrarToastRecibo(
-      errorArchivo ? `Link copiado. No se pudo compartir el archivo: ${errorArchivo}` : 'Link copiado al portapapeles',
-      errorArchivo ? 8000 : undefined
-    );
-  } catch (e) {
-    mostrarToastRecibo('No se pudo compartir');
-  }
 }
 
 function mostrarToastRecibo(msg, duracionMs = 2500) {

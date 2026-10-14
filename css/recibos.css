@@ -967,30 +967,6 @@
   text-decoration: none;
 }
 
-.recibo-btn-compartir {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .4rem;
-  background: var(--primary, #2d6a4f);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: .55rem .75rem;
-  font-size: .82rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: opacity .15s;
-}
-.recibo-btn-compartir:hover { opacity: .88; }
-
-.recibo-btn-compartir:disabled,
-.recibo-btn-compartir--cargando {
-  cursor: not-allowed;
-  opacity: .75;
-}
 
 .recibo-spinner {
   display: inline-block;

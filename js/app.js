@@ -1425,7 +1425,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "movimientos") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) {
+    if (!can("movimientos.ver")) {
       navigateTo("dashboard");
       return;
     }
@@ -1441,7 +1441,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "movimiento-nuevo") {
 
-    if (!["admin", "worker"].includes(currentUserRole)) {
+    if (!can("movimientos.cargar")) {
       navigateTo("movimientos");
       return;
     }
