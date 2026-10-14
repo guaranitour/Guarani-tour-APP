@@ -1588,15 +1588,25 @@ async function compartirComprobante(url, btn) {
   };
 
   // Intentar compartir como archivo real (PDF/imagen) vía Web Share API
+  let errorArchivo = null; // motivo por el que no se pudo compartir el archivo (diagnóstico)
   if (fileId && navigator.share) {
     try {
       // Camino feliz (Samsung Internet): el archivo ya está resuelto en
       // memoria, así que navigator.share() se llama SIN ningún await
       // previo y conserva el "user activation" del click.
       const listo = _archivosCompartirListos.get(fileId);
-      if (listo && puedeCompartirArchivos(listo)) {
-        await navigator.share({ files: [listo], title: 'Comprobante' });
-        return;
+      if (listo && !puedeCompartirArchivos(listo)) {
+        errorArchivo = `canShare=false (${listo.type || 'sin tipo'}, ${Math.round(listo.size / 1024)} KB)`;
+      }
+      if (listo && !errorArchivo) {
+        try {
+          await navigator.share({ files: [listo], title: 'Comprobante' });
+          return;
+        } catch (e) {
+          if (e.name === 'AbortError') return;
+          console.error('[recibos] share archivo falló:', e);
+          errorArchivo = `${e.name}: ${e.message} (${listo.type || 'sin tipo'}, ${Math.round(listo.size / 1024)} KB)`;
+        }
       }
 
       // Respaldo: la precarga no terminó (o falló). Esperamos con estado
@@ -1629,8 +1639,9 @@ async function compartirComprobante(url, btn) {
     }
   }
 
-  // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive)
-  if (navigator.share) {
+  // Fallback 1: compartir el link (Drive sin fileId reconocible, u origen no-Drive).
+  // Si el share del archivo ya falló, la activación está consumida: se salta.
+  if (navigator.share && !errorArchivo) {
     try {
       await navigator.share({ url, title: 'Comprobante' });
       return;
@@ -1642,7 +1653,10 @@ async function compartirComprobante(url, btn) {
   // Fallback 2: copiar al portapapeles
   try {
     await navigator.clipboard.writeText(url);
-    mostrarToastRecibo('Link copiado al portapapeles');
+    mostrarToastRecibo(
+      errorArchivo ? `Link copiado. No se pudo compartir el archivo: ${errorArchivo}` : 'Link copiado al portapapeles',
+      errorArchivo ? 8000 : undefined
+    );
   } catch (e) {
     mostrarToastRecibo('No se pudo compartir');
   }
