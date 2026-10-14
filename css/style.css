@@ -159,8 +159,11 @@ body {
   min-height: 100vh;
   font-family: 'Roboto', sans-serif;
   background: var(--bg);
+  /* "clip" y no "hidden"/"auto": con overflow en html, un overflow que
+     no sea visible/clip en body lo vuelve contenedor de scroll y rompe
+     el position:sticky del .topbar (se iba con el scroll). */
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-x: clip;
   display: flex;
   align-items: center;
   justify-content: center;
