@@ -404,9 +404,14 @@ function renderReciboCard(r) {
 // PDF en segundo plano apenas se abre el recibo, así al presionar
 // "Compartir" el share sale sin ningún await antes.
 const _cacheArchivosCompartir = new Map(); // fileId -> Promise<File>
+// fileId -> File ya resuelto. Permite llamar a navigator.share() de forma
+// síncrona en el click (ni siquiera un `await` sobre una promesa resuelta
+// es seguro en Samsung Internet).
+const _archivosCompartirListos = new Map();
 
 function precargarComprobante(fileId) {
-  if (!fileId || _cacheArchivosCompartir.has(fileId)) return;
+  if (!fileId) return null;
+  if (_cacheArchivosCompartir.has(fileId)) return _cacheArchivosCompartir.get(fileId);
 
   const promesa = supabaseClient.functions.invoke('recibos', {
     body: { action: 'descargar', fileId },
@@ -421,16 +426,19 @@ function precargarComprobante(fileId) {
       }
       const { base64, mimeType, nombre } = data.data;
       const blob = base64ToBlob(base64, mimeType || 'application/pdf');
-      return new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
+      const archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
+      _archivosCompartirListos.set(fileId, archivo);
+      return archivo;
     })
     .catch(() => {
-      // Si falla la precarga, no pasa nada: compartirComprobante hace
-      // su propio fetch al momento de compartir, como respaldo.
+      // Si falla la precarga, no pasa nada: compartirComprobante vuelve
+      // a intentarlo al momento de compartir, como respaldo.
       _cacheArchivosCompartir.delete(fileId);
       return null;
     });
 
   _cacheArchivosCompartir.set(fileId, promesa);
+  return promesa;
 }
 
 // ── Vista detalle (página completa) ──────────
@@ -1574,49 +1582,48 @@ async function compartirComprobante(url, btn) {
     btn.innerHTML = textoOriginal;
   }
 
+  const puedeCompartirArchivos = (f) => {
+    try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [f] })); }
+    catch { return false; }
+  };
+
   // Intentar compartir como archivo real (PDF/imagen) vía Web Share API
-  if (fileId && navigator.share && navigator.canShare) {
+  if (fileId && navigator.share) {
     try {
-      // Camino feliz: el archivo ya se precargó al abrir el detalle
-      // (ver precargarComprobante), así que acá solo esperamos esa
-      // promesa — que normalmente ya está resuelta. Esto es clave en
-      // Samsung Internet: navigator.share() con archivos exige poco
-      // o ningún await entre el click y el share, o descarta el
-      // "user activation" y tira NotAllowedError.
-      let archivo = null;
-      const cacheado = _cacheArchivosCompartir.get(fileId);
-      if (cacheado) archivo = await cacheado;
-
-      if (!archivo) {
-        // Respaldo: no hubo precarga a tiempo (recibo viejo abierto
-        // hace rato, o la precarga falló). Pedimos el archivo ahora,
-        // mostrando el estado de carga — en este caso puede fallar en
-        // Samsung Internet por el mismo motivo, pero sigue funcionando
-        // en Chrome y cae al fallback de link de forma segura en todos.
-        ponerCargando();
-        const { data: gsData, error: gsError } = await supabaseClient.functions.invoke('recibos', {
-          body: { action: 'descargar', fileId },
-        });
-        if (gsError || !gsData?.ok) {
-          let msg = gsData?.error || gsError?.message || 'No se pudo obtener el archivo';
-          if (!gsData && gsError?.context?.json) {
-            try { msg = (await gsError.context.json())?.error || msg; } catch {}
-          }
-          throw new Error(msg);
-        }
-        const { base64, mimeType, nombre } = gsData.data;
-        const blob = base64ToBlob(base64, mimeType || 'application/pdf');
-        archivo = new File([blob], nombre || 'comprobante.pdf', { type: blob.type });
-      }
-
-      if (navigator.canShare({ files: [archivo] })) {
-        restaurarBoton();
-        await navigator.share({ files: [archivo], title: 'Comprobante' });
+      // Camino feliz (Samsung Internet): el archivo ya está resuelto en
+      // memoria, así que navigator.share() se llama SIN ningún await
+      // previo y conserva el "user activation" del click.
+      const listo = _archivosCompartirListos.get(fileId);
+      if (listo && puedeCompartirArchivos(listo)) {
+        await navigator.share({ files: [listo], title: 'Comprobante' });
         return;
       }
+
+      // Respaldo: la precarga no terminó (o falló). Esperamos con estado
+      // de carga. Después del await el share puede ser rechazado por falta
+      // de activación: en ese caso se avisa y el próximo toque sale directo
+      // (archivo ya en memoria) en vez de copiar el link.
+      if (!listo) {
+        ponerCargando();
+        const archivo = await precargarComprobante(fileId);
+        restaurarBoton();
+        if (archivo && puedeCompartirArchivos(archivo)) {
+          try {
+            await navigator.share({ files: [archivo], title: 'Comprobante' });
+            return;
+          } catch (e) {
+            if (e.name === 'AbortError') return;
+            if (e.name === 'NotAllowedError') {
+              mostrarToastRecibo('Comprobante listo. Tocá Compartir de nuevo');
+              return;
+            }
+            throw e;
+          }
+        }
+      }
     } catch (e) {
-      if (e.name === 'AbortError') { restaurarBoton(); return; } // usuario canceló el share sheet
-      // Cualquier otro error (Apps Script caído, sin permiso, archivo muy grande, etc.): caer al fallback de link
+      if (e.name === 'AbortError') return; // usuario canceló el share sheet
+      // Otro error (archivo muy grande, sin soporte, etc.): caer al fallback de link
     } finally {
       restaurarBoton();
     }
