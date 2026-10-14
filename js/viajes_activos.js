@@ -31,7 +31,8 @@ async function _getBycCis() {
   if (_bycCache.data && Date.now() - _bycCache.ts < BYC_TTL_MS) {
     return { data: _bycCache.data, error: null };
   }
-  const res = await supabaseClient.from("basesycondiciones").select("ci");
+  // RPC que devuelve solo los CI (no expone nombre/email/link). Ver sql/permisos_byc.sql.
+  const res = await supabaseClient.rpc("byc_cis");
   if (!res.error && res.data) _bycCache = { data: res.data, ts: Date.now() };
   return res;
 }

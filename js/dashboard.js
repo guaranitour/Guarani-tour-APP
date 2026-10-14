@@ -282,7 +282,7 @@ function _skelComparativo() {
 // se vacía.
 function _dashboardSkeletonHtml(esFinanzas = false, esViewer = false, puedeVerCaja = false) {
   return `
-    <div id="dash-slot-byc">${(esFinanzas || esViewer) ? "" : _skelKpiSection("Bases y condiciones", _dashIcons.byc, 2)}</div>
+    <div id="dash-slot-byc">${!can("byc.ver") ? "" : _skelKpiSection("Bases y condiciones", _dashIcons.byc, 2)}</div>
     <div id="dash-slot-viajes">${_skelListSection("Viajes activos", _dashIcons.viajes, 3)}</div>
     <div id="dash-slot-caja">${puedeVerCaja ? _skelListSection("Dinero por método de pago", _dashIcons.caja, 3) : ""}</div>
     <div id="dash-slot-extra"></div>
@@ -338,6 +338,8 @@ async function loadDashboard() {
   const puedeVerComparativo = esWorkerOAdmin || currentUserRole === "finanzas";
   const esFinanzas = currentUserRole === "finanzas";
   const esViewer = currentUserRole === "viewer";
+  // KPIs de Bases y condiciones: por tarea (ver sql/permisos_byc.sql).
+  const puedeVerByc = can("byc.ver");
   const teniaCache = _dashCacheReady();
 
   if (teniaCache) {
@@ -349,7 +351,7 @@ async function loadDashboard() {
     // una sesión anterior con otro rol (mismo navegador sin recargar
     // entre logins).
     root.innerHTML = `
-      <div id="dash-slot-byc">${esFinanzas || esViewer ? "" : _dashCache.byc}</div>
+      <div id="dash-slot-byc">${puedeVerByc ? _dashCache.byc : ""}</div>
       <div id="dash-slot-viajes">${_dashCache.viajes}</div>
       <div id="dash-slot-caja">${puedeVerComparativo ? (_dashCache.caja || "") : ""}</div>
       <div id="dash-slot-extra">${_dashCache.extra || ""}</div>
@@ -368,7 +370,7 @@ async function loadDashboard() {
 
   if (teniaCache) {
     // Registramos qué HTML quedó pintado en cada slot (ver _swapSlotIfChanged).
-    if (slotByc)    slotByc._dashPainted    = esFinanzas || esViewer ? "" : _dashCache.byc;
+    if (slotByc)    slotByc._dashPainted    = puedeVerByc ? _dashCache.byc : "";
     if (slotViajes) slotViajes._dashPainted = _dashCache.viajes;
     if (slotCaja)   slotCaja._dashPainted   = puedeVerComparativo ? (_dashCache.caja || "") : "";
     if (slotExtra)  slotExtra._dashPainted  = _dashCache.extra || "";
@@ -377,7 +379,7 @@ async function loadDashboard() {
     // Revalidación pasiva: el contenido ya está a la vista, solo
     // marcamos con los tres puntos junto a cada título que se está
     // refrescando en segundo plano. La app sigue 100% usable.
-    _setSlotRevalidating(slotByc, !esViewer);
+    _setSlotRevalidating(slotByc, puedeVerByc);
     _setSlotRevalidating(slotViajes, true);
     if (puedeVerComparativo && _dashCache.caja) _setSlotRevalidating(slotCaja, true);
     _setSlotRevalidating(slotClub, !esViewer);
@@ -404,7 +406,9 @@ async function loadDashboard() {
       .order("fecha_salida", { ascending: false });
     const qVp = supabaseClient.from("viaje_pasajeros")
       .select("id, pasajero_id, viaje_id, asistencia, puntos_destino, pasajeros ( Pasajero, Vendedor )");
-    const qByc = supabaseClient.from("basesycondiciones").select("id, ci, estado");
+    const qByc = puedeVerByc
+      ? supabaseClient.from("basesycondiciones").select("id, ci, estado")
+      : Promise.resolve({ data: [], error: null });
 
     const [
       { data: pasajerosData, error: errPas },
@@ -437,7 +441,7 @@ async function loadDashboard() {
     //    Si veníamos de caché, _swapSlotIfChanged compara con lo anterior
     //    y solo toca el DOM si el HTML realmente cambió.
 
-    const htmlByc = (esFinanzas || esViewer) ? "" : renderKpisByc(bycData || [], pasajerosData || []);
+    const htmlByc = !puedeVerByc ? "" : renderKpisByc(bycData || [], pasajerosData || []);
     if (teniaCache) _swapSlotIfChanged(slotByc, htmlByc, "byc");
     else if (slotByc) slotByc.innerHTML = htmlByc;
     _dashCache.byc = htmlByc;
@@ -500,20 +504,27 @@ async function loadDashboard() {
 
       const last3Ids   = last3.map(v => v.id);
       const vpLast3    = (vpData || []).filter(vp => last3Ids.includes(vp.viaje_id));
-      const vpLast3Ids = vpLast3.map(vp => vp.id);
+
+      // Comparativo: todos los viajes activos; si hay menos de 3, se usan
+      // los últimos 3 (activos + concluidos) como antes.
+      const activos = (viajesData || []).filter(v => (v.estado || "activo") === "activo");
+      const compViajes = activos.length >= 3 ? activos : last3;
+      const compIds    = compViajes.map(v => v.id);
+      const vpComp     = (vpData || []).filter(vp => compIds.includes(vp.viaje_id));
+      const vpCompIds  = vpComp.map(vp => vp.id);
 
       extraPromise = Promise.all([
-        last3Ids.length
-          ? supabaseClient.from("egresos").select("viaje_id, monto").in("viaje_id", last3Ids)
+        compIds.length
+          ? supabaseClient.from("egresos").select("viaje_id, monto").in("viaje_id", compIds)
           : Promise.resolve({ data: [] }),
-        vpLast3Ids.length
-          ? supabaseClient.from("pagos").select("viaje_pasajero_id, monto, tipo").in("viaje_pasajero_id", vpLast3Ids)
+        vpCompIds.length
+          ? supabaseClient.from("pagos").select("viaje_pasajero_id, monto, tipo").in("viaje_pasajero_id", vpCompIds)
           : Promise.resolve({ data: [] }),
       ])
         .then(([{ data: egresosData }, { data: pagosData }]) => {
           const htmlExtra =
             `<hr class="dash-section-divider" />` +
-            renderComparativo(last3, vpLast3, egresosData || [], pagosData || []) +
+            renderComparativo(compViajes, vpComp, egresosData || [], pagosData || []) +
             (esWorkerOAdmin ? renderRankingVendedores(last3, vpLast3) : "");
           if (teniaCache) _swapSlotIfChanged(slotExtra, htmlExtra, "extra");
           else if (slotExtra) slotExtra.innerHTML = htmlExtra;
@@ -1504,7 +1515,7 @@ function renderComparativo(last3, vpLast3, egresosData, pagosData) {
   <div class="dash-section">
     <div class="dash-section-title">
       <span class="dash-icon">${_dashIcons.balance}</span>
-      Egresos vs ingresos · últimos 3 viajes
+      Egresos vs ingresos · ${last3.length > 0 && last3.every(v => (v.estado || "activo") === "activo") && last3.length >= 3 ? "viajes activos" : "últimos 3 viajes"}
     </div>
     ${body}
   </div>`;

@@ -803,7 +803,12 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // Guard de acceso: finanzas no puede entrar a clientes, usuarios, byc
   // ni al detalle de un pasajero (tampoco desde Club Destino/ranking),
   // ni por menú ni por hash/URL directa ni por llamada programática.
-  if (currentUserRole === "finanzas" && (view === "clientes" || view === "usuarios" || view === "byc" || view === "byc-vincular" || view === "detalle")) {
+  if (currentUserRole === "finanzas" && (view === "clientes" || view === "usuarios" || view === "detalle")) {
+    view = "dashboard";
+  }
+
+  // Estado ByC: por tarea (byc.ver), no por rol. Ver sql/permisos_byc.sql.
+  if ((view === "byc" || view === "byc-vincular") && !can("byc.ver")) {
     view = "dashboard";
   }
 
@@ -811,7 +816,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // histórico ni Club Destino (incluye su vista de detalle y el ranking
   // de puntos), tampoco al alta de cliente, ni por menú ni por hash/URL
   // directa ni por llamada programática.
-  if (currentUserRole === "viewer" && (view === "clientes" || view === "nuevo" || view === "byc" || view === "byc-vincular" || view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
+  if (currentUserRole === "viewer" && (view === "clientes" || view === "nuevo" || view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
     view = "dashboard";
   }
 
