@@ -44,10 +44,10 @@ let _busquedaRecibosActiva = '';
 async function cargarRecibos() {
   const cont = document.getElementById('recibos-cont');
 
-  // El módulo de Recibos todavía no está habilitado para el rol viewer:
+  // Sin la tarea recibos.ver (ej. rol viewer, aún no habilitado):
   // se muestra un aviso en vez del listado real, y se ocultan el resumen,
   // la búsqueda/botón "Nuevo" y los chips de agrupación (no aplican).
-  if (currentUserRole === 'viewer') {
+  if (!can('recibos.ver')) {
     const resumenEl = document.querySelector('#view-recibos .recibos-resumen');
     const toolbarEl = document.querySelector('#view-recibos .recibos-toolbar');
     const modoEl    = document.querySelector('#view-recibos .recibos-modo');
@@ -812,17 +812,15 @@ async function cargarViajesActivosEnSelect() {
 
 /* ── FRASES RÁPIDAS (SPEECHES) POR VIAJE ──────────────────────────────
  * Tabla Supabase: recibo_speeches (id, viaje_id, texto, created_at)
- * Solo admin puede crear/editar/eliminar. Al elegir un viaje en el
+ * Solo quien tenga la tarea recibos.speeches puede crear/editar/eliminar. Al elegir un viaje en el
  * formulario de recibo, se muestran como chips debajo del select; al
  * tocar uno, reemplaza por completo el contenido del campo Concepto.
  * ────────────────────────────────────────────────────────────────── */
 let _viajeIdSeleccionadoRecibo = null;
 let _speechesDelViajeCache = [];
 
-function _esAdminRecibos() {
-  return Array.isArray(currentUserRole)
-    ? currentUserRole.includes('admin')
-    : currentUserRole === 'admin';
+function _puedeGestionarSpeeches() {
+  return can('recibos.speeches');
 }
 
 // ── Select "Tipo de recibo" ───────────────────
@@ -914,7 +912,7 @@ async function onCambioViajeRecibo(nombreViaje) {
     return;
   }
 
-  if (btnGestionar) btnGestionar.style.display = _esAdminRecibos() ? '' : 'none';
+  if (btnGestionar) btnGestionar.style.display = _puedeGestionarSpeeches() ? '' : 'none';
   wrap.style.display = '';
   chips.innerHTML = '<span class="frec-speeches-vacio">Cargando…</span>';
 
@@ -939,7 +937,7 @@ async function _cargarYRenderSpeechesChips(viajeId) {
   _speechesDelViajeCache = data || [];
 
   if (_speechesDelViajeCache.length === 0) {
-    chips.innerHTML = _esAdminRecibos()
+    chips.innerHTML = _puedeGestionarSpeeches()
       ? '<span class="frec-speeches-vacio">Sin frases guardadas. Tocá "Gestionar" para crear una.</span>'
       : '<span class="frec-speeches-vacio">Sin frases guardadas para este viaje.</span>';
     return;
@@ -1117,7 +1115,7 @@ function _escapeHtmlRecibo(str) {
 
 /* ── MODAL: GESTIONAR SPEECHES ────────────────────────────────────────── */
 function abrirModalSpeeches() {
-  if (!_viajeIdSeleccionadoRecibo || !_esAdminRecibos()) return;
+  if (!_viajeIdSeleccionadoRecibo || !_puedeGestionarSpeeches()) return;
 
   const modal = document.getElementById('modal-speeches');
   const nombreEl = document.getElementById('modal-speeches-viaje-nombre');

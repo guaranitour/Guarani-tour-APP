@@ -1386,10 +1386,10 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Inicio", action: () => navigateTo("dashboard") },
       { label: "Recibos" }
     ]);
-    // Ocultar botón "Nuevo" para viewer
+    // Botón "Nuevo" solo con la tarea recibos.crear
     const btnNuevoRecibo = document.querySelector(".btn-nuevo-recibo");
     if (btnNuevoRecibo) {
-      btnNuevoRecibo.style.display = ["admin", "worker"].includes(currentUserRole) ? "" : "none";
+      btnNuevoRecibo.style.display = can("recibos.crear") ? "" : "none";
     }
     cargarRecibos();
 
@@ -1409,7 +1409,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "recibo-nuevo") {
 
-    if (!["admin", "worker"].includes(currentUserRole)) {
+    if (!can("recibos.crear")) {
       navigateTo("recibos");
       return;
     }
