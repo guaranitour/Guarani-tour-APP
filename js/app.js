@@ -1124,7 +1124,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "legales") {
 
-    if (!["admin", "worker"].includes(currentUserRole)) return;
+    if (!can("legales.ver")) return;
     showEl("view-legales");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },

@@ -20,18 +20,15 @@ const LEGALES_STORAGE_BUCKET = "legales-docs";
 let _legalesContenidoCargado = false; // evita re-fetch al Apps Script en cada visita a la vista
 let _legalesDocs = [];                // caché en memoria de la última lista de documentos cargada
 
-function _esWorkerOAdminLegales() {
-  return Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-    : ["admin", "worker"].includes(currentUserRole);
-}
+function _puedeVerLegales()    { return can("legales.ver"); }
+function _puedeCargarLegales() { return can("legales.cargar"); }
 
 // ── Punto de entrada de la vista ────────────────────────────
 async function loadLegales() {
-  if (!_esWorkerOAdminLegales()) return; // guarda extra, RLS igual lo bloquearía
+  if (!_puedeVerLegales()) return; // guarda extra, RLS igual lo bloquearía
 
   const btnSubir = document.getElementById("btn-subir-doc-legal");
-  if (btnSubir) btnSubir.style.display = _esWorkerOAdminLegales() ? "" : "none";
+  if (btnSubir) btnSubir.style.display = _puedeCargarLegales() ? "" : "none";
 
   // El contenido institucional cambia poco: se trae una sola vez por
   // sesión de la SPA, no en cada visita a la vista.
@@ -242,7 +239,7 @@ async function descargarDocLegal(id, btnEl) {
 let _legalDocPendiente = null;
 
 function abrirSelectorDocLegal() {
-  if (!_esWorkerOAdminLegales()) return;
+  if (!_puedeCargarLegales()) return;
   const input = document.getElementById("legal-doc-file-input");
   if (input) input.click();
 }
@@ -252,7 +249,7 @@ function onArchivoLegalSeleccionado(inputEl) {
   inputEl.value = ""; // permite volver a elegir el mismo archivo más adelante
   if (!file) return;
 
-  if (!_esWorkerOAdminLegales()) return; // guarda extra, RLS igual lo bloquearía
+  if (!_puedeCargarLegales()) return; // guarda extra, RLS igual lo bloquearía
 
   if (file.type !== "application/pdf") {
     _appToast("Solo se aceptan archivos PDF", true);
