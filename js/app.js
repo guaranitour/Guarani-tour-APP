@@ -803,7 +803,7 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // Guard de acceso: finanzas no puede entrar a clientes, usuarios, byc
   // ni al detalle de un pasajero (tampoco desde Club Destino/ranking),
   // ni por menú ni por hash/URL directa ni por llamada programática.
-  if (currentUserRole === "finanzas" && (view === "clientes" || view === "usuarios" || view === "detalle")) {
+  if (currentUserRole === "finanzas" && (view === "usuarios" || view === "detalle")) {
     view = "dashboard";
   }
 
@@ -816,9 +816,15 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // histórico ni Club Destino (incluye su vista de detalle y el ranking
   // de puntos), tampoco al alta de cliente, ni por menú ni por hash/URL
   // directa ni por llamada programática.
-  if (currentUserRole === "viewer" && (view === "clientes" || view === "nuevo" || view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
+  if (currentUserRole === "viewer" && (view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
     view = "dashboard";
   }
+
+  // Clientes: por tarea, no por rol. Ver sql/permisos_clientes.sql.
+  // (el "detalle" se mantiene con su guard por rol: viewer lo abre desde viajes)
+  if (view === "clientes" && !can("clientes.ver")) view = "dashboard";
+  if (view === "nuevo" && !can("clientes.crear")) view = "dashboard";
+  if (view === "byc-vincular" && !can("clientes.editar")) view = "dashboard";
 
   const soportaVT = typeof document.startViewTransition === "function";
   const aplicaTransicion =
@@ -945,7 +951,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
-    fab.style.display = (view === "clientes" && ["admin", "worker"].includes(currentUserRole)) ? "" : "none";
+    fab.style.display = (view === "clientes" && can("clientes.crear")) ? "" : "none";
   }
 
   const fabViaje = document.getElementById("fab-viaje-nuevo");

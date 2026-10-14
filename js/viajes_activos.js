@@ -1164,9 +1164,9 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   // de finanzas: no gestiona pasajeros ni servicios extra.
   const puedeVerFinancierosEarly = esWorkerOAdminEarly || esFinanzasEarly;
 
-  // Botón agregar pasajero: visible para admin/worker/viewer, no para finanzas
+  // Botón agregar pasajero: por tarea (clientes.crear_rapido)
   const btnAgregarEarly = document.getElementById("btn-agregar-vp");
-  if (btnAgregarEarly) btnAgregarEarly.style.display = esFinanzasEarly ? "none" : "";
+  if (btnAgregarEarly) btnAgregarEarly.style.display = can("clientes.crear_rapido") ? "" : "none";
 
   // Tab Pasajeros: finanzas no debe ver el listado de pasajeros del viaje
   const tabPasajerosEarly = document.getElementById("tab-pasajeros");
@@ -1281,9 +1281,9 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     };
   });
 
-  // Botón agregar pasajero: visible para todos los roles (admin, worker, viewer)
+  // Botón agregar pasajero: por tarea (clientes.crear_rapido)
   const btnAgregar = document.getElementById("btn-agregar-vp");
-  if (btnAgregar) btnAgregar.style.display = "";
+  if (btnAgregar) btnAgregar.style.display = can("clientes.crear_rapido") ? "" : "none";
 
   // (Tabs Egresos/Presupuesto/Resumen ya se muestran/ocultan más arriba,
   // antes del return temprano por "sin pasajeros")

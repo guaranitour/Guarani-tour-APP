@@ -9,7 +9,7 @@
 // cortos, sin descripción y en grid de 3.
 // ══════════════════════════════════════════════════════════
 const MODULOS_MENU = [
-  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", roles: ["admin", "worker"] },
+  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", permisos: ["clientes.ver"] },
   { slug: "viajes",             label: "Viajes",      img: "viajes.png",    bg: "rgba(45,106,79,.12)" },
   { slug: "recibos",            label: "Recibos",     img: "recibo.png",    bg: "rgba(201,168,76,.18)" },
   { slug: "movimientos",        label: "Movimientos", img: "bancario.png",  bg: "rgba(45,106,79,.16)", permisos: ["movimientos.ver"] },
