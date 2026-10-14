@@ -52,17 +52,8 @@ async function cargarRecibos() {
     const toolbarEl = document.querySelector('#view-recibos .recibos-toolbar');
     const modoEl    = document.querySelector('#view-recibos .recibos-modo');
     if (resumenEl) resumenEl.style.display = 'none';
+    if (toolbarEl) toolbarEl.style.display = 'none';
     if (modoEl) modoEl.style.display = 'none';
-
-    // Con recibos.crear (sin ver) se conserva la barra solo con el botón
-    // "Nuevo": la búsqueda no aplica porque no puede leer recibos.
-    const searchEl = toolbarEl?.querySelector('.search-wrap');
-    if (can('recibos.crear')) {
-      if (toolbarEl) toolbarEl.style.display = '';
-      if (searchEl) searchEl.style.display = 'none';
-    } else {
-      if (toolbarEl) toolbarEl.style.display = 'none';
-    }
 
     cont.innerHTML = `
       <div class="recibos-en-construccion">
