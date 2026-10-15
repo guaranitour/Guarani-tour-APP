@@ -400,7 +400,12 @@ async function eliminarClienteDetalle() {
   const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
-  if (!confirm(`¿Eliminar a "${p.Pasajero}"? Esta acción no se puede deshacer.`)) return;
+  if (!(await confirmar({
+    titulo: "Eliminar cliente",
+    mensaje: `¿Eliminar a "${p.Pasajero}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: "Eliminar",
+    peligro: true,
+  }))) return;
 
   const { data, error } = await supabaseClient
     .from("pasajeros")
