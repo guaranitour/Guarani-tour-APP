@@ -252,7 +252,7 @@ function _pintarShellOptimista(user) {
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
-  if (menuEncuesta) menuEncuesta.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
+  if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -424,7 +424,7 @@ if (card) card.style.display = data.role === "admin" ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
   if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
-  if (menuEncuesta) menuEncuesta.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
+  if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -1123,7 +1123,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "encuesta") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    if (!can("encuesta.ver")) return;
     showEl("view-encuesta");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
