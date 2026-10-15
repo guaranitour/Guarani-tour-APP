@@ -31,7 +31,8 @@ function _puedeEnviarLinkContacto() {
 // y salir de "Detalle de pasajero".
 function setFabSosVisible(visible) {
   const fab = document.getElementById("fab-sos");
-  if (fab) fab.style.display = visible ? "" : "none";
+  // Sin la tarea contactos.ver no hay nada que mostrar en el modal
+  if (fab) fab.style.display = (visible && can("contactos.ver")) ? "" : "none";
 }
 
 function abrirModalContacto() {
