@@ -85,10 +85,25 @@ async function loadUsers() {
 
   list.innerHTML = `<div class="list-state">Cargando…</div>`;
 
-  const { data, error } = await supabaseClient
-    .from("staff")
-    .select("id, email, role, status, nombre, last_seen, avatar_url")
-    .order("email");
+  // El alta de usuarios se muestra solo con la tarea usuarios.crear
+  const addToggle = document.getElementById("u-add-toggle");
+  if (addToggle) addToggle.style.display = can("usuarios.crear") ? "" : "none";
+
+  const [staffRes, catRes, rolRes, spRes] = await Promise.all([
+    supabaseClient
+      .from("staff")
+      .select("id, email, role, status, nombre, last_seen, avatar_url")
+      .order("email"),
+    supabaseClient.from("permisos").select("codigo, modulo, descripcion").order("codigo"),
+    supabaseClient.from("rol_permisos").select("role, permiso"),
+    supabaseClient.from("staff_permisos").select("staff_id, permiso, concedido"),
+  ]);
+  const { data, error } = staffRes;
+  if (catRes.error || rolRes.error || spRes.error) {
+    console.warn("No se pudieron cargar las tareas:", catRes.error || rolRes.error || spRes.error);
+  }
+  _cargarTareasCache(catRes.data, rolRes.data, spRes.data);
+  _usuariosList = data || [];
 
   if (error) {
     console.error(error);
@@ -120,8 +135,17 @@ async function loadUsers() {
 
   const ROLE_LABELS = { admin: "Admin", worker: "Worker", viewer: "Viewer", finanzas: "Finanzas" };
 
+  const miEmail = (document.getElementById("user-email")?.textContent || "").trim().toLowerCase();
+  const puedeEditar   = can("usuarios.editar");
+  const puedeRol      = can("usuarios.permisos");
+  const puedeEliminar = can("usuarios.eliminar");
+
   list.innerHTML = data.map(u => {
     const online = isOnline(u.last_seen);
+    const esYo = (u.email || "").trim().toLowerCase() === miEmail;
+    const dNombre = puedeEditar ? "" : "disabled";
+    const dRol    = (puedeRol && !esYo) ? "" : "disabled";
+    const dEstado = (puedeEditar && !esYo) ? "" : "disabled";
     return `
     <details class="user-card">
 
@@ -139,6 +163,7 @@ async function loadUsers() {
             class="user-nombre-input"
             value="${u.nombre || ""}"
             placeholder="Nombre…"
+            ${dNombre}
             onclick="event.stopPropagation()"
             onblur="updateUserNombre('${u.id}', this)"
             onkeydown="if(event.key==='Enter') this.blur()"
@@ -170,6 +195,7 @@ async function loadUsers() {
               onclick="event.stopPropagation()"
               onchange="updateUserRole('${u.id}', this); this.previousElementSibling.textContent = this.options[this.selectedIndex].text;"
               class="user-select-hidden select-role"
+              ${dRol}
               aria-label="Rol de ${u.email}">
               <option value="admin"    ${u.role === 'admin'    ? 'selected' : ''}>Admin</option>
               <option value="worker"   ${u.role === 'worker'   ? 'selected' : ''}>Worker</option>
@@ -186,6 +212,7 @@ async function loadUsers() {
               onclick="event.stopPropagation()"
               onchange="updateUserStatus('${u.id}', this); this.previousElementSibling.textContent = this.options[this.selectedIndex].text; this.previousElementSibling.setAttribute('data-status', this.value);"
               class="user-select-hidden select-status"
+              ${dEstado}
               aria-label="Estado de ${u.email}">
               <option value="enabled"  ${u.status === 'enabled'  ? 'selected' : ''}>Activo</option>
               <option value="disabled" ${u.status === 'disabled' ? 'selected' : ''}>Inactivo</option>
@@ -193,6 +220,15 @@ async function loadUsers() {
           </div>
 
         </div>
+
+        ${_tareasSeccionHtml(u, esYo)}
+
+        ${(puedeEliminar && !esYo) ? `
+        <div class="user-danger-zone">
+          <button type="button" class="user-btn-eliminar" onclick="event.stopPropagation(); eliminarUsuario('${u.id}')">
+            Eliminar usuario
+          </button>
+        </div>` : ""}
 
       </div>
 
@@ -251,7 +287,16 @@ async function updateUserRole(id, selectEl) {
     .eq("id", id);
 
   showFeedback(selectEl, error ? "err" : "ok");
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    showToast(error.message || "No se pudo cambiar el rol", "error");
+    loadUsers(); // resincroniza el badge que el onchange ya había actualizado
+    return;
+  }
+
+  // El paquete del rol cambió: recalcular las tareas efectivas del usuario
+  const u = _usuariosList.find(x => x.id === id);
+  if (u) { u.role = newRole; _refrescarTareasUsuario(u); }
 }
 
 
@@ -296,6 +341,172 @@ async function updateUserStatus(id, selectEl) {
       badgeEl.textContent = reverted === "enabled" ? "Activo" : "Inactivo";
     }
   }
+}
+
+// ── TAREAS POR USUARIO ─────────────────────────────────────────────────────
+// Tarea efectiva = override individual (staff_permisos.concedido) si existe;
+// si no, lo que trae el paquete del rol (rol_permisos). Un switch que
+// coincide con el paquete del rol borra el override (queda "limpio").
+let _usuariosList     = [];  // filas de staff de la última carga
+let _catalogoTareas   = [];  // [{ codigo, modulo, descripcion }]
+let _tareasPorRol     = {};  // role -> Set(codigo)
+let _overridesUsuario = {};  // staffId -> { codigo: boolean }
+
+function _cargarTareasCache(catalogo, rolPerms, staffPerms) {
+  _catalogoTareas = catalogo || [];
+  _tareasPorRol = {};
+  (rolPerms || []).forEach(r => {
+    (_tareasPorRol[r.role] = _tareasPorRol[r.role] || new Set()).add(r.permiso);
+  });
+  _overridesUsuario = {};
+  (staffPerms || []).forEach(sp => {
+    (_overridesUsuario[sp.staff_id] = _overridesUsuario[sp.staff_id] || {})[sp.permiso] = sp.concedido;
+  });
+}
+
+function _escU(v) {
+  return String(v ?? "").replace(/[&<>"']/g, c => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+function _tareaPorRol(u, codigo) {
+  return !!(_tareasPorRol[u.role] && _tareasPorRol[u.role].has(codigo));
+}
+
+function _tareaEfectiva(u, codigo) {
+  const ov = (_overridesUsuario[u.id] || {})[codigo];
+  return ov !== undefined ? ov : _tareaPorRol(u, codigo);
+}
+
+function _tareasConteoTexto(u) {
+  const activas = _catalogoTareas.filter(t => _tareaEfectiva(u, t.codigo)).length;
+  return `${activas} / ${_catalogoTareas.length}`;
+}
+
+function _tareasCuerpoHtml(u, esYo) {
+  const editable = can("usuarios.permisos") && !esYo;
+  const grupos = {};
+  _catalogoTareas.forEach(t => { (grupos[t.modulo] = grupos[t.modulo] || []).push(t); });
+
+  const nota = esYo
+    ? `<p class="user-tareas-nota">No podés modificar tus propias tareas.</p>`
+    : (!editable ? `<p class="user-tareas-nota">Solo lectura: se requiere la tarea usuarios.permisos.</p>` : "");
+
+  const bloques = Object.keys(grupos).sort().map(modulo => {
+    const filas = grupos[modulo].map(t => {
+      const porRol = _tareaPorRol(u, t.codigo);
+      const efectiva = _tareaEfectiva(u, t.codigo);
+      const accion = t.codigo.slice(modulo.length + 1) || t.codigo;
+      let chip = "";
+      if (efectiva && !porRol) chip = `<span class="user-tarea-chip extra" title="Concedida solo a este usuario">Extra</span>`;
+      else if (!efectiva && porRol) chip = `<span class="user-tarea-chip quitada" title="Incluida en el rol, quitada a este usuario">Quitada</span>`;
+      return `
+        <label class="user-tarea" title="${_escU(t.descripcion || t.codigo)}">
+          <span class="user-tarea-info">
+            <span class="user-tarea-nombre">${_escU(accion)}</span>
+            ${t.descripcion ? `<span class="user-tarea-desc">${_escU(t.descripcion)}</span>` : ""}
+          </span>
+          ${chip}
+          <input type="checkbox" class="user-tarea-switch"
+                 ${efectiva ? "checked" : ""} ${editable ? "" : "disabled"}
+                 onclick="event.stopPropagation()"
+                 onchange="toggleTareaUsuario('${u.id}', '${_escU(t.codigo)}', this)">
+        </label>`;
+    }).join("");
+    return `<div class="user-tareas-grupo"><div class="user-tareas-modulo">${_escU(modulo)}</div>${filas}</div>`;
+  }).join("");
+
+  return nota + bloques;
+}
+
+function _tareasSeccionHtml(u, esYo) {
+  if (!_catalogoTareas.length) return "";
+  return `
+    <details class="user-tareas" id="tareas-${u.id}" data-yo="${esYo ? 1 : 0}">
+      <summary class="user-tareas-summary" onclick="event.stopPropagation()">
+        Tareas
+        <span class="user-tareas-count" id="tareas-count-${u.id}">${_tareasConteoTexto(u)}</span>
+      </summary>
+      <div class="user-tareas-body" id="tareas-body-${u.id}">${_tareasCuerpoHtml(u, esYo)}</div>
+    </details>`;
+}
+
+// Re-pinta el cuerpo y el contador sin cerrar el <details> abierto.
+function _refrescarTareasUsuario(u) {
+  const det = document.getElementById(`tareas-${u.id}`);
+  const body = document.getElementById(`tareas-body-${u.id}`);
+  const count = document.getElementById(`tareas-count-${u.id}`);
+  if (!det || !body) return;
+  body.innerHTML = _tareasCuerpoHtml(u, det.dataset.yo === "1");
+  if (count) count.textContent = _tareasConteoTexto(u);
+}
+
+async function toggleTareaUsuario(staffId, codigo, inputEl) {
+  const u = _usuariosList.find(x => x.id === staffId);
+  if (!u) return;
+  const quiere = inputEl.checked;
+  const porRol = _tareaPorRol(u, codigo);
+  inputEl.disabled = true;
+
+  let error;
+  if (quiere === porRol) {
+    // Coincide con el paquete del rol: se elimina la excepción individual
+    ({ error } = await supabaseClient
+      .from("staff_permisos")
+      .delete()
+      .eq("staff_id", staffId)
+      .eq("permiso", codigo));
+  } else {
+    ({ error } = await supabaseClient
+      .from("staff_permisos")
+      .upsert({ staff_id: staffId, permiso: codigo, concedido: quiere }, { onConflict: "staff_id,permiso" }));
+  }
+
+  if (error) {
+    console.error(error);
+    showToast("No se pudo guardar la tarea", "error");
+    inputEl.checked = !quiere;
+    inputEl.disabled = false;
+    return;
+  }
+
+  const ov = (_overridesUsuario[staffId] = _overridesUsuario[staffId] || {});
+  if (quiere === porRol) delete ov[codigo]; else ov[codigo] = quiere;
+  _refrescarTareasUsuario(u);
+}
+
+// ── ELIMINAR USUARIO ───────────────────────────────────────────────────────
+async function eliminarUsuario(id) {
+  if (!can("usuarios.eliminar")) return;
+  const u = _usuariosList.find(x => x.id === id);
+  if (!u) return;
+
+  const ok = await confirmar({
+    titulo: "Eliminar usuario",
+    mensaje: `¿Eliminar a "${u.nombre || u.email}"? Perderá el acceso a la app. Si solo querés quitarle el acceso, marcalo como Inactivo.`,
+    confirmarTexto: "Eliminar",
+    peligro: true,
+  });
+  if (!ok) return;
+
+  const { data, error } = await supabaseClient
+    .from("staff")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    console.error(error);
+    showToast(error.message || "No se pudo eliminar el usuario", "error");
+    return;
+  }
+  if (!data || data.length === 0) {
+    showToast("No tenés permiso para eliminar este usuario", "error");
+    return;
+  }
+  showToast("Usuario eliminado", "success");
+  loadUsers();
 }
 
 // ── Tabs de la vista Usuarios (App / Selección de asientos) ────────────────

@@ -658,3 +658,110 @@
   border-top: 1px solid var(--border);
   animation: rowIn .2s both;
 }
+
+/* ── Tareas por usuario ──────────────────────────────────────────────────── */
+.user-tareas {
+  margin-top: .8rem;
+  border-top: 1px solid var(--border);
+  padding-top: .6rem;
+}
+
+.user-tareas-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  cursor: pointer;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-mid);
+  list-style: none;
+}
+.user-tareas-summary::-webkit-details-marker { display: none; }
+
+.user-tareas-count {
+  font-weight: 500;
+  font-size: .75rem;
+  padding: .1rem .5rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+.user-tareas-body { margin-top: .5rem; }
+
+.user-tareas-nota {
+  margin: 0 0 .5rem;
+  font-size: .75rem;
+  color: var(--text-muted);
+}
+
+.user-tareas-grupo { margin-bottom: .6rem; }
+
+.user-tareas-modulo {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  margin-bottom: .2rem;
+}
+
+.user-tarea {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .4rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.user-tarea:last-child { border-bottom: 0; }
+
+.user-tarea-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.user-tarea-nombre { font-size: .85rem; color: var(--text); }
+.user-tarea-desc {
+  font-size: .72rem;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.user-tarea-chip {
+  font-size: .68rem;
+  font-weight: 600;
+  padding: .1rem .45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.user-tarea-chip.extra   { background: var(--accent-light); color: var(--accent); }
+.user-tarea-chip.quitada { background: var(--danger-bg2);   color: var(--danger-text); }
+
+.user-tarea-switch {
+  width: 2.3rem;
+  height: 1.3rem;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.user-tarea-switch:disabled { cursor: not-allowed; opacity: .55; }
+
+/* ── Zona de eliminar ────────────────────────────────────────────────────── */
+.user-danger-zone {
+  margin-top: .8rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--border);
+}
+.user-btn-eliminar {
+  background: transparent;
+  color: var(--danger-text);
+  border: 1px solid var(--danger-text);
+  border-radius: 8px;
+  padding: .35rem .8rem;
+  font-size: .8rem;
+  cursor: pointer;
+}
+.user-btn-eliminar:hover { background: var(--danger-bg); }

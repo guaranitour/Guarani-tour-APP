@@ -246,7 +246,7 @@ function _pintarShellOptimista(user) {
   document.getElementById("user-email").textContent = user.email;
   renderTopbarProfile();
   const card = document.getElementById("card-usuarios");
-  if (card) card.style.display = cached.role === "admin" ? "" : "none";
+  if (card) card.style.display = can("usuarios.ver") ? "" : "none";
   const cardMov = document.getElementById("card-movimientos");
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
@@ -415,9 +415,9 @@ async function _enterAppImpl(user) {
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
   renderTopbarProfile();
- // 👇 OCULTAR USUARIOS SI NO ES ADMIN
+ // 👇 USUARIOS: por tarea (usuarios.ver)
 const card = document.getElementById("card-usuarios");
-if (card) card.style.display = data.role === "admin" ? "" : "none";
+if (card) card.style.display = can("usuarios.ver") ? "" : "none";
   // 👇 MOVIMIENTOS BANCARIOS: admin, worker y finanzas (finanzas solo lectura, ver movimientos.js)
   const cardMov = document.getElementById("card-movimientos");
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
@@ -803,7 +803,9 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // Guard de acceso: finanzas no puede entrar a clientes, usuarios, byc
   // ni al detalle de un pasajero (tampoco desde Club Destino/ranking),
   // ni por menú ni por hash/URL directa ni por llamada programática.
-  if (currentUserRole === "finanzas" && (view === "usuarios" || view === "detalle")) {
+  if (view === "usuarios" && !can("usuarios.ver")) view = "dashboard";
+
+  if (currentUserRole === "finanzas" && view === "detalle") {
     view = "dashboard";
   }
 
@@ -1083,7 +1085,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   else if (view === "usuarios") {
     // ver switchUsuariosTab() más abajo para el manejo de tabs
 
-    if (currentUserRole !== "admin") return;
+    if (!can("usuarios.ver")) return;
     showEl("view-usuarios");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
