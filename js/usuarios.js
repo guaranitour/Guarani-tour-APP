@@ -79,6 +79,20 @@ function showFeedback(selectEl, tipo) {
 }
 
 
+// Traduce el error de Supabase a un mensaje entendible. Las reglas viven en
+// la base (trigger _staff_proteger_cambios + RLS de staff), así que el
+// texto del trigger se reutiliza y el resto se mapea por código.
+function mensajeErrorStaff(error, accion = "guardar") {
+  const msg = error?.message || "";
+  if (error?.code === "23505") return "Ya existe un usuario con ese correo";
+  if (error?.code === "42501") {
+    // Mensajes propios del trigger ("requiere la tarea…", "No podés…")
+    if (msg && !/row-level security/i.test(msg)) return msg;
+    return `No tenés permiso para ${accion} usuarios`;
+  }
+  return msg ? `No se pudo ${accion}: ${msg}` : `No se pudo ${accion}`;
+}
+
 async function loadUsers() {
   const list = document.getElementById("users-list");
   if (!list) return;
@@ -214,6 +228,13 @@ async function createUser() {
     return;
   }
 
+  // Aviso previo para no esperar a la base: sin usuarios.permisos solo se
+  // pueden crear viewers (lo exige el trigger de staff, esto es solo UX).
+  if (role !== "viewer" && !can("usuarios.permisos")) {
+    showToast("Crear un usuario con un rol distinto de Viewer requiere la tarea usuarios.permisos", "error", 4500);
+    return;
+  }
+
   const btn = document.querySelector('#view-usuarios .btn-save');
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
 
@@ -225,9 +246,13 @@ async function createUser() {
 
   if (error) {
     console.error(error);
-    const emailInput = document.getElementById("u-email");
-    emailInput.classList.add("error");
-    setTimeout(() => emailInput.classList.remove("error"), 2000);
+    showToast(mensajeErrorStaff(error, "agregar"), "error", 4500);
+    // El correo solo se marca en rojo si el problema es el correo mismo
+    if (error.code === "23505" || error.code === "23514") {
+      const emailInput = document.getElementById("u-email");
+      emailInput.classList.add("error");
+      setTimeout(() => emailInput.classList.remove("error"), 2000);
+    }
     return;
   }
 
@@ -251,7 +276,18 @@ async function updateUserRole(id, selectEl) {
     .eq("id", id);
 
   showFeedback(selectEl, error ? "err" : "ok");
-  if (error) console.error(error);
+  if (!error) {
+    selectEl.dataset.prev = newRole; // último rol guardado
+    return;
+  }
+  console.error(error);
+  showToast(mensajeErrorStaff(error, "cambiar el rol de"), "error", 4500);
+  // Volver al último rol guardado (o al del render inicial)
+  const prev = selectEl.dataset.prev || selectEl.querySelector("option[selected]")?.value;
+  if (prev) {
+    selectEl.value = prev;
+    selectEl.previousElementSibling.textContent = selectEl.options[selectEl.selectedIndex].text;
+  }
 }
 
 
@@ -268,7 +304,10 @@ async function updateUserNombre(id, inputEl) {
 
   if (!error) inputEl.defaultValue = nuevoNombre || "";
   showFeedback(inputEl, error ? "err" : "ok");
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    showToast(mensajeErrorStaff(error, "cambiar el nombre de"), "error", 4500);
+  }
 }
 
 
@@ -288,6 +327,7 @@ async function updateUserStatus(id, selectEl) {
   showFeedback(selectEl, error ? "err" : "ok");
   if (error) {
     console.error(error);
+    showToast(mensajeErrorStaff(error, "cambiar el estado de"), "error", 4500);
     // Revertir color/etiqueta si falla
     const reverted = newStatus === "enabled" ? "disabled" : "enabled";
     selectEl.value = reverted;
