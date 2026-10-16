@@ -9,14 +9,14 @@
 // cortos, sin descripción y en grid de 3.
 // ══════════════════════════════════════════════════════════
 const MODULOS_MENU = [
-  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", roles: ["admin", "worker"] },
+  { slug: "clientes",           label: "Clientes",   img: "cliente.png",   bg: "rgba(45,106,79,.12)", permisos: ["clientes.ver"] },
   { slug: "viajes",             label: "Viajes",      img: "viajes.png",    bg: "rgba(45,106,79,.12)" },
   { slug: "recibos",            label: "Recibos",     img: "recibo.png",    bg: "rgba(201,168,76,.18)" },
   { slug: "movimientos",        label: "Movimientos", img: "bancario.png",  bg: "rgba(45,106,79,.16)", permisos: ["movimientos.ver"] },
-  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)", roles: ["admin", "worker"] },
+  { slug: "byc",                label: "Estado ByC",  img: "byc.png",       bg: "rgba(70,130,180,.15)", permisos: ["byc.ver"] },
   { slug: "historico",          label: "Histórico",   img: "historial.png", bg: "rgba(120,120,140,.15)", roles: ["admin", "worker", "finanzas"] },
   { slug: "seleccion-asiento",  label: "Asientos",    img: "asiento.png",   bg: "rgba(45,106,79,.12)" },
-  { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", roles: ["admin"] },
+  { slug: "usuarios",           label: "Usuarios",    img: "staff.png",     bg: "rgba(124,92,196,.15)", permisos: ["usuarios.ver"] },
   { slug: "legales",            label: "Legales",     img: "legales.png",   bg: "rgba(70,130,180,.15)", permisos: ["legales.ver"] },
   { slug: "facturas",           label: "Facturas",    img: "facturas.png",  bg: "rgba(201,168,76,.18)", permisos: ["facturas.ver", "marangatu.ver"] },
   { slug: "informes",           label: "Informes",    img: "informes.png",  bg: "rgba(45,106,79,.16)", roles: ["admin", "worker", "finanzas"], beta: true },

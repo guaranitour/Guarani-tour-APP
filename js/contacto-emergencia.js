@@ -15,9 +15,7 @@ function normalizeCI(ci) {
 }
 
 function _puedeEditarContacto() {
-  return ["admin", "worker"].some(r =>
-    Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
-  );
+  return can("contactos.editar");
 }
 
 // Permiso para "Enviar link" de contacto de emergencia: más amplio que
@@ -26,16 +24,15 @@ function _puedeEditarContacto() {
 // 'viewer'. Generar y compartir un link no implica poder editar el
 // contacto directamente, así que se mantiene como chequeo aparte.
 function _puedeEnviarLinkContacto() {
-  return ["admin", "worker", "viewer"].some(r =>
-    Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
-  );
+  return can("contactos.enviar_link");
 }
 
 // Muestra u oculta el FAB SOS según la vista activa. Se llama al entrar
 // y salir de "Detalle de pasajero".
 function setFabSosVisible(visible) {
   const fab = document.getElementById("fab-sos");
-  if (fab) fab.style.display = visible ? "" : "none";
+  // Sin la tarea contactos.ver no hay nada que mostrar en el modal
+  if (fab) fab.style.display = (visible && can("contactos.ver")) ? "" : "none";
 }
 
 function abrirModalContacto() {

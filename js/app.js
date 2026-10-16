@@ -246,13 +246,13 @@ function _pintarShellOptimista(user) {
   document.getElementById("user-email").textContent = user.email;
   renderTopbarProfile();
   const card = document.getElementById("card-usuarios");
-  if (card) card.style.display = cached.role === "admin" ? "" : "none";
+  if (card) card.style.display = can("usuarios.ver") ? "" : "none";
   const cardMov = document.getElementById("card-movimientos");
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
-  if (menuActivityLog) menuActivityLog.style.display = cached.role === "admin" ? "" : "none";
+  if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
-  if (menuEncuesta) menuEncuesta.style.display = ["admin", "worker", "finanzas"].includes(cached.role) ? "" : "none";
+  if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -415,16 +415,16 @@ async function _enterAppImpl(user) {
   showEl("app-view");
   document.getElementById("user-email").textContent = user.email;
   renderTopbarProfile();
- // 👇 OCULTAR USUARIOS SI NO ES ADMIN
+ // 👇 USUARIOS: por tarea (usuarios.ver)
 const card = document.getElementById("card-usuarios");
-if (card) card.style.display = data.role === "admin" ? "" : "none";
+if (card) card.style.display = can("usuarios.ver") ? "" : "none";
   // 👇 MOVIMIENTOS BANCARIOS: admin, worker y finanzas (finanzas solo lectura, ver movimientos.js)
   const cardMov = document.getElementById("card-movimientos");
   if (cardMov) cardMov.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
   const menuActivityLog = document.getElementById("menu-activity-log-btn");
-  if (menuActivityLog) menuActivityLog.style.display = data.role === "admin" ? "" : "none";
+  if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
-  if (menuEncuesta) menuEncuesta.style.display = ["admin", "worker", "finanzas"].includes(data.role) ? "" : "none";
+  if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -803,7 +803,14 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // Guard de acceso: finanzas no puede entrar a clientes, usuarios, byc
   // ni al detalle de un pasajero (tampoco desde Club Destino/ranking),
   // ni por menú ni por hash/URL directa ni por llamada programática.
-  if (currentUserRole === "finanzas" && (view === "clientes" || view === "usuarios" || view === "byc" || view === "byc-vincular" || view === "detalle")) {
+  if (view === "usuarios" && !can("usuarios.ver")) view = "dashboard";
+
+  if (currentUserRole === "finanzas" && view === "detalle") {
+    view = "dashboard";
+  }
+
+  // Estado ByC: por tarea (byc.ver), no por rol. Ver sql/permisos_byc.sql.
+  if ((view === "byc" || view === "byc-vincular") && !can("byc.ver")) {
     view = "dashboard";
   }
 
@@ -811,9 +818,15 @@ function navigateTo(view, idx = null, _fromHash = false) {
   // histórico ni Club Destino (incluye su vista de detalle y el ranking
   // de puntos), tampoco al alta de cliente, ni por menú ni por hash/URL
   // directa ni por llamada programática.
-  if (currentUserRole === "viewer" && (view === "clientes" || view === "nuevo" || view === "byc" || view === "byc-vincular" || view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
+  if (currentUserRole === "viewer" && (view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
     view = "dashboard";
   }
+
+  // Clientes: por tarea, no por rol. Ver sql/permisos_clientes.sql.
+  // (el "detalle" se mantiene con su guard por rol: viewer lo abre desde viajes)
+  if (view === "clientes" && !can("clientes.ver")) view = "dashboard";
+  if (view === "nuevo" && !can("clientes.crear")) view = "dashboard";
+  if (view === "byc-vincular" && !can("clientes.editar")) view = "dashboard";
 
   const soportaVT = typeof document.startViewTransition === "function";
   const aplicaTransicion =
@@ -940,7 +953,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   const fab = document.getElementById("fab-nuevo");
   if (fab) {
-    fab.style.display = (view === "clientes" && ["admin", "worker"].includes(currentUserRole)) ? "" : "none";
+    fab.style.display = (view === "clientes" && can("clientes.crear")) ? "" : "none";
   }
 
   const fabViaje = document.getElementById("fab-viaje-nuevo");
@@ -1072,7 +1085,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   else if (view === "usuarios") {
     // ver switchUsuariosTab() más abajo para el manejo de tabs
 
-    if (currentUserRole !== "admin") return;
+    if (!can("usuarios.ver")) return;
     showEl("view-usuarios");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
@@ -1100,7 +1113,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "activity-log") {
 
-    if (currentUserRole !== "admin") return;
+    if (!can("actividad.ver")) return;
     showEl("view-activity-log");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },
@@ -1112,7 +1125,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   else if (view === "encuesta") {
 
-    if (!["admin", "worker", "finanzas"].includes(currentUserRole)) return;
+    if (!can("encuesta.ver")) return;
     showEl("view-encuesta");
     updateBreadcrumb([
       { label: "Inicio", action: () => navigateTo("dashboard") },

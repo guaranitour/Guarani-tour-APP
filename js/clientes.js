@@ -234,13 +234,11 @@ async function renderDetalle(pasajeroId) {
   setField("d-email",       p["E-mail"]);
   setField("d-vendedor",    p.Vendedor);
 
-  // Mostrar botón editar solo para admin y worker
+  // Botones editar / eliminar: por tarea (ver sql/permisos_clientes.sql)
   const btnEditar = document.getElementById("btn-editar-detalle");
-  if (btnEditar) {
-    btnEditar.style.display = ["admin", "worker"].some(r =>
-      Array.isArray(currentUserRole) ? currentUserRole.includes(r) : currentUserRole === r
-    ) ? "" : "none";
-  }
+  if (btnEditar) btnEditar.style.display = can("clientes.editar") ? "" : "none";
+  const btnEliminar = document.getElementById("btn-eliminar-detalle");
+  if (btnEliminar) btnEliminar.style.display = can("clientes.eliminar") ? "" : "none";
 
   // Asegurar modo lectura al renderizar
   cancelarEdicionDetalle(true);
@@ -293,9 +291,7 @@ async function activarEdicionDetalle() {
   const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
-  const esAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.includes("admin")
-    : currentUserRole === "admin";
+  const esAdmin = can("clientes.cambiar_vendedor");
 
   // Poblar inputs con valores actuales
   document.getElementById("e-nombre").value  = p.Pasajero || "";
@@ -317,7 +313,7 @@ async function activarEdicionDetalle() {
   if (selVend) {
     selVend.disabled = !esAdmin;
     selVend.style.opacity = esAdmin ? "" : "0.5";
-    selVend.title = esAdmin ? "" : "Solo admin puede cambiar el vendedor";
+    selVend.title = esAdmin ? "" : "No tenés permiso para cambiar el vendedor";
   }
 
   if (btnGuardar) btnGuardar.disabled = false;
@@ -395,6 +391,48 @@ async function guardarEdicionDetalle() {
   cancelarEdicionDetalle();
   renderDetalle(selectedIdx);
   mostrarFeedbackDetalle("Cambios guardados correctamente.", true);
+}
+
+// Elimina un cliente SIN historial. La base rechaza el borrado si tiene
+// viajes o pagos (trigger) y exige la tarea clientes.eliminar (RLS).
+async function eliminarClienteDetalle() {
+  if (!can("clientes.eliminar")) return;
+  const p = allPassengers.find(x => x.id === selectedIdx);
+  if (!p) return;
+
+  if (!(await confirmar({
+    titulo: "Eliminar cliente",
+    mensaje: `¿Eliminar a "${p.Pasajero}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: "Eliminar",
+    peligro: true,
+  }))) return;
+
+  const { data, error } = await supabaseClient
+    .from("pasajeros")
+    .delete()
+    .eq("id", p.id)
+    .select("id");
+
+  if (error) {
+    showToast(
+      error.code === "23503" ? error.message : "No se pudo eliminar el cliente",
+      "error"
+    );
+    return;
+  }
+  if (!data || data.length === 0) {
+    showToast("No tenés permiso para eliminar este cliente", "error");
+    return;
+  }
+
+  if (p.avatar_path) {
+    supabaseClient.storage.from("avatars").remove([p.avatar_path]).catch(() => {});
+  }
+  const i = allPassengers.findIndex(x => x.id === p.id);
+  if (i !== -1) allPassengers.splice(i, 1);
+
+  showToast("Cliente eliminado", "success");
+  navigateTo("clientes");
 }
 
 function mostrarFeedbackDetalle(msg, ok) {
