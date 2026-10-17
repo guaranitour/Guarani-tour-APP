@@ -1786,49 +1786,6 @@
       </div>
     </div>
 
-    <!-- MODAL: AGREGAR SERVICIO EXTRA AL PASAJERO -->
-    <div id="modal-agregar-extra" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalAgregarExtraPasajero(event)">
-      <div class="modal-transferir-card">
-        <div class="modal-transferir-header">
-          <div class="modal-transferir-titulo">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/>
-              <path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-            </svg>
-            Agregar servicio extra
-          </div>
-          <button class="modal-transferir-close" onclick="cerrarModalAgregarExtraPasajero()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        <!-- Paso 1: elegir el servicio -->
-        <div id="modal-extra-paso-lista">
-          <p class="modal-transferir-desc">Elegí el servicio extra a asignarle a este pasajero.</p>
-          <div id="modal-extra-lista"></div>
-        </div>
-
-        <!-- Paso 2: confirmar precio -->
-        <div id="modal-extra-paso-precio" style="display:none">
-          <p class="modal-transferir-desc" id="modal-extra-nombre-elegido"></p>
-
-          <div class="form-field" style="margin-top:.5rem">
-            <label class="form-label">Precio a cobrar (Gs.) <span class="req">*</span></label>
-            <input type="text" inputmode="numeric" autocomplete="off" id="modal-extra-precio" class="form-input input-miles" />
-          </div>
-
-          <div class="modal-transferir-actions">
-            <button class="btn-cancel" onclick="_volverListaExtraPasajero()">Volver</button>
-            <button class="btn-save" id="btn-confirmar-extra-pasajero" onclick="confirmarAgregarExtraPasajero()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Agregar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
   <!-- HISTORIAL DE VIAJES DEL PASAJERO -->
   <div id="view-historial-viajes" style="display:none">
     <div class="main detalle-main">
@@ -2720,6 +2677,50 @@
       <span id="bn-shortcut-label">Calendario</span>
     </button>
   </nav>
+
+  <!-- ── MODAL: AGREGAR SERVICIO EXTRA A UN PASAJERO ──────────────
+       Vive a nivel raíz (junto al navbar y el menú) para que se muestre
+       por encima del navbar y no dependa de la vista donde se abre. -->
+  <div id="modal-agregar-extra" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalAgregarExtraPasajero(event)">
+    <div class="modal-transferir-card">
+      <div class="modal-transferir-header">
+        <div class="modal-transferir-titulo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/>
+            <path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+          </svg>
+          Agregar servicio extra
+        </div>
+        <button class="modal-transferir-close" onclick="cerrarModalAgregarExtraPasajero()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Paso 1: elegir el servicio -->
+      <div id="modal-extra-paso-lista">
+        <p class="modal-transferir-desc">Elegí el servicio extra a asignarle a este pasajero.</p>
+        <div id="modal-extra-lista"></div>
+      </div>
+
+      <!-- Paso 2: confirmar precio -->
+      <div id="modal-extra-paso-precio" style="display:none">
+        <p class="modal-transferir-desc" id="modal-extra-nombre-elegido"></p>
+
+        <div class="form-field" style="margin-top:.5rem">
+          <label class="form-label">Precio a cobrar (Gs.) <span class="req">*</span></label>
+          <input type="text" inputmode="numeric" autocomplete="off" id="modal-extra-precio" class="form-input input-miles" />
+        </div>
+
+        <div class="modal-transferir-actions">
+          <button class="btn-cancel" onclick="_volverListaExtraPasajero()">Volver</button>
+          <button class="btn-save" id="btn-confirmar-extra-pasajero" onclick="confirmarAgregarExtraPasajero()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Agregar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ── PANEL LATERAL DE FILTROS (Registro de actividad) ─────── -->
   <div class="al-drawer-overlay" id="al-drawer-overlay" onclick="cancelarFiltrosActivityLog()"></div>
