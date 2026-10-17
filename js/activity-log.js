@@ -16,6 +16,7 @@ const ACTIVITY_LOG_TABLE_LABELS = {
   viajes: "Viajes",
   viaje_pasajeros: "Viaje pasajeros",
   categorias: "Categorías",
+  presupuesto_viaje: "Presupuesto",
   contactos_emergencia: "Contactos de emergencia",
   servicio_extra_pasajeros: "Servicio extra pasajeros",
   servicios_extra: "Servicios extra",
