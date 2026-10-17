@@ -28,6 +28,12 @@ async function loadEgresos(viajeId) {
   const btnAdd = document.getElementById("btn-agregar-egreso");
   if (!listEl) return;
 
+  // Al renderizar con datos el botón se mueve dentro de #egresos-list (junto
+  // al total). Hay que devolverlo a su lugar antes de limpiar la lista: si no,
+  // innerHTML lo destruye y, si no hay egresos (ej. se eliminó el último),
+  // nunca se vuelve a insertar.
+  if (btnAdd && listEl.contains(btnAdd)) listEl.after(btnAdd);
+
   listEl.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
   if (btnAdd) btnAdd.style.display = can("egresos.registrar") ? "" : "none";
