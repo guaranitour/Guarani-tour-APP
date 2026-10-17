@@ -843,15 +843,6 @@ function _esWorkerOAdminPagos() {
     : ["admin", "worker"].includes(currentUserRole);
 }
 
-// Igual que _esWorkerOAdminPagos, pero habilitando también a viewer:
-// se usa puntualmente para la asignación de servicios extra al pasajero,
-// que viewer sí puede gestionar (a diferencia del resto de este módulo).
-function _puedeGestionarExtrasPasajero() {
-  return _esWorkerOAdminPagos() || (Array.isArray(currentUserRole)
-    ? currentUserRole.includes("viewer")
-    : currentUserRole === "viewer");
-}
-
 /* Carga los extras ya asignados a este pasajero y pinta la sección.
    La sección completa queda oculta si el viaje no tiene
    extras_habilitados, sin importar el rol. */
@@ -861,7 +852,8 @@ async function loadExtrasPasajero() {
   const btnAdd  = document.getElementById("btn-agregar-extra-pasajero");
   if (!section || !listEl) return;
 
-  const habilitado = !!viajeActualData?.extras_habilitados;
+  // Por tarea (sql/permisos_extras.sql): ver / asignar / quitar
+  const habilitado = !!viajeActualData?.extras_habilitados && can("extras.pasajero_ver");
   if (!habilitado) {
     section.style.display = "none";
     pagosCtx.extrasAsignados = [];
@@ -869,8 +861,8 @@ async function loadExtrasPasajero() {
   }
   section.style.display = "";
 
-  const puedeEditar = _puedeGestionarExtrasPasajero();
-  if (btnAdd) btnAdd.style.display = puedeEditar ? "" : "none";
+  const puedeQuitar = can("extras.pasajero_quitar");
+  if (btnAdd) btnAdd.style.display = can("extras.pasajero_asignar") ? "" : "none";
 
   const { data, error } = await supabaseClient
     .from("servicio_extra_pasajeros")
@@ -895,7 +887,7 @@ async function loadExtrasPasajero() {
 
   listEl.innerHTML = pagosCtx.extrasAsignados.map(e => {
     const nombre = e.servicios_extra?.nombre || "Servicio extra";
-    const removeBtn = puedeEditar ? `
+    const removeBtn = puedeQuitar ? `
       <button class="pagos-extra-remove" title="Quitar" onclick="eliminarExtraPasajero('${e.id}')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"/>
@@ -920,7 +912,7 @@ async function loadExtrasPasajero() {
 /* ── MODAL: AGREGAR SERVICIO EXTRA ──────────── */
 
 async function abrirModalAgregarExtraPasajero() {
-  if (!_puedeGestionarExtrasPasajero()) return;
+  if (!can("extras.pasajero_asignar")) return;
 
   pagosCtx.extraElegido = null;
 
@@ -976,7 +968,7 @@ function _elegirExtraPasajero(servicioId) {
   document.getElementById("modal-extra-nombre-elegido").textContent = servicio.nombre;
 
   const precioEl = document.getElementById("modal-extra-precio");
-  if (precioEl) precioEl.value = servicio.precio_venta || 0;
+  if (precioEl) precioEl.value = _formatearMiles(servicio.precio_venta || 0);
 }
 
 function _volverListaExtraPasajero() {
@@ -994,13 +986,13 @@ function cerrarModalAgregarExtraPasajero(event) {
 }
 
 async function confirmarAgregarExtraPasajero() {
-  if (!_puedeGestionarExtrasPasajero()) return;
+  if (!can("extras.pasajero_asignar")) return;
 
   const servicio = pagosCtx.extraElegido;
   if (!servicio) return;
 
   const precioRaw = document.getElementById("modal-extra-precio")?.value;
-  const precio_venta_real = parseInt(precioRaw);
+  const precio_venta_real = _numeroDesdeMiles(precioRaw);
 
   if (precioRaw === "" || isNaN(precio_venta_real) || precio_venta_real < 0) {
     document.getElementById("modal-extra-precio")?.classList.add("error");
@@ -1037,7 +1029,7 @@ async function confirmarAgregarExtraPasajero() {
 }
 
 async function eliminarExtraPasajero(id) {
-  if (!_puedeGestionarExtrasPasajero()) return;
+  if (!can("extras.pasajero_quitar")) return;
 
   const asignado = pagosCtx.extrasAsignados.find(e => String(e.id) === String(id));
   const nombre = asignado?.servicios_extra?.nombre || "este servicio extra";

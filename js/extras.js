@@ -1,20 +1,13 @@
 /* ─────────────────────────────────────────────
    extras.js — Servicios extra por viaje
    CRUD sobre la tabla servicios_extra.
-   Lectura: admin / worker / viewer (viewer no ve el tab, pero
-   la función queda protegida igual por las dudas).
-   Alta / edición / baja: admin y worker únicamente.
+   Permisos por tarea (ver sql/permisos_extras.sql): extras.ver,
+   extras.registrar, extras.editar y extras.eliminar.
 ───────────────────────────────────────────── */
 
 let _extrasLoadToken = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
 let _extrasData = [];     // Caché en memoria de los extras del viaje actualmente cargado
 let _extraEditandoId = null; // null = alta nueva · id = edición en curso
-
-function _esWorkerOAdminExtras() {
-  return Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-    : ["admin", "worker"].includes(currentUserRole);
-}
 
 async function loadExtras(viajeId) {
   const miToken = ++_extrasLoadToken;
@@ -24,8 +17,9 @@ async function loadExtras(viajeId) {
 
   listEl.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
-  const puedeEditar = _esWorkerOAdminExtras();
-  if (btnAdd) btnAdd.style.display = puedeEditar ? "" : "none";
+  const puedeEditar   = can("extras.editar");
+  const puedeEliminar = can("extras.eliminar");
+  if (btnAdd) btnAdd.style.display = can("extras.registrar") ? "" : "none";
 
   const { data, error } = await supabaseClient
     .from("servicios_extra")
@@ -63,21 +57,22 @@ async function loadExtras(viajeId) {
       : "";
     const costosHtml = `<div class="extra-costos">Costo real: Gs. ${(s.costo_real || 0).toLocaleString("es-PY")}</div>`;
 
-    const acciones = puedeEditar ? `
-      <div class="extra-row-actions">
+    const btnEditar = puedeEditar ? `
         <button class="extra-btn-icon" title="Editar" onclick="event.stopPropagation(); editarExtra('${s.id}')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
-        </button>
+        </button>` : "";
+    const btnEliminar = puedeEliminar ? `
         <button class="extra-btn-icon danger" title="Eliminar" onclick="event.stopPropagation(); eliminarExtra('${s.id}')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
-        </button>
-      </div>` : "";
+        </button>` : "";
+    const acciones = (btnEditar || btnEliminar)
+      ? `<div class="extra-row-actions">${btnEditar}${btnEliminar}</div>` : "";
 
     return `
   <div class="extra-row">
@@ -124,8 +119,8 @@ function editarExtra(id) {
   document.getElementById("extra-id").value             = servicio.id;
   document.getElementById("extra-nombre").value          = servicio.nombre || "";
   document.getElementById("extra-descripcion").value     = servicio.descripcion || "";
-  document.getElementById("extra-precio-venta").value    = servicio.precio_venta || 0;
-  document.getElementById("extra-costo-real").value      = servicio.costo_real || 0;
+  document.getElementById("extra-precio-venta").value    = _formatearMiles(servicio.precio_venta || 0);
+  document.getElementById("extra-costo-real").value      = _formatearMiles(servicio.costo_real || 0);
 
   const saveBtn = document.getElementById("btn-guardar-extra");
   if (saveBtn) {
@@ -141,7 +136,7 @@ function cerrarFormExtra() {
   const form = document.getElementById("form-extra");
   const btn  = document.getElementById("btn-agregar-extra");
   if (form) form.style.display = "none";
-  if (btn) btn.style.display = _esWorkerOAdminExtras() ? "" : "none";
+  if (btn) btn.style.display = can("extras.registrar") ? "" : "none";
 
   _extraEditandoId = null;
   _limpiarFormExtra();
@@ -156,14 +151,15 @@ function _limpiarFormExtra() {
 }
 
 async function guardarExtra() {
-  if (!_esWorkerOAdminExtras()) return; // guarda extra, RLS igual lo bloquearía
+  // Alta requiere .registrar; modificar uno existente, .editar (RLS igual lo exige)
+  if (!can(_extraEditandoId ? "extras.editar" : "extras.registrar")) return;
 
   const nombre           = document.getElementById("extra-nombre")?.value.trim();
   const descripcion      = document.getElementById("extra-descripcion")?.value.trim() || null;
   const precioVentaRaw   = document.getElementById("extra-precio-venta")?.value;
   const costoRealRaw     = document.getElementById("extra-costo-real")?.value;
-  const precio_venta     = parseInt(precioVentaRaw);
-  const costo_real       = parseInt(costoRealRaw);
+  const precio_venta     = _numeroDesdeMiles(precioVentaRaw);
+  const costo_real       = _numeroDesdeMiles(costoRealRaw);
 
   let valido = true;
   if (!nombre) {
@@ -227,12 +223,23 @@ async function guardarExtra() {
 }
 
 async function eliminarExtra(id) {
-  if (!_esWorkerOAdminExtras()) return;
+  if (!can("extras.eliminar")) return;
 
   const servicio = _extrasData.find(s => String(s.id) === String(id));
   const nombre = servicio ? servicio.nombre : "este servicio extra";
 
-  if (!(await confirmar({ titulo: "Eliminar servicio extra", mensaje: `¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`, confirmarTexto: "Eliminar", peligro: true }))) return;
+  // servicio_extra_id tiene ON DELETE CASCADE: si hay pasajeros con este
+  // servicio asignado, se les quita también. Se avisa cuántos antes de confirmar.
+  const { count: asignados } = await supabaseClient
+    .from("servicio_extra_pasajeros")
+    .select("id", { count: "exact", head: true })
+    .eq("servicio_extra_id", id);
+
+  const aviso = asignados > 0
+    ? `${asignados === 1 ? "1 pasajero tiene" : asignados + " pasajeros tienen"} asignado este servicio. Al eliminarlo se les quitará y se descontará de lo que deben pagar. `
+    : "";
+
+  if (!(await confirmar({ titulo: "Eliminar servicio extra", mensaje: `${aviso}¿Eliminar "${nombre}"? Esta acción no se puede deshacer.`, confirmarTexto: "Eliminar", peligro: true }))) return;
 
   const { data: borrados, error } = await supabaseClient
     .from("servicios_extra")
@@ -242,13 +249,7 @@ async function eliminarExtra(id) {
 
   if (error) {
     console.error("Error eliminando servicio extra:", error);
-    // 23503: el servicio ya está asignado a pasajeros (clave foránea)
-    showToast(
-      error.code === "23503"
-        ? "No se puede eliminar: el servicio está asignado a pasajeros"
-        : "Error al eliminar el servicio extra",
-      "error"
-    );
+    showToast("Error al eliminar el servicio extra", "error");
     return;
   }
 

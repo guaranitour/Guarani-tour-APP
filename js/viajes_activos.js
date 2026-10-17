@@ -1197,8 +1197,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     ? currentUserRole.some(r => ["admin", "worker"].includes(r))
     : ["admin", "worker"].includes(currentUserRole);
   // Egresos/Presupuesto/Resumen: admin, worker y finanzas (finanzas sin edición,
-  // controlado dentro de cada módulo). Extra y agregar-pasajero quedan afuera
-  // de finanzas: no gestiona pasajeros ni servicios extra.
+  // controlado dentro de cada módulo). Extra va por tarea (extras.ver).
   const puedeVerFinancierosEarly = esWorkerOAdminEarly || esFinanzasEarly;
 
   // Botón agregar pasajero: por tarea (clientes.crear_rapido)
@@ -1222,7 +1221,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   if (tabTransfEarly) tabTransfEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabExtraEarly = document.getElementById("tab-extra");
   if (tabExtraEarly) {
-    tabExtraEarly.style.display = (esWorkerOAdminEarly && !!viajeActualData?.extras_habilitados) ? "" : "none";
+    tabExtraEarly.style.display = (can("extras.ver") && !!viajeActualData?.extras_habilitados) ? "" : "none";
   }
 
   // Finanzas entra directo a Resumen (no tiene acceso a Pasajeros, que es
@@ -2245,9 +2244,9 @@ function switchViajeTab(tab) {
     : ["admin","worker"].includes(currentUserRole);
 
   if (esFinanzas) {
-    // Finanzas: solo egresos/presupuesto/resumen. Nunca pasajeros ni extra.
-    if (tab === "pasajeros" || tab === "extra") tab = "resumen";
-  } else if (!_esWorkerOAdmin && (tab === "presupuesto" || tab === "resumen" || tab === "extra" || tab === "transferencias")) {
+    // Finanzas: nunca ve el listado de pasajeros.
+    if (tab === "pasajeros") tab = "resumen";
+  } else if (!_esWorkerOAdmin && (tab === "presupuesto" || tab === "resumen" || tab === "transferencias")) {
     tab = "pasajeros";
   }
   // Egresos: por tarea (ver sql/permisos_egresos.sql)
@@ -2258,9 +2257,9 @@ function switchViajeTab(tab) {
   if (tab === "presupuesto" && !can("presupuesto.ver")) {
     tab = esFinanzas ? "resumen" : "pasajeros";
   }
-  // Extra requiere además que el viaje lo tenga habilitado
-  if (tab === "extra" && !viajeActualData?.extras_habilitados) {
-    tab = "pasajeros";
+  // Extra: por tarea (sql/permisos_extras.sql) y además el viaje debe tenerlo habilitado
+  if (tab === "extra" && (!can("extras.ver") || !viajeActualData?.extras_habilitados)) {
+    tab = esFinanzas ? "resumen" : "pasajeros";
   }
 
   // Botones
