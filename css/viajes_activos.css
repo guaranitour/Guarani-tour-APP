@@ -1190,16 +1190,28 @@
 }
 .egreso-det-comprobante:hover { background: rgba(45,106,79,.1); }
 
+/* Acciones del detalle de egreso: Editar | Eliminar (2 columnas; uno solo, centrado) */
 .egreso-det-acciones {
-  display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .6rem;
+  margin-bottom: 1rem;
+}
+.egreso-det-acciones.una {
+  grid-template-columns: min(100%, 320px); justify-content: center;
+}
+.egreso-det-acciones .btn-editar-viaje,
+.egreso-det-acciones .egreso-btn-eliminar {
+  width: 100%; min-height: 42px; box-sizing: border-box;
 }
 .egreso-btn-eliminar {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   background: transparent;
   color: var(--danger-text);
   border: 1px solid var(--danger-text);
-  border-radius: 8px;
-  padding: .55rem 1rem;
-  font-size: .85rem;
+  border-radius: 10px;
+  padding: .6rem .9rem;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 600;
   cursor: pointer;
 }
 .egreso-btn-eliminar:hover { background: var(--danger-bg); }
