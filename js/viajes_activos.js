@@ -1814,7 +1814,7 @@ function abrirEdicionVP(event, vpId, total, puntos, asistencia, pasajeroId) {
     <div class="vp-edit-inner">
       <div class="vp-edit-field" style="grid-column:1/-1">
         <label class="pcf-label">Total a pagar (Gs.) <span class="req">*</span></label>
-        <input type="number" id="vpe-total" class="form-input" value="${total}" min="0" />
+        <input type="text" inputmode="numeric" autocomplete="off" id="vpe-total" class="form-input input-miles" value="${_formatearMiles(total)}" />
       </div>
       <div class="vp-edit-field">
         <label class="pcf-label">Puntos destino</label>
@@ -1845,7 +1845,7 @@ function cerrarEdicionVP() {
 }
 
 async function guardarEdicionVP(vpId) {
-  const total      = parseInt(document.getElementById("vpe-total").value);
+  const total      = _numeroDesdeMiles(document.getElementById("vpe-total").value);
   const puntosInput = parseInt(document.getElementById("vpe-puntos").value) || 0;
   const asistencia = document.getElementById("vpe-asistencia").value;
 
@@ -1911,7 +1911,7 @@ async function guardarPasajeroEnViaje() {
       return;
     }
 
-    const total = parseInt(document.getElementById("input-total").value);
+    const total = _numeroDesdeMiles(document.getElementById("input-total").value);
 
     if (total == null || isNaN(total) || total < 0) {
       showToast("Ingresá un monto válido", "warning");
