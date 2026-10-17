@@ -31,6 +31,7 @@ async function loadPresupuesto(viajeId) {
   if (formEl)  formEl.style.display  = "none";
 
   const puedeEditar    = can("presupuesto.editar");
+  const puedeEliminar  = can("presupuesto.eliminar");
   const puedeRegistrar = can("presupuesto.registrar");
 
   // Traer presupuesto guardado + categorías + datos de proyección en paralelo
@@ -120,7 +121,7 @@ async function loadPresupuesto(viajeId) {
       <div class="egreso-monto" style="color:var(--accent)">
         Gs. ${(f.monto_presupuestado || 0).toLocaleString("es-PY")}
       </div>
-      ${puedeEditar ? `
+      ${puedeEliminar ? `
       <button class="presupuesto-btn-eliminar" title="Eliminar categoría del presupuesto"
               onclick="confirmarEliminarCategoriaPresupuesto(${f.categoria_id})">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -193,7 +194,7 @@ function _renderProyeccionGanancia({ egresosPresupuestados, paxEstimados, precio
 // Eliminar una categoría del presupuesto: única vía de borrado (vaciar el
 // input en el form de edición NO elimina). Pide confirmación con modal.
 async function confirmarEliminarCategoriaPresupuesto(categoriaId) {
-  if (!can("presupuesto.editar")) {
+  if (!can("presupuesto.eliminar")) {
     showToast("No tenés permiso para eliminar categorías del presupuesto", "error");
     return;
   }
