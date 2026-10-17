@@ -13,6 +13,36 @@ let _presupuestoOriginal   = {};   // { categoria_id: monto } al cargar para det
 let _presupuestoModoEdicion = false;
 let _presupuestoProyeccion = { paxEstimados: null, precioEstimado: null }; // caché de pasajeros_estimados/precio_estimado_pasajero del viaje
 
+// ── Separador de miles (solo visual) ─────────────────────────────────
+// Los inputs de monto son type="text" con puntos de miles. Al guardar se
+// leen con _presupuestoNumero(), que los quita: al backend llega el entero.
+function _presupuestoFormatearMiles(valor) {
+  const digitos = String(valor ?? "").replace(/\D/g, "");
+  return digitos ? Number(digitos).toLocaleString("es-PY") : "";
+}
+
+function _presupuestoNumero(texto) {
+  const digitos = String(texto ?? "").replace(/\D/g, "");
+  return digitos ? parseInt(digitos, 10) : NaN;
+}
+
+// Reformatea mientras se tipea, conservando la posición del cursor
+// (se cuenta cuántos dígitos había a su izquierda).
+document.addEventListener("input", (ev) => {
+  const el = ev.target;
+  if (!el.matches?.(".presupuesto-input, #presupuesto-precio-estimado")) return;
+  const pos = el.selectionStart ?? el.value.length;
+  const digitosIzq = el.value.slice(0, pos).replace(/\D/g, "").length;
+  el.value = _presupuestoFormatearMiles(el.value);
+
+  let nuevaPos = 0, vistos = 0;
+  while (nuevaPos < el.value.length && vistos < digitosIzq) {
+    if (/\d/.test(el.value[nuevaPos])) vistos++;
+    nuevaPos++;
+  }
+  el.setSelectionRange(nuevaPos, nuevaPos);
+});
+
 let _presupuestoLoadToken = 0; // Descarta respuestas tardías de un viaje distinto al que se está viendo
 
 async function loadPresupuesto(viajeId) {
@@ -263,7 +293,7 @@ async function mostrarFormPresupuesto(esEdicion) {
   const paxInput    = document.getElementById("presupuesto-pax-estimados");
   const precioInput = document.getElementById("presupuesto-precio-estimado");
   if (paxInput)    paxInput.value    = _presupuestoProyeccion.paxEstimados || "";
-  if (precioInput) precioInput.value = _presupuestoProyeccion.precioEstimado || "";
+  if (precioInput) precioInput.value = _presupuestoFormatearMiles(_presupuestoProyeccion.precioEstimado);
 
   // Cargar categorías si no están en caché
   if (_presupuestoCategorias.length === 0) {
@@ -279,12 +309,12 @@ async function mostrarFormPresupuesto(esEdicion) {
     <p class="presupuesto-form-hint">Completá los montos por categoría. Las categorías sin monto serán ignoradas (para eliminar una, usá el botón de tacho en la lista).</p>
     <div class="detail-grid">
       ${_presupuestoCategorias.map(c => {
-        const valorPrevio = _presupuestoOriginal[c.id] || "";
+        const valorPrevio = _presupuestoFormatearMiles(_presupuestoOriginal[c.id]);
         return `
         <div class="form-field">
           <label class="form-label">${c.nombre}</label>
-          <input type="number" class="form-input presupuesto-input"
-                 data-cat-id="${c.id}" min="0" placeholder="0"
+          <input type="text" inputmode="numeric" autocomplete="off" class="form-input presupuesto-input"
+                 data-cat-id="${c.id}" placeholder="0"
                  value="${valorPrevio}" />
         </div>`;
       }).join("")}
@@ -324,7 +354,7 @@ async function guardarPresupuesto() {
   const paxInput    = document.getElementById("presupuesto-pax-estimados");
   const precioInput = document.getElementById("presupuesto-precio-estimado");
   const paxEstimados   = paxInput?.value.trim()    ? parseInt(paxInput.value)    : null;
-  const precioEstimado = precioInput?.value.trim() ? parseInt(precioInput.value) : null;
+  const precioEstimado = precioInput?.value.trim() ? _presupuestoNumero(precioInput.value) : null;
 
   await supabaseClient
     .from("viajes")
@@ -341,7 +371,7 @@ async function guardarPresupuesto() {
     const valorTexto = input.value.trim();
     if (valorTexto === "") return; // vacío: se ignora, no se guarda
 
-    const monto = parseInt(valorTexto);
+    const monto = _presupuestoNumero(valorTexto);
     if (!Number.isNaN(monto) && monto >= 0) {
       filas.push({
         viaje_id:            viajeActualId,
@@ -449,8 +479,8 @@ async function agregarCatExtra() {
     div.className = "form-field";
     div.innerHTML = `
       <label class="form-label">${nueva.nombre}</label>
-      <input type="number" class="form-input presupuesto-input"
-             data-cat-id="${nueva.id}" min="0" placeholder="0" value="" />`;
+      <input type="text" inputmode="numeric" autocomplete="off" class="form-input presupuesto-input"
+             data-cat-id="${nueva.id}" placeholder="0" value="" />`;
     grid.appendChild(div);
   }
 
