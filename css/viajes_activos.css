@@ -1215,6 +1215,13 @@
 .presupuesto-adv-actions {
   display: flex; gap: .5rem; justify-content: flex-end; margin-top: .25rem;
 }
+.presupuesto-btn-eliminar {
+  flex-shrink: 0; margin-left: .5rem;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: .35rem; border-radius: 6px;
+  display: inline-flex; align-items: center;
+}
+.presupuesto-btn-eliminar:hover { color: #c0392b; background: rgba(192,57,43,.1); }
 
 /* ── BUSCADOR + FILTRO ROW ───────────────────── */
 

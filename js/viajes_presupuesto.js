@@ -113,13 +113,21 @@ async function loadPresupuesto(viajeId) {
       <span class="egresos-total-valor">Gs. ${total.toLocaleString("es-PY")}</span>
     </div>
     ${filas.map(f => `
-    <div class="egreso-row">
+    <div class="egreso-row" data-cat-id="${f.categoria_id}">
       <div class="egreso-info">
         <div class="egreso-concepto">${catMap[f.categoria_id] || "—"}</div>
       </div>
       <div class="egreso-monto" style="color:var(--accent)">
         Gs. ${(f.monto_presupuestado || 0).toLocaleString("es-PY")}
       </div>
+      ${puedeEditar ? `
+      <button class="presupuesto-btn-eliminar" title="Eliminar categoría del presupuesto"
+              onclick="confirmarEliminarCategoriaPresupuesto(${f.categoria_id})">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </button>` : ""}
     </div>`).join("")}
   `;
 
@@ -182,6 +190,40 @@ function _renderProyeccionGanancia({ egresosPresupuestados, paxEstimados, precio
   `;
 }
 
+// Eliminar una categoría del presupuesto: única vía de borrado (vaciar el
+// input en el form de edición NO elimina). Pide confirmación con modal.
+async function confirmarEliminarCategoriaPresupuesto(categoriaId) {
+  if (!can("presupuesto.editar")) {
+    showToast("No tenés permiso para eliminar categorías del presupuesto", "error");
+    return;
+  }
+  const row = document.querySelector(`#presupuesto-list .egreso-row[data-cat-id="${categoriaId}"]`);
+  const nombre = row?.querySelector(".egreso-concepto")?.textContent || "esta categoría";
+
+  const ok = await confirmar({
+    titulo: "Eliminar categoría",
+    mensaje: `¿Eliminar "${nombre}" del presupuesto? Esta acción es irrevocable.`,
+    confirmarTexto: "Eliminar",
+    peligro: true,
+  });
+  if (!ok) return;
+
+  const { error } = await supabaseClient
+    .from("presupuesto_viaje")
+    .delete()
+    .eq("viaje_id", viajeActualId)
+    .eq("categoria_id", categoriaId);
+
+  if (error) {
+    console.error("Error eliminando categoría del presupuesto:", error);
+    showToast("Error al eliminar. Intentá de nuevo.", "error");
+    return;
+  }
+
+  showToast("Categoría eliminada del presupuesto", "success");
+  loadPresupuesto(viajeActualId);
+}
+
 function confirmarEditarPresupuesto() {
   const advertencia = document.getElementById("presupuesto-advertencia");
   if (advertencia) {
@@ -233,7 +275,7 @@ async function mostrarFormPresupuesto(esEdicion) {
   }
 
   fieldsEl.innerHTML = `
-    <p class="presupuesto-form-hint">Completá los montos por categoría. Las categorías sin monto serán ignoradas.</p>
+    <p class="presupuesto-form-hint">Completá los montos por categoría. Las categorías sin monto serán ignoradas (para eliminar una, usá el botón de tacho en la lista).</p>
     <div class="detail-grid">
       ${_presupuestoCategorias.map(c => {
         const valorPrevio = _presupuestoOriginal[c.id] || "";
@@ -329,19 +371,8 @@ async function guardarPresupuesto() {
       return !original || original !== f.monto_presupuestado;
     });
 
-    // Categorías que tenían monto y ahora quedaron vacías → eliminar
-    const catIdsNuevos = new Set(filas.map(f => f.categoria_id));
-    // Object.keys devuelve strings y catIdsNuevos guarda números: convertir,
-    // si no, "has" nunca coincide y se borraría todo el presupuesto.
-    const aEliminar = Object.keys(_presupuestoOriginal).map(Number).filter(id => !catIdsNuevos.has(id));
-    if (aEliminar.length > 0) {
-      await supabaseClient
-        .from("presupuesto_viaje")
-        .delete()
-        .eq("viaje_id", viajeActualId)
-        .in("categoria_id", aEliminar);
-    }
-
+    // Vaciar un input NO elimina la categoría: el borrado es solo con el
+    // botón de cada fila (confirmarEliminarCategoriaPresupuesto).
     if (filasAGuardar.length === 0) {
       cerrarFormPresupuesto();
       loadPresupuesto(viajeActualId);
