@@ -76,8 +76,9 @@ function extraerFileIdDrive(url: string): string | null {
 
 // ── Validación server-side de campos obligatorios ─────────────
 const CAMPOS_OBLIGATORIOS = [
-  "cliente", "ci", "email", "monto", "fecha", "concepto", "metodo_pago", "abona_por", "tipo_recibo_id",
+  "cliente", "ci", "email", "monto", "moneda", "fecha", "concepto", "metodo_pago", "abona_por", "tipo_recibo_id",
 ] as const;
+const MONEDAS_VALIDAS = ["PYG", "USD"];
 
 function validarPayloadGenerar(body: Record<string, unknown>): string | null {
   for (const campo of CAMPOS_OBLIGATORIOS) {
@@ -88,6 +89,9 @@ function validarPayloadGenerar(body: Record<string, unknown>): string | null {
   }
   if (isNaN(Number(body.monto)) || Number(body.monto) <= 0) {
     return "El monto debe ser un número mayor a 0";
+  }
+  if (!MONEDAS_VALIDAS.includes(body.moneda as string)) {
+    return "La moneda debe ser PYG o USD";
   }
   return null;
 }
@@ -122,11 +126,12 @@ async function accionGenerar(body: Record<string, unknown>, supabase: ReturnType
   }
 
   // 2. Generar PDF vía Apps Script
-  let pdfData: { recibo: string; url: string; fileId: string; cliente: string; monto: number; fecha: string };
+  let pdfData: { recibo: string; url: string; fileId: string; cliente: string; monto: number; moneda: string; fecha: string };
   try {
     pdfData = await llamarAppsScript({
       cliente: body.cliente,
       monto: Number(body.monto),
+      moneda: body.moneda,
       fecha: body.fecha,
       ci: body.ci,
       concepto: body.concepto,
@@ -145,6 +150,7 @@ async function accionGenerar(body: Record<string, unknown>, supabase: ReturnType
   const payload = {
     cliente: body.cliente,
     monto: Number(body.monto),
+    moneda: body.moneda,
     fecha: body.fecha,
     ci: body.ci || null,
     correo_beneficiario: body.email || null,

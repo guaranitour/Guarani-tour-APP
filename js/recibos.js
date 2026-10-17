@@ -103,7 +103,7 @@ async function actualizarResumenMesRecibos() {
     return;
   }
 
-  totalEl.textContent = formatGs(Number(data[0].total_gs) || 0);
+  totalEl.textContent = formatTotalesRecibo(data[0].total_gs, data[0].total_usd);
   cantEl.textContent  = data[0].cantidad ?? 0;
 }
 
@@ -301,7 +301,7 @@ function renderizarViajes(viajes) {
             <span class="recibos-grupo-sub">${v.cantidad} recibo${v.cantidad !== 1 ? 's' : ''}</span>
           </div>
           <div class="recibos-grupo-total">
-            <span class="recibos-grupo-total-valor">${formatGs(Number(v.total_gs) || 0)}</span>
+            <span class="recibos-grupo-total-valor">${formatTotalesRecibo(v.total_gs, v.total_usd)}</span>
           </div>
           <svg class="recibos-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </div>
@@ -386,7 +386,7 @@ function renderReciboCard(r) {
       <div class="recibo-card-main">
         <div class="recibo-card-linea1">
           <span class="recibo-cliente">${r.cliente || '—'}</span>
-          <span class="recibo-monto">${formatGs(r.monto)}</span>
+          <span class="recibo-monto">${formatMonto(r.monto, r.moneda)}</span>
         </div>
         <div class="recibo-card-linea2">
           <span class="recibo-meta">${metaTexto || '—'}</span>
@@ -515,7 +515,7 @@ async function initReciboDetalleView(id) {
 
       <div class="recibo-doc-monto-bloque">
         <span class="recibo-doc-monto-label">Monto recibido</span>
-        <span class="recibo-doc-monto">${recibo.monto != null ? formatGs(recibo.monto) : '—'}</span>
+        <span class="recibo-doc-monto">${recibo.monto != null ? formatMonto(recibo.monto, recibo.moneda) : '—'}</span>
       </div>
 
       ${recibo.concepto ? `
@@ -579,6 +579,10 @@ async function initReciboNuevoView() {
   const selForma = document.getElementById('frec-forma-pago');
   if (selForma) selForma.value = '';
 
+  const selMoneda = document.getElementById('frec-moneda');
+  if (selMoneda) selMoneda.value = 'PYG';
+  actualizarLabelMonto();
+
   const selViaje = document.getElementById('frec-abona-por');
   if (selViaje) {
     selViaje.value = '';
@@ -624,6 +628,7 @@ async function initReciboNuevoView() {
   initCustomSelect("frec-tipo-recibo");
   initCustomSelect("frec-forma-pago");
   initCustomSelect("frec-abona-por");
+  initCustomSelect("frec-moneda");
 }
 
 function toggleCamposTransferencia() {
@@ -1275,6 +1280,7 @@ async function guardarNuevoRecibo() {
     action:      'generar',
     cliente,
     monto:       Number(monto),
+    moneda:      document.getElementById('frec-moneda').value || 'PYG',
     fecha,
     ci,
     email:       correo,
@@ -1447,9 +1453,40 @@ function filtrarRecibos() {
 }
 
 // ── Helpers ───────────────────────────────────
-function formatGs(n) {
+const MONEDAS_RECIBO = {
+  PYG: { simbolo: 'Gs.', decimales: 0 },
+  USD: { simbolo: 'US$', decimales: 2 },
+};
+
+// moneda ausente (recibos viejos / RPC sin la columna) → PYG
+function formatMonto(n, moneda = 'PYG') {
   if (n == null || n === '') return '—';
-  return 'Gs. ' + Number(n).toLocaleString('es-PY');
+  const m = MONEDAS_RECIBO[moneda] || MONEDAS_RECIBO.PYG;
+  return m.simbolo + ' ' + Number(n).toLocaleString('es-PY', {
+    minimumFractionDigits: m.decimales,
+    maximumFractionDigits: m.decimales,
+  });
+}
+
+function formatGs(n) {
+  return formatMonto(n, 'PYG');
+}
+
+// Totales por moneda (nunca se suman entre sí): "Gs. 1.000.000 · US$ 250,00".
+// US$ solo aparece si hay montos en dólares.
+function formatTotalesRecibo(totalGs, totalUsd) {
+  const gs  = Number(totalGs)  || 0;
+  const usd = Number(totalUsd) || 0;
+  return usd > 0 ? `${formatMonto(gs, 'PYG')} · ${formatMonto(usd, 'USD')}` : formatMonto(gs, 'PYG');
+}
+
+// Ajusta etiqueta/step del campo monto según la moneda elegida en el form
+function actualizarLabelMonto() {
+  const moneda = document.getElementById('frec-moneda')?.value || 'PYG';
+  const label  = document.querySelector('label[for="frec-monto"]');
+  const input  = document.getElementById('frec-monto');
+  if (label) label.textContent = `Monto (${MONEDAS_RECIBO[moneda].simbolo}) *`;
+  if (input) input.step = moneda === 'USD' ? '0.01' : '1';
 }
 
 // Devuelve la fecha de HOY como 'YYYY-MM-DD' usando los componentes

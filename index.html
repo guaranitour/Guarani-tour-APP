@@ -2340,6 +2340,15 @@
 
         <div class="form-recibo-row">
           <div class="form-recibo-field">
+            <label for="frec-moneda">Moneda *</label>
+            <select id="frec-moneda" onchange="actualizarLabelMonto()">
+              <option value="PYG">Guaraníes (Gs.)</option>
+              <option value="USD">Dólares (US$)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-recibo-row">
+          <div class="form-recibo-field">
             <label for="frec-monto">Monto (Gs.) *</label>
             <input id="frec-monto" type="number" placeholder="0" min="0" />
           </div>
