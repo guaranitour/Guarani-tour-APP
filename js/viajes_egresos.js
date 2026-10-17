@@ -244,7 +244,7 @@ function cerrarFormEgreso() {
 
 async function guardarEgreso() {
   let categoriaSelVal = document.getElementById("egreso-categoria")?.value;
-  const monto        = parseInt(document.getElementById("egreso-monto")?.value);
+  const monto        = _numeroDesdeMiles(document.getElementById("egreso-monto")?.value);
   const fecha        = document.getElementById("egreso-fecha")?.value || null;
   const descripcion  = document.getElementById("egreso-descripcion")?.value.trim() || null;
   const ejecutor     = document.getElementById("egreso-ejecutor")?.value.trim();
@@ -574,7 +574,7 @@ async function initEgresoEditarView({ egresoId, viajeId }) {
         </div>
         <div class="form-field">
           <label class="form-label">Monto (Gs.) <span class="req">*</span></label>
-          <input type="number" id="egreso-ed-monto" class="form-input" min="1" value="${e.monto ?? ""}" />
+          <input type="text" inputmode="numeric" autocomplete="off" id="egreso-ed-monto" class="form-input input-miles" value="${_formatearMiles(e.monto)}" />
         </div>
         <div class="form-field">
           <label class="form-label">Fecha <span class="req">*</span></label>
@@ -623,7 +623,7 @@ async function guardarEdicionEgreso() {
 
   const categoriaSelVal = document.getElementById("egreso-ed-categoria")?.value;
   const nuevaCatNombre  = document.getElementById("egreso-ed-nueva-cat-nombre")?.value.trim();
-  const monto       = parseInt(document.getElementById("egreso-ed-monto")?.value);
+  const monto       = _numeroDesdeMiles(document.getElementById("egreso-ed-monto")?.value);
   const fecha       = document.getElementById("egreso-ed-fecha")?.value || null;
   const descripcion = document.getElementById("egreso-ed-descripcion")?.value.trim() || null;
   const ejecutor    = document.getElementById("egreso-ed-ejecutor")?.value.trim();

@@ -589,6 +589,37 @@ function _nombreArchivoSeguro(nombre) {
   return nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.\-]+/g, "_");
 }
 
+// ── Separador de miles (solo visual) ─────────────────────────────────
+// Helper compartido (presupuesto, egresos). Los inputs de monto son
+// type="text" con puntos de miles (clase .input-miles). Al guardar se leen
+// con _numeroDesdeMiles(), que los quita: al backend llega el entero.
+function _formatearMiles(valor) {
+  const digitos = String(valor ?? "").replace(/\D/g, "");
+  return digitos ? Number(digitos).toLocaleString("es-PY") : "";
+}
+
+function _numeroDesdeMiles(texto) {
+  const digitos = String(texto ?? "").replace(/\D/g, "");
+  return digitos ? parseInt(digitos, 10) : NaN;
+}
+
+// Reformatea mientras se tipea, conservando la posición del cursor
+// (se cuenta cuántos dígitos había a su izquierda).
+document.addEventListener("input", (ev) => {
+  const el = ev.target;
+  if (!el.matches?.(".input-miles, .presupuesto-input, #presupuesto-precio-estimado")) return;
+  const pos = el.selectionStart ?? el.value.length;
+  const digitosIzq = el.value.slice(0, pos).replace(/\D/g, "").length;
+  el.value = _formatearMiles(el.value);
+
+  let nuevaPos = 0, vistos = 0;
+  while (nuevaPos < el.value.length && vistos < digitosIzq) {
+    if (/\d/.test(el.value[nuevaPos])) vistos++;
+    nuevaPos++;
+  }
+  el.setSelectionRange(nuevaPos, nuevaPos);
+});
+
 // Comprobantes (egresos, transferencias, pagos): más resolución que las
 // portadas para que el texto siga legible. Se dispara apenas se elige el archivo.
 const _INPUTS_COMPROBANTE = ["egreso-archivo", "egreso-ed-archivo", "transferencia-archivo", "pago-foto"];
