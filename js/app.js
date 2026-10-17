@@ -707,7 +707,7 @@ window.addEventListener("popstate", (event) => {
   // guarda datos); egreso-detalle no tiene contexto en memoria para
   // reconstruirse, así que va al padre. viaje-pasajero-pagos sí lo tiene
   // (pagosCtx), así que se resuelve más abajo, junto con pago-detalle.
-  const objectIdxViews = ["egreso-detalle", "transferencia-detalle"];
+  const objectIdxViews = ["egreso-detalle", "egreso-editar", "transferencia-detalle"];
   if (objectIdxViews.includes(view)) {
     navigateTo(_origenListaViajes().view, null, true);
     return;
@@ -766,7 +766,7 @@ function getSaludo() {
 // sin romper nada (ver soportaVT en navigateTo).
 const _vistasConTransicion = new Set([
   "byc", "byc-vincular", "clientes", "club-destino", "dashboard", "detalle",
-  "egreso-detalle", "historial-viajes", "historico", "movimiento-nuevo",
+  "egreso-detalle", "egreso-editar", "historial-viajes", "historico", "movimiento-nuevo",
   "movimientos", "nuevo", "pago-detalle", "ranking-puntos", "recibo-detalle",
   "recibo-nuevo", "recibos", "seleccion-asiento", "transferencia-detalle",
   "usuarios", "viaje-detalle", "viaje-editar", "viaje-nuevo",
@@ -786,6 +786,7 @@ const _NIVEL_VISTA = {
   "facturas-internas": 2, "facturas-marangatu": 2,
   "viaje-editar": 3, "viaje-pasajero-nuevo": 3, "viaje-pasajero-pagos": 3,
   "egreso-detalle": 3, "transferencia-detalle": 3,
+  "egreso-editar": 4,
   "pago-detalle": 4,
 };
 
@@ -906,6 +907,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vpd) _vpd.style.display = "none";
   const _ved = document.getElementById("view-egreso-detalle");
   if (_ved) _ved.style.display = "none";
+  const _veed = document.getElementById("view-egreso-editar");
+  if (_veed) _veed.style.display = "none";
   const _vtd = document.getElementById("view-transferencia-detalle");
   if (_vtd) _vtd.style.display = "none";
   const _vve = document.getElementById("view-viaje-editar");
@@ -1376,6 +1379,21 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Egreso" }
     ]);
     initEgresoDetalleView(idx);
+
+  }
+
+  else if (view === "egreso-editar") {
+
+    if (!can("egresos.editar")) { navigateTo("dashboard"); return; }
+    showEl("view-egreso-editar");
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
+      { label: "Detalle", action: () => navigateTo("viaje-detalle", idx?.viajeId) },
+      { label: "Egreso", action: () => navigateTo("egreso-detalle", idx) },
+      { label: "Editar" }
+    ]);
+    initEgresoEditarView(idx);
 
   }
 

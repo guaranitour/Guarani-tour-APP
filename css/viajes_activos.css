@@ -1189,6 +1189,20 @@
   transition: background .15s;
 }
 .egreso-det-comprobante:hover { background: rgba(45,106,79,.1); }
+
+.egreso-det-acciones {
+  display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem;
+}
+.egreso-btn-eliminar {
+  background: transparent;
+  color: var(--danger-text);
+  border: 1px solid var(--danger-text);
+  border-radius: 8px;
+  padding: .55rem 1rem;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.egreso-btn-eliminar:hover { background: var(--danger-bg); }
 .egreso-det-sin-comprobante {
   font-size: .83rem; color: var(--text-muted);
   display: block; margin-top: .5rem; font-style: italic;

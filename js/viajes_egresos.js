@@ -30,11 +30,7 @@ async function loadEgresos(viajeId) {
 
   listEl.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
-  const esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-    : ["admin", "worker"].includes(currentUserRole);
-
-  if (btnAdd) btnAdd.style.display = esWorkerOAdmin ? "" : "none";
+  if (btnAdd) btnAdd.style.display = can("egresos.registrar") ? "" : "none";
 
   // Query principal de egresos
   const { data, error } = await supabaseClient
@@ -116,9 +112,10 @@ async function loadEgresos(viajeId) {
   }
 }
 
-async function _cargarOpcionesFormEgreso() {
-  // Categorías: solo las presupuestadas para este viaje + exclusivas del viaje
-  // Siempre re-consultamos (el caché se invalida en mostrarFormEgreso)
+// Categorías elegibles para un egreso del viaje: las presupuestadas + las
+// exclusivas del viaje (aunque no estén presupuestadas), sin duplicados y
+// ordenadas alfabéticamente. Siempre re-consulta.
+async function _categoriasDisponiblesViaje(viajeId) {
   const [
     { data: presupuestadas },
     { data: exclusivas }
@@ -127,35 +124,31 @@ async function _cargarOpcionesFormEgreso() {
     supabaseClient
       .from("presupuesto_viaje")
       .select("categoria_id, categorias(id, nombre, scope)")
-      .eq("viaje_id", parseInt(viajeActualId)),
-    // Categorías exclusivas del viaje (scope = viajeActualId), aunque no estén presupuestadas
+      .eq("viaje_id", parseInt(viajeId)),
+    // Categorías exclusivas del viaje (scope = viajeId), aunque no estén presupuestadas
     supabaseClient
       .from("categorias")
       .select("id, nombre, scope")
-      .eq("scope", parseInt(viajeActualId))
+      .eq("scope", parseInt(viajeId))
       .order("nombre", { ascending: true })
   ]);
 
-  // Armar lista deduplicada
   const vistos = new Set();
-  _egresosCategorias = [];
-
+  const lista = [];
   (presupuestadas || []).forEach(row => {
     const c = row.categorias;
-    if (c && !vistos.has(c.id)) {
-      vistos.add(c.id);
-      _egresosCategorias.push(c);
-    }
+    if (c && !vistos.has(c.id)) { vistos.add(c.id); lista.push(c); }
   });
   (exclusivas || []).forEach(c => {
-    if (c && !vistos.has(c.id)) {
-      vistos.add(c.id);
-      _egresosCategorias.push(c);
-    }
+    if (c && !vistos.has(c.id)) { vistos.add(c.id); lista.push(c); }
   });
 
-  // Ordenar alfabéticamente
-  _egresosCategorias.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  return lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+async function _cargarOpcionesFormEgreso() {
+  // Siempre re-consultamos (el caché se invalida en mostrarFormEgreso)
+  _egresosCategorias = await _categoriasDisponiblesViaje(viajeActualId);
 
   // Métodos de pago (caja saliente) — desde caché global
   const metodosList = await getMetodosPago();
@@ -191,21 +184,24 @@ async function _cargarOpcionesFormEgreso() {
   initCustomSelect("egreso-caja");
 }
 
-function _toggleNuevaCategoriaInput(mostrar) {
-  let wrap = document.getElementById("egreso-nueva-cat-wrap");
+// Los ids por defecto son los del form de alta; la vista de edición pasa los suyos.
+function _toggleNuevaCategoriaInput(mostrar, selId = "egreso-categoria", prefijo = "egreso") {
+  const wrapId  = `${prefijo}-nueva-cat-wrap`;
+  const inputId = `${prefijo}-nueva-cat-nombre`;
+  let wrap = document.getElementById(wrapId);
   if (mostrar) {
     if (!wrap) {
       wrap = document.createElement("div");
-      wrap.id = "egreso-nueva-cat-wrap";
+      wrap.id = wrapId;
       wrap.style.cssText = "margin-top:.5rem";
       wrap.innerHTML = `
-        <input id="egreso-nueva-cat-nombre" class="form-input"
+        <input id="${inputId}" class="form-input"
                type="text" placeholder="Nombre del nuevo tipo de egreso" />
       `;
-      document.getElementById("egreso-categoria").after(wrap);
+      document.getElementById(selId).after(wrap);
     }
     wrap.style.display = "";
-    document.getElementById("egreso-nueva-cat-nombre")?.focus();
+    document.getElementById(inputId)?.focus();
   } else if (wrap) {
     wrap.style.display = "none";
   }
@@ -234,12 +230,7 @@ function cerrarFormEgreso() {
   const form = document.getElementById("form-nuevo-egreso");
   const btn  = document.getElementById("btn-agregar-egreso");
   if (form) form.style.display = "none";
-  if (btn) {
-    const esWorkerOAdmin = Array.isArray(currentUserRole)
-      ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-      : ["admin", "worker"].includes(currentUserRole);
-    btn.style.display = esWorkerOAdmin ? "" : "none";
-  }
+  if (btn) btn.style.display = can("egresos.registrar") ? "" : "none";
 
   ["egreso-categoria", "egreso-monto", "egreso-fecha", "egreso-descripcion", "egreso-ejecutor", "egreso-caja", "egreso-archivo"].forEach(id => {
     const el = document.getElementById(id);
@@ -372,7 +363,7 @@ async function initEgresoDetalleView({ egresoId, viajeId }) {
   // Query egreso + categorías + métodos en paralelo
   const [{ data: e, error }, { data: catData }, metDataRaw] = await Promise.all([
     supabaseClient.from("egresos")
-      .select("id, monto, descripcion, fecha, ejecutor, creado_por, categoria_id, caja_saliente, comprobante_nro")
+      .select("id, viaje_id, monto, descripcion, fecha, ejecutor, creado_por, categoria_id, caja_saliente, comprobante_nro")
       .eq("id", egresoId)
       .single(),
     supabaseClient.from("categorias").select("id, nombre"),
@@ -456,5 +447,271 @@ async function initEgresoDetalleView({ egresoId, viajeId }) {
       </div>
       ${comprobanteHtml}
     </div>
+
+    ${(can("egresos.editar") || can("egresos.eliminar")) ? `
+    <div class="egreso-det-acciones">
+      ${can("egresos.editar") ? `
+      <button type="button" class="btn-save" onclick="abrirEgresoEditar('${e.id}', '${e.viaje_id ?? viajeId}')">Editar egreso</button>` : ""}
+      ${can("egresos.eliminar") ? `
+      <button type="button" class="egreso-btn-eliminar" onclick="eliminarEgreso('${e.id}', '${e.viaje_id ?? viajeId}')">Eliminar egreso</button>` : ""}
+    </div>` : ""}
   `;
+}
+
+/* ── EGRESO ELIMINAR / EDITAR ──────────────── */
+
+// Vuelve al viaje parado en el tab Egresos (loadViajeDetalle consume _tabInicialViaje).
+function _volverAEgresosViaje(viajeId) {
+  _tabInicialViaje = "egresos";
+  navigateTo("viaje-detalle", parseInt(viajeId, 10));
+}
+
+async function eliminarEgreso(egresoId, viajeId) {
+  if (!can("egresos.eliminar")) {
+    showToast("No tenés permiso para eliminar egresos", "error");
+    return;
+  }
+
+  const ok = await confirmar({
+    titulo: "Eliminar egreso",
+    mensaje: "¿Eliminar este egreso? Esta acción es irrevocable.",
+    confirmarTexto: "Eliminar",
+    peligro: true,
+  });
+  if (!ok) return;
+
+  // .select() devuelve las filas borradas (y su comprobante): RLS no da
+  // error si no borra nada
+  const { data, error } = await supabaseClient
+    .from("egresos")
+    .delete()
+    .eq("id", egresoId)
+    .select("id, comprobante_nro");
+
+  if (error || !data?.length) {
+    console.error("Error eliminando egreso:", error);
+    showToast("No se pudo eliminar el egreso", "error");
+    return;
+  }
+
+  // Ya eliminado: se borra su comprobante del bucket, si tenía
+  if (data[0].comprobante_nro) await _borrarComprobanteEgreso(data[0].comprobante_nro);
+
+  showToast("Egreso eliminado", "success");
+  _volverAEgresosViaje(viajeId);
+}
+
+let _egresoEditando = null; // { id, viajeId, comprobante } del egreso abierto en la vista de edición
+
+function abrirEgresoEditar(egresoId, viajeId) {
+  navigateTo("egreso-editar", { egresoId, viajeId });
+}
+
+function _escAttrEgreso(v) {
+  return String(v ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+// Borra un comprobante del bucket "egresos" a partir de su URL pública.
+async function _borrarComprobanteEgreso(url) {
+  const marca = "/object/public/egresos/";
+  const i = url ? url.indexOf(marca) : -1;
+  if (i === -1) return false;
+  const path = decodeURIComponent(url.slice(i + marca.length).split("?")[0]);
+  const { error } = await supabaseClient.storage.from("egresos").remove([path]);
+  if (error) console.warn("No se pudo borrar el comprobante del bucket:", error);
+  return !error;
+}
+
+async function initEgresoEditarView({ egresoId, viajeId }) {
+  const cont = document.getElementById("egreso-editar-cont");
+  if (!cont) return;
+
+  cont.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
+  _egresoEditando = null;
+
+  const [{ data: e, error }, categorias, metodos] = await Promise.all([
+    supabaseClient.from("egresos")
+      .select("id, viaje_id, monto, descripcion, fecha, ejecutor, categoria_id, caja_saliente, comprobante_nro")
+      .eq("id", egresoId)
+      .single(),
+    _categoriasDisponiblesViaje(viajeId),
+    getMetodosPago()
+  ]);
+
+  if (error || !e) {
+    cont.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar el egreso.</div>`;
+    return;
+  }
+
+  // La categoría actual puede haber quedado fuera de las elegibles (ej. se
+  // quitó del presupuesto): se incluye igual para no perderla al editar.
+  if (!categorias.some(c => String(c.id) === String(e.categoria_id))) {
+    const { data: actual } = await supabaseClient
+      .from("categorias").select("id, nombre, scope").eq("id", e.categoria_id).maybeSingle();
+    if (actual) categorias.push(actual);
+  }
+
+  _egresoEditando = { id: e.id, viajeId: e.viaje_id, comprobante: e.comprobante_nro };
+
+  const fecha = e.fecha ? e.fecha.split("T")[0] : "";
+  const opcionesCat = categorias.map(c =>
+    `<option value="${c.id}"${String(c.id) === String(e.categoria_id) ? " selected" : ""}>${c.scope ? `${c.nombre} (exclusiva)` : c.nombre}</option>`
+  ).join("");
+  const opcionesCaja = metodos.map(m =>
+    `<option value="${m.id}"${String(m.id) === String(e.caja_saliente) ? " selected" : ""}>${m.metodo_de_pago}</option>`
+  ).join("");
+
+  const comprobanteActual = e.comprobante_nro
+    ? `<a href="${e.comprobante_nro}" target="_blank" class="egreso-det-comprobante">Ver comprobante actual</a>`
+    : `<span class="egreso-det-sin-comprobante">Sin comprobante adjunto</span>`;
+
+  cont.innerHTML = `
+    <div class="pago-form-inner">
+      <div class="detail-grid">
+        <div class="form-field full">
+          <label class="form-label">Categoría <span class="req">*</span></label>
+          <select id="egreso-ed-categoria" class="form-input">${opcionesCat}<option value="__nuevo__">+ Otro tipo…</option></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Monto (Gs.) <span class="req">*</span></label>
+          <input type="number" id="egreso-ed-monto" class="form-input" min="1" value="${e.monto ?? ""}" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Fecha <span class="req">*</span></label>
+          <input type="date" id="egreso-ed-fecha" class="form-input" value="${fecha}" />
+        </div>
+        <div class="form-field full">
+          <label class="form-label">Descripción</label>
+          <input type="text" id="egreso-ed-descripcion" class="form-input" value="${_escAttrEgreso(e.descripcion)}" />
+        </div>
+        <div class="form-field full">
+          <label class="form-label">Comprobante</label>
+          <div style="margin-bottom:.4rem">${comprobanteActual}</div>
+          <input type="file" id="egreso-ed-archivo" class="form-input" accept="image/*,application/pdf">
+          <p class="presupuesto-form-hint" style="margin:.4rem 0 0">Opcional. Si adjuntás uno nuevo, reemplaza al actual y el anterior se elimina.</p>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Ejecutor <span class="req">*</span></label>
+          <input type="text" id="egreso-ed-ejecutor" class="form-input" value="${_escAttrEgreso(e.ejecutor)}" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Caja saliente <span class="req">*</span></label>
+          <select id="egreso-ed-caja" class="form-input">${opcionesCaja}</select>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top:.75rem">
+        <button class="btn-cancel" onclick="navigateTo('egreso-detalle', { egresoId: '${e.id}', viajeId: '${e.viaje_id}' })">Cancelar</button>
+        <button class="btn-save" id="btn-guardar-egreso-ed" onclick="guardarEdicionEgreso()">Guardar cambios</button>
+      </div>
+    </div>`;
+
+  const selCat = document.getElementById("egreso-ed-categoria");
+  selCat.onchange = () => _toggleNuevaCategoriaInput(selCat.value === "__nuevo__", "egreso-ed-categoria", "egreso-ed");
+
+  initCustomSelect("egreso-ed-categoria");
+  initCustomSelect("egreso-ed-caja");
+}
+
+async function guardarEdicionEgreso() {
+  if (!can("egresos.editar")) {
+    showToast("No tenés permiso para editar egresos", "error");
+    return;
+  }
+  const ctx = _egresoEditando;
+  if (!ctx) return;
+
+  const categoriaSelVal = document.getElementById("egreso-ed-categoria")?.value;
+  const nuevaCatNombre  = document.getElementById("egreso-ed-nueva-cat-nombre")?.value.trim();
+  const monto       = parseInt(document.getElementById("egreso-ed-monto")?.value);
+  const fecha       = document.getElementById("egreso-ed-fecha")?.value || null;
+  const descripcion = document.getElementById("egreso-ed-descripcion")?.value.trim() || null;
+  const ejecutor    = document.getElementById("egreso-ed-ejecutor")?.value.trim();
+  const cajaId      = document.getElementById("egreso-ed-caja")?.value;
+  const archivo     = document.getElementById("egreso-ed-archivo")?.files[0];
+
+  const marcar = (id) => { document.getElementById(id)?.classList.add("error"); return false; };
+  let valido = true;
+  if (!categoriaSelVal)   valido = marcar("egreso-ed-categoria");
+  if (categoriaSelVal === "__nuevo__" && !nuevaCatNombre) valido = marcar("egreso-ed-nueva-cat-nombre");
+  if (!monto || monto <= 0) valido = marcar("egreso-ed-monto");
+  if (!fecha)             valido = marcar("egreso-ed-fecha");
+  if (!ejecutor)          valido = marcar("egreso-ed-ejecutor");
+  if (!cajaId)            valido = marcar("egreso-ed-caja");
+  if (!valido) return;
+
+  const ok = await confirmar({
+    titulo: "Guardar cambios",
+    mensaje: "¿Guardar los cambios de este egreso? La edición es irrevocable: los valores anteriores no se pueden recuperar.",
+    confirmarTexto: "Guardar",
+    peligro: true,
+  });
+  if (!ok) return;
+
+  const btn = document.getElementById("btn-guardar-egreso-ed");
+  const restaurarBtn = () => { if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; } };
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+
+  // Si eligió "+ Otro tipo…", crear la categoría exclusiva del viaje primero
+  let categoriaId = categoriaSelVal;
+  if (categoriaSelVal === "__nuevo__") {
+    const { data: nuevaCat, error: errCat } = await supabaseClient
+      .from("categorias")
+      .insert([{ nombre: nuevaCatNombre, scope: parseInt(ctx.viajeId) }])
+      .select("id")
+      .single();
+
+    if (errCat || !nuevaCat) {
+      console.error("Error creando categoría:", errCat);
+      showToast("Error al crear el tipo de egreso. Intentá de nuevo.", "error");
+      restaurarBtn();
+      return;
+    }
+    categoriaId = nuevaCat.id;
+    _egresosCategorias = []; // para que el próximo form de alta la muestre
+  }
+
+  // Comprobante nuevo: se convierte a WebP al subir (uploadEgresoFile)
+  let nuevaUrl = null;
+  if (archivo) {
+    try {
+      nuevaUrl = await uploadEgresoFile(archivo, ctx.viajeId);
+    } catch (e) {
+      console.error(e);
+      showToast("Error subiendo comprobante", "error");
+      restaurarBtn();
+      return;
+    }
+  }
+
+  const cambios = {
+    categoria_id: categoriaId,
+    monto,
+    fecha,
+    descripcion,
+    ejecutor,
+    caja_saliente: cajaId
+  };
+  if (nuevaUrl) cambios.comprobante_nro = nuevaUrl;
+
+  // .select() devuelve las filas actualizadas: RLS no da error si no toca nada
+  const { data, error } = await supabaseClient
+    .from("egresos")
+    .update(cambios)
+    .eq("id", ctx.id)
+    .select("id");
+
+  if (error || !data?.length) {
+    console.error("Error editando egreso:", error);
+    if (nuevaUrl) _borrarComprobanteEgreso(nuevaUrl); // deshacer la subida
+    showToast("No se pudo guardar el egreso. Revisá los datos e intentá de nuevo.", "error");
+    restaurarBtn();
+    return;
+  }
+
+  // Ya guardado: se elimina del bucket el comprobante que reemplazó
+  if (nuevaUrl && ctx.comprobante) await _borrarComprobanteEgreso(ctx.comprobante);
+
+  showToast("Egreso actualizado", "success");
+  navigateTo("egreso-detalle", { egresoId: ctx.id, viajeId: ctx.viajeId });
 }

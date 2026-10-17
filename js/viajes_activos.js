@@ -591,7 +591,7 @@ function _nombreArchivoSeguro(nombre) {
 
 // Comprobantes (egresos, transferencias, pagos): más resolución que las
 // portadas para que el texto siga legible. Se dispara apenas se elige el archivo.
-const _INPUTS_COMPROBANTE = ["egreso-archivo", "transferencia-archivo", "pago-foto"];
+const _INPUTS_COMPROBANTE = ["egreso-archivo", "egreso-ed-archivo", "transferencia-archivo", "pago-foto"];
 document.addEventListener("change", (e) => {
   if (_INPUTS_COMPROBANTE.includes(e.target?.id)) {
     precomprimirImagen(e.target.files?.[0], { maxW: 1800, calidad: 0.85 });
@@ -618,9 +618,9 @@ async function uploadViajeImage(fileOriginal, fixedName = null) {
 
   return fixedName ? `${data.publicUrl}?t=${Date.now()}` : data.publicUrl;
 }
-async function uploadEgresoFile(fileOriginal) {
+async function uploadEgresoFile(fileOriginal, viajeId = viajeActualId) {
   const file = await _optimizarComprobante(fileOriginal);
-  const fileName = `${viajeActualId}/${Date.now()}_${_nombreArchivoSeguro(file.name)}`;
+  const fileName = `${viajeId}/${Date.now()}_${_nombreArchivoSeguro(file.name)}`;
 
   const { error } = await supabaseClient.storage
     .from("egresos")
@@ -980,6 +980,10 @@ function openViajeDetalle(viajeId) {
   _setViajeOrigen(currentView === "historico" ? "historico" : "viajes");
   navigateTo("viaje-detalle", parseInt(viajeId, 10));
 }
+// Tab con el que se abre el próximo viaje (lo setea quien navega: ej. al
+// volver de eliminar un egreso). Se consume en loadViajeDetalle.
+let _tabInicialViaje = null;
+
 async function loadViajeDetalle(viajeId) {
   viajeActualId = parseInt(viajeId, 10);
 
@@ -989,7 +993,9 @@ async function loadViajeDetalle(viajeId) {
   // ni lo refresca hasta que el usuario hace clic manualmente en un tab,
   // porque loadEgresos/loadPresupuesto/etc. solo se disparan dentro de
   // switchViajeTab.
-  switchViajeTab("pasajeros");
+  const tabInicial = _tabInicialViaje || "pasajeros";
+  _tabInicialViaje = null;
+  switchViajeTab(tabInicial);
 
   const cacheado = _viajeDetalleCache.get(viajeActualId);
 
@@ -1176,7 +1182,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   // Egresos/Presupuesto/Resumen queden disponibles aunque el viaje
   // todavía no tenga pasajeros cargados.
   const tabEgresosEarly = document.getElementById("tab-egresos");
-  if (tabEgresosEarly) tabEgresosEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
+  if (tabEgresosEarly) tabEgresosEarly.style.display = can("egresos.ver") ? "" : "none"; // por tarea (sql/permisos_egresos.sql)
   const tabPresEarly = document.getElementById("tab-presupuesto");
   if (tabPresEarly) tabPresEarly.style.display = can("presupuesto.ver") ? "" : "none";
   const tabResEarly = document.getElementById("tab-resumen");
@@ -2210,8 +2216,12 @@ function switchViajeTab(tab) {
   if (esFinanzas) {
     // Finanzas: solo egresos/presupuesto/resumen. Nunca pasajeros ni extra.
     if (tab === "pasajeros" || tab === "extra") tab = "resumen";
-  } else if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra" || tab === "transferencias")) {
+  } else if (!_esWorkerOAdmin && (tab === "presupuesto" || tab === "resumen" || tab === "extra" || tab === "transferencias")) {
     tab = "pasajeros";
+  }
+  // Egresos: por tarea (ver sql/permisos_egresos.sql)
+  if (tab === "egresos" && !can("egresos.ver")) {
+    tab = esFinanzas ? "resumen" : "pasajeros";
   }
   // Presupuesto: por tarea (ver sql/permisos_presupuesto.sql)
   if (tab === "presupuesto" && !can("presupuesto.ver")) {
