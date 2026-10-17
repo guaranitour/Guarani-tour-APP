@@ -331,7 +331,9 @@ async function guardarPresupuesto() {
 
     // Categorías que tenían monto y ahora quedaron vacías → eliminar
     const catIdsNuevos = new Set(filas.map(f => f.categoria_id));
-    const aEliminar = Object.keys(_presupuestoOriginal).filter(id => !catIdsNuevos.has(id));
+    // Object.keys devuelve strings y catIdsNuevos guarda números: convertir,
+    // si no, "has" nunca coincide y se borraría todo el presupuesto.
+    const aEliminar = Object.keys(_presupuestoOriginal).map(Number).filter(id => !catIdsNuevos.has(id));
     if (aEliminar.length > 0) {
       await supabaseClient
         .from("presupuesto_viaje")
