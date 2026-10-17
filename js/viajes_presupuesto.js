@@ -30,12 +30,8 @@ async function loadPresupuesto(viajeId) {
   if (btnEdit) btnEdit.style.display = "none";
   if (formEl)  formEl.style.display  = "none";
 
-  const esAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.includes("admin")
-    : currentUserRole === "admin";
-  const esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin","worker"].includes(r))
-    : ["admin","worker"].includes(currentUserRole);
+  const puedeEditar    = can("presupuesto.editar");
+  const puedeRegistrar = can("presupuesto.registrar");
 
   // Traer presupuesto guardado + categorías + datos de proyección en paralelo
   const [{ data: filas, error }, { data: globales }, { data: locales }, { data: viajeProy }, { data: pasajerosConfirmados }] = await Promise.all([
@@ -91,7 +87,7 @@ async function loadPresupuesto(viajeId) {
         </svg>
         Sin presupuesto registrado
       </div>`;
-    if (btnReg && esWorkerOAdmin) btnReg.style.display = "";
+    if (btnReg && puedeRegistrar) btnReg.style.display = "";
     return;
   }
 
@@ -127,7 +123,7 @@ async function loadPresupuesto(viajeId) {
     </div>`).join("")}
   `;
 
-  if (btnEdit && esAdmin) btnEdit.style.display = "";
+  if (btnEdit && puedeEditar) btnEdit.style.display = "";
 }
 
 // Arma la tarjeta de proyección de ganancias, mostrando siempre la
@@ -265,19 +261,18 @@ function cerrarFormPresupuesto() {
   if (formEl)       formEl.style.display  = "none";
   if (advertencia)  advertencia.remove();
 
-  const esAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.includes("admin")
-    : currentUserRole === "admin";
-  const esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin","worker"].includes(r))
-    : ["admin","worker"].includes(currentUserRole);
-
   const hayPresupuesto = Object.keys(_presupuestoOriginal).length > 0;
-  if (btnReg)  btnReg.style.display  = (!hayPresupuesto && esWorkerOAdmin) ? "" : "none";
-  if (btnEdit) btnEdit.style.display = (hayPresupuesto && esAdmin) ? "" : "none";
+  if (btnReg)  btnReg.style.display  = (!hayPresupuesto && can("presupuesto.registrar")) ? "" : "none";
+  if (btnEdit) btnEdit.style.display = (hayPresupuesto && can("presupuesto.editar")) ? "" : "none";
 }
 
 async function guardarPresupuesto() {
+  // Registrar un presupuesto nuevo requiere .registrar; modificar uno existente, .editar
+  if (!can(_presupuestoModoEdicion ? "presupuesto.editar" : "presupuesto.registrar")) {
+    showToast("No tenés permiso para guardar el presupuesto", "error");
+    return;
+  }
+
   const inputs = document.querySelectorAll(".presupuesto-input");
   const btn    = document.getElementById("btn-guardar-presupuesto");
 
@@ -375,6 +370,11 @@ async function guardarPresupuesto() {
 }
 
 async function agregarCatExtra() {
+  if (!can("presupuesto.registrar") && !can("presupuesto.editar")) {
+    showToast("No tenés permiso para crear categorías", "error");
+    return;
+  }
+
   const input = document.getElementById("input-cat-extra");
   if (!input) return;
 

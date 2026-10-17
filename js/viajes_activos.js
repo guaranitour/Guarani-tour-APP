@@ -1178,7 +1178,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   const tabEgresosEarly = document.getElementById("tab-egresos");
   if (tabEgresosEarly) tabEgresosEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabPresEarly = document.getElementById("tab-presupuesto");
-  if (tabPresEarly) tabPresEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
+  if (tabPresEarly) tabPresEarly.style.display = can("presupuesto.ver") ? "" : "none";
   const tabResEarly = document.getElementById("tab-resumen");
   if (tabResEarly) tabResEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabTransfEarly = document.getElementById("tab-transferencias");
@@ -2212,6 +2212,10 @@ function switchViajeTab(tab) {
     if (tab === "pasajeros" || tab === "extra") tab = "resumen";
   } else if (!_esWorkerOAdmin && (tab === "egresos" || tab === "presupuesto" || tab === "resumen" || tab === "extra" || tab === "transferencias")) {
     tab = "pasajeros";
+  }
+  // Presupuesto: por tarea (ver sql/permisos_presupuesto.sql)
+  if (tab === "presupuesto" && !can("presupuesto.ver")) {
+    tab = esFinanzas ? "resumen" : "pasajeros";
   }
   // Extra requiere además que el viaje lo tenga habilitado
   if (tab === "extra" && !viajeActualData?.extras_habilitados) {
