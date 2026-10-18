@@ -1092,10 +1092,9 @@
                 <!-- Tipo -->
                 <div class="form-field">
                   <label class="form-label">Tipo <span class="req">*</span></label>
-                  <select id="pago-tipo" class="form-input" onchange="onTipoChange()">
+                  <select id="pago-tipo" class="form-input">
                     <option value="Pago">Pago</option>
                     <option value="Devolución">Devolución</option>
-                    <option value="Transferencia">Transferencia</option>
                   </select>
                 </div>
 
@@ -1166,25 +1165,6 @@
                   <input type="text" id="pago-observacion" class="form-input" placeholder="Ej: Segundo pago cuota" />
                 </div>
 
-              </div>
-
-              <!-- Sección transferencia (condicional) -->
-              <div id="pago-transferencia-wrap" style="display:none">
-                <div class="section-title" style="margin-top:.75rem">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/>
-                  </svg>
-                  Pasajero destino
-                </div>
-                <div class="form-buscar-wrap">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  <input type="text" id="trans-buscar" class="form-input"
-                    placeholder="Nombre o CI del pasajero destino…"
-                    oninput="buscarPasajeroDestino()" />
-                </div>
-                <div id="trans-resultados"></div>
               </div>
 
               <div class="form-actions">

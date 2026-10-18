@@ -122,3 +122,28 @@ using (
 );
 
 commit;
+
+-- ============================================================
+-- Limpieza: pagos.viaje_id y pagos.pasajero_id eliminadas
+-- Estaban en NULL en todas las filas (los pagos cuelgan de
+-- viaje_pasajero_id). Sus FKs con ON DELETE CASCADE se van con ellas.
+-- _pasajeros_bloquear_delete_con_historial dejó de consultar
+-- pagos.pasajero_id: basta con que el cliente tenga viaje_pasajeros.
+-- ============================================================
+
+create or replace function public._pasajeros_bloquear_delete_con_historial()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (select 1 from viaje_pasajeros where pasajero_id = old.id) then
+    raise exception 'No se puede eliminar: el cliente tiene viajes o pagos registrados'
+      using errcode = '23503';
+  end if;
+  return old;
+end;
+$$;
+
+alter table public.pagos drop column if exists viaje_id, drop column if exists pasajero_id;

@@ -11,7 +11,6 @@ let pagosCtx = {
   totalAPagar     : 0,
   metodos         : [],   // { id, metodo_de_pago }
   bancos          : [],   // { id, banco_id }
-  pasajeroDestino : null,
   extrasAsignados     : [],   // servicio_extra_pasajeros de este viaje_pasajero (con datos del servicio)
   extrasDisponibles   : [],   // servicios_extra del viaje aún no asignados a este pasajero
   extraElegido        : null, // { id, nombre, precio_venta } seleccionado en el modal, previo a confirmar
@@ -401,7 +400,7 @@ function mostrarFormPago() {
   const fechaEl = document.getElementById("pago-fecha");
   if (fechaEl) fechaEl.value = new Date().toISOString().split("T")[0];
   const tipoEl  = document.getElementById("pago-tipo");
-  if (tipoEl) { tipoEl.value = "Pago"; onTipoChange(); refreshCustomSelect("pago-tipo"); }
+  if (tipoEl) { tipoEl.value = "Pago"; refreshCustomSelect("pago-tipo"); }
   onMetodoChange();
   document.getElementById("form-nuevo-pago").style.display = "";
   document.getElementById("btn-nuevo-pago").style.display  = "none";
@@ -413,56 +412,6 @@ function ocultarFormPago() {
   if (form) form.style.display = "none";
   // Botón "Registrar pago": por tarea (sql/permisos_pagos.sql)
   if (btn) btn.style.display = can("pagos.registrar") ? "" : "none";
-}
-
-/* ── CAMBIO DE TIPO ─────────────────────────── */
-function onTipoChange() {
-  const tipo     = document.getElementById("pago-tipo")?.value;
-  const secTrans = document.getElementById("pago-transferencia-wrap");
-  if (secTrans) secTrans.style.display = (tipo === "Transferencia") ? "" : "none";
-  if (tipo === "Transferencia") {
-    const buscarEl = document.getElementById("trans-buscar");
-    const resEl    = document.getElementById("trans-resultados");
-    if (buscarEl) buscarEl.value = "";
-    if (resEl)    resEl.innerHTML = "";
-    pagosCtx.pasajeroDestino = null;
-  }
-}
-
-/* ── BUSCAR PASAJERO DESTINO ────────────────── */
-async function buscarPasajeroDestino() {
-  const q    = document.getElementById("trans-buscar").value.toLowerCase().trim();
-  const cont = document.getElementById("trans-resultados");
-  if (!q) { cont.innerHTML = ""; return; }
-
-  // Cargar pasajeros si aún no están en memoria
-  if (!allPassengers || allPassengers.length === 0) {
-    cont.innerHTML = `<div class="trans-vacio">Cargando pasajeros…</div>`;
-    await loadPassengers();
-  }
-
-  const resultados = (allPassengers || []).filter(p =>
-    String(p.id) !== String(pagosCtx.pasajeroId) &&
-    ((p.Pasajero || "").toLowerCase().includes(q) ||
-     (p["Documento de Identidad"] || "").toLowerCase().includes(q))
-  );
-  if (resultados.length === 0) {
-    cont.innerHTML = `<div class="trans-vacio">Sin resultados para "<strong>${q}</strong>"</div>`;
-    return;
-  }
-  cont.innerHTML = resultados.slice(0, 8).map(p => `
-    <div class="pasajero-item" onclick="seleccionarPasajeroDestino('${p.id}','${(p.Pasajero||"").replace(/'/g,"\\'")}')">
-      <div class="pasajero-item-inner">
-        <div><strong>${p.Pasajero}</strong><div class="ci">CI: ${p["Documento de Identidad"] || "—"}</div></div>
-        <span class="pasajero-select-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
-      </div>
-    </div>`).join("");
-}
-
-function seleccionarPasajeroDestino(id, nombre) {
-  pagosCtx.pasajeroDestino = { id, nombre };
-  document.getElementById("trans-buscar").value = nombre;
-  document.getElementById("trans-resultados").innerHTML = `<div class="pasajero-seleccionado">✅ ${nombre}</div>`;
 }
 
 /* ── SUBIR FOTO ─────────────────────────────── */
@@ -495,11 +444,6 @@ async function guardarPago() {
   if (monto == null || isNaN(monto) || monto < 0) { montoEl.classList.add("input-error"); montoEl.focus(); return; }
   montoEl.classList.remove("input-error");
 
-  if (tipo === "Transferencia" && !pagosCtx.pasajeroDestino) {
-    showToast("Seleccioná el pasajero destino de la transferencia", "warning");
-    return;
-  }
-
   const btn = document.getElementById("btn-guardar-pago");
   btn.disabled = true;
   btn.textContent = "Guardando…";
@@ -529,26 +473,9 @@ async function guardarPago() {
       creado_por      : user.email,
     };
 
-    if (tipo === "Transferencia") {
-      const { data: reg1, error: e1 } = await supabaseClient
-        .from("pagos").insert([{ ...base, tipo: "Transferencia" }]).select("id").single();
-      if (e1) throw e1;
-      const { data: reg2, error: e2 } = await supabaseClient.from("pagos").insert([{
-        ...base,
-        pasajero_id        : pagosCtx.pasajeroDestino.id,
-        tipo               : "Pago",
-        referencia_pago_id : reg1.id,
-        observacion        : `Transferencia desde ${pagosCtx.nombrePasajero}${obs ? " — " + obs : ""}`,
-      }]).select("id").single();
-      if (e2) throw e2;
-      // Vínculo bidireccional: origen también apunta al destino
-      const { error: e3 } = await supabaseClient
-        .from("pagos").update({ referencia_pago_id: reg2.id }).eq("id", reg1.id);
-      if (e3) throw e3;
-    } else {
-      const { error } = await supabaseClient.from("pagos").insert([base]);
-      if (error) throw error;
-    }
+    // Las transferencias entre pasajeros se hacen desde el detalle del pago
+    const { error } = await supabaseClient.from("pagos").insert([base]);
+    if (error) throw error;
 
     showToast("Pago guardado", "success");
     ocultarFormPago();
