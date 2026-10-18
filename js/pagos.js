@@ -416,12 +416,20 @@ function _abrirFormPago() {
   if (fechaEl) fechaEl.value = new Date().toISOString().split("T")[0];
   const tipoEl  = document.getElementById("pago-tipo");
   if (tipoEl) { tipoEl.value = "Pago"; refreshCustomSelect("pago-tipo"); }
+  // Método predeterminado: UENO OSCAR (se busca por nombre, no por id)
+  const metodoEl = document.getElementById("pago-metodo");
+  const metodoPorDefecto = (pagosCtx.metodos || []).find(m => (m.metodo_de_pago || "").trim().toUpperCase() === "UENO OSCAR");
+  if (metodoEl && metodoPorDefecto) {
+    metodoEl.value = String(metodoPorDefecto.id);
+    refreshCustomSelect("pago-metodo");
+  }
   onMetodoChange();
   document.getElementById("form-nuevo-pago").style.display = "";
   document.getElementById("btn-nuevo-pago").style.display  = "none";
 }
 
 function ocultarFormPago() {
+  _formPagoALaLista(); // si estaba prestado al detalle (edición), lo devuelve
   const form = document.getElementById("form-nuevo-pago");
   const btn  = document.getElementById("btn-nuevo-pago");
   if (form) form.style.display = "none";
@@ -563,8 +571,10 @@ async function guardarPago() {
       showToast("Pago guardado", "success");
     }
 
+    const editadoEnDetalle = !!editando && !!_formPagoOrigen;
     ocultarFormPago();
-    await loadPagosPasajero();
+    if (editadoEnDetalle) _volverALaListaPagos(); // el detalle mostraba datos viejos
+    else await loadPagosPasajero();
 
   } catch (e) {
     console.error("Error guardando pago:", e);
@@ -577,16 +587,54 @@ async function guardarPago() {
 /* ── EDITAR UN PAGO ─────────────────────────── */
 // Se entra desde el detalle del pago; el formulario de la lista se reutiliza
 // en "modo edición" (pagosCtx.pagoEditando).
-function iniciarEdicionPago() {
-  const p = pagosCtx.pagoActual;
-  if (!p || !can("pagos.editar")) return;
-  pagosCtx.pagoPorEditar = p;
+// El formulario se "presta" al detalle del pago para editar sin cambiar de
+// pantalla; _formPagoOrigen recuerda dónde devolverlo.
+let _formPagoOrigen = null;
+
+function _formPagoAlDetalle() {
+  const form = document.getElementById("form-nuevo-pago");
+  const slot = document.getElementById("pd-edit-slot");
+  if (!form || !slot) return false;
+  if (!_formPagoOrigen) _formPagoOrigen = { padre: form.parentNode, siguiente: form.nextSibling };
+  slot.appendChild(form);
+  const botones = document.getElementById("pd-botones");
+  if (botones) botones.style.display = "none";
+  return true;
+}
+
+function _formPagoALaLista() {
+  if (!_formPagoOrigen) return;
+  const form = document.getElementById("form-nuevo-pago");
+  if (form) _formPagoOrigen.padre.insertBefore(form, _formPagoOrigen.siguiente);
+  _formPagoOrigen = null;
+  const botones = document.getElementById("pd-botones");
+  if (botones) botones.style.display = "";
+}
+
+function _volverALaListaPagos() {
   navigateTo("viaje-pasajero-pagos", {
     viajePasajeroId : pagosCtx.viajePasajeroId,
     viajeId         : pagosCtx.viajeId,
     pasajeroId      : pagosCtx.pasajeroId,
     nombrePasajero  : pagosCtx.nombrePasajero,
   });
+}
+
+async function iniciarEdicionPago() {
+  const p = pagosCtx.pagoActual;
+  if (!p || !can("pagos.editar")) return;
+
+  // Normal: se edita aquí mismo. Los selects de método ya están cargados
+  // si se llegó por la lista de pagos.
+  if (document.getElementById("pago-metodo")?.options.length && _formPagoAlDetalle()) {
+    await _prepararEdicionPago(p);
+    return;
+  }
+
+  // Si el detalle se abrió directo (ej. recarga), se pasa por la lista, que
+  // prepara los selects, y desde allí se abre el formulario.
+  pagosCtx.pagoPorEditar = p;
+  _volverALaListaPagos();
 }
 
 function _resetModoEdicionPago() {

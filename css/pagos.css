@@ -642,7 +642,23 @@
   color: var(--text-muted);
 }
 
-#pd-editar { margin-top: .75rem; }
+/* display:block/flex pisaría el atributo hidden */
+.pd-foto-aviso[hidden],
+.pago-foto-actual[hidden] { display: none; }
+
+/* Editar y Transferir: uno al lado del otro (si solo hay uno, ocupa todo) */
+.pd-botones {
+  display: flex;
+  gap: .75rem;
+}
+.pd-botones > div {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.pd-botones .btn-transferir-pago {
+  padding-inline: .5rem;
+  text-align: center;
+}
 
 .pago-foto-actual {
   display: flex;

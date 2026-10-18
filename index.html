@@ -1714,7 +1714,8 @@
           </a>
         </div>
 
-        <!-- Editar (pagos.editar) -->
+        <!-- Acciones: Editar (pagos.editar) y Transferir (pagos.transferir) -->
+        <div class="pd-botones" id="pd-botones">
         <div id="pd-editar" style="display:none">
           <button class="btn-transferir-pago" onclick="iniciarEdicionPago()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1725,13 +1726,16 @@
           </button>
         </div>
 
-        <!-- Acciones -->
         <div id="pd-acciones" style="display:none">
           <button class="btn-transferir-pago" onclick="abrirModalTransferirPago()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
             Transferir a otro pasajero
           </button>
         </div>
+        </div>
+
+        <!-- Aquí se mueve el formulario de pago mientras se edita (ver iniciarEdicionPago) -->
+        <div id="pd-edit-slot"></div>
 
       </div>
     </div>
