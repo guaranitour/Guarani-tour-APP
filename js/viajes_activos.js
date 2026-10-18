@@ -1218,7 +1218,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   const tabResEarly = document.getElementById("tab-resumen");
   if (tabResEarly) tabResEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
   const tabTransfEarly = document.getElementById("tab-transferencias");
-  if (tabTransfEarly) tabTransfEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
+  if (tabTransfEarly) tabTransfEarly.style.display = can("transferencias.ver") ? "" : "none"; // por tarea (sql/permisos_transferencias.sql)
   const tabExtraEarly = document.getElementById("tab-extra");
   if (tabExtraEarly) {
     tabExtraEarly.style.display = (can("extras.ver") && !!viajeActualData?.extras_habilitados) ? "" : "none";
@@ -2246,7 +2246,7 @@ function switchViajeTab(tab) {
   if (esFinanzas) {
     // Finanzas: nunca ve el listado de pasajeros.
     if (tab === "pasajeros") tab = "resumen";
-  } else if (!_esWorkerOAdmin && (tab === "presupuesto" || tab === "resumen" || tab === "transferencias")) {
+  } else if (!_esWorkerOAdmin && (tab === "presupuesto" || tab === "resumen")) {
     tab = "pasajeros";
   }
   // Egresos: por tarea (ver sql/permisos_egresos.sql)
@@ -2255,6 +2255,10 @@ function switchViajeTab(tab) {
   }
   // Presupuesto: por tarea (ver sql/permisos_presupuesto.sql)
   if (tab === "presupuesto" && !can("presupuesto.ver")) {
+    tab = esFinanzas ? "resumen" : "pasajeros";
+  }
+  // Transferencias: por tarea (ver sql/permisos_transferencias.sql)
+  if (tab === "transferencias" && !can("transferencias.ver")) {
     tab = esFinanzas ? "resumen" : "pasajeros";
   }
   // Extra: por tarea (sql/permisos_extras.sql) y además el viaje debe tenerlo habilitado

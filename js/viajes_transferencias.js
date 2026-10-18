@@ -11,8 +11,11 @@
 //  de_caja / a_caja son metodos_de_pago.id — la misma tabla que ya usa
 //  pagos.metodo_pago_id.
 //
+//  Permisos por tarea (ver sql/permisos_transferencias.sql):
+//  transferencias.ver y transferencias.registrar.
+//
 //  Dependencias globales (definidas en otros scripts, cargados antes en
-//  index.html): supabaseClient, currentUserRole, viajeActualId,
+//  index.html): supabaseClient, can(), viajeActualId,
 //  navigateTo(), getMetodosPago().
 // ══════════════════════════════════════════════════════════════════════
 
@@ -28,11 +31,7 @@ async function loadTransferencias(viajeId) {
 
   listEl.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
 
-  const esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-    : ["admin", "worker"].includes(currentUserRole);
-
-  if (btnAdd) btnAdd.style.display = esWorkerOAdmin ? "" : "none";
+  if (btnAdd) btnAdd.style.display = can("transferencias.registrar") ? "" : "none";
 
   // Query principal de transferencias
   const { data, error } = await supabaseClient
@@ -133,6 +132,7 @@ async function _cargarOpcionesFormTransferencia() {
 }
 
 async function mostrarFormTransferencia() {
+  if (!can("transferencias.registrar")) return;
   const form = document.getElementById("form-nueva-transferencia");
   const btn  = document.getElementById("btn-agregar-transferencia");
   if (!form) return;
@@ -153,12 +153,7 @@ function cerrarFormTransferencia() {
   const form = document.getElementById("form-nueva-transferencia");
   const btn  = document.getElementById("btn-agregar-transferencia");
   if (form) form.style.display = "none";
-  if (btn) {
-    const esWorkerOAdmin = Array.isArray(currentUserRole)
-      ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-      : ["admin", "worker"].includes(currentUserRole);
-    btn.style.display = esWorkerOAdmin ? "" : "none";
-  }
+  if (btn) btn.style.display = can("transferencias.registrar") ? "" : "none";
 
   ["transferencia-de", "transferencia-a", "transferencia-monto", "transferencia-fecha", "transferencia-nota", "transferencia-archivo"].forEach(id => {
     const el = document.getElementById(id);
@@ -185,6 +180,8 @@ async function uploadTransferenciaFile(fileOriginal) {
 }
 
 async function guardarTransferencia() {
+  if (!can("transferencias.registrar")) return; // RLS igual lo bloquearía
+
   const deCaja    = document.getElementById("transferencia-de")?.value;
   const aCaja     = document.getElementById("transferencia-a")?.value;
   const monto     = parseInt(document.getElementById("transferencia-monto")?.value);
