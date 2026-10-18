@@ -1135,6 +1135,10 @@
                 <!-- Foto comprobante -->
                 <div class="form-field full" id="pago-foto-wrap">
                   <label class="form-label">Foto comprobante</label>
+                  <div class="pago-foto-actual" id="pago-foto-actual" hidden>
+                    <span id="pago-foto-actual-txt"></span>
+                    <button type="button" id="pago-foto-actual-btn" class="pago-foto-actual-btn" onclick="_alternarQuitarFotoActual()">Quitar</button>
+                  </div>
                   <div class="file-input-custom" id="pago-foto-custom">
                     <input type="file" id="pago-foto" class="file-input-native" accept="image/*,application/pdf" />
                     <button type="button" class="file-input-btn" onclick="document.getElementById('pago-foto').click()">
@@ -1706,7 +1710,19 @@
           </div>
           <a id="pd-foto-link" href="#" target="_blank">
             <img id="pd-foto-img" src="" alt="Comprobante" class="pd-foto-img" />
+            <span id="pd-foto-aviso" class="pd-foto-aviso" hidden></span>
           </a>
+        </div>
+
+        <!-- Editar (pagos.editar) -->
+        <div id="pd-editar" style="display:none">
+          <button class="btn-transferir-pago" onclick="iniciarEdicionPago()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar pago
+          </button>
         </div>
 
         <!-- Acciones -->

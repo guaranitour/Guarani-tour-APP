@@ -147,3 +147,111 @@ end;
 $$;
 
 alter table public.pagos drop column if exists viaje_id, drop column if exists pasajero_id;
+
+-- ============================================================
+-- Fase 2: comprobantes en R2 + tarea pagos.editar
+--   * pagos.foto_storage_key: llave del comprobante en R2
+--     (pagos/{viajeId}/{timestamp}.{ext}). foto_comprobante (URL pública
+--     de Supabase Storage) queda para los pagos anteriores a la migración.
+--   * pagos.editar (solo admin por defecto): corrige datos y comprobante.
+--     Reemplazar o quitar el comprobante borra el anterior en R2 (el Worker
+--     exige pagos.editar para el DELETE).
+--   * UPDATE: pagos.editar, o fijar el vínculo de una transferencia
+--     (pagos.registrar / pagos.transferir, como antes).
+--   * Trigger _pagos_proteger_update:
+--       - inmutables: id, viaje_pasajero_id, creado_por, created_at, ref_origen
+--       - referencia_pago_id solo se fija una vez
+--       - sin pagos.editar solo se puede fijar referencia_pago_id
+--       - con pagos.editar no se cambia hacia/desde Transferencia
+--       - un pago ligado a una transferencia mantiene monto, tipo y método
+-- ============================================================
+
+alter table public.pagos add column if not exists foto_storage_key text;
+
+insert into public.permisos (codigo, modulo, descripcion) values
+  ('pagos.editar', 'pagos', 'Corregir un pago ya registrado (datos y comprobante; reemplazar el comprobante borra el anterior)')
+on conflict (codigo) do update set descripcion = excluded.descripcion;
+
+insert into public.rol_permisos (role, permiso) values ('admin', 'pagos.editar')
+on conflict do nothing;
+
+drop policy if exists pagos_vincular on public.pagos;
+drop policy if exists pagos_actualizar on public.pagos;
+
+create policy pagos_actualizar on public.pagos for update to authenticated
+using (
+  (select public.has_permission('pagos.editar'))
+  or (
+    tipo = 'Transferencia'
+    and referencia_pago_id is null
+    and (
+      (select public.has_permission('pagos.registrar'))
+      or (select public.has_permission('pagos.transferir'))
+    )
+  )
+)
+with check (
+  (select public.has_permission('pagos.editar'))
+  or (
+    tipo = 'Transferencia'
+    and (
+      (select public.has_permission('pagos.registrar'))
+      or (select public.has_permission('pagos.transferir'))
+    )
+  )
+);
+
+create or replace function public._pagos_proteger_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.email() is null then
+    return new;
+  end if;
+
+  if new.id                is distinct from old.id
+  or new.viaje_pasajero_id is distinct from old.viaje_pasajero_id
+  or new.creado_por        is distinct from old.creado_por
+  or new.created_at        is distinct from old.created_at
+  or new.ref_origen        is distinct from old.ref_origen
+  then
+    raise exception 'No se pueden modificar el pasajero, el autor ni el origen de un pago';
+  end if;
+
+  if new.referencia_pago_id is distinct from old.referencia_pago_id
+     and old.referencia_pago_id is not null then
+    raise exception 'El vínculo de una transferencia no se puede modificar';
+  end if;
+
+  if not public.has_permission('pagos.editar') then
+    if (to_jsonb(new) - 'referencia_pago_id') is distinct from (to_jsonb(old) - 'referencia_pago_id') then
+      raise exception 'Solo se puede vincular la referencia de un pago; el resto no es modificable';
+    end if;
+    return new;
+  end if;
+
+  if new.tipo is distinct from old.tipo
+     and 'Transferencia' in (new.tipo, old.tipo) then
+    raise exception 'No se puede cambiar un pago hacia o desde el tipo Transferencia';
+  end if;
+
+  if (new.monto is distinct from old.monto
+      or new.tipo is distinct from old.tipo
+      or new.metodo_pago_id is distinct from old.metodo_pago_id)
+     and (
+       old.tipo = 'Transferencia'
+       or old.referencia_pago_id is not null
+       or old.ref_origen is not null
+       or exists (select 1 from public.pagos x
+                  where x.referencia_pago_id = old.id or x.ref_origen = old.id::text)
+     )
+  then
+    raise exception 'Este pago está ligado a una transferencia: no se pueden cambiar monto, tipo ni método';
+  end if;
+
+  return new;
+end;
+$$;

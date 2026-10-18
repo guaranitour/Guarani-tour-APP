@@ -80,6 +80,13 @@ async function initPagosView(ctx) {
   if (bancoHidden) bancoHidden.value = "";
 
   await loadPagosPasajero();
+
+  // Viene del botón "Editar" del detalle del pago
+  if (pagosCtx.pagoPorEditar) {
+    const p = pagosCtx.pagoPorEditar;
+    pagosCtx.pagoPorEditar = null;
+    await _prepararEdicionPago(p);
+  }
 }
 
 /* ── BÚSQUEDA DE BANCO ──────────────────────── */
@@ -178,7 +185,7 @@ async function loadPagosPasajero() {
       .single(),
     supabaseClient
       .from("pagos")
-      .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, creado_por, banco, metodo_pago_id")
+      .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, foto_storage_key, creado_por, banco, metodo_pago_id, referencia_pago_id, ref_origen")
       .eq("viaje_pasajero_id", parseInt(pagosCtx.viajePasajeroId))
       .order("fecha_pago", { ascending: false }),
   ]);
@@ -311,7 +318,9 @@ async function loadPagosPasajero() {
       id: p.id, tipo: p.tipo, monto: p.monto, fecha_pago: p.fecha_pago,
       metodo, banco, comprobante_nro: p.comprobante_nro,
       observacion: p.observacion, creado_por: p.creado_por,
-      foto_comprobante: p.foto_comprobante
+      foto_comprobante: p.foto_comprobante, foto_storage_key: p.foto_storage_key,
+      metodo_pago_id: p.metodo_pago_id, banco_id: p.banco,
+      referencia_pago_id: p.referencia_pago_id, ref_origen: p.ref_origen
     }));
     return `
     <div class="pago-row" onclick="abrirDetallePago(JSON.parse(decodeURIComponent('${pagoData}')))">
@@ -384,6 +393,12 @@ function _leerMontoInput(id) {
 
 function mostrarFormPago() {
   if (!can("pagos.registrar")) return;
+  _abrirFormPago();
+}
+
+// Abre el formulario limpio, en modo alta. _prepararEdicionPago() lo reutiliza.
+function _abrirFormPago() {
+  _resetModoEdicionPago();
   ["pago-monto","pago-comprobante","pago-observacion"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
@@ -410,30 +425,80 @@ function ocultarFormPago() {
   const form = document.getElementById("form-nuevo-pago");
   const btn  = document.getElementById("btn-nuevo-pago");
   if (form) form.style.display = "none";
+  _resetModoEdicionPago();
   // Botón "Registrar pago": por tarea (sql/permisos_pagos.sql)
   if (btn) btn.style.display = can("pagos.registrar") ? "" : "none";
 }
 
-/* ── SUBIR FOTO ─────────────────────────────── */
-// Los comprobantes quedan en una carpeta por viaje: pagos/{viajeId}/{timestamp}.{ext}
-async function subirFotoComprobante(fileOriginal) {
-  const file = await _optimizarComprobante(fileOriginal);
-  const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const carpeta = pagosCtx.viajeId ? `${pagosCtx.viajeId}/` : "";
-  const fileName = `${carpeta}${Date.now()}.${ext}`;
-  const { error } = await supabaseClient.storage.from("pagos").upload(fileName, file, { contentType: file.type || undefined });
-  if (error) throw error;
-  const { data } = supabaseClient.storage.from("pagos").getPublicUrl(fileName);
-  return data.publicUrl;
+/* ── COMPROBANTES EN R2 (vía Worker) ────────── */
+// Los archivos viven en R2 detrás del mismo Worker que usa Facturas. Llave:
+// pagos/{viajeId}/{timestamp}.{ext}. El Worker exige pagos.registrar para
+// subir, pagos.comprobante_ver para ver y pagos.editar para borrar.
+const PAGOS_WORKER_URL = "https://storage.guaranitour.com";
+
+async function _pagosJwt() {
+  const { data } = await supabaseClient.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) throw new Error("Sesión no disponible");
+  return token;
 }
 
-/* ── GUARDAR PAGO ───────────────────────────── */
-async function guardarPago() {
-  if (!can("pagos.registrar")) return; // guarda extra, RLS igual lo bloquearía
+async function _pagosWorkerFetch(key, opciones = {}) {
+  const jwt = await _pagosJwt();
+  return fetch(`${PAGOS_WORKER_URL}/${encodeURIComponent(key)}`, {
+    ...opciones,
+    headers: { ...(opciones.headers || {}), Authorization: `Bearer ${jwt}` },
+  });
+}
 
-  const monto    = _leerMontoInput("pago-monto");
-  const tipo     = document.getElementById("pago-tipo").value;
-  const metodoid = document.getElementById("pago-metodo").value || null;
+// Devuelve la llave del objeto en R2
+async function subirFotoComprobante(fileOriginal) {
+  const file = await _optimizarComprobante(fileOriginal);
+  const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+  const key = `pagos/${pagosCtx.viajeId}/${Date.now()}.${ext}`;
+  const res = await _pagosWorkerFetch(key, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `HTTP ${res.status}`);
+  }
+  return key;
+}
+
+// Mejor esfuerzo: si falla queda un archivo huérfano en R2, pero el pago
+// ya está guardado y no se debe revertir por eso.
+async function _pagosEliminarArchivo(key) {
+  if (!key) return;
+  try {
+    const res = await _pagosWorkerFetch(key, { method: "DELETE" });
+    if (!res.ok) console.warn("No se pudo borrar el comprobante anterior:", key, res.status);
+  } catch (e) {
+    console.warn("No se pudo borrar el comprobante anterior:", key, e);
+  }
+}
+
+/* ── GUARDAR PAGO (alta o edición) ──────────── */
+const _SVG_CHECK_BTN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+function _pintarBtnGuardarPago() {
+  const btn = document.getElementById("btn-guardar-pago");
+  if (!btn) return;
+  btn.disabled = false;
+  btn.innerHTML = `${_SVG_CHECK_BTN} ${pagosCtx.pagoEditando ? "Guardar cambios" : "Registrar pago"}`;
+}
+
+async function guardarPago() {
+  const editando = pagosCtx.pagoEditando;
+  if (!can(editando ? "pagos.editar" : "pagos.registrar")) return; // guarda extra, RLS igual lo bloquearía
+
+  // Un pago ligado a una transferencia conserva monto, tipo y método
+  const ligada   = !!(editando && pagosCtx.edicionLigada);
+  const monto    = ligada ? editando.monto : _leerMontoInput("pago-monto");
+  const tipo     = ligada ? editando.tipo  : document.getElementById("pago-tipo").value;
+  const metodoid = ligada ? (editando.metodo_pago_id ?? null) : (document.getElementById("pago-metodo").value || null);
   const bancoId  = document.getElementById("pago-banco").value  || null;
   const fecha    = document.getElementById("pago-fecha").value;
   const compNro  = document.getElementById("pago-comprobante").value.trim() || null;
@@ -448,36 +513,57 @@ async function guardarPago() {
   btn.disabled = true;
   btn.textContent = "Guardando…";
 
+  let nuevaKey = null;
   try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-
-    let foto_url = null;
     if (fotoFile) {
-      try { foto_url = await subirFotoComprobante(fotoFile); }
+      try { nuevaKey = await subirFotoComprobante(fotoFile); }
       catch (e) {
         console.warn("No se pudo subir foto:", e);
+        // Al corregir un pago no se descarta en silencio el comprobante nuevo
+        if (editando) throw new Error("No se pudo subir el comprobante");
         showToast("El pago se guardará sin el comprobante adjunto", "warning");
       }
     }
 
-    const base = {
-      viaje_pasajero_id : parseInt(pagosCtx.viajePasajeroId),
-      metodo_pago_id    : metodoid,
+    const datos = {
+      metodo_pago_id  : metodoid,
       banco           : bancoId,
       monto,
       tipo,
       fecha_pago      : fecha || new Date().toISOString().split("T")[0],
       comprobante_nro : compNro,
       observacion     : obs,
-      foto_comprobante: foto_url,
-      creado_por      : user.email,
     };
 
-    // Las transferencias entre pasajeros se hacen desde el detalle del pago
-    const { error } = await supabaseClient.from("pagos").insert([base]);
-    if (error) throw error;
+    if (editando) {
+      const cambiaFoto = !!nuevaKey || pagosCtx.quitarFoto;
+      if (cambiaFoto) {
+        datos.foto_storage_key = nuevaKey;   // null si solo se quita
+        datos.foto_comprobante = null;       // URL pública vieja (Supabase Storage)
+      }
+      const { data: filas, error } = await supabaseClient
+        .from("pagos").update(datos).eq("id", editando.id).select("id");
+      if (error || !filas?.length) {
+        await _pagosEliminarArchivo(nuevaKey); // el archivo nuevo quedó sin uso
+        nuevaKey = null;
+        throw error || new Error("No se pudo guardar el cambio (sin permiso)");
+      }
+      // Recién con el pago actualizado se borra el comprobante anterior
+      if (cambiaFoto) await _pagosEliminarArchivo(editando.foto_storage_key);
+      showToast("Pago actualizado", "success");
+    } else {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      const { error } = await supabaseClient.from("pagos").insert([{
+        ...datos,
+        viaje_pasajero_id : parseInt(pagosCtx.viajePasajeroId),
+        foto_storage_key  : nuevaKey,
+        creado_por        : user.email,
+      }]);
+      if (error) { await _pagosEliminarArchivo(nuevaKey); nuevaKey = null; throw error; }
+      // Las transferencias entre pasajeros se hacen desde el detalle del pago
+      showToast("Pago guardado", "success");
+    }
 
-    showToast("Pago guardado", "success");
     ocultarFormPago();
     await loadPagosPasajero();
 
@@ -485,14 +571,156 @@ async function guardarPago() {
     console.error("Error guardando pago:", e);
     showToast("Error al guardar: " + (e.message || "Intentá de nuevo"), "error");
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Registrar pago`;
+    _pintarBtnGuardarPago();
   }
+}
+
+/* ── EDITAR UN PAGO ─────────────────────────── */
+// Se entra desde el detalle del pago; el formulario de la lista se reutiliza
+// en "modo edición" (pagosCtx.pagoEditando).
+function iniciarEdicionPago() {
+  const p = pagosCtx.pagoActual;
+  if (!p || !can("pagos.editar")) return;
+  pagosCtx.pagoPorEditar = p;
+  navigateTo("viaje-pasajero-pagos", {
+    viajePasajeroId : pagosCtx.viajePasajeroId,
+    viajeId         : pagosCtx.viajeId,
+    pasajeroId      : pagosCtx.pasajeroId,
+    nombrePasajero  : pagosCtx.nombrePasajero,
+  });
+}
+
+function _resetModoEdicionPago() {
+  pagosCtx.pagoEditando = null;
+  pagosCtx.edicionLigada = false;
+  pagosCtx.quitarFoto = false;
+  ["pago-tipo", "pago-monto", "pago-metodo"].forEach(id => {
+    const wrap = document.getElementById(id)?.closest(".form-field");
+    if (wrap) wrap.style.display = "";
+  });
+  const nota = document.getElementById("pago-foto-actual");
+  if (nota) nota.hidden = true;
+  _pintarBtnGuardarPago();
+}
+
+function _alternarQuitarFotoActual() {
+  pagosCtx.quitarFoto = !pagosCtx.quitarFoto;
+  _pintarNotaFotoActual();
+}
+
+function _pintarNotaFotoActual() {
+  const txt = document.getElementById("pago-foto-actual-txt");
+  const btn = document.getElementById("pago-foto-actual-btn");
+  if (!txt || !btn) return;
+  txt.textContent = pagosCtx.quitarFoto
+    ? "El comprobante actual se quitará al guardar."
+    : "Ya tiene un comprobante. Si elegís otro archivo, lo reemplaza.";
+  btn.textContent = pagosCtx.quitarFoto ? "Deshacer" : "Quitar";
+}
+
+async function _pagoTieneTransferencia(id) {
+  const { count } = await supabaseClient
+    .from("pagos")
+    .select("id", { count: "exact", head: true })
+    .or(`ref_origen.eq.${id},referencia_pago_id.eq.${id}`);
+  return (count || 0) > 0;
+}
+
+async function _prepararEdicionPago(p) {
+  if (!can("pagos.editar")) return;
+  _abrirFormPago();
+  pagosCtx.pagoEditando = p;
+
+  const ligada = p.tipo === "Transferencia" || !!p.referencia_pago_id || !!p.ref_origen
+    || await _pagoTieneTransferencia(p.id);
+  pagosCtx.edicionLigada = ligada;
+
+  document.getElementById("pago-monto").value = _formatearMiles(p.monto);
+  document.getElementById("pago-fecha").value = p.fecha_pago || "";
+  document.getElementById("pago-comprobante").value = p.comprobante_nro || "";
+  document.getElementById("pago-observacion").value = p.observacion || "";
+
+  const tipoEl = document.getElementById("pago-tipo");
+  if (tipoEl) { tipoEl.value = p.tipo; refreshCustomSelect("pago-tipo"); }
+  const metodoEl = document.getElementById("pago-metodo");
+  if (metodoEl) { metodoEl.value = String(p.metodo_pago_id ?? ""); refreshCustomSelect("pago-metodo"); }
+  onMetodoChange();
+
+  document.getElementById("pago-banco").value = p.banco_id ?? "";
+  document.getElementById("pago-banco-input").value = p.banco || "";
+
+  if (ligada) {
+    ["pago-tipo", "pago-monto", "pago-metodo"].forEach(id => {
+      const wrap = document.getElementById(id)?.closest(".form-field");
+      if (wrap) wrap.style.display = "none";
+    });
+    showToast("Este pago está ligado a una transferencia: no se puede cambiar monto, tipo ni método", "warning");
+  }
+
+  const nota = document.getElementById("pago-foto-actual");
+  if (nota) {
+    nota.hidden = !(p.foto_storage_key || p.foto_comprobante);
+    _pintarNotaFotoActual();
+  }
+
+  _pintarBtnGuardarPago();
+  document.getElementById("form-nuevo-pago")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 /* ── DETALLE DE UN PAGO ─────────────────────── */
 function abrirDetallePago(pago) {
   navigateTo("pago-detalle", pago);
+}
+
+// Comprobante del detalle: los nuevos viven en R2 y solo se obtienen con el
+// JWT (fetch → blob); los anteriores a la migración siguen con su URL pública.
+let _pdFotoObjectUrl = null;
+
+async function _cargarFotoDetallePago(p) {
+  const wrap = document.getElementById("pd-foto-wrap");
+  const img  = document.getElementById("pd-foto-img");
+  const link = document.getElementById("pd-foto-link");
+  const aviso = document.getElementById("pd-foto-aviso");
+
+  if (_pdFotoObjectUrl) { URL.revokeObjectURL(_pdFotoObjectUrl); _pdFotoObjectUrl = null; }
+  img.removeAttribute("src");
+  img.style.display = "none";
+  link.removeAttribute("href");
+  aviso.hidden = true;
+
+  if (!can("pagos.comprobante_ver") || !(p.foto_storage_key || p.foto_comprobante)) {
+    wrap.style.display = "none";
+    return;
+  }
+  wrap.style.display = "block";
+
+  if (!p.foto_storage_key) { // comprobante anterior a R2
+    img.src = p.foto_comprobante;
+    img.style.display = "";
+    link.href = p.foto_comprobante;
+    return;
+  }
+
+  aviso.textContent = "Cargando comprobante…";
+  aviso.hidden = false;
+  try {
+    const res = await _pagosWorkerFetch(p.foto_storage_key);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    if (pagosCtx.pagoActual !== p) return; // el usuario ya cambió de pago
+    _pdFotoObjectUrl = URL.createObjectURL(blob);
+    link.href = _pdFotoObjectUrl;
+    if (blob.type === "application/pdf") {
+      aviso.textContent = "Abrir comprobante (PDF)";
+    } else {
+      img.src = _pdFotoObjectUrl;
+      img.style.display = "";
+      aviso.hidden = true;
+    }
+  } catch (e) {
+    console.error("Error cargando comprobante:", e);
+    if (pagosCtx.pagoActual === p) aviso.textContent = "No se pudo cargar el comprobante";
+  }
 }
 
 async function initPagoDetalleView(p) {
@@ -522,16 +750,11 @@ async function initPagoDetalleView(p) {
   document.getElementById("pd-observacion").textContent  = p.observacion || "—";
   document.getElementById("pd-creado").textContent       = p.creado_por || "—";
 
-  const fotoWrap = document.getElementById("pd-foto-wrap");
-  const fotoImg  = document.getElementById("pd-foto-img");
-  const fotoLink = document.getElementById("pd-foto-link");
-  if (p.foto_comprobante && can("pagos.comprobante_ver")) {
-    fotoImg.src  = p.foto_comprobante;
-    fotoLink.href = p.foto_comprobante;
-    fotoWrap.style.display = "block";
-  } else {
-    fotoWrap.style.display = "none";
-  }
+  _cargarFotoDetallePago(p); // sin await: no demora el resto del detalle
+
+  // Editar: por tarea (sql/permisos_pagos.sql)
+  const editarEl = document.getElementById("pd-editar");
+  if (editarEl) editarEl.style.display = can("pagos.editar") ? "" : "none";
 
   // Mostrar botón de transferencia solo con la tarea pagos.transferir, solo para tipo Pago,
   // y solo si este pago aún no fue transferido (no existe Transferencia con referencia_pago_id = p.id)
