@@ -255,3 +255,19 @@ begin
   return new;
 end;
 $$;
+
+-- ============================================================
+-- Cierre de la migración a R2
+--   * Se quitan las policies del bucket "pagos" de Supabase (ya sin uso)
+--     y el bucket se vacía y se borra con la API de Storage.
+--   * Se elimina pagos.foto_comprobante (URL pública vieja): los 167
+--     comprobantes con viaje están en R2 (foto_storage_key). Los 3 de pagos
+--     sin viaje (93, 139, 140) y 4 huérfanos se respaldaron en local.
+--   Ejecutar el DROP COLUMN solo después de desplegar el front sin
+--   foto_comprobante (si no, el SELECT de pagos.js falla).
+-- ============================================================
+
+drop policy if exists pagos_storage_insert on storage.objects;
+drop policy if exists pagos_storage_select on storage.objects;
+
+alter table public.pagos drop column if exists foto_comprobante;

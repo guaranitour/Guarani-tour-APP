@@ -185,7 +185,7 @@ async function loadPagosPasajero() {
       .single(),
     supabaseClient
       .from("pagos")
-      .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_comprobante, foto_storage_key, creado_por, banco, metodo_pago_id, referencia_pago_id, ref_origen")
+      .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, foto_storage_key, creado_por, banco, metodo_pago_id, referencia_pago_id, ref_origen")
       .eq("viaje_pasajero_id", parseInt(pagosCtx.viajePasajeroId))
       .order("fecha_pago", { ascending: false }),
   ]);
@@ -318,7 +318,7 @@ async function loadPagosPasajero() {
       id: p.id, tipo: p.tipo, monto: p.monto, fecha_pago: p.fecha_pago,
       metodo, banco, comprobante_nro: p.comprobante_nro,
       observacion: p.observacion, creado_por: p.creado_por,
-      foto_comprobante: p.foto_comprobante, foto_storage_key: p.foto_storage_key,
+      foto_storage_key: p.foto_storage_key,
       metodo_pago_id: p.metodo_pago_id, banco_id: p.banco,
       referencia_pago_id: p.referencia_pago_id, ref_origen: p.ref_origen
     }));
@@ -539,7 +539,6 @@ async function guardarPago() {
       const cambiaFoto = !!nuevaKey || pagosCtx.quitarFoto;
       if (cambiaFoto) {
         datos.foto_storage_key = nuevaKey;   // null si solo se quita
-        datos.foto_comprobante = null;       // URL pública vieja (Supabase Storage)
       }
       const { data: filas, error } = await supabaseClient
         .from("pagos").update(datos).eq("id", editando.id).select("id");
@@ -659,7 +658,7 @@ async function _prepararEdicionPago(p) {
 
   const nota = document.getElementById("pago-foto-actual");
   if (nota) {
-    nota.hidden = !(p.foto_storage_key || p.foto_comprobante);
+    nota.hidden = !p.foto_storage_key;
     _pintarNotaFotoActual();
   }
 
@@ -672,8 +671,7 @@ function abrirDetallePago(pago) {
   navigateTo("pago-detalle", pago);
 }
 
-// Comprobante del detalle: los nuevos viven en R2 y solo se obtienen con el
-// JWT (fetch → blob); los anteriores a la migración siguen con su URL pública.
+// Comprobante del detalle: vive en R2 y solo se obtiene con el JWT (fetch → blob).
 let _pdFotoObjectUrl = null;
 
 async function _cargarFotoDetallePago(p) {
@@ -688,18 +686,11 @@ async function _cargarFotoDetallePago(p) {
   link.removeAttribute("href");
   aviso.hidden = true;
 
-  if (!can("pagos.comprobante_ver") || !(p.foto_storage_key || p.foto_comprobante)) {
+  if (!can("pagos.comprobante_ver") || !p.foto_storage_key) {
     wrap.style.display = "none";
     return;
   }
   wrap.style.display = "block";
-
-  if (!p.foto_storage_key) { // comprobante anterior a R2
-    img.src = p.foto_comprobante;
-    img.style.display = "";
-    link.href = p.foto_comprobante;
-    return;
-  }
 
   aviso.textContent = "Cargando comprobante…";
   aviso.hidden = false;
