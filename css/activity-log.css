@@ -113,6 +113,8 @@
   color: var(--text-muted);
 }
 
+.al-f-tabla { margin: 0; }
+
 .al-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
 .al-chip {
   padding: .45rem .85rem;

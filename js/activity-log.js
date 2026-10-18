@@ -1,7 +1,8 @@
 // =====================================================================
 // activity-log.js — Vista "Registro de actividad" (admin) sobre la
-// tabla activity_log. Lista paginada con filtros múltiples (usuario,
-// fecha, tipo, tabla) en un panel lateral con Aceptar/Cancelar. Cada fila
+// tabla activity_log. Lista paginada con filtros (usuario, fecha, tipo y
+// tabla —esta última en una lista desplegable, "Todos" por defecto) en un
+// panel lateral con Aceptar/Cancelar. Cada fila
 // es expandible (<details>) y muestra el diff entre old_data y new_data.
 // Los ids de referencia (viaje_id, pasajero_id, etc.) se traducen a
 // nombres al mostrar (ver _resolverReferenciasAL).
@@ -20,6 +21,11 @@ const ACTIVITY_LOG_TABLE_LABELS = {
   contactos_emergencia: "Contactos de emergencia",
   servicio_extra_pasajeros: "Servicio extra pasajeros",
   servicios_extra: "Servicios extra",
+  staff: "Usuarios",
+  staff_permisos: "Permisos de usuario",
+  transferencias_internas: "Transferencias internas",
+  recibos: "Recibos",
+  movimientos_bancarios: "Movimientos bancarios",
 };
 
 const ACTIVITY_LOG_OP_LABELS = {
@@ -41,12 +47,15 @@ const AL_REFS = {
   categoria_id:      { tabla: "categorias",      col: "nombre",          label: "Categoría" },
   servicio_extra_id: { tabla: "servicios_extra", col: "nombre",          label: "Servicio extra" },
   viaje_pasajero_id: { tabla: "viaje_pasajeros", col: null,              label: "Pasajero en viaje" },
+  staff_id:          { tabla: "staff",           col: "email",           label: "Usuario" },
+  tipo_recibo_id:    { tabla: "tipo_recibos",    col: "tipo",            label: "Tipo de recibo" },
 };
 
 // Cache de resolución: tabla -> Map(id -> nombre | null si ya no existe)
 const _alCache = {
   viajes: new Map(), pasajeros: new Map(), metodos_de_pago: new Map(),
   categorias: new Map(), servicios_extra: new Map(),
+  staff: new Map(), tipo_recibos: new Map(),
   viaje_pasajeros: new Map(), // id -> { pasajero_id, viaje_id } | null
 };
 
@@ -186,8 +195,12 @@ function _renderDrawerBodyAL() {
             aria-pressed="${seleccion.includes(valor)}">${_escapeHtmlAL(label)}</button>`).join("");
 
   const tipos = Object.entries(ACTIVITY_LOG_OP_LABELS).map(([k, v]) => [k, v.label]);
-  const tablas = Object.entries(ACTIVITY_LOG_TABLE_LABELS);
+  const tablas = Object.entries(ACTIVITY_LOG_TABLE_LABELS)
+    .sort((a, b) => a[1].localeCompare(b[1], "es"));
+  const tablaElegida = _alBorrador.tablas[0] || "";
 
+  // Tabla: lista desplegable de una sola elección ("Todos" por defecto). Hay
+  // demasiadas tablas para mostrarlas todas como chips.
   body.innerHTML = `
     <section class="al-f-sec">
       <h3>Tipo</h3>
@@ -195,7 +208,13 @@ function _renderDrawerBodyAL() {
     </section>
     <section class="al-f-sec">
       <h3>Tabla</h3>
-      <div class="al-chips">${chips("tablas", tablas, _alBorrador.tablas)}</div>
+      <div class="form-field al-f-tabla">
+        <span class="form-label" style="display:none">Tabla</span>
+        <select id="al-f-tabla" class="form-input" onchange="_elegirTablaAL(this.value)">
+          <option value=""${tablaElegida ? "" : " selected"}>Todos</option>
+          ${tablas.map(([valor, label]) => `<option value="${_escapeHtmlAL(valor)}"${tablaElegida === valor ? " selected" : ""}>${_escapeHtmlAL(label)}</option>`).join("")}
+        </select>
+      </div>
     </section>
     <section class="al-f-sec">
       <h3>Usuario</h3>
@@ -210,7 +229,12 @@ function _renderDrawerBodyAL() {
       </div>
     </section>`;
 
+  if (typeof initCustomSelect === "function") initCustomSelect("al-f-tabla");
   _pintarUsuariosDrawerAL();
+}
+
+function _elegirTablaAL(valor) {
+  _alBorrador.tablas = valor ? [valor] : [];
 }
 
 // Selección múltiple por delegación (chips de tipo/tabla y usuarios)
@@ -294,7 +318,7 @@ async function _fetchActivityLogPage() {
 
   let query = supabaseClient
     .from("activity_log")
-    .select("id, table_name, record_id, operation, old_data, new_data, changed_by, changed_by_email, changed_at")
+    .select("id, table_name, record_id, record_key, operation, old_data, new_data, changed_by, changed_by_email, changed_at")
     .order("changed_at", { ascending: false })
     .range(_activityLogState.offset, _activityLogState.offset + ACTIVITY_LOG_PAGE_SIZE - 1);
 
@@ -388,6 +412,7 @@ async function _resolverReferenciasAL(rows) {
   const columnas = {
     viajes: "nombre", pasajeros: "Pasajero", metodos_de_pago: "metodo_de_pago",
     categorias: "nombre", servicios_extra: "nombre",
+    staff: "email", tipo_recibos: "tipo",
   };
   for (const [tabla, col] of Object.entries(columnas)) {
     if (!faltan[tabla].size) continue;
@@ -419,6 +444,28 @@ function _nombreRefAL(clave, valor) {
 // Descripción corta del registro afectado, para la fila colapsada
 function _descripcionRegistroAL(row) {
   const d = row.new_data || row.old_data || {};
+  // staff y staff_permisos no tienen record_id numérico: se usa record_key
+  const sinNombre = `#${row.record_id ?? row.record_key ?? "—"}`;
+
+  switch (row.table_name) {
+    case "staff":
+      return d.nombre || d.email || sinNombre;
+    case "staff_permisos": {
+      const quien = _nombreRefAL("staff_id", d.staff_id) || "usuario";
+      return `${quien} · ${d.permiso}${d.concedido === false ? " (denegado)" : ""}`;
+    }
+    case "recibos":
+      return [d.recibo_nro != null ? `N° ${d.recibo_nro}` : null, d.cliente].filter(Boolean).join(" · ") || sinNombre;
+    case "movimientos_bancarios":
+      return d.descripcion || d.categoria || sinNombre;
+    case "transferencias_internas": {
+      const de = _nombreRefAL("de_caja", d.de_caja)?.trim();
+      const a = _nombreRefAL("a_caja", d.a_caja)?.trim();
+      const via = _nombreRefAL("viaje_id", d.viaje_id);
+      return [de && a ? `${de} → ${a}` : null, via].filter(Boolean).join(" · ") || sinNombre;
+    }
+  }
+
   if (d.nombre) return String(d.nombre);
   const partes = [];
   const pas = _nombreRefAL("pasajero_id", d.pasajero_id);
@@ -427,7 +474,7 @@ function _descripcionRegistroAL(row) {
   if (vp) partes.push(vp);
   const via = _nombreRefAL("viaje_id", d.viaje_id);
   if (via) partes.push(via);
-  return partes.join(" · ") || `#${row.record_id}`;
+  return partes.join(" · ") || sinNombre;
 }
 
 function _renderActivityLogRow(row) {
