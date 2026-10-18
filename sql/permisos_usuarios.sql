@@ -115,3 +115,26 @@ with check (
 );
 
 commit;
+
+-- ============================================================
+-- Lectura de public.staff: se cierra la policy abierta
+-- "Permitir lectura autenticados" (auth.role() = 'authenticated') dejaba
+-- leer todos los usuarios, con email y rol, a cualquier usuario logueado.
+-- Ojo: las policies "fila propia" que se ven en pg_policies para 'staff'
+-- son de reservas.staff (otra tabla); en public.staff esta era la única de
+-- lectura, así que no se podía borrar sin reemplazarla.
+--   * Cada usuario lee su propia fila (por email): alcanza para entrar a la
+--     app (enterApp consulta su rol y estado) aunque no tenga usuarios.ver.
+--   * usuarios.ver lee todas (módulo Usuarios); actividad.ver también, para
+--     traducir ids de usuario a email en el registro de actividad.
+-- ============================================================
+
+drop policy if exists "Permitir lectura autenticados" on public.staff;
+drop policy if exists staff_select on public.staff;
+
+create policy staff_select on public.staff for select to authenticated
+using (
+  email = auth.email()
+  or (select public.has_permission('usuarios.ver'))
+  or (select public.has_permission('actividad.ver'))
+);
