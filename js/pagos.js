@@ -384,6 +384,7 @@ function _leerMontoInput(id) {
 }
 
 function mostrarFormPago() {
+  if (!can("pagos.registrar")) return;
   ["pago-monto","pago-comprobante","pago-observacion"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
@@ -410,8 +411,8 @@ function ocultarFormPago() {
   const form = document.getElementById("form-nuevo-pago");
   const btn  = document.getElementById("btn-nuevo-pago");
   if (form) form.style.display = "none";
-  // Botón "Registrar pago": visible para todos los roles (admin, worker, viewer)
-  if (btn) btn.style.display = "";
+  // Botón "Registrar pago": por tarea (sql/permisos_pagos.sql)
+  if (btn) btn.style.display = can("pagos.registrar") ? "" : "none";
 }
 
 /* ── CAMBIO DE TIPO ─────────────────────────── */
@@ -479,6 +480,8 @@ async function subirFotoComprobante(fileOriginal) {
 
 /* ── GUARDAR PAGO ───────────────────────────── */
 async function guardarPago() {
+  if (!can("pagos.registrar")) return; // guarda extra, RLS igual lo bloquearía
+
   const monto    = _leerMontoInput("pago-monto");
   const tipo     = document.getElementById("pago-tipo").value;
   const metodoid = document.getElementById("pago-metodo").value || null;
@@ -507,7 +510,10 @@ async function guardarPago() {
     let foto_url = null;
     if (fotoFile) {
       try { foto_url = await subirFotoComprobante(fotoFile); }
-      catch (e) { console.warn("No se pudo subir foto:", e); }
+      catch (e) {
+        console.warn("No se pudo subir foto:", e);
+        showToast("El pago se guardará sin el comprobante adjunto", "warning");
+      }
     }
 
     const base = {
@@ -592,7 +598,7 @@ async function initPagoDetalleView(p) {
   const fotoWrap = document.getElementById("pd-foto-wrap");
   const fotoImg  = document.getElementById("pd-foto-img");
   const fotoLink = document.getElementById("pd-foto-link");
-  if (p.foto_comprobante) {
+  if (p.foto_comprobante && can("pagos.comprobante_ver")) {
     fotoImg.src  = p.foto_comprobante;
     fotoLink.href = p.foto_comprobante;
     fotoWrap.style.display = "block";
@@ -600,15 +606,11 @@ async function initPagoDetalleView(p) {
     fotoWrap.style.display = "none";
   }
 
-  // Mostrar botón de transferencia solo a admin/worker, solo para tipo Pago,
+  // Mostrar botón de transferencia solo con la tarea pagos.transferir, solo para tipo Pago,
   // y solo si este pago aún no fue transferido (no existe Transferencia con referencia_pago_id = p.id)
   const accionesEl = document.getElementById("pd-acciones");
   if (accionesEl) {
-    const esWorkerOAdmin = Array.isArray(currentUserRole)
-      ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-      : ["admin", "worker"].includes(currentUserRole);
-
-    if (esWorkerOAdmin && p.tipo === "Pago") {
+    if (can("pagos.transferir") && p.tipo === "Pago") {
       // Verificar si ya existe un registro Transferencia que apunte a este pago como origen
       const { data: transExistente } = await supabaseClient
         .from("pagos")
@@ -636,6 +638,7 @@ async function initPagoDetalleView(p) {
 
 /* ── MODAL: TRANSFERIR PAGO ─────────────────── */
 async function abrirModalTransferirPago() {
+  if (!can("pagos.transferir")) return;
   const p = pagosCtx.pagoActual;
   if (!p) return;
 
@@ -744,6 +747,7 @@ function seleccionarDestinatario(id, nombre) {
 }
 
 async function confirmarTransferirPago() {
+  if (!can("pagos.transferir")) return;
   const p    = pagosCtx.pagoActual;
   const dest = pagosCtx.destinatarioTransferencia;
   if (!p || !dest) return;
@@ -836,12 +840,6 @@ async function confirmarTransferirPago() {
    No modifica viaje_pasajeros.total_a_pagar: el total
    con extras se calcula en memoria (ver loadPagosPasajero).
 ═══════════════════════════════════════════════ */
-
-function _esWorkerOAdminPagos() {
-  return Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-    : ["admin", "worker"].includes(currentUserRole);
-}
 
 /* Carga los extras ya asignados a este pasajero y pinta la sección.
    La sección completa queda oculta si el viaje no tiene
