@@ -32,6 +32,7 @@ function abrirPagosPasajero(viajePasajeroId, viajeId, pasajeroId, nombrePasajero
    vía reemplazoCtx, que lee guardarPasajeroEnViaje().
 ─────────────────────────────────────────────── */
 function iniciarReemplazoPasajero() {
+  if (!can("viaje_pasajeros.reemplazar")) return;
   if (!pagosCtx.viajePasajeroId) {
     showToast("No hay pasajero seleccionado", "error");
     return;
@@ -53,6 +54,10 @@ async function initPagosView(ctx) {
   if (titulo) titulo.textContent = ctx.nombrePasajero || "Pagos";
 
   ocultarFormPago();
+
+  // Reemplazar pasajero: por tarea (sql/permisos_viajes.sql)
+  const btnReemplazar = document.getElementById("btn-reemplazar-pasajero");
+  if (btnReemplazar) btnReemplazar.style.display = can("viaje_pasajeros.reemplazar") ? "" : "none";
 
   // ── Cargar métodos y bancos desde caché global (en paralelo) ──
   [pagosCtx.metodos, pagosCtx.bancos] = await Promise.all([

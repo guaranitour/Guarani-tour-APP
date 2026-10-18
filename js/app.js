@@ -829,6 +829,11 @@ function navigateTo(view, idx = null, _fromHash = false) {
   if (view === "nuevo" && !can("clientes.crear")) view = "dashboard";
   if (view === "byc-vincular" && !can("clientes.editar")) view = "dashboard";
 
+  // Viajes: por tarea, también ante hash/URL directa. Ver sql/permisos_viajes.sql.
+  if (view === "viaje-nuevo" && !can("viajes.crear")) view = "viajes";
+  if (view === "viaje-editar" && !can("viajes.editar")) view = "viajes";
+  if (view === "viaje-pasajero-nuevo" && !can("viaje_pasajeros.agregar")) view = "viajes";
+
   const soportaVT = typeof document.startViewTransition === "function";
   const aplicaTransicion =
     soportaVT &&
@@ -961,7 +966,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
 
   const fabViaje = document.getElementById("fab-viaje-nuevo");
   if (fabViaje) {
-    fabViaje.style.display = (view === "viajes" && currentUserRole === "admin") ? "" : "none";
+    fabViaje.style.display = (view === "viajes" && can("viajes.crear")) ? "" : "none";
   }
 
   _updateBottomNavActiveState(view);

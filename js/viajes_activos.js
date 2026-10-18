@@ -668,6 +668,8 @@ async function uploadEgresoFile(fileOriginal, viajeId = viajeActualId) {
 
 /* ── CREAR VIAJE ──────────────────────────── */
 async function crearViaje() {
+  if (!can("viajes.crear")) return; // guarda extra, RLS igual lo bloquearía
+
   const nombre   = document.getElementById("v-nombre").value.trim();
   const salida   = document.getElementById("v-salida").value;
   const regreso  = document.getElementById("v-regreso").value;
@@ -736,6 +738,7 @@ async function crearViaje() {
 
 /* ── EDITAR VIAJE ─────────────────────────── */
 function irEditarViaje(viajeId) {
+  if (!can("viajes.editar")) return;
   navigateTo("viaje-editar", parseInt(viajeId, 10));
 }
 
@@ -782,78 +785,12 @@ async function initFormEditarViaje(viajeId) {
   }
 }
 
-// ── Cancelación automática de viaje ─────────────────────────────────────────
-// Al pasar un viaje a "cancelado":
-//   1. Todos los viaje_pasajeros → asistencia = "No asiste", puntos = 0
-//   2. Por cada pago real (no Devolución, no Transferencia) registrado,
-//      se inserta una Devolución espejando metodo_pago_id y banco originales.
-async function _procesarCancelacionViaje(viajeId) {
-  // 1. Traer todos los viaje_pasajeros del viaje
-  const { data: vps } = await supabaseClient
-    .from("viaje_pasajeros")
-    .select("id")
-    .eq("viaje_id", viajeId);
 
-  if (!vps || vps.length === 0) return;
-
-  const vpIds = vps.map(v => v.id);
-
-  // 2. Marcar todos como No asiste con puntos 0
-  await supabaseClient
-    .from("viaje_pasajeros")
-    .update({ asistencia: "No asiste", puntos_destino: 0 })
-    .in("id", vpIds);
-
-  // 3. Traer pagos reales (excluir Devoluciones y Transferencias)
-  const { data: pagos } = await supabaseClient
-    .from("pagos")
-    .select("viaje_pasajero_id, monto, metodo_pago_id, banco")
-    .in("viaje_pasajero_id", vpIds)
-    .eq("tipo", "Pago");
-
-  if (!pagos || pagos.length === 0) return;
-
-  // 4. Agrupar por viaje_pasajero_id + metodo_pago_id + banco → sumar montos
-  const agrupado = {};
-  pagos.forEach(p => {
-    const key = `${p.viaje_pasajero_id}__${p.metodo_pago_id || ""}__${p.banco || ""}`;
-    if (!agrupado[key]) {
-      agrupado[key] = {
-        viaje_pasajero_id : p.viaje_pasajero_id,
-        metodo_pago_id    : p.metodo_pago_id || null,
-        banco             : p.banco || null,
-        monto             : 0,
-      };
-    }
-    agrupado[key].monto += p.monto || 0;
-  });
-
-  // 5. Insertar una Devolución por cada grupo con monto > 0
-  const hoy = new Date().toISOString().split("T")[0];
-  const { data: { user } } = await supabaseClient.auth.getUser();
-
-  const devoluciones = Object.values(agrupado)
-    .filter(d => d.monto > 0)
-    .map(d => ({
-      viaje_pasajero_id : d.viaje_pasajero_id,
-      monto             : d.monto,
-      tipo              : "Devolución",
-      metodo_pago_id    : d.metodo_pago_id,
-      banco             : d.banco,
-      fecha_pago        : hoy,
-      observacion       : "Devolución automática por cancelación de viaje",
-      creado_por        : user?.email || null,
-    }));
-
-  if (devoluciones.length > 0) {
-    const { error } = await supabaseClient.from("pagos").insert(devoluciones);
-    if (error) console.error("Error insertando devoluciones:", error);
-    else console.log(`✅ ${devoluciones.length} devolución(es) registrada(s) por cancelación`);
-  }
-}
-// ────────────────────────────────────────────────────────────────────────────
-
+// La cancelación (estado, pasajeros "No asiste" y devoluciones) la hace de
+// forma atómica el RPC cancelar_viaje() — ver sql/permisos_viajes.sql.
 async function guardarEditarViaje() {
+  if (!can("viajes.editar")) return; // guarda extra, RLS igual lo bloquearía
+
   const nombre  = document.getElementById("ve-nombre").value.trim();
   const salida  = document.getElementById("ve-salida").value;
   const regreso = document.getElementById("ve-regreso").value;
@@ -863,6 +800,13 @@ async function guardarEditarViaje() {
   const file    = document.getElementById("ve-imagen").files[0];
 
   if (!nombre) { showToast("El nombre es obligatorio", "warning"); return; }
+
+  const estadoAnterior = viajeActualData?.estado;
+  const cancelando = estado === "cancelado" && estadoAnterior !== "cancelado";
+  if (cancelando && !can("viajes.cancelar")) {
+    showToast("No tenés permiso para cancelar viajes", "warning");
+    return;
+  }
 
   const btn = document.getElementById("btn-guardar-editar-viaje");
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
@@ -886,30 +830,38 @@ async function guardarEditarViaje() {
     }
   }
 
+  // Al cancelar, el estado no va en el UPDATE: lo fija cancelar_viaje()
+  const cambios = { nombre, fecha_salida: salida, fecha_regreso: regreso, imagen_url, puntos_destino, extras_habilitados };
+  if (!cancelando) cambios.estado = estado;
+
   const { error } = await supabaseClient
     .from("viajes")
-    .update({ nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino, extras_habilitados })
+    .update(cambios)
     .eq("id", viajeActualId);
 
-  if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
-
   if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
     console.error(error);
     showToast("Error al guardar cambios", "error");
     return;
   }
 
-  // Capturar estado anterior ANTES de pisar el caché
-  const estadoAnterior = viajeActualData?.estado;
+  if (cancelando) {
+    const { data: resultado, error: errCancel } = await supabaseClient
+      .rpc("cancelar_viaje", { p_viaje_id: viajeActualId });
+    if (errCancel) {
+      if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
+      console.error("Error cancelando viaje:", errCancel);
+      showToast("Se guardaron los cambios, pero no se pudo cancelar el viaje: " + (errCancel.message || "intentá de nuevo"), "error");
+      return;
+    }
+    console.log("✅ Viaje cancelado:", resultado);
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = "Guardar cambios"; }
 
   // Actualizar caché
   viajeActualData = { ...viajeActualData, nombre, fecha_salida: salida, fecha_regreso: regreso, estado, imagen_url, puntos_destino, extras_habilitados };
-
-  // ── Lógica de cancelación automática ────────────────────────────────────
-  if (estado === "cancelado" && estadoAnterior !== "cancelado") {
-    await _procesarCancelacionViaje(viajeActualId);
-  }
-  // ────────────────────────────────────────────────────────────────────────
 
   // El viaje acaba de cambiar: invalidamos cache para traer datos frescos
   // en primer plano al volver, en vez de repintar lo viejo por un instante.
@@ -956,9 +908,11 @@ function previewViajeImg(event) {
 
 /* ── FAB HANDLER ──────────────────────────── */
 function handleFabViajes() {
+  if (!can("viajes.crear")) return;
   navigateTo("viaje-nuevo");
 }
 function irAgregarPasajero() {
+  if (!can("viaje_pasajeros.agregar")) return;
   navigateTo("viaje-pasajero-nuevo", viajeActualId);
 }
 
@@ -1156,9 +1110,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   nombreEl.textContent = viaje.nombre;
   const estado = viaje.estado || "activo";
 
-  const esAdminDetalle = Array.isArray(currentUserRole)
-    ? currentUserRole.includes("admin")
-    : currentUserRole === "admin";
+  const puedeEditarViaje = can("viajes.editar"); // por tarea (sql/permisos_viajes.sql)
 
   infoEl.innerHTML = `
     <span class="viaje-pill ${estado}">${estado}</span>
@@ -1168,7 +1120,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
 
   const editBtnSlot = document.getElementById("detalle-viaje-edit-btn");
   if (editBtnSlot) {
-    editBtnSlot.innerHTML = esAdminDetalle ? `
+    editBtnSlot.innerHTML = puedeEditarViaje ? `
       <button class="btn-editar-viaje" onclick="irEditarViaje(${viaje.id})" title="Editar viaje">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -1191,22 +1143,13 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   }
   // ───────────────────────────────────────────────────────────────────────
 
-  // Rol del usuario actual (se necesita para los tabs, incluso sin pasajeros)
-  const esFinanzasEarly = currentUserRole === "finanzas";
-  const esWorkerOAdminEarly = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin", "worker"].includes(r))
-    : ["admin", "worker"].includes(currentUserRole);
-  // Egresos/Presupuesto/Resumen: admin, worker y finanzas (finanzas sin edición,
-  // controlado dentro de cada módulo). Extra va por tarea (extras.ver).
-  const puedeVerFinancierosEarly = esWorkerOAdminEarly || esFinanzasEarly;
-
-  // Botón agregar pasajero: por tarea (clientes.crear_rapido)
+  // Botón agregar pasajero: por tarea (sql/permisos_viajes.sql)
   const btnAgregarEarly = document.getElementById("btn-agregar-vp");
-  if (btnAgregarEarly) btnAgregarEarly.style.display = can("clientes.crear_rapido") ? "" : "none";
+  if (btnAgregarEarly) btnAgregarEarly.style.display = can("viaje_pasajeros.agregar") ? "" : "none";
 
-  // Tab Pasajeros: finanzas no debe ver el listado de pasajeros del viaje
+  // Tab Pasajeros: por tarea (finanzas no tiene el listado de pasajeros del viaje)
   const tabPasajerosEarly = document.getElementById("tab-pasajeros");
-  if (tabPasajerosEarly) tabPasajerosEarly.style.display = esFinanzasEarly ? "none" : "";
+  if (tabPasajerosEarly) tabPasajerosEarly.style.display = can("viaje_pasajeros.listado") ? "" : "none";
 
   // Mostrar tabs según rol — antes del return temprano, para que
   // Egresos/Presupuesto/Resumen queden disponibles aunque el viaje
@@ -1216,7 +1159,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   const tabPresEarly = document.getElementById("tab-presupuesto");
   if (tabPresEarly) tabPresEarly.style.display = can("presupuesto.ver") ? "" : "none";
   const tabResEarly = document.getElementById("tab-resumen");
-  if (tabResEarly) tabResEarly.style.display = puedeVerFinancierosEarly ? "" : "none";
+  if (tabResEarly) tabResEarly.style.display = can("resumen.ver") ? "" : "none";
   const tabTransfEarly = document.getElementById("tab-transferencias");
   if (tabTransfEarly) tabTransfEarly.style.display = can("transferencias.ver") ? "" : "none"; // por tarea (sql/permisos_transferencias.sql)
   const tabExtraEarly = document.getElementById("tab-extra");
@@ -1224,9 +1167,9 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     tabExtraEarly.style.display = (can("extras.ver") && !!viajeActualData?.extras_habilitados) ? "" : "none";
   }
 
-  // Finanzas entra directo a Resumen (no tiene acceso a Pasajeros, que es
-  // la tab activa por defecto en el HTML).
-  if (esFinanzasEarly) switchViajeTab("resumen");
+  // Quien no tiene el listado de pasajeros (finanzas) entra directo a la
+  // primera tab disponible, porque Pasajeros es la activa por defecto en el HTML.
+  if (!can("viaje_pasajeros.listado")) switchViajeTab(_tabFallbackViaje());
 
   if (!pasajeros || pasajeros.length === 0) {
     listEl.innerHTML = `
@@ -1265,13 +1208,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     extrasPorVP[e.viaje_pasajero_id] = (extrasPorVP[e.viaje_pasajero_id] || 0) + (e.precio_venta_real || 0);
   });
 
-  const esAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.includes("admin")
-    : currentUserRole === "admin";
-
-  const esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin","worker"].includes(r))
-    : ["admin","worker"].includes(currentUserRole);
+  const puedeEditarVP = can("viaje_pasajeros.editar"); // por tarea (sql/permisos_viajes.sql)
 
   // Mapa inverso: id de origen → nombre del pasajero que lo reemplazó
   const _reemplazadoPorNombre = {};
@@ -1351,7 +1288,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
   if (hayFiltroActivo) {
     _aplicarFiltrosVP();
   } else {
-    renderPasajerosViaje(pasajerosDelViaje, esAdmin, pagosPorVP);
+    renderPasajerosViaje(pasajerosDelViaje, puedeEditarVP, pagosPorVP);
   }
 
   // Botón/caja flotante de alertas del viaje (deudas + BYC pendiente)
@@ -1473,9 +1410,7 @@ function _aplicarFiltrosVP(qOverride) {
     ? qOverride
     : (document.getElementById("buscador-vp")?.value || "");
 
-  const esAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.includes("admin")
-    : currentUserRole === "admin";
+  const puedeEditarVP = can("viaje_pasajeros.editar");
 
   let filtrados = pasajerosDelViaje;
 
@@ -1521,7 +1456,7 @@ function _aplicarFiltrosVP(qOverride) {
 
   const pagosPorVP = {};
   pasajerosDelViaje.forEach(p => { pagosPorVP[p.id] = p._pagos; });
-  renderPasajerosViaje(filtrados, esAdmin, pagosPorVP);
+  renderPasajerosViaje(filtrados, puedeEditarVP, pagosPorVP);
   _actualizarBadgeFiltros();
 }
 
@@ -1694,7 +1629,7 @@ function limpiarFiltros() {
   _aplicarFiltrosVP();
 }
 
-function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
+function renderPasajerosViaje(pasajeros, puedeEditarVP, pagosPorVP) {
   const listEl = document.getElementById("viaje-pasajeros-list");
 
   // ── Contador de asistencia (siempre sobre el total real del viaje) ──
@@ -1768,7 +1703,7 @@ function renderPasajerosViaje(pasajeros, esAdmin, pagosPorVP) {
            onclick="abrirPagosPasajero('${p.id}', '${viajeActualId}', '${pid}', '${nombreE}')">
         ${noAsiste ? "" : `<span class="vp-pill ${pillClass}">${pillLabel}</span>`}
       </div>
-      ${esAdmin ? `
+      ${puedeEditarVP ? `
       <button class="btn-editar-vp" title="Editar"
         onclick="abrirEdicionVP(event, '${p.id}', ${total}, ${p.puntos_destino || 0}, '${p.asistencia || "Asiste"}', '${pid}')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1844,6 +1779,7 @@ function cerrarEdicionVP() {
 }
 
 async function guardarEdicionVP(vpId) {
+  if (!can("viaje_pasajeros.editar")) return; // guarda extra, RLS igual lo bloquearía
   const total      = _numeroDesdeMiles(document.getElementById("vpe-total").value);
   const puntosInput = parseInt(document.getElementById("vpe-puntos").value) || 0;
   const asistencia = document.getElementById("vpe-asistencia").value;
@@ -1899,6 +1835,7 @@ async function guardarEdicionVP(vpId) {
   loadViajeDetalle(viajeActualId);
 }
 async function guardarPasajeroEnViaje() {
+  if (!can("viaje_pasajeros.agregar")) return; // guarda extra, RLS igual lo bloquearía
   try {
     if (!viajeActualId) {
       showToast("Error: no hay viaje seleccionado", "error");
@@ -1989,6 +1926,7 @@ const { error } = await supabaseClient
    pidió. El trigger de notificación se dispara solo, del
    lado de la base, sobre el INSERT resultante. */
 async function confirmarReemplazoPasajero(total) {
+  if (!can("viaje_pasajeros.reemplazar")) return; // guarda extra, el RPC igual lo exige
   const btnGuardar = document.getElementById("btn-guardar-pasajero");
   if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = "Procesando…"; }
 
@@ -2236,35 +2174,29 @@ function capitalizarNombre(str) {
 const _ORDEN_TABS_VIAJE = ["pasajeros", "egresos", "presupuesto", "extra", "resumen", "transferencias"];
 let _tabViajeActual = null;
 
-function switchViajeTab(tab) {
-  // Redirigir según rol si intenta acceder a un tab restringido
-  const esFinanzas = currentUserRole === "finanzas";
-  const _esWorkerOAdmin = Array.isArray(currentUserRole)
-    ? currentUserRole.some(r => ["admin","worker"].includes(r))
-    : ["admin","worker"].includes(currentUserRole);
+// Primera tab que el usuario puede ver, para redirigir cuando pide una que no
+function _tabFallbackViaje() {
+  if (can("viaje_pasajeros.listado")) return "pasajeros";
+  if (can("resumen.ver")) return "resumen";
+  if (can("egresos.ver")) return "egresos";
+  if (can("presupuesto.ver")) return "presupuesto";
+  if (can("transferencias.ver")) return "transferencias";
+  return "pasajeros";
+}
 
-  if (esFinanzas) {
-    // Finanzas: nunca ve el listado de pasajeros.
-    if (tab === "pasajeros") tab = "resumen";
-  } else if (!_esWorkerOAdmin && (tab === "presupuesto" || tab === "resumen")) {
-    tab = "pasajeros";
-  }
+function switchViajeTab(tab) {
+  // Cada tab va por tarea; si no tiene acceso a la pedida, va a la primera disponible.
+  // Pasajeros y Resumen: sql/permisos_viajes.sql
+  if (tab === "pasajeros" && !can("viaje_pasajeros.listado")) tab = _tabFallbackViaje();
+  if (tab === "resumen" && !can("resumen.ver")) tab = _tabFallbackViaje();
   // Egresos: por tarea (ver sql/permisos_egresos.sql)
-  if (tab === "egresos" && !can("egresos.ver")) {
-    tab = esFinanzas ? "resumen" : "pasajeros";
-  }
+  if (tab === "egresos" && !can("egresos.ver")) tab = _tabFallbackViaje();
   // Presupuesto: por tarea (ver sql/permisos_presupuesto.sql)
-  if (tab === "presupuesto" && !can("presupuesto.ver")) {
-    tab = esFinanzas ? "resumen" : "pasajeros";
-  }
+  if (tab === "presupuesto" && !can("presupuesto.ver")) tab = _tabFallbackViaje();
   // Transferencias: por tarea (ver sql/permisos_transferencias.sql)
-  if (tab === "transferencias" && !can("transferencias.ver")) {
-    tab = esFinanzas ? "resumen" : "pasajeros";
-  }
+  if (tab === "transferencias" && !can("transferencias.ver")) tab = _tabFallbackViaje();
   // Extra: por tarea (sql/permisos_extras.sql) y además el viaje debe tenerlo habilitado
-  if (tab === "extra" && (!can("extras.ver") || !viajeActualData?.extras_habilitados)) {
-    tab = esFinanzas ? "resumen" : "pasajeros";
-  }
+  if (tab === "extra" && (!can("extras.ver") || !viajeActualData?.extras_habilitados)) tab = _tabFallbackViaje();
 
   // Botones
   document.getElementById("tab-pasajeros").classList.toggle("active", tab === "pasajeros");
