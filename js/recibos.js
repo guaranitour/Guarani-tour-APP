@@ -386,7 +386,7 @@ function renderReciboCard(r) {
       <div class="recibo-card-main">
         <div class="recibo-card-linea1">
           <span class="recibo-cliente">${r.cliente || '—'}</span>
-          <span class="recibo-monto">${formatMonto(r.monto, r.moneda)}</span>
+          <span class="recibo-monto">${formatMontoRecibo(r.monto, r.moneda)}</span>
         </div>
         <div class="recibo-card-linea2">
           <span class="recibo-meta">${metaTexto || '—'}</span>
@@ -515,7 +515,7 @@ async function initReciboDetalleView(id) {
 
       <div class="recibo-doc-monto-bloque">
         <span class="recibo-doc-monto-label">Monto recibido</span>
-        <span class="recibo-doc-monto">${recibo.monto != null ? formatMonto(recibo.monto, recibo.moneda) : '—'}</span>
+        <span class="recibo-doc-monto">${recibo.monto != null ? formatMontoRecibo(recibo.monto, recibo.moneda) : '—'}</span>
       </div>
 
       ${recibo.concepto ? `
@@ -1459,7 +1459,7 @@ const MONEDAS_RECIBO = {
 };
 
 // moneda ausente (recibos viejos / RPC sin la columna) → PYG
-function formatMonto(n, moneda = 'PYG') {
+function formatMontoRecibo(n, moneda = 'PYG') {
   if (n == null || n === '') return '—';
   const m = MONEDAS_RECIBO[moneda] || MONEDAS_RECIBO.PYG;
   return m.simbolo + ' ' + Number(n).toLocaleString('es-PY', {
@@ -1469,7 +1469,7 @@ function formatMonto(n, moneda = 'PYG') {
 }
 
 function formatGs(n) {
-  return formatMonto(n, 'PYG');
+  return formatMontoRecibo(n, 'PYG');
 }
 
 // Totales por moneda (nunca se suman entre sí): "Gs. 1.000.000 · US$ 250,00".
@@ -1477,7 +1477,7 @@ function formatGs(n) {
 function formatTotalesRecibo(totalGs, totalUsd) {
   const gs  = Number(totalGs)  || 0;
   const usd = Number(totalUsd) || 0;
-  return usd > 0 ? `${formatMonto(gs, 'PYG')} · ${formatMonto(usd, 'USD')}` : formatMonto(gs, 'PYG');
+  return usd > 0 ? `${formatMontoRecibo(gs, 'PYG')} · ${formatMontoRecibo(usd, 'USD')}` : formatMontoRecibo(gs, 'PYG');
 }
 
 // Ajusta etiqueta/step del campo monto según la moneda elegida en el form
