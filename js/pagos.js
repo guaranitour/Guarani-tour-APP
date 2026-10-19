@@ -545,8 +545,8 @@ async function guardarPago() {
   const fotoFile = document.getElementById("pago-foto").files?.[0];
 
   const montoEl = document.getElementById("pago-monto");
-  if (monto == null || isNaN(monto) || monto < 0) { montoEl.classList.add("input-error"); montoEl.focus(); return; }
-  montoEl.classList.remove("input-error");
+  if (monto == null || isNaN(monto) || monto < 0) { montoEl.classList.add("error"); montoEl.focus(); return; }
+  montoEl.classList.remove("error");
 
   const bancoInputEl = document.getElementById("pago-banco-input");
   bancoInputEl?.classList.remove("error");

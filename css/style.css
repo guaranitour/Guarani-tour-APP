@@ -1425,3 +1425,24 @@ body { padding-bottom: 0; }
 }
 .perfil-dato-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
 .perfil-dato-valor { font-size: .92rem; color: var(--text); word-break: break-word; }
+
+/* Tareas de la persona, agrupadas por módulo (solo las que tiene) */
+.perfil-tareas { width: 100%; border-top: 1px solid var(--border); padding-top: .75rem; }
+.perfil-tareas:empty { display: none; }
+.perfil-tareas-titulo {
+  font-size: .72rem; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .05em; margin-bottom: .4rem;
+}
+.perfil-tareas-total {
+  display: inline-block; min-width: 1.4em; padding: 0 .4em; margin-left: .3em;
+  border-radius: 999px; text-align: center; font-size: .7rem; font-weight: 600;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.perfil-tareas-grupo { border-top: 1px solid var(--border); }
+.perfil-tareas-grupo:first-of-type { border-top: none; }
+.perfil-tareas-grupo summary {
+  cursor: pointer; padding: .55rem 0; font-size: .88rem; font-weight: 600;
+  color: var(--text); text-transform: capitalize; list-style-position: inside;
+}
+.perfil-tareas-grupo ul { margin: 0 0 .6rem; padding: 0 0 0 1.4rem; }
+.perfil-tareas-grupo li { font-size: .82rem; color: var(--text-mid, var(--text)); padding: .15rem 0; }

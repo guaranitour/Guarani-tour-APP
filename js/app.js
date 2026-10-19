@@ -150,6 +150,48 @@ function renderPerfil() {
   set("perfil-dato-nombre", nombre);
   set("perfil-dato-correo", correo);
   set("perfil-dato-rol", rol);
+  renderPerfilTareas();
+}
+
+// Catálogo de tareas (codigo → descripción), se pide una sola vez por sesión
+let _perfilCatalogoTareas = null;
+
+// Lista las tareas que tiene la persona (las que le faltan no se muestran),
+// agrupadas por módulo. Pinta ya con los códigos y completa con las
+// descripciones cuando llega el catálogo.
+async function renderPerfilTareas() {
+  const cont = document.getElementById("perfil-tareas");
+  if (!cont) return;
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pintar = () => {
+    const codigos = [...userPermisos].sort();
+    if (codigos.length === 0) { cont.innerHTML = ""; return; }
+    const grupos = {};
+    codigos.forEach(c => {
+      const modulo = c.split(".")[0];
+      (grupos[modulo] = grupos[modulo] || []).push(c);
+    });
+    const desc = _perfilCatalogoTareas || {};
+    cont.innerHTML = `
+      <div class="perfil-tareas-titulo">Mis tareas <span class="perfil-tareas-total">${codigos.length}</span></div>
+      ${Object.keys(grupos).sort().map(modulo => `
+        <details class="perfil-tareas-grupo">
+          <summary>${esc(modulo)} <span class="perfil-tareas-total">${grupos[modulo].length}</span></summary>
+          <ul>${grupos[modulo].map(c => `<li title="${esc(c)}">${esc(desc[c] || c.slice(modulo.length + 1) || c)}</li>`).join("")}</ul>
+        </details>`).join("")}`;
+  };
+  pintar();
+
+  if (_perfilCatalogoTareas) return;
+  try {
+    const { data, error } = await supabaseClient.from("permisos").select("codigo, descripcion");
+    if (error) throw error;
+    _perfilCatalogoTareas = Object.fromEntries((data || []).map(t => [t.codigo, t.descripcion]));
+    if (currentView === "perfil") pintar();
+  } catch (e) {
+    console.warn("No se pudo cargar el catálogo de tareas:", e);
+  }
 }
 
 // ── Caché de perfil de staff (arranque optimista) ────────────
