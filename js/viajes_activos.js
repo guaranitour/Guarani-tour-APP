@@ -1771,6 +1771,7 @@ function abrirEdicionVP(event, vpId, total, puntos, asistencia, pasajeroId) {
     </div>`;
 
   row.after(form);
+  initCustomSelect("vpe-asistencia");
 }
 
 function cerrarEdicionVP() {
@@ -2065,7 +2066,6 @@ async function mostrarFormCrearPasajero(nombre) {
         <div class="pcf-field">
           <label class="pcf-label">Vendedor <span class="req">*</span></label>
           <select id="pcf-vendedor" class="form-input">
-            <option value="">— Seleccionar —</option>
             ${optsVendedor}
           </select>
         </div>
@@ -2082,6 +2082,9 @@ async function mostrarFormCrearPasajero(nombre) {
       </div>
     </div>
   `;
+
+  initCustomSelect("pcf-sexo");
+  initCustomSelect("pcf-vendedor");
 }
 
 async function confirmarCrearPasajero() {
