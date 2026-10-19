@@ -316,6 +316,12 @@ async function _fetchActivityLogPage() {
   const btnVerMas = document.getElementById("activity-log-ver-mas");
   if (btnVerMas) { btnVerMas.disabled = true; btnVerMas.textContent = "Cargando…"; }
 
+  // Primera página: la lista está vacía, así que se muestra un "Cargando…"
+  if (_activityLogState.offset === 0) {
+    const listEl = document.getElementById("activity-log-list");
+    if (listEl) listEl.innerHTML = `<p class="al-empty">Cargando…</p>`;
+  }
+
   let query = supabaseClient
     .from("activity_log")
     .select("id, table_name, record_id, record_key, operation, old_data, new_data, changed_by, changed_by_email, changed_at")
@@ -359,6 +365,7 @@ async function _fetchActivityLogPage() {
     if (_activityLogState.offset === 0 && (!data || data.length === 0)) {
       listEl.innerHTML = `<p class="al-empty">No hay actividad registrada con estos filtros.</p>`;
     } else {
+      if (_activityLogState.offset === 0) listEl.innerHTML = ""; // quita el "Cargando…"
       for (const row of data) listEl.appendChild(_renderActivityLogRow(row));
     }
   }
