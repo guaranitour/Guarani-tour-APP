@@ -1185,8 +1185,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
       _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
       const buscadorVacio = document.getElementById("buscador-vp");
       if (buscadorVacio) buscadorVacio.value = "";
-      const panelFVacio = document.getElementById("filtro-panel-vp");
-      if (panelFVacio) panelFVacio.style.display = "none";
+      _cerrarDrawerFiltrosVP();
     }
     const counterVacio = document.getElementById("vp-asistencia-counter");
     if (counterVacio) counterVacio.style.display = "none";
@@ -1267,8 +1266,7 @@ function _pintarDetalleViaje(datos, { refrescando }) {
     const buscador = document.getElementById("buscador-vp");
     if (buscador) buscador.value = "";
     _filtrosVP = { vendedor: "", miembro: "", pago: "", asistencia: "", byc: "", reservado: "" };
-    const panelF = document.getElementById("filtro-panel-vp");
-    if (panelF) panelF.style.display = "none";
+    _cerrarDrawerFiltrosVP();
   }
 
   // Inyectar botón filtro junto al buscador (solo una vez)
@@ -1486,13 +1484,16 @@ function _inyectarUIFiltros() {
   row.className = "buscador-filtro-row";
   buscadorWrap.parentNode.insertBefore(row, buscadorWrap);
   row.appendChild(buscadorWrap);
+  // El margen inline del markup hacía el wrap más alto que el input y el
+  // botón (stretch) quedaba desparejo; el espaciado lo da el row.
+  buscadorWrap.style.marginBottom = "0";
 
   // Botón de filtro
   const btn = document.createElement("button");
   btn.id = "btn-filtro-vp";
   btn.className = "btn-filtro-vp";
   btn.title = "Filtrar pasajeros";
-  btn.setAttribute("onclick", "toggleFiltroPanel()");
+  btn.setAttribute("onclick", "abrirDrawerFiltrosVP()");
   btn.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
       <line x1="4" y1="6" x2="20" y2="6"/>
@@ -1502,14 +1503,24 @@ function _inyectarUIFiltros() {
     <span class="filtro-badge" id="filtro-badge" style="display:none">0</span>`;
   row.appendChild(btn);
 
-  // Panel de filtros (oculto por defecto)
-  const panel = document.createElement("div");
-  panel.id = "filtro-panel-vp";
-  panel.className = "filtro-panel-vp";
-  panel.style.display = "none";
+  // Panel lateral de filtros (en body, oculto por defecto)
+  if (document.getElementById("vpf-drawer")) return;
+  const overlay = document.createElement("div");
+  overlay.id = "vpf-overlay";
+  overlay.className = "vpf-overlay";
+  overlay.setAttribute("onclick", "_cerrarDrawerFiltrosVPConHistorial()");
+  const panel = document.createElement("aside");
+  panel.id = "vpf-drawer";
+  panel.className = "vpf-drawer";
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-hidden", "true");
   panel.innerHTML = `
-    <div class="filtro-panel-title">Filtrar pasajeros</div>
-    <div class="filtro-panel-fields">
+    <div class="vpf-header">
+      <h2>Filtrar pasajeros</h2>
+      <button type="button" class="vpf-limpiar" onclick="limpiarFiltros()">Limpiar</button>
+    </div>
+    <div class="vpf-body">
       <div class="form-field">
         <label class="form-label">Vendedor</label>
         <select id="filtro-sel-vendedor" class="form-input">
@@ -1546,21 +1557,55 @@ function _inyectarUIFiltros() {
         </select>
       </div>
     </div>
-    <div class="filtro-panel-actions">
-      <button class="btn-filtro-limpiar" onclick="limpiarFiltros()">Limpiar</button>
-      <button class="btn-filtro-aplicar" onclick="aplicarFiltros()">Aplicar</button>
+    <div class="vpf-footer">
+      <button type="button" class="vpf-btn-cancelar" onclick="_cerrarDrawerFiltrosVPConHistorial()">Cancelar</button>
+      <button type="button" class="vpf-btn-aplicar" onclick="aplicarFiltros()">Aplicar</button>
     </div>`;
 
-  // Insertar panel después del row
-  row.parentNode.insertBefore(panel, row.nextSibling);
+  document.body.appendChild(overlay);
+  document.body.appendChild(panel);
+  ["filtro-sel-vendedor", "filtro-sel-miembro", "filtro-sel-pago", "filtro-sel-asistencia", "filtro-sel-byc"]
+    .forEach(id => initCustomSelect(id));
 }
 
-function toggleFiltroPanel()  {
-  const panel = document.getElementById("filtro-panel-vp");
-  if (!panel) return;
-  const abierto = panel.style.display !== "none";
-  panel.style.display = abierto ? "none" : "";
-  if (!abierto) _renderFiltroPanel();
+// true mientras el panel tiene una entrada extra en el historial: "atrás" lo
+// cierra en vez de salir del viaje (la consume el popstate de app.js).
+let _vpfHistoryOpen = false;
+
+function abrirDrawerFiltrosVP() {
+  const drawer  = document.getElementById("vpf-drawer");
+  const overlay = document.getElementById("vpf-overlay");
+  if (!drawer || !overlay) return;
+  _renderFiltroPanel();
+  drawer.classList.add("open");
+  overlay.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  document.addEventListener("keydown", _onKeydownDrawerVP);
+  if (!_vpfHistoryOpen) {
+    history.pushState({ vpfDrawer: true }, "", location.hash);
+    _vpfHistoryOpen = true;
+  }
+}
+
+// Solo cierra lo visual. Lo llaman el cierre normal y el popstate de app.js.
+function _cerrarDrawerFiltrosVP() {
+  const drawer  = document.getElementById("vpf-drawer");
+  const overlay = document.getElementById("vpf-overlay");
+  if (drawer) { drawer.classList.remove("open"); drawer.setAttribute("aria-hidden", "true"); }
+  if (overlay) overlay.classList.remove("open");
+  document.body.style.overflow = "";
+  document.removeEventListener("keydown", _onKeydownDrawerVP);
+}
+
+function _cerrarDrawerFiltrosVPConHistorial() {
+  // history.back() dispara popstate, que apaga la bandera y cierra lo visual.
+  if (_vpfHistoryOpen) history.back();
+  else _cerrarDrawerFiltrosVP();
+}
+
+function _onKeydownDrawerVP(ev) {
+  if (ev.key === "Escape") _cerrarDrawerFiltrosVPConHistorial();
 }
 
 function _renderFiltroPanel() {
@@ -1596,6 +1641,9 @@ function _renderFiltroPanel() {
   }
   if (selAsist) selAsist.value = _filtrosVP.asistencia;
   if (selByc) selByc.value = _filtrosVP.byc;
+
+  ["filtro-sel-vendedor", "filtro-sel-miembro", "filtro-sel-pago", "filtro-sel-asistencia", "filtro-sel-byc"]
+    .forEach(id => refreshCustomSelect(id));
 }
 
 function aplicarFiltros() {
@@ -1609,7 +1657,7 @@ function aplicarFiltros() {
   _filtrosVP.pago       = selPago?.value  || "";
   _filtrosVP.asistencia = selAsist?.value || "";
   _filtrosVP.byc        = selByc?.value   || "";
-  document.getElementById("filtro-panel-vp").style.display = "none";
+  _cerrarDrawerFiltrosVPConHistorial();
   _aplicarFiltrosVP();
 }
 
@@ -1625,7 +1673,7 @@ function limpiarFiltros() {
   if (selPago)  selPago.value  = "";
   if (selAsist) selAsist.value = "";
   if (selByc)   selByc.value   = "";
-  document.getElementById("filtro-panel-vp").style.display = "none";
+  _cerrarDrawerFiltrosVPConHistorial();
   _aplicarFiltrosVP();
 }
 

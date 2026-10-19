@@ -695,6 +695,12 @@ window.addEventListener("popstate", (event) => {
     _cerrarDrawerUIAL();
     return;
   }
+  // Panel lateral de filtros de pasajeros del viaje: atrás lo cierra.
+  if (typeof _vpfHistoryOpen !== "undefined" && _vpfHistoryOpen) {
+    _vpfHistoryOpen = false;
+    _cerrarDrawerFiltrosVP();
+    return;
+  }
   // Paso 2 de "Pendientes de vincular": atrás vuelve a la lista (paso 1).
   if (typeof _bycPaso2HistoryOpen !== "undefined" && _bycPaso2HistoryOpen) {
     _bycPaso2HistoryOpen = false;
