@@ -916,24 +916,41 @@
 
 /* ══ REEMPLAZO DE PASAJERO ═══════════════════════ */
 
-.btn-reemplazar-pasajero {
-  margin-top: .6rem;
-  background: transparent;
-  border: 1.5px solid rgba(45,106,79,.35);
-  color: var(--accent);
+/* Acciones del historial: reemplazar (azul, izquierda) y registrar pago
+   (verde, derecha), lado a lado y con la misma apariencia sólida. */
+.pagos-acciones {
+  display: flex;
+  gap: .6rem;
+  margin-top: 1rem;
 }
 
-.btn-reemplazar-pasajero:hover {
-  background: rgba(45,106,79,.08);
+.pagos-acciones .btn-agregar-pasajero {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-top: 0;
+  height: 46px;
+  padding: 0 .8rem;
+  border: 1.5px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-size: .88rem;
+}
+.pagos-acciones .btn-agregar-pasajero:hover {
+  background: #235a3f;
+  border-color: #235a3f;
 }
 
-[data-theme="dark"] .btn-reemplazar-pasajero {
-  border-color: rgba(82,183,136,.4);
-  color: var(--accent2, #52b788);
+.pagos-acciones .btn-reemplazar-pasajero {
+  border-color: #2b6cb0;
+  background: #2b6cb0;
+}
+.pagos-acciones .btn-reemplazar-pasajero:hover {
+  background: #245a94;
+  border-color: #245a94;
 }
 
-[data-theme="dark"] .btn-reemplazar-pasajero:hover {
-  background: rgba(82,183,136,.12);
+@media (max-width: 380px) {
+  .pagos-acciones .btn-agregar-pasajero { font-size: .8rem; gap: .3rem; }
 }
 
 #reemplazo-banner {

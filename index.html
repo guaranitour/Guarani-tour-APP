@@ -1060,23 +1060,25 @@
 
           <div id="pagos-list"></div>
 
-          <!-- Botón abrir form -->
-          <button class="btn-agregar-pasajero" id="btn-nuevo-pago" onclick="mostrarFormPago()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Registrar pago
-          </button>
+          <div class="pagos-acciones">
+            <!-- Botón reemplazar pasajero -->
+            <button class="btn-agregar-pasajero btn-reemplazar-pasajero" id="btn-reemplazar-pasajero" onclick="iniciarReemplazoPasajero()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+              Reemplazar pasajero
+            </button>
 
-          <!-- Botón reemplazar pasajero -->
-          <button class="btn-agregar-pasajero btn-reemplazar-pasajero" id="btn-reemplazar-pasajero" onclick="iniciarReemplazoPasajero()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-            Reemplazar pasajero
-          </button>
+            <!-- Botón abrir form -->
+            <button class="btn-agregar-pasajero" id="btn-nuevo-pago" onclick="mostrarFormPago()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Registrar pago
+            </button>
+          </div>
 
           <!-- Formulario inline -->
           <div id="form-nuevo-pago" style="display:none">
