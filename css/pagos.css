@@ -694,6 +694,25 @@
   white-space: nowrap;
 }
 
+/* Editar pago: verde del acento (mismos tonos que "Registrar pago") */
+.pd-botones .btn-editar-pago-verde {
+  background: rgba(45,106,79,.08);
+  border-color: rgba(45,106,79,.3);
+  color: var(--accent);
+}
+.pd-botones .btn-editar-pago-verde:hover {
+  background: rgba(45,106,79,.15);
+  border-color: rgba(45,106,79,.5);
+}
+.pd-botones .btn-editar-pago-verde:active {
+  background: rgba(45,106,79,.2);
+}
+[data-theme="dark"] .pd-botones .btn-editar-pago-verde {
+  background: rgba(82,183,136,.1);
+  border-color: rgba(82,183,136,.35);
+  color: var(--accent2, #52b788);
+}
+
 .pago-foto-actual {
   display: flex;
   align-items: center;
