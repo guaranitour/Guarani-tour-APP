@@ -227,6 +227,9 @@ async function mostrarFormEgreso() {
   form.style.display = "";
   if (btn) btn.style.display = "none";
 
+  // Con la lista larga el form queda fuera de pantalla: llevar la vista hasta él
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+
   // Invalidar caché si cambiamos de viaje
   _egresosCategorias = [];
   await _cargarOpcionesFormEgreso();
