@@ -917,7 +917,7 @@
 /* ══ REEMPLAZO DE PASAJERO ═══════════════════════ */
 
 /* Acciones del historial: reemplazar (azul, izquierda) y registrar pago
-   (verde, derecha), lado a lado y con la misma apariencia sólida. */
+   (verde, derecha), lado a lado con el estilo translúcido de .btn-transferir-pago. */
 .pagos-acciones {
   display: flex;
   gap: .6rem;
@@ -930,23 +930,31 @@
   margin-top: 0;
   height: 46px;
   padding: 0 .8rem;
-  border: 1.5px solid var(--accent);
-  background: var(--accent);
-  color: #fff;
+  border: 1.5px solid rgba(45,106,79,.3);
+  border-radius: 14px;
+  background: rgba(45,106,79,.08);
+  color: var(--accent);
   font-size: .88rem;
 }
 .pagos-acciones .btn-agregar-pasajero:hover {
-  background: #235a3f;
-  border-color: #235a3f;
+  background: rgba(45,106,79,.15);
+  border-color: rgba(45,106,79,.5);
 }
 
 .pagos-acciones .btn-reemplazar-pasajero {
-  border-color: #2b6cb0;
-  background: #2b6cb0;
+  border-color: rgba(52,120,246,.25);
+  background: rgba(52,120,246,.07);
+  color: var(--info-text);
 }
 .pagos-acciones .btn-reemplazar-pasajero:hover {
-  background: #245a94;
-  border-color: #245a94;
+  background: rgba(52,120,246,.13);
+  border-color: rgba(52,120,246,.45);
+}
+
+[data-theme="dark"] .pagos-acciones .btn-agregar-pasajero:not(.btn-reemplazar-pasajero) {
+  border-color: rgba(82,183,136,.35);
+  background: rgba(82,183,136,.1);
+  color: var(--accent2, #52b788);
 }
 
 @media (max-width: 380px) {
