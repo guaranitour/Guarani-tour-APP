@@ -533,7 +533,12 @@ async function guardarPago() {
   const monto    = ligada ? editando.monto : _leerMontoInput("pago-monto");
   const tipo     = ligada ? editando.tipo  : document.getElementById("pago-tipo").value;
   const metodoid = ligada ? (editando.metodo_pago_id ?? null) : (document.getElementById("pago-metodo").value || null);
-  const bancoId  = document.getElementById("pago-banco").value  || null;
+  // El banco solo aplica a los métodos UENO (ver onMetodoChange): ahí es
+  // obligatorio; con cualquier otro método se descarta.
+  const selMetodo = document.getElementById("pago-metodo");
+  const esUeno    = (selMetodo?.options[selMetodo.selectedIndex]?.text || "").toUpperCase().includes("UENO");
+  let bancoId     = document.getElementById("pago-banco").value || null;
+  if (!ligada && !esUeno) bancoId = null;
   const fecha    = document.getElementById("pago-fecha").value;
   const compNro  = document.getElementById("pago-comprobante").value.trim() || null;
   const obs      = document.getElementById("pago-observacion").value.trim() || null;
@@ -542,6 +547,15 @@ async function guardarPago() {
   const montoEl = document.getElementById("pago-monto");
   if (monto == null || isNaN(monto) || monto < 0) { montoEl.classList.add("input-error"); montoEl.focus(); return; }
   montoEl.classList.remove("input-error");
+
+  const bancoInputEl = document.getElementById("pago-banco-input");
+  bancoInputEl?.classList.remove("error");
+  if (!ligada && esUeno && !bancoId) {
+    bancoInputEl?.classList.add("error");
+    bancoInputEl?.focus();
+    showToast("Seleccioná el banco de la lista", "error");
+    return;
+  }
 
   const btn = document.getElementById("btn-guardar-pago");
   btn.disabled = true;
