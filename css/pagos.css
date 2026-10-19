@@ -682,13 +682,16 @@
   display: flex;
   gap: .75rem;
 }
+/* Cada columna parte del ancho de su contenido y reparte el sobrante, así el
+   texto más largo no se parte en dos líneas ni agranda el botón. */
 .pd-botones > div {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-width: 0;
 }
 .pd-botones .btn-transferir-pago {
-  padding-inline: .5rem;
+  padding-inline: .75rem;
   text-align: center;
+  white-space: nowrap;
 }
 
 .pago-foto-actual {
