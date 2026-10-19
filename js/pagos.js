@@ -50,20 +50,16 @@ function iniciarReemplazoPasajero() {
 async function initPagosView(ctx) {
   Object.assign(pagosCtx, ctx);
 
-  const titulo = document.getElementById("pagos-pasajero-titulo");
-  if (titulo) titulo.textContent = ctx.nombrePasajero || "Pagos";
-
   ocultarFormPago();
 
   // Reemplazar pasajero: por tarea (sql/permisos_viajes.sql)
   const btnReemplazar = document.getElementById("btn-reemplazar-pasajero");
   if (btnReemplazar) btnReemplazar.style.display = can("viaje_pasajeros.reemplazar") ? "" : "none";
 
-  // ── Cargar métodos y bancos desde caché global (en paralelo) ──
-  [pagosCtx.metodos, pagosCtx.bancos] = await Promise.all([
-    getMetodosPago(),
-    getBancos(),
-  ]);
+  // ── Métodos y bancos (caché global) y datos del pasajero cargan a la vez ──
+  const metodosBancosP = Promise.all([getMetodosPago(), getBancos()]);
+  const cargaP = loadPagosPasajero(metodosBancosP);
+  [pagosCtx.metodos, pagosCtx.bancos] = await metodosBancosP;
 
   // Poblar select métodos
   const selMetodo = document.getElementById("pago-metodo");
@@ -84,7 +80,7 @@ async function initPagosView(ctx) {
   const bancoHidden = document.getElementById("pago-banco");
   if (bancoHidden) bancoHidden.value = "";
 
-  await loadPagosPasajero();
+  await cargaP;
 
   // Viene del botón "Editar" del detalle del pago
   if (pagosCtx.pagoPorEditar) {
@@ -171,14 +167,41 @@ function onMetodoChange() {
 }
 
 /* ── CARGAR PAGOS ───────────────────────────── */
-async function loadPagosPasajero() {
+// Placeholders con la altura aproximada del contenido real, para que al llegar
+// los datos no haya saltos de layout.
+const _PAGOS_SKEL_RESUMEN = `
+  <div class="pagos-skel pagos-skel--resumen"></div>
+  <div class="pagos-skel pagos-skel--barra"></div>
+  <div class="pagos-skel pagos-skel--club"></div>`;
+const _PAGOS_SKEL_FILAS = `
+  <div class="pagos-skel pagos-skel--fila"></div>
+  <div class="pagos-skel pagos-skel--fila"></div>
+  <div class="pagos-skel pagos-skel--fila"></div>`;
+
+// Cantidad de viajes a los que asistió el pasajero (>= 3 → miembro Club Destino)
+async function _cargarAsistenciasPasajero(pasajeroId) {
+  const { data } = await supabaseClient
+    .from("viaje_pasajeros")
+    .select("id")
+    .eq("pasajero_id", pasajeroId)
+    .eq("asistencia", "Asiste");
+  return (data || []).length;
+}
+
+async function loadPagosPasajero(metodosBancosP = Promise.all([getMetodosPago(), getBancos()])) {
   const listEl    = document.getElementById("pagos-list");
   const resumenEl = document.getElementById("pagos-resumen");
   if (!listEl) return;
 
-  listEl.innerHTML = `<div class="pagos-loading">Cargando…</div>`;
+  listEl.innerHTML = _PAGOS_SKEL_FILAS;
+  if (resumenEl) resumenEl.innerHTML = _PAGOS_SKEL_RESUMEN;
 
-  // Etapa 1: total a pagar y lista de pagos no dependen entre sí → en paralelo
+  // Todo lo que no depende de otra respuesta sale a la vez: antes los extras y
+  // la membresía esperaban en cascada. La membresía usa pasajero_id del
+  // contexto; si faltara, se pide después de leer viaje_pasajeros.
+  const extrasP   = loadExtrasPasajero();
+  const asistP    = pagosCtx.pasajeroId ? _cargarAsistenciasPasajero(pagosCtx.pasajeroId) : null;
+
   const [
     { data: vp },
     { data: pagos, error },
@@ -199,27 +222,24 @@ async function loadPagosPasajero() {
 
   if (error) {
     listEl.innerHTML = `<div class="pagos-empty">Error al cargar pagos</div>`;
+    if (resumenEl) resumenEl.innerHTML = "";
     console.error("Error pagos:", error);
     return;
   }
 
   // Servicios extra asignados a este pasajero (no afectan total_a_pagar en DB,
   // se suman en memoria para el cálculo de saldo mostrado en pantalla)
-  await loadExtrasPasajero();
+  await extrasP;
   const totalExtras = pagosCtx.extrasAsignados.reduce((s, e) => s + (e.precio_venta_real || 0), 0);
   const totalConExtras = pagosCtx.totalAPagar + totalExtras;
 
-  // Etapa 2: membresía Club Destino depende de pasajero_id (recién disponible tras la etapa 1)
+  // Membresía Club Destino (ya en vuelo si el contexto traía pasajero_id)
   let esMiembro = false;
   let puntosViaje = vp?.puntos_destino || 0;
-  if (vp?.pasajero_id) {
-    const { data: historial } = await supabaseClient
-      .from("viaje_pasajeros")
-      .select("id")
-      .eq("pasajero_id", vp.pasajero_id)
-      .eq("asistencia", "Asiste");
-    esMiembro = (historial || []).length >= 3;
-  }
+  const asistencias = asistP
+    ? await asistP
+    : (vp?.pasajero_id ? await _cargarAsistenciasPasajero(vp.pasajero_id) : 0);
+  esMiembro = asistencias >= 3;
 
   // Totales
   let totalPagado = 0, totalDevuelto = 0, totalTransferido = 0;
@@ -303,6 +323,7 @@ async function loadPagosPasajero() {
   }
 
   // Resolver nombres desde caché local (sin join)
+  [pagosCtx.metodos, pagosCtx.bancos] = await metodosBancosP;
   const metodosMap = Object.fromEntries(pagosCtx.metodos.map(m => [String(m.id), m.metodo_de_pago]));
   const bancosMap  = Object.fromEntries(pagosCtx.bancos.map(b => [String(b.id), b.banco_id]));
 
@@ -1052,6 +1073,7 @@ async function loadExtrasPasajero() {
     return;
   }
   section.style.display = "";
+  listEl.innerHTML = `<div class="pagos-skel pagos-skel--fila"></div>`;
 
   const puedeQuitar = can("extras.pasajero_quitar");
   if (btnAdd) btnAdd.style.display = can("extras.pasajero_asignar") ? "" : "none";
