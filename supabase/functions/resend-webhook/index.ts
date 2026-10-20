@@ -1,7 +1,7 @@
 // supabase/functions/resend-webhook/index.ts
 //
 // Recibe los webhooks de Resend y avisa al staff con el permiso
-// mail_automaticos.ver cuando un correo automático (recibos, BYC):
+// notificaciones.mails_automaticos cuando un correo automático (recibos, BYC):
 //   · rebota           → email.bounced
 //   · es marcado spam  → email.complained
 // Avisa por push FCM (data-only, mismo patrón que send-notifications) y
@@ -18,7 +18,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
 const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET");
 
-const PERMISO = "mail_automaticos.ver";
+const PERMISO = "notificaciones.mails_automaticos";
 const TOLERANCIA_SEG = 300;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
