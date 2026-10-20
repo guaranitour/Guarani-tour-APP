@@ -9,6 +9,7 @@
 const NOTIF_TIPOS = {
   recordatorio: { label: "Recordatorio", icono: "⏰" },
   consejo:      { label: "Consejo",      icono: "💡" },
+  correo:       { label: "Correo",       icono: "⚠️" },   // automática (resend-webhook), no se crea a mano
 };
 const NOTIF_ROLES = ["admin", "worker", "finanzas", "viewer"];
 const NOTIF_FRECUENCIAS = { unica: "Una sola vez", diaria: "Todos los días", semanal: "Cada semana", mensual: "Cada mes" };
@@ -321,7 +322,7 @@ async function abrirFormNotificacion(n = null) {
     <div class="form-field">
       <label class="form-label">Tipo</label>
       <div class="notif-segmento" id="nf-tipo">
-        ${Object.entries(NOTIF_TIPOS).map(([k, t]) => `
+        ${Object.entries(NOTIF_TIPOS).filter(([k]) => k !== "correo").map(([k, t]) => `
           <button type="button" data-v="${k}" class="${(n?.tipo || "recordatorio") === k ? "active" : ""}"
                   onclick="_notifSeg(this)">${t.icono} ${t.label}</button>`).join("")}
       </div>
