@@ -413,6 +413,13 @@ function _tareasConteoTexto(u) {
   return `${activas} / ${_catalogoTareas.length}`;
 }
 
+let _modulosTareasAbiertos = {};  // staffId -> Set(módulos desplegados)
+
+function _recordarModuloTareas(staffId, modulo, abierto) {
+  const s = (_modulosTareasAbiertos[staffId] = _modulosTareasAbiertos[staffId] || new Set());
+  if (abierto) s.add(modulo); else s.delete(modulo);
+}
+
 function _tareasCuerpoHtml(u, esYo) {
   const editable = can("usuarios.permisos") && !esYo;
   const grupos = {};
@@ -422,20 +429,22 @@ function _tareasCuerpoHtml(u, esYo) {
     ? `<p class="user-tareas-nota">No podés modificar tus propias tareas.</p>`
     : (!editable ? `<p class="user-tareas-nota">Solo lectura: se requiere la tarea usuarios.permisos.</p>` : "");
 
+  // Módulos que estaban abiertos, para no cerrarlos al re-pintar tras un cambio
+  const abiertos = _modulosTareasAbiertos[u.id] || new Set();
+
   const bloques = Object.keys(grupos).sort().map(modulo => {
+    let activas = 0;
     const filas = grupos[modulo].map(t => {
       const porRol = _tareaPorRol(u, t.codigo);
       const efectiva = _tareaEfectiva(u, t.codigo);
+      if (efectiva) activas++;
       const accion = t.codigo.slice(modulo.length + 1) || t.codigo;
       let chip = "";
       if (efectiva && !porRol) chip = `<span class="user-tarea-chip extra" title="Concedida solo a este usuario">Extra</span>`;
       else if (!efectiva && porRol) chip = `<span class="user-tarea-chip quitada" title="Incluida en el rol, quitada a este usuario">Quitada</span>`;
       return `
-        <label class="user-tarea" title="${_escU(t.descripcion || t.codigo)}">
-          <span class="user-tarea-info">
-            <span class="user-tarea-nombre">${_escU(accion)}</span>
-            ${t.descripcion ? `<span class="user-tarea-desc">${_escU(t.descripcion)}</span>` : ""}
-          </span>
+        <label class="user-tarea" title="${_escU(t.codigo)}">
+          <span class="user-tarea-nombre">${_escU(t.descripcion || accion)}</span>
           ${chip}
           <input type="checkbox" class="user-tarea-switch"
                  ${efectiva ? "checked" : ""} ${editable ? "" : "disabled"}
@@ -443,7 +452,12 @@ function _tareasCuerpoHtml(u, esYo) {
                  onchange="toggleTareaUsuario('${u.id}', '${_escU(t.codigo)}', this)">
         </label>`;
     }).join("");
-    return `<div class="user-tareas-grupo"><div class="user-tareas-modulo">${_escU(modulo)}</div>${filas}</div>`;
+    return `
+      <details class="user-tareas-grupo" ${abiertos.has(modulo) ? "open" : ""}
+               ontoggle="_recordarModuloTareas('${u.id}', '${_escU(modulo)}', this.open)">
+        <summary onclick="event.stopPropagation()">${_escU(modulo)} <span class="user-tareas-count">${activas}/${grupos[modulo].length}</span></summary>
+        ${filas}
+      </details>`;
   }).join("");
 
   return nota + bloques;
