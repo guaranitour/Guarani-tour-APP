@@ -864,12 +864,15 @@ function navigateTo(view, idx = null, _fromHash = false) {
   }
 
   // Guard de acceso: viewer no puede entrar a clientes, byc/byc-vincular,
-  // histórico ni Club Destino (incluye su vista de detalle y el ranking
-  // de puntos), tampoco al alta de cliente, ni por menú ni por hash/URL
+  // Club Destino (incluye su vista de detalle y el ranking de puntos),
+  // tampoco al alta de cliente, ni por menú ni por hash/URL
   // directa ni por llamada programática.
-  if (currentUserRole === "viewer" && (view === "historico" || view === "club-destino" || view === "ranking-puntos")) {
+  if (currentUserRole === "viewer" && (view === "club-destino" || view === "ranking-puntos")) {
     view = "dashboard";
   }
+
+  // Histórico: por tarea, no por rol. Ver sql/permisos_historico.sql.
+  if (view === "historico" && !can("historico.ver")) view = "dashboard";
 
   // Clientes: por tarea, no por rol. Ver sql/permisos_clientes.sql.
   // (el "detalle" se mantiene con su guard por rol: viewer lo abre desde viajes)
