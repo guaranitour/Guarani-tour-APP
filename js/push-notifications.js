@@ -155,6 +155,7 @@ async function savePushToken(staffId, token) {
 messaging.onMessage((payload) => {
   console.log("Mensaje en foreground:", payload);
   const data = payload.data || {};
+  if (typeof actualizarBadgeNotificaciones === "function") actualizarBadgeNotificaciones();
   if (typeof showToast === "function") {
     showToast(data.title ? `${data.title}: ${data.body}` : (data.body || "Nueva notificación"), "success");
   }

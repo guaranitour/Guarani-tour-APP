@@ -247,7 +247,7 @@ function _staffCacheClear(email) {
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
   "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-  "activity-log","legales","informes","encuesta","perfil"
+  "activity-log","legales","informes","encuesta","perfil","notificaciones"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -295,6 +295,9 @@ function _pintarShellOptimista(user) {
   if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
   if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
+  const menuNotif = document.getElementById("menu-notificaciones-btn");
+  if (menuNotif) menuNotif.style.display = can("notificaciones.ver") ? "" : "none";
+  actualizarBadgeNotificaciones();
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -467,6 +470,9 @@ if (card) card.style.display = can("usuarios.ver") ? "" : "none";
   if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
   if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
+  const menuNotif = document.getElementById("menu-notificaciones-btn");
+  if (menuNotif) menuNotif.style.display = can("notificaciones.ver") ? "" : "none";
+  actualizarBadgeNotificaciones();
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
   _precargarIconosModulos();
@@ -821,6 +827,7 @@ const _vistasConTransicion = new Set([
   "viaje-pasajero-nuevo", "viaje-pasajero-pagos", "viajes",
   "activity-log", "calendario", "facturas", "facturas-internas",
   "facturas-marangatu", "informes", "legales", "encuesta", "perfil",
+  "notificaciones",
 ]);
 
 // Profundidad de cada vista para elegir la dirección de la transición
@@ -1001,6 +1008,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_vleg) _vleg.style.display = "none";
   const _venc = document.getElementById("view-encuesta");
   if (_venc) _venc.style.display = "none";
+  const _vnotif = document.getElementById("view-notificaciones");
+  if (_vnotif) _vnotif.style.display = "none";
   const _vfact = document.getElementById("view-facturas");
   if (_vfact) _vfact.style.display = "none";
   const _vfactint = document.getElementById("view-facturas-internas");
@@ -1179,6 +1188,18 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Registro de actividad" }
     ]);
     loadActivityLog({ reset: true, restaurar: _navVolviendo });
+
+  }
+
+  else if (view === "notificaciones") {
+
+    if (!can("notificaciones.ver")) return;
+    showEl("view-notificaciones");
+    updateBreadcrumb([
+      { label: "Inicio", action: () => navigateTo("dashboard") },
+      { label: "Notificaciones" }
+    ]);
+    loadNotificaciones();
 
   }
 
