@@ -122,6 +122,16 @@
   min-width: 0;
 }
 
+/* La card de cantidad es angosta; la de total toma el espacio restante */
+.recibos-resumen-card:last-child {
+  flex: 0 0 auto;
+  min-width: 5.5rem;
+}
+
+.recibos-resumen-card:first-child {
+  flex: 1 1 0;
+}
+
 .recibos-resumen-label {
   font-size: .68rem;
   text-transform: uppercase;

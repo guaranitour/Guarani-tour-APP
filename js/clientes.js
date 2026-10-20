@@ -46,7 +46,7 @@ async function _loadPassengersImpl() {
 function renderList(passengers) {
   const listEl  = document.getElementById("passenger-list");
   const countEl = document.getElementById("passenger-count");
-  countEl.textContent = `${passengers.length} pasajero${passengers.length !== 1 ? "s" : ""}`;
+  countEl.textContent = `${passengers.length} PX`;
 
   if (passengers.length === 0) { setListState("empty"); return; }
 
