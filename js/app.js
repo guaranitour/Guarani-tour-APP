@@ -1039,6 +1039,7 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Panel de control" }
     ]);
     loadDashboard();
+    actualizarBadgeNotificaciones(); // refresca la tarjeta de no leídas del Inicio
 
   }
 

@@ -166,7 +166,6 @@
       <div class="hamburger-wrap">
         <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Abrir menú" aria-haspopup="true" aria-expanded="false" aria-controls="hamburger-menu">
           <span></span><span></span><span></span>
-          <i class="hamburger-notif-dot" id="hamburger-notif-dot" style="display:none"></i>
         </button>
         <div class="hamburger-menu" id="hamburger-menu" role="menu">
           <div class="menu-user" id="user-email"></div>
@@ -229,6 +228,13 @@
       </button>
 
       <div class="profile-wrap">
+        <button class="topbar-bell" id="topbar-bell" style="display:none" onclick="navigateTo('notificaciones')" aria-label="Notificaciones">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="topbar-bell-count" id="topbar-bell-count" style="display:none"></span>
+        </button>
         <button class="topbar-profile" onclick="toggleProfileMenu()" aria-label="Abrir menú de perfil" aria-haspopup="true" aria-expanded="false" aria-controls="profile-menu">
           <span>--</span>
         </button>
@@ -269,6 +275,7 @@
             <span id="dash-greeting-date-text">—</span>
           </div>
         </div>
+        <div id="dash-notif-card" style="display:none"></div>
         <div id="dashboard-content"></div>
       </div>
     </div>

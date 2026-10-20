@@ -45,21 +45,69 @@ function _notifTiempoRelativo(iso) {
 }
 
 // ── Contador de no leídas (menú hamburguesa) ───────────────
+let _notifUltimoConteo = 0;
+
+// Una sola consulta: cuenta las no leídas y trae la más reciente
+// (para la campana, el menú y la tarjeta del Inicio).
 async function actualizarBadgeNotificaciones() {
   if (typeof can !== "function" || !can("notificaciones.ver")) return;
-  const { count, error } = await supabaseClient
+  const { data, count, error } = await supabaseClient
     .from("notificaciones_bandeja")
-    .select("id", { count: "exact", head: true })
-    .is("leida_at", null);
+    .select("id, tipo, titulo, mensaje, created_at", { count: "exact" })
+    .is("leida_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
   if (error) return;
   const n = count || 0;
+  const texto = n > 99 ? "99+" : String(n);
+
   const badge = document.getElementById("menu-notif-badge");
   if (badge) {
-    badge.textContent = n > 99 ? "99+" : String(n);
+    badge.textContent = texto;
     badge.style.display = n > 0 ? "" : "none";
   }
-  const dot = document.getElementById("hamburger-notif-dot");
-  if (dot) dot.style.display = n > 0 ? "" : "none";
+
+  const bell = document.getElementById("topbar-bell");
+  if (bell) {
+    bell.style.display = "";
+    const c = document.getElementById("topbar-bell-count");
+    if (c) {
+      c.textContent = texto;
+      c.style.display = n > 0 ? "" : "none";
+    }
+    // La campana se mueve unos segundos solo cuando hay novedades
+    if (n > _notifUltimoConteo) {
+      bell.classList.remove("ring");
+      void bell.offsetWidth;
+      bell.classList.add("ring");
+    }
+  }
+  _notifUltimoConteo = n;
+
+  _renderTarjetaNotifInicio(n, data && data[0]);
+}
+
+// Tarjeta arriba del Inicio con la última notificación sin leer
+function _renderTarjetaNotifInicio(total, ultima) {
+  const card = document.getElementById("dash-notif-card");
+  if (!card) return;
+  if (!ultima || total === 0) {
+    card.style.display = "none";
+    card.innerHTML = "";
+    return;
+  }
+  const t = NOTIF_TIPOS[ultima.tipo] || NOTIF_TIPOS.recordatorio;
+  card.innerHTML = `
+    <button type="button" class="dash-notif" onclick="navigateTo('notificaciones')">
+      <span class="notif-item-icono">${t.icono}</span>
+      <span class="notif-item-body">
+        <span class="dash-notif-titulo">${_escN(ultima.titulo)}</span>
+        <span class="dash-notif-mensaje">${_escN(ultima.mensaje)}</span>
+        <span class="notif-item-meta">${_notifTiempoRelativo(ultima.created_at)}${total > 1 ? ` · y ${total - 1} más sin leer` : ""}</span>
+      </span>
+      <span class="dash-notif-ver">Ver</span>
+    </button>`;
+  card.style.display = "";
 }
 
 // ── Vista ────────────────────────────────────────────────────
