@@ -14,7 +14,7 @@ async function loadResumen(viajeId) {
     .from("viaje_pasajeros")
     .select(`
       id, total_a_pagar, asistencia, puntos_destino,
-      pasajeros ( Vendedor, Sexo )
+      pasajeros ( Pasajero, Vendedor, Sexo )
     `)
     .eq("viaje_id", viajeId);
 
@@ -129,12 +129,13 @@ async function loadResumen(viajeId) {
   // Se listan todos los servicios del catálogo del viaje, aunque tengan 0.
   const conteoPorServicio = {};
   (serviciosExtraRows || []).forEach(s => {
-    conteoPorServicio[s.id] = { nombre: s.nombre, cantidad: 0 };
+    conteoPorServicio[s.id] = { nombre: s.nombre, cantidad: 0, ingreso: 0 };
   });
   extrasVpAsisten.forEach(e => {
     const key = e.servicio_extra_id;
-    if (!conteoPorServicio[key]) conteoPorServicio[key] = { nombre: "Servicio eliminado", cantidad: 0 };
+    if (!conteoPorServicio[key]) conteoPorServicio[key] = { nombre: "Servicio eliminado", cantidad: 0, ingreso: 0 };
     conteoPorServicio[key].cantidad++;
+    conteoPorServicio[key].ingreso += e.precio_venta_real || 0;
   });
   const serviciosExtraEntries = Object.values(conteoPorServicio)
     .sort((a, b) => b.cantidad - a.cantidad);
@@ -162,17 +163,6 @@ async function loadResumen(viajeId) {
     ? Math.round(totalPuntos / totalMiembros)
     : 0;
 
-  // Pasajeros por vendedor — normalizar espacios para evitar duplicados
-  const porVendedor = {};
-  (vpRows || []).forEach(p => {
-    const raw = p.pasajeros?.Vendedor || "";
-    const v = raw.trim().replace(/\s+/g, " ") || "Sin vendedor";
-    if (!porVendedor[v]) porVendedor[v] = { total: 0, asisten: 0 };
-    porVendedor[v].total++;
-    if (p.asistencia === "Asiste") porVendedor[v].asisten++;
-  });
-  const vendedorEntries = Object.entries(porVendedor)
-    .sort((a, b) => b[1].total - a[1].total);
 
   /* ── Cálculos de pagos ───────────────────────── */
   // Pagado por pasajero (solo tipo "Pago" menos "Devolución" y "Transferencia")
@@ -206,16 +196,46 @@ async function loadResumen(viajeId) {
     }
   });
 
+  // Extras de cada pasajero que asiste (suman a lo que debe pagar y a lo vendido)
+  const extrasPorVP = {};
+  extrasVpAsisten.forEach(e => {
+    const k = String(e.viaje_pasajero_id);
+    extrasPorVP[k] = (extrasPorVP[k] || 0) + (e.precio_venta_real || 0);
+  });
+
   // Pasajeros con saldo pendiente vs. al día — solo los que asisten
   let paxAlDia = 0, paxConDeuda = 0;
+  const deudores = [];
   (vpRows || [])
     .filter(p => p.asistencia === "Asiste")
     .forEach(p => {
       const pagado = pagadoPorVP[String(p.id)] || 0;
-      const debe   = (p.total_a_pagar || 0) - pagado;
+      const debe   = (p.total_a_pagar || 0) + (extrasPorVP[String(p.id)] || 0) - pagado;
       if (debe <= 0) paxAlDia++;
-      else paxConDeuda++;
+      else {
+        paxConDeuda++;
+        deudores.push({ nombre: p.pasajeros?.Pasajero || "Sin nombre", debe });
+      }
     });
+  deudores.sort((a, b) => b.debe - a.debe);
+
+  // Pasajeros por vendedor — normalizar espacios para evitar duplicados.
+  // Vendido = total a pagar (+ extras) de los que asisten; cobrado = neto
+  // pagado por esos mismos pasajeros.
+  const porVendedor = {};
+  (vpRows || []).forEach(p => {
+    const raw = p.pasajeros?.Vendedor || "";
+    const v = raw.trim().replace(/\s+/g, " ") || "Sin vendedor";
+    if (!porVendedor[v]) porVendedor[v] = { total: 0, asisten: 0, vendido: 0, cobrado: 0 };
+    porVendedor[v].total++;
+    if (p.asistencia === "Asiste") {
+      porVendedor[v].asisten++;
+      porVendedor[v].vendido += (p.total_a_pagar || 0) + (extrasPorVP[String(p.id)] || 0);
+      porVendedor[v].cobrado += pagadoPorVP[String(p.id)] || 0;
+    }
+  });
+  const vendedorEntries = Object.entries(porVendedor)
+    .sort((a, b) => b[1].vendido - a[1].vendido || b[1].total - a[1].total);
 
   // Recaudado (neto de devoluciones/transferencias) de pasajeros que NO
   // asisten — se muestra aparte para no inflar el total esperado del viaje.
@@ -307,6 +327,15 @@ async function loadResumen(viajeId) {
   /* ── Saldo neto global ───────────────────────── */
   const saldoNeto = netoIngresado - totalEgresos;
 
+  /* ── Rentabilidad proyectada ─────────────────── */
+  // Ingreso proyectado = lo esperado de quienes asisten + lo que quedó
+  // recaudado de quienes no asisten (misma plata que entra en el saldo neto).
+  const ingresoProyectado   = totalEsperado + recaudadoNoAsisten;
+  const resultadoProyectado = ingresoProyectado - totalEgresos;
+  const margenPct = ingresoProyectado > 0
+    ? Math.round((resultadoProyectado / ingresoProyectado) * 100)
+    : 0;
+
   /* ── Render ──────────────────────────────────── */
   const fmt = n => (n || 0).toLocaleString("es-PY");
 
@@ -326,8 +355,25 @@ async function loadResumen(viajeId) {
       <span class="resumen-hero-sub">Cobrado − egresos · incluye asisten y no asisten</span>
     </div>
 
+    <!-- ══ RENTABILIDAD ══ -->
+    <div class="resumen-section-title">${icoDinero} Rentabilidad</div>
+    <div class="resumen-grid">
+      <div class="resumen-card">
+        <span class="resumen-card-label">Resultado proyectado</span>
+        <span class="resumen-card-value ${resultadoProyectado >= 0 ? "positivo" : "negativo"}">
+          ${resultadoProyectado >= 0 ? "" : "− "}Gs. ${fmt(Math.abs(resultadoProyectado))}
+        </span>
+        <span class="resumen-card-sub">ingreso esperado − egresos</span>
+      </div>
+      <div class="resumen-card">
+        <span class="resumen-card-label">Margen</span>
+        <span class="resumen-card-value ${margenPct >= 0 ? "positivo" : "negativo"}">${margenPct}%</span>
+        <span class="resumen-card-sub">sobre Gs. ${fmt(ingresoProyectado)}</span>
+      </div>
+    </div>
+
     <!-- ══ RECAUDACIÓN ══ -->
-    <div class="resumen-section-title">${icoDinero} Recaudación</div>
+    <div class="resumen-section-title" style="margin-top:1.25rem">${icoDinero} Recaudación</div>
 
     <div class="resumen-progress-wrap">
       <div class="resumen-progress-bar">
@@ -421,7 +467,10 @@ async function loadResumen(viajeId) {
       ${serviciosExtraEntries.map(s => `
       <div class="resumen-desglose-row">
         <span class="resumen-desglose-nombre">${_escapeHtml(s.nombre)}</span>
-        <span class="resumen-pill${s.cantidad > 0 ? " asiste" : ""}">${s.cantidad} pasajero${s.cantidad === 1 ? "" : "s"}</span>
+        <span class="resumen-vendedor-pills">
+          <span class="resumen-pill${s.cantidad > 0 ? " asiste" : ""}">${s.cantidad} pasajero${s.cantidad === 1 ? "" : "s"}</span>
+          ${s.ingreso > 0 ? `<span class="resumen-pill asiste">Gs. ${fmt(s.ingreso)}</span>` : ""}
+        </span>
       </div>`).join("")}
     </div>` : `
     <div class="viaje-pasajeros-empty">Sin servicios extra registrados</div>`}
@@ -429,6 +478,22 @@ async function loadResumen(viajeId) {
 
     <!-- ══ DETALLE (colapsado por defecto) ══ -->
     <div class="resumen-section-title" style="margin-top:1.5rem">Detalle</div>
+
+    ${deudores.length > 0 ? `
+    <details class="resumen-details">
+      <summary>
+        ${icoUsuarios}
+        <span>Pendiente por pasajero</span>
+        <span class="resumen-details-badge">${deudores.length}</span>
+      </summary>
+      <div class="resumen-details-body">
+        ${deudores.map(d => `
+        <div class="resumen-desglose-row">
+          <span class="resumen-desglose-nombre">${_escapeHtml(d.nombre)}</span>
+          <span class="resumen-desglose-monto negativo">Gs. ${fmt(d.debe)}</span>
+        </div>`).join("")}
+      </div>
+    </details>` : ""}
 
     <details class="resumen-details">
       <summary>
@@ -439,7 +504,7 @@ async function loadResumen(viajeId) {
       <div class="resumen-details-body">
         ${saldoPorMetodoEntries.map(r => `
         <div class="resumen-metodo-card">
-          <div class="resumen-metodo-nombre">${r.nombre}</div>
+          <div class="resumen-metodo-nombre">${_escapeHtml(r.nombre)}</div>
           <div class="resumen-metodo-cols">
             <div class="resumen-metodo-col">
               <span class="resumen-metodo-col-label">Cobrado</span>
@@ -499,7 +564,7 @@ async function loadResumen(viajeId) {
         <div>
           ${desgloseEntries.map(([nombre, monto]) => `
           <div class="resumen-desglose-row">
-            <span class="resumen-desglose-nombre">${nombre}</span>
+            <span class="resumen-desglose-nombre">${_escapeHtml(nombre)}</span>
             <span class="resumen-desglose-monto">Gs. ${fmt(monto)}</span>
           </div>`).join("")}
         </div>` : ""}
@@ -516,7 +581,10 @@ async function loadResumen(viajeId) {
       <div class="resumen-details-body">
         ${vendedorEntries.map(([nombre, data]) => `
         <div class="resumen-desglose-row">
-          <span class="resumen-desglose-nombre">${nombre}</span>
+          <span class="resumen-desglose-nombre">
+            ${_escapeHtml(nombre)}
+            <span class="resumen-card-sub" style="display:block">Vendido Gs. ${fmt(data.vendido)} · Cobrado Gs. ${fmt(data.cobrado)}</span>
+          </span>
           <span class="resumen-vendedor-pills">
             <span class="resumen-pill">${data.total} pax</span>
             ${data.asisten > 0 ? `<span class="resumen-pill asiste">${data.asisten} asisten</span>` : ""}
