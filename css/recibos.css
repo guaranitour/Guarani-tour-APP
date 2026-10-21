@@ -1222,6 +1222,12 @@
 }
 
 /* ── MODAL: GESTIONAR SPEECHES ──────────────────────────────────────── */
+/* Por encima del formulario de recibo (.modal-recibo-overlay, z 1000) y del navbar */
+#modal-speeches,
+#modal-completar-speech {
+  z-index: 1100;
+}
+
 .modal-speeches-lista {
   display: flex;
   flex-direction: column;
