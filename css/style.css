@@ -376,7 +376,9 @@ h2 {
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(45,106,79,.15);
   box-shadow: 0 2px 12px rgba(0,0,0,.07);
-  padding: 0 1.1rem; height: 68px;
+  /* safe-area-inset-top: en la app nativa (edge-to-edge) evita que el topbar
+     quede debajo de la barra de estado; en navegador vale 0. */
+  padding: env(safe-area-inset-top, 0px) 1.1rem 0; height: calc(68px + env(safe-area-inset-top, 0px));
   display: grid;
   grid-template-columns: 38px 1fr 38px;
   align-items: center;
