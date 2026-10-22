@@ -178,7 +178,8 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               message: {
                 token: t.token,
-                android: { priority: "high", ttl: "43200s" },
+                // android.notification: ver send-notifications (app nativa Capacitor).
+                android: { priority: "high", ttl: "43200s", notification: { title: `⚠️ ${titulo}`, body: mensaje } },
                 data: {
                   title: `⚠️ ${titulo}`,
                   body: mensaje,

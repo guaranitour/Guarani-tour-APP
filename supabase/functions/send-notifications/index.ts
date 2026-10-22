@@ -215,7 +215,10 @@ Deno.serve(async (_req) => {
                 message: {
                   token: t.token,
                   // data-only + prioridad alta: llega aunque el equipo esté en Doze
-                  android: { priority: "high", ttl: "43200s" },
+                  // android.notification: la app nativa (Capacitor) no tiene service worker,
+                  // así que necesita bloque de notificación para mostrarla con la app cerrada.
+                  // Los tokens web (PWA) ignoran este bloque.
+                  android: { priority: "high", ttl: "43200s", notification: { title: titulo, body: n.mensaje } },
                   data: {
                     title: titulo,
                     body: n.mensaje,

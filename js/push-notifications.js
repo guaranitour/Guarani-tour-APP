@@ -6,7 +6,51 @@
 // y luego este archivo.
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
+// En el WebView de la app nativa (Capacitor) Firebase Web Messaging no está
+// soportado: ahí se usa @capacitor/push-notifications (FCM nativo).
+let messaging = null;
+try { messaging = firebase.messaging(); } catch (e) { console.warn("Firebase Messaging web no disponible:", e); }
+
+function isNativePush() {
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+}
+
+async function initNativePush(staffId) {
+  const Push = window.Capacitor.Plugins.PushNotifications;
+  try {
+    let perm = await Push.checkPermissions();
+    if (perm.receive === "prompt" || perm.receive === "prompt-with-rationale") {
+      perm = await Push.requestPermissions();
+    }
+    if (perm.receive !== "granted") {
+      return { ok: false, reason: perm.receive === "denied" ? "denied" : "error" };
+    }
+
+    await Push.removeAllListeners();
+    const token = await new Promise((resolve, reject) => {
+      Push.addListener("registration", (t) => resolve(t.value));
+      Push.addListener("registrationError", (e) => reject(e));
+      Push.register();
+    });
+
+    Push.addListener("pushNotificationReceived", (n) => {
+      if (typeof actualizarBadgeNotificaciones === "function") actualizarBadgeNotificaciones();
+      if (typeof showToast === "function") {
+        showToast(n.title ? `${n.title}: ${n.body}` : (n.body || "Nueva notificación"), "success");
+      }
+    });
+    Push.addListener("pushNotificationActionPerformed", () => {
+      if (typeof navigateTo === "function") navigateTo("notificaciones");
+    });
+
+    const saveResult = await savePushToken(staffId, token);
+    if (!saveResult.ok) return { ok: false, reason: "save_failed", error: saveResult.error };
+    return { ok: true, token };
+  } catch (err) {
+    console.error("Error al inicializar push nativo:", err);
+    return { ok: false, reason: "error", error: err };
+  }
+}
 
 // Detecta si la app corre instalada como PWA (standalone),
 // y no como pestaña normal del navegador.
@@ -19,6 +63,8 @@ function isRunningAsPWA() {
 }
 
 async function initPushNotifications(staffId) {
+  if (isNativePush()) return initNativePush(staffId);
+
   if (!("Notification" in window)) {
     return { ok: false, reason: "unsupported" };
   }
@@ -152,7 +198,7 @@ async function savePushToken(staffId, token) {
   return { ok: true };
 }
 
-messaging.onMessage((payload) => {
+if (messaging) messaging.onMessage((payload) => {
   console.log("Mensaje en foreground:", payload);
   const data = payload.data || {};
   if (typeof actualizarBadgeNotificaciones === "function") actualizarBadgeNotificaciones();
