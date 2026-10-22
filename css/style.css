@@ -378,7 +378,9 @@ h2 {
   box-shadow: 0 2px 12px rgba(0,0,0,.07);
   /* safe-area-inset-top: en la app nativa (edge-to-edge) evita que el topbar
      quede debajo de la barra de estado; en navegador vale 0. */
-  padding: env(safe-area-inset-top, 0px) 1.1rem 0; height: calc(68px + env(safe-area-inset-top, 0px));
+  /* --safe-area-inset-top lo inyecta Capacitor en WebViews que no soportan env() */
+  padding: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) 1.1rem 0;
+  height: calc(68px + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)));
   display: grid;
   grid-template-columns: 38px 1fr 38px;
   align-items: center;

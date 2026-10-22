@@ -2894,7 +2894,18 @@
   <script src="js/facturas.js"></script>
   <script src="js/marangatu.js"></script>
   <script>
-  if ('serviceWorker' in navigator) {
+  // App nativa (Capacitor): los archivos ya van dentro del APK, así que no se
+  // usa service worker (cache-first dejaba versiones viejas tras actualizar el
+  // APK). Si quedó uno de una instalación anterior, se desregistra y se limpia.
+  const _esAppNativa = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (_esAppNativa && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(async regs => {
+      if (!regs.length) return;
+      await Promise.all(regs.map(r => r.unregister()));
+      if (window.caches) await Promise.all((await caches.keys()).map(k => caches.delete(k)));
+      window.location.reload();
+    });
+  } else if ('serviceWorker' in navigator) {
     let _swRefrescando = false;
 
     // Cuando el nuevo SW toma control (tras SKIP_WAITING), recargamos
