@@ -1053,7 +1053,7 @@ async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
         pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
       `)
       .eq("viaje_id", viajeId)
-      .order("id", { ascending: false }), // más recientemente cargado primero
+      .order("created_at", { ascending: false }), // más recientemente cargado primero
     _getBycCis(),
   ]);
 
