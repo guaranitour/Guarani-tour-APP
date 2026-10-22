@@ -1052,7 +1052,8 @@ async function _cargarYPintarViajeDetalle(viajeId, { silencioso }) {
         reemplaza_a,
         pasajeros ( id, Pasajero, "Documento de Identidad", Vendedor )
       `)
-      .eq("viaje_id", viajeId),
+      .eq("viaje_id", viajeId)
+      .order("created_at", { ascending: false }), // más recientemente cargado primero
     _getBycCis(),
   ]);
 
