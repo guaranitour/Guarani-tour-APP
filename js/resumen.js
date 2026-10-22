@@ -346,6 +346,16 @@ async function loadResumen(viajeId) {
   const icoUsuarios = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
   const icoExtra = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`;
 
+  // Pasajes agrupados por costo (total_a_pagar), solo pasajeros que asisten
+  const _porCosto = {};
+  (vpRows || []).filter(p => p.asistencia === "Asiste").forEach(p => {
+    const costo = p.total_a_pagar || 0;
+    _porCosto[costo] = (_porCosto[costo] || 0) + 1;
+  });
+  const costosPasaje = Object.entries(_porCosto)
+    .map(([costo, cantidad]) => ({ costo: Number(costo), cantidad }))
+    .sort((a, b) => b.costo - a.costo);
+
   cont.innerHTML = `
 
     <!-- ══ HERO: saldo neto global — lo primero que se ve ══ -->
@@ -439,6 +449,20 @@ async function loadResumen(viajeId) {
         <span class="resumen-card-sub">de ${totalAsisten} que asisten</span>
       </div>
     </div>
+
+    <!-- ══ COSTOS DEL PASAJE ══ -->
+    <div class="resumen-section-title" style="margin-top:1.25rem">${icoDinero} Costos del pasaje</div>
+    ${costosPasaje.length > 0 ? `
+    <div>
+      ${costosPasaje.map(c => `
+      <div class="resumen-desglose-row">
+        <span class="resumen-desglose-nombre">${c.costo === 0 ? "Canje (Gs. 0)" : "Gs. " + fmt(c.costo)}</span>
+        <span class="resumen-vendedor-pills">
+          <span class="resumen-pill asiste">${c.cantidad} pasajero${c.cantidad === 1 ? "" : "s"}</span>
+        </span>
+      </div>`).join("")}
+    </div>` : `
+    <div class="viaje-pasajeros-empty">Sin pasajeros que asistan</div>`}
 
     <!-- ══ CLUB DESTINO ══ -->
     <div class="resumen-section-title" style="margin-top:1.25rem">${icoEstrella} Club Destino</div>
