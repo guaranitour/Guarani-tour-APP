@@ -181,11 +181,7 @@ function exportarEncuestaCSV() {
   const esc = v => `"${String(Array.isArray(v) ? v.join("; ") : (v ?? "")).replace(/"/g, '""')}"`;
   const csv = [cols.map(c => esc(c[1])).join(",")]
     .concat(rows.map(r => cols.map(c => esc(r[c[0]])).join(","))).join("\r\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-  a.download = `encuesta_${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  compartirOGuardarArchivo(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }),
+    `encuesta_${new Date().toISOString().slice(0, 10)}.csv`)
+    .catch(() => showToast("No se pudo guardar el archivo"));
 }

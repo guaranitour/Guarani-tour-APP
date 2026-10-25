@@ -193,9 +193,7 @@ async function abrirMarangatu(id, rowEl) {
     const resultado = await _obtenerBlobMarangatu(id);
     if (!resultado) return;
 
-    const url = URL.createObjectURL(resultado.blob);
-    window.open(url, "_blank", "noopener");
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    await abrirArchivo(resultado.blob, resultado.item.nombre_archivo || "factura");
   } catch (err) {
     console.error("[marangatu] error abriendo factura:", err);
     _appToast("No se pudo abrir la factura", true);
@@ -211,14 +209,8 @@ async function descargarMarangatu(id, btnEl) {
     const resultado = await _obtenerBlobMarangatu(id);
     if (!resultado) return;
 
-    const url = URL.createObjectURL(resultado.blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = resultado.item.nombre_archivo || "factura";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    const destino = await guardarArchivo(resultado.blob, resultado.item.nombre_archivo || "factura");
+    if (destino) _appToast("Guardado en " + destino);
   } catch (err) {
     console.error("[marangatu] error descargando:", err);
     _appToast("No se pudo descargar la factura", true);

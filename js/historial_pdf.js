@@ -149,24 +149,11 @@ async function compartirHistorialImagen(event, vpId, nombrePasajero) {
     // 4. Compartir la imagen vía el panel nativo (WhatsApp, etc.) si el
     //    dispositivo lo soporta; si no, descargarla como PNG.
     const nombreArchivo = `Historial_${nombrePasajero.replace(/\s+/g, "_")}_${nombreViaje.replace(/\s+/g, "_")}.png`;
-    const archivoImagen = await dataUrlAFile(dataUrl, nombreArchivo);
-
-    const puedeCompartirArchivo = navigator.canShare && navigator.canShare({ files: [archivoImagen] });
-
-    if (puedeCompartirArchivo) {
-      try {
-        await navigator.share({
-          files : [archivoImagen],
-          title : `Historial de Pagos — ${nombrePasajero}`,
-          text  : `Hola ${nombrePasajero}, te pasamos los pagos que hiciste hasta ahora.`
-        });
-      } catch (shareErr) {
-        // El usuario canceló el panel de compartir: no es un error real.
-        if (shareErr.name !== "AbortError") throw shareErr;
-      }
-    } else {
-      descargarDataUrl(dataUrl, nombreArchivo);
-    }
+    const blobImagen = await (await fetch(dataUrl)).blob();
+    await compartirPorWhatsApp(blobImagen, nombreArchivo, {
+      title : `Historial de Pagos — ${nombrePasajero}`,
+      text  : `Hola ${nombrePasajero}, te pasamos los pagos que hiciste hasta ahora.`
+    });
 
   } catch (err) {
     console.error("Error generando el historial:", err);

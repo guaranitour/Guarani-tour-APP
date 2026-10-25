@@ -1142,23 +1142,7 @@ async function compartirPuntosPasajero(pasajeroId) {
 
     const textoCompartir = `Hola ${registro.nombre}, estos son los viajes que hiciste en 2026 y los puntos que acumulaste en cada uno. ¡Vas sumando para el Club Destino! 🌟`;
 
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        files: [file],
-        title: "Puntos Club Destino 2026",
-        text: textoCompartir,
-      });
-    } else {
-      // Fallback: descargar la imagen
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
+    await compartirPorWhatsApp(blob, fileName, { title: "Puntos Club Destino 2026", text: textoCompartir });
   } catch (e) {
     if (e?.name !== "AbortError") {
       console.error("Error al compartir puntos del pasajero:", e);

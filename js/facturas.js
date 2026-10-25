@@ -216,10 +216,7 @@ async function abrirFactura(id, rowEl) {
     const resultado = await _obtenerBlobFactura(id);
     if (!resultado) return;
 
-    const url = URL.createObjectURL(resultado.blob);
-    window.open(url, "_blank", "noopener");
-    // Revocar después de un momento, dando tiempo a que la pestaña cargue el blob.
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    await abrirArchivo(resultado.blob, resultado.item.nombre_archivo || "comprobante");
   } catch (err) {
     console.error("[facturas] error abriendo comprobante:", err);
     _appToast("No se pudo abrir el comprobante", true);
@@ -239,14 +236,8 @@ async function descargarFactura(id, btnEl) {
     const resultado = await _obtenerBlobFactura(id);
     if (!resultado) return;
 
-    const url = URL.createObjectURL(resultado.blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = resultado.item.nombre_archivo || "comprobante";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    const destino = await guardarArchivo(resultado.blob, resultado.item.nombre_archivo || "comprobante");
+    if (destino) _appToast("Guardado en " + destino);
   } catch (err) {
     console.error("[facturas] error descargando:", err);
     _appToast("No se pudo descargar el comprobante", true);
