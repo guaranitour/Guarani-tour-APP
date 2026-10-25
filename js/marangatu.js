@@ -205,7 +205,7 @@ async function abrirMarangatu(id, rowEl) {
 }
 
 async function descargarMarangatu(id, btnEl) {
-  if (btnEl) btnEl.disabled = true;
+  if (btnEl) { btnEl.disabled = true; btnEl.classList.add("is-cargando"); }
 
   try {
     const resultado = await _obtenerBlobMarangatu(id);
@@ -223,7 +223,7 @@ async function descargarMarangatu(id, btnEl) {
     console.error("[marangatu] error descargando:", err);
     _appToast("No se pudo descargar la factura", true);
   } finally {
-    if (btnEl) btnEl.disabled = false;
+    if (btnEl) { btnEl.disabled = false; btnEl.classList.remove("is-cargando"); }
   }
 }
 

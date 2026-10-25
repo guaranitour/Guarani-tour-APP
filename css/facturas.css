@@ -317,3 +317,37 @@
     margin-left: auto;
   }
 }
+
+/* ── Feedback de carga (abrir / descargar comprobante) ───────── */
+.fact-row { position: relative; overflow: hidden; }
+.fact-row[aria-disabled="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 3px; width: 40%;
+  background: var(--accent, #2d6a4f);
+  border-radius: 3px;
+  animation: factBarra 1s ease-in-out infinite;
+}
+@keyframes factBarra {
+  from { translate: -100% 0; }
+  to   { translate: 250% 0; }
+}
+.fact-btn-descargar.is-cargando { position: relative; opacity: 1; cursor: progress; }
+.fact-btn-descargar.is-cargando > * { visibility: hidden; }
+.fact-btn-descargar.is-cargando::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent, #2d6a4f);
+  border-radius: 50%;
+  animation: factGiro .7s linear infinite;
+}
+@keyframes factGiro { to { rotate: 360deg; } }
+@media (prefers-reduced-motion: reduce) {
+  .fact-row[aria-disabled="true"]::after,
+  .fact-btn-descargar.is-cargando::after { animation-duration: 2s; }
+}

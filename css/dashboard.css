@@ -682,3 +682,19 @@
 .dash-skel-comp-card .dash-skel-line-lg { height: .85rem; width: 50%; margin-bottom: .7rem; }
 .dash-skel-comp-card .dash-skel-bar-row { height: 7px; margin-bottom: .6rem; }
 .dash-skel-comp-card .dash-skel-bar-row:last-of-type { margin-bottom: 0; }
+
+/* Feedback de carga al compartir los puntos */
+.dash-rank-share-btn.is-cargando { position: relative; opacity: 1; cursor: progress; }
+.dash-rank-share-btn.is-cargando > * { visibility: hidden; }
+.dash-rank-share-btn.is-cargando::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 14px; height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: dashShareGiro .7s linear infinite;
+}
+@keyframes dashShareGiro { to { rotate: 360deg; } }

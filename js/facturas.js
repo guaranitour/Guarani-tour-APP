@@ -233,7 +233,7 @@ async function abrirFactura(id, rowEl) {
 // temporal — a diferencia de abrirFactura, esto nunca queda a criterio
 // del visor del navegador.
 async function descargarFactura(id, btnEl) {
-  if (btnEl) btnEl.disabled = true;
+  if (btnEl) { btnEl.disabled = true; btnEl.classList.add("is-cargando"); }
 
   try {
     const resultado = await _obtenerBlobFactura(id);
@@ -251,7 +251,7 @@ async function descargarFactura(id, btnEl) {
     console.error("[facturas] error descargando:", err);
     _appToast("No se pudo descargar el comprobante", true);
   } finally {
-    if (btnEl) btnEl.disabled = false;
+    if (btnEl) { btnEl.disabled = false; btnEl.classList.remove("is-cargando"); }
   }
 }
 

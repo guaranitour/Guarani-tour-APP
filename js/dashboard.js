@@ -1106,7 +1106,7 @@ function filtrarRankingPuntos() {
 // vía Web Share API (o la descarga si el navegador no la soporta).
 async function compartirPuntosPasajero(pasajeroId) {
   const btn = event?.currentTarget;
-  if (btn) btn.disabled = true;
+  if (btn) { btn.disabled = true; btn.classList.add("is-cargando"); }
 
   try {
     let registro = _rankingPuntosCompleto.find(r => r.pasajeroId === pasajeroId);
@@ -1165,7 +1165,7 @@ async function compartirPuntosPasajero(pasajeroId) {
       showToast("No se pudo generar la imagen para compartir.", "error");
     }
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) { btn.disabled = false; btn.classList.remove("is-cargando"); }
   }
 }
 
