@@ -157,9 +157,13 @@ Deno.serve(async (req) => {
                 // mensaje. Sin esto, el default es 4 semanas; 24h es más
                 // razonable para un aviso de "nuevo pasajero" que pierde
                 // sentido si se entrega demasiado tarde.
+                // notification: la app nativa (APK de Capacitor) no tiene service
+                // worker, así que con data-only no muestra nada si está cerrada.
+                // Los tokens web (PWA) ignoran este bloque y siguen usando el SW.
                 android: {
                   priority: "high",
                   ttl: "86400s",
+                  notification: { title: titulo, body: cuerpo },
                 },
                 // Links desde la raíz del dominio propio (app.guaranitour.com),
                 // sin el prefijo /Guarani-tour-APP/ de GitHub Pages. Se usa

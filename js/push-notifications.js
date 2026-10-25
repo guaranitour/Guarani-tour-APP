@@ -15,6 +15,29 @@ function isNativePush() {
   return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 }
 
+// Al tocar una notificación en la app nativa: lleva a la vista indicada en el
+// "link" del push (ej. /?goto=viaje-detalle&idx=12). Sin link válido, abre la
+// bandeja. Si la app arrancó en frío, espera a que termine de iniciar.
+async function abrirDestinoDeNotificacion(data) {
+  let vista = "notificaciones";
+  let idx = null;
+  try {
+    const params = new URL((data && data.link) || "", location.origin).searchParams;
+    const goto = params.get("goto");
+    const permitidas = typeof RESTORABLE_VIEWS_ARRANQUE !== "undefined" ? RESTORABLE_VIEWS_ARRANQUE : [];
+    if (goto && permitidas.includes(goto)) {
+      vista = goto;
+      const i = params.get("idx");
+      idx = i === null ? null : (isNaN(i) ? i : parseInt(i, 10));
+    }
+  } catch (e) { /* link inválido: bandeja */ }
+
+  for (let i = 0; i < 50 && !(typeof appReady !== "undefined" && appReady); i++) {
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  if (typeof navigateTo === "function") navigateTo(vista, idx);
+}
+
 async function initNativePush(staffId) {
   const Push = window.Capacitor.Plugins.PushNotifications;
   try {
@@ -39,8 +62,8 @@ async function initNativePush(staffId) {
         showToast(n.title ? `${n.title}: ${n.body}` : (n.body || "Nueva notificación"), "success");
       }
     });
-    Push.addListener("pushNotificationActionPerformed", () => {
-      if (typeof navigateTo === "function") navigateTo("notificaciones");
+    Push.addListener("pushNotificationActionPerformed", (accion) => {
+      abrirDestinoDeNotificacion(accion && accion.notification && accion.notification.data);
     });
 
     const saveResult = await savePushToken(staffId, token);
