@@ -295,8 +295,6 @@ function _pintarShellOptimista(user) {
   if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
   if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
-  const menuNotif = document.getElementById("menu-notificaciones-btn");
-  if (menuNotif) menuNotif.style.display = can("notificaciones.ver") ? "" : "none";
   actualizarBadgeNotificaciones();
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
@@ -470,8 +468,6 @@ if (card) card.style.display = can("usuarios.ver") ? "" : "none";
   if (menuActivityLog) menuActivityLog.style.display = can("actividad.ver") ? "" : "none";
   const menuEncuesta = document.getElementById("menu-encuesta-btn");
   if (menuEncuesta) menuEncuesta.style.display = can("encuesta.ver") ? "" : "none";
-  const menuNotif = document.getElementById("menu-notificaciones-btn");
-  if (menuNotif) menuNotif.style.display = can("notificaciones.ver") ? "" : "none";
   actualizarBadgeNotificaciones();
   const menuEmail = document.getElementById("menu-user-email");
   if (menuEmail) menuEmail.textContent = user.email;
