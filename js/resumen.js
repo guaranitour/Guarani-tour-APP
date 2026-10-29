@@ -3,6 +3,59 @@
    Solo visible para admin y worker
 ═══════════════════════════════════════════════ */
 
+// Servicios extra del resumen actual (por id), usados por el modal de detalle.
+let _resumenExtrasDetalle = {};
+
+// Costos del pasaje del resumen actual (por monto), para el modal de detalle.
+let _resumenCostosDetalle = {};
+
+// Modal compartido. Cada pasajero puede traer `precio`; si no, solo el nombre.
+function _abrirModalPasajerosResumen(titulo, pasajeros, resumen) {
+  const modal = document.getElementById("modal-extra-pasajeros");
+  if (!modal) return;
+
+  const fmt = n => (n || 0).toLocaleString("es-PY");
+  document.getElementById("modal-extra-pasajeros-nombre").textContent = titulo;
+
+  const lista = [...pasajeros].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  document.getElementById("modal-extra-pasajeros-lista").innerHTML = lista.map(p => `
+    <div class="resumen-desglose-row">
+      <span class="resumen-desglose-nombre">${_escapeHtml(p.nombre)}</span>
+      ${p.precio != null ? `<span class="resumen-pill asiste">Gs. ${fmt(p.precio)}</span>` : ""}
+    </div>`).join("");
+  document.getElementById("modal-extra-pasajeros-total").textContent = resumen;
+
+  modal.style.display = "flex";
+}
+
+function abrirModalExtraPasajeros(servicioId) {
+  const s = _resumenExtrasDetalle[String(servicioId)];
+  if (!s) return;
+  const fmt = n => (n || 0).toLocaleString("es-PY");
+  _abrirModalPasajerosResumen(
+    s.nombre,
+    s.pasajeros,
+    `${s.cantidad} pasajero${s.cantidad === 1 ? "" : "s"} · Gs. ${fmt(s.ingreso)}`
+  );
+}
+
+function abrirModalCostoPasajeros(costo) {
+  const c = _resumenCostosDetalle[String(costo)];
+  if (!c) return;
+  const fmt = n => (n || 0).toLocaleString("es-PY");
+  _abrirModalPasajerosResumen(
+    c.costo === 0 ? "Canje (Gs. 0)" : "Gs. " + fmt(c.costo),
+    c.pasajeros,
+    `${c.cantidad} pasajero${c.cantidad === 1 ? "" : "s"}`
+  );
+}
+
+function cerrarModalExtraPasajeros(event) {
+  if (event && event.target.id !== "modal-extra-pasajeros") return;
+  const modal = document.getElementById("modal-extra-pasajeros");
+  if (modal) modal.style.display = "none";
+}
+
 async function loadResumen(viajeId) {
   const cont = document.getElementById("resumen-cont");
   if (!cont) return;
@@ -129,16 +182,26 @@ async function loadResumen(viajeId) {
   // Se listan todos los servicios del catálogo del viaje, aunque tengan 0.
   const conteoPorServicio = {};
   (serviciosExtraRows || []).forEach(s => {
-    conteoPorServicio[s.id] = { nombre: s.nombre, cantidad: 0, ingreso: 0 };
+    conteoPorServicio[s.id] = { id: s.id, nombre: s.nombre, cantidad: 0, ingreso: 0, pasajeros: [] };
   });
+  const nombrePorVP = Object.fromEntries(
+    (vpRows || []).map(p => [String(p.id), p.pasajeros?.Pasajero || "Sin nombre"])
+  );
   extrasVpAsisten.forEach(e => {
     const key = e.servicio_extra_id;
-    if (!conteoPorServicio[key]) conteoPorServicio[key] = { nombre: "Servicio eliminado", cantidad: 0, ingreso: 0 };
+    if (!conteoPorServicio[key]) conteoPorServicio[key] = { id: key, nombre: "Servicio eliminado", cantidad: 0, ingreso: 0, pasajeros: [] };
     conteoPorServicio[key].cantidad++;
     conteoPorServicio[key].ingreso += e.precio_venta_real || 0;
+    conteoPorServicio[key].pasajeros.push({
+      nombre: nombrePorVP[String(e.viaje_pasajero_id)] || "Sin nombre",
+      precio: e.precio_venta_real || 0
+    });
   });
   const serviciosExtraEntries = Object.values(conteoPorServicio)
     .sort((a, b) => b.cantidad - a.cantidad);
+
+  // Se guarda para el modal de "quiénes tienen este servicio"
+  _resumenExtrasDetalle = Object.fromEntries(serviciosExtraEntries.map(s => [String(s.id), s]));
 
   // Desglose por sexo — solo pasajeros que asisten
   const porSexo = { M: 0, F: 0, otro: 0 };
@@ -350,11 +413,13 @@ async function loadResumen(viajeId) {
   const _porCosto = {};
   (vpRows || []).filter(p => p.asistencia === "Asiste").forEach(p => {
     const costo = p.total_a_pagar || 0;
-    _porCosto[costo] = (_porCosto[costo] || 0) + 1;
+    if (!_porCosto[costo]) _porCosto[costo] = [];
+    _porCosto[costo].push({ nombre: p.pasajeros?.Pasajero || "Sin nombre" });
   });
   const costosPasaje = Object.entries(_porCosto)
-    .map(([costo, cantidad]) => ({ costo: Number(costo), cantidad }))
+    .map(([costo, pasajeros]) => ({ costo: Number(costo), cantidad: pasajeros.length, pasajeros }))
     .sort((a, b) => b.costo - a.costo);
+  _resumenCostosDetalle = Object.fromEntries(costosPasaje.map(c => [String(c.costo), c]));
 
   cont.innerHTML = `
 
@@ -450,20 +515,6 @@ async function loadResumen(viajeId) {
       </div>
     </div>
 
-    <!-- ══ COSTOS DEL PASAJE ══ -->
-    <div class="resumen-section-title" style="margin-top:1.25rem">${icoDinero} Costos del pasaje</div>
-    ${costosPasaje.length > 0 ? `
-    <div>
-      ${costosPasaje.map(c => `
-      <div class="resumen-desglose-row">
-        <span class="resumen-desglose-nombre">${c.costo === 0 ? "Canje (Gs. 0)" : "Gs. " + fmt(c.costo)}</span>
-        <span class="resumen-vendedor-pills">
-          <span class="resumen-pill asiste">${c.cantidad} pasajero${c.cantidad === 1 ? "" : "s"}</span>
-        </span>
-      </div>`).join("")}
-    </div>` : `
-    <div class="viaje-pasajeros-empty">Sin pasajeros que asistan</div>`}
-
     <!-- ══ CLUB DESTINO ══ -->
     <div class="resumen-section-title" style="margin-top:1.25rem">${icoEstrella} Club Destino</div>
     <div class="resumen-grid">
@@ -483,25 +534,48 @@ async function loadResumen(viajeId) {
       </div>
     </div>
 
-    ${extrasHabilitados ? `
-    <!-- ══ SERVICIOS EXTRA ══ -->
-    <div class="resumen-section-title" style="margin-top:1.25rem">${icoExtra} Servicios extra</div>
-    ${serviciosExtraEntries.length > 0 ? `
-    <div>
-      ${serviciosExtraEntries.map(s => `
-      <div class="resumen-desglose-row">
-        <span class="resumen-desglose-nombre">${_escapeHtml(s.nombre)}</span>
-        <span class="resumen-vendedor-pills">
-          <span class="resumen-pill${s.cantidad > 0 ? " asiste" : ""}">${s.cantidad} pasajero${s.cantidad === 1 ? "" : "s"}</span>
-          ${s.ingreso > 0 ? `<span class="resumen-pill asiste">Gs. ${fmt(s.ingreso)}</span>` : ""}
-        </span>
-      </div>`).join("")}
-    </div>` : `
-    <div class="viaje-pasajeros-empty">Sin servicios extra registrados</div>`}
-    ` : ""}
-
     <!-- ══ DETALLE (colapsado por defecto) ══ -->
     <div class="resumen-section-title" style="margin-top:1.5rem">Detalle</div>
+
+    <details class="resumen-details">
+      <summary>
+        ${icoDinero}
+        <span>Costos del pasaje</span>
+        <span class="resumen-details-badge">${costosPasaje.length}</span>
+      </summary>
+      <div class="resumen-details-body">
+        ${costosPasaje.length > 0 ? costosPasaje.map(c => `
+        <div class="resumen-desglose-row">
+          <span class="resumen-desglose-nombre">${c.costo === 0 ? "Canje (Gs. 0)" : "Gs. " + fmt(c.costo)}</span>
+          <span class="resumen-vendedor-pills">
+            <button type="button" class="resumen-pill asiste resumen-pill-btn" onclick="abrirModalCostoPasajeros('${c.costo}')" aria-label="Ver pasajeros de este costo">${c.cantidad} pasajero${c.cantidad === 1 ? "" : "s"}</button>
+          </span>
+        </div>`).join("") : `
+        <div class="viaje-pasajeros-empty">Sin pasajeros que asistan</div>`}
+      </div>
+    </details>
+
+    ${extrasHabilitados ? `
+    <details class="resumen-details">
+      <summary>
+        ${icoExtra}
+        <span>Servicios extra</span>
+        <span class="resumen-details-badge">${serviciosExtraEntries.length}</span>
+      </summary>
+      <div class="resumen-details-body">
+        ${serviciosExtraEntries.length > 0 ? serviciosExtraEntries.map(s => `
+        <div class="resumen-desglose-row">
+          <span class="resumen-desglose-nombre">${_escapeHtml(s.nombre)}</span>
+          <span class="resumen-vendedor-pills">
+            ${s.cantidad > 0
+              ? `<button type="button" class="resumen-pill asiste resumen-pill-btn" onclick="abrirModalExtraPasajeros('${s.id}')" aria-label="Ver pasajeros con ${_escapeHtml(s.nombre)}">${s.cantidad} pasajero${s.cantidad === 1 ? "" : "s"}</button>`
+              : `<span class="resumen-pill">0 pasajeros</span>`}
+            ${s.ingreso > 0 ? `<span class="resumen-pill asiste">Gs. ${fmt(s.ingreso)}</span>` : ""}
+          </span>
+        </div>`).join("") : `
+        <div class="viaje-pasajeros-empty">Sin servicios extra registrados</div>`}
+      </div>
+    </details>` : ""}
 
     ${deudores.length > 0 ? `
     <details class="resumen-details">

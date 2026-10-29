@@ -295,6 +295,38 @@
   color: var(--accent);
 }
 
+/* Pill clickeable (abre modal con el detalle de pasajeros) */
+.resumen-pill-btn {
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s ease, transform .1s ease;
+}
+
+.resumen-pill-btn::after {
+  content: "›";
+  margin-left: .3rem;
+  font-size: .9rem;
+  line-height: 1;
+}
+
+.resumen-pill-btn:hover { background: rgba(45,106,79,.18); }
+.resumen-pill-btn:active { transform: scale(.96); }
+
+/* Modal: pasajeros con un servicio extra */
+.modal-extra-lista {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: .25rem 0 .75rem;
+}
+
+.modal-extra-total {
+  text-align: right;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-muted, #7a8c7e);
+}
+
 /* ── Detalle colapsable (<details> nativo) ───── */
 .resumen-details {
   background: var(--card-bg, #fff);
