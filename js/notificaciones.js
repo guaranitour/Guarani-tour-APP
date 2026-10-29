@@ -29,9 +29,14 @@ function _notifPuedeAdministrar() {
   return can("notificaciones.crear") || can("notificaciones.editar") || can("notificaciones.eliminar");
 }
 
+// Paraguay usa UTC-3 fijo (sin horario de verano desde oct-2024). Se fuerza ese
+// huso en vez del del dispositivo, que puede tener la tzdata vieja (UTC-4 en invierno).
+const NOTIF_TZ = "Etc/GMT+3";
+const NOTIF_OFFSET = "-03:00";
+
 function _notifFechaCorta(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("es-PY", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString("es-PY", { timeZone: NOTIF_TZ, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 function _notifTiempoRelativo(iso) {
@@ -303,10 +308,9 @@ async function _notifCargarStaff() {
   return _notifStaff;
 }
 
-// datetime-local necesita "YYYY-MM-DDTHH:mm" en hora local
+// datetime-local necesita "YYYY-MM-DDTHH:mm" en hora de Paraguay (UTC-3)
 function _notifParaInput(date) {
-  const d = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return d.toISOString().slice(0, 16);
+  return new Date(date.getTime() - 3 * 3600000).toISOString().slice(0, 16);
 }
 
 async function abrirFormNotificacion(n = null) {
@@ -372,7 +376,7 @@ async function abrirFormNotificacion(n = null) {
     </div>
     <div class="form-field" id="nf-termina-wrap" style="display:none">
       <label class="form-label">Dejar de repetir el (opcional)</label>
-      <input type="date" id="nf-termina" class="form-input" value="${n?.termina_en ? n.termina_en.slice(0, 10) : ""}" />
+      <input type="date" id="nf-termina" class="form-input" value="${n?.termina_en ? _notifParaInput(new Date(n.termina_en)).slice(0, 10) : ""}" />
     </div>
     <div class="form-error" id="nf-error"></div>
     <div class="form-actions">
@@ -440,7 +444,7 @@ async function guardarNotificacion() {
   const ahora = val("nf-cuando") === "ahora";
   let proxima = new Date();
   if (!ahora) {
-    proxima = new Date(val("nf-fecha"));
+    proxima = new Date(val("nf-fecha") + ":00" + NOTIF_OFFSET);
     if (isNaN(proxima)) { errEl.textContent = "Elegí la fecha y hora."; return; }
     if (!editando && proxima.getTime() < Date.now() - 60000) {
       errEl.textContent = "La fecha ya pasó."; return;
@@ -449,7 +453,7 @@ async function guardarNotificacion() {
 
   let terminaEn = null;
   if (frecuencia !== "unica" && val("nf-termina")) {
-    terminaEn = new Date(val("nf-termina") + "T23:59:59");
+    terminaEn = new Date(val("nf-termina") + "T23:59:59" + NOTIF_OFFSET);
     if (terminaEn <= proxima) { errEl.textContent = "La fecha final debe ser posterior al primer envío."; return; }
   }
   errEl.textContent = "";
