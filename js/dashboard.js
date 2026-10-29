@@ -509,6 +509,15 @@ async function loadDashboard() {
       // los últimos 3 (activos + concluidos) como antes.
       const activos = (viajesData || []).filter(v => (v.estado || "activo") === "activo");
       const compViajes = activos.length >= 3 ? activos : last3;
+
+      // Ranking de vendedores: todos los viajes activos; si hay menos de 3,
+      // se completan con los completados más recientes hasta llegar a 3.
+      const completados = (viajesData || []).filter(v => v.estado === "completado");
+      const rankViajes  = activos.length >= 3
+        ? activos
+        : [...activos, ...completados.slice(0, 3 - activos.length)];
+      const rankIds     = rankViajes.map(v => v.id);
+      const vpRank      = (vpData || []).filter(vp => rankIds.includes(vp.viaje_id));
       const compIds    = compViajes.map(v => v.id);
       const vpComp     = (vpData || []).filter(vp => compIds.includes(vp.viaje_id));
       const vpCompIds  = vpComp.map(vp => vp.id);
@@ -525,7 +534,7 @@ async function loadDashboard() {
           const htmlExtra =
             `<hr class="dash-section-divider" />` +
             renderComparativo(compViajes, vpComp, egresosData || [], pagosData || []) +
-            (esWorkerOAdmin ? renderRankingVendedores(last3, vpLast3) : "");
+            (esWorkerOAdmin ? renderRankingVendedores(rankViajes, vpRank) : "");
           if (teniaCache) _swapSlotIfChanged(slotExtra, htmlExtra, "extra");
           else if (slotExtra) slotExtra.innerHTML = htmlExtra;
           _dashCache.extra = htmlExtra;
