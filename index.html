@@ -1742,51 +1742,7 @@
       </div>
     </div>
 
-    <!-- ── MODAL: TRANSFERIR PAGO ─────────────── -->
-    <div id="modal-transferir-pago" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalTransferirPago(event)">
-      <div class="modal-transferir-card">
-        <div class="modal-transferir-header">
-          <div class="modal-transferir-titulo">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
-            Transferir pago
-          </div>
-          <button class="modal-transferir-close" onclick="cerrarModalTransferirPago()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
 
-        <p class="modal-transferir-desc">Este pago será reasignado a otro pasajero del mismo viaje.</p>
-
-        <div class="modal-transferir-monto" id="modal-trans-monto">Gs. —</div>
-
-        <div class="form-field" style="margin-top:1rem">
-          <label class="form-label">Buscar pasajero destino</label>
-          <input
-            type="text"
-            id="modal-trans-buscar"
-            class="form-input"
-            placeholder="Nombre o CI…"
-            oninput="buscarPasajeroParaTransferir()"
-            autocomplete="off"
-          />
-        </div>
-
-        <div id="modal-trans-resultados" class="modal-trans-resultados"></div>
-
-        <div id="modal-trans-seleccionado" class="modal-trans-seleccionado" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="modal-trans-nombre-sel"></span>
-        </div>
-
-        <div class="modal-transferir-actions">
-          <button class="btn-cancel" onclick="cerrarModalTransferirPago()">Cancelar</button>
-          <button class="btn-save" id="btn-confirmar-transferencia" onclick="confirmarTransferirPago()" disabled>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
-            Confirmar transferencia
-          </button>
-        </div>
-      </div>
-    </div>
 
   <!-- HISTORIAL DE VIAJES DEL PASAJERO -->
   <div id="view-historial-viajes" style="display:none">
@@ -2422,88 +2378,9 @@
   </div>
 </div>
 
-<!-- MODAL: PASAJEROS CON UN SERVICIO EXTRA (resumen del viaje) -->
-<div id="modal-extra-pasajeros" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalExtraPasajeros(event)">
-  <div class="modal-transferir-card" onclick="event.stopPropagation()">
-    <div class="modal-transferir-header">
-      <div class="modal-transferir-titulo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        <span id="modal-extra-pasajeros-nombre"></span>
-      </div>
-      <button class="modal-transferir-close" onclick="cerrarModalExtraPasajeros()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div id="modal-extra-pasajeros-lista" class="modal-extra-lista"></div>
-    <div id="modal-extra-pasajeros-total" class="modal-extra-total"></div>
-  </div>
-</div>
 
-<!-- MODAL: GESTIONAR SPEECHES DE RECIBO POR VIAJE -->
-<div id="modal-speeches" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalSpeeches(event)">
-  <div class="modal-transferir-card" onclick="event.stopPropagation()">
-    <div class="modal-transferir-header">
-      <div class="modal-transferir-titulo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        Frases rápidas — <span id="modal-speeches-viaje-nombre"></span>
-      </div>
-      <button class="modal-transferir-close" onclick="cerrarModalSpeeches()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
 
-    <p class="modal-transferir-desc">
-      Estas frases aparecen como opciones rápidas al elegir este viaje en un recibo nuevo.
-      Escribí la frase en plural, normal, y marcá dónde va el número con <code>{n}</code>
-      (o el nombre que prefieras, ej. <code>{cantidad}</code>) — al aplicarla se va a
-      preguntar el valor, y si es 1 el sistema ajusta la palabra siguiente al singular
-      automáticamente.<br>
-      Ej: <code>Pago parcial por {n} viajes a Encarnación</code> → con n=1 queda
-      "1 viaje", con n=3 queda "3 viajes".
-    </p>
 
-    <div id="modal-speeches-lista" class="modal-speeches-lista"></div>
-
-    <div class="modal-speeches-nuevo">
-      <textarea id="modal-speeches-input" rows="2" placeholder="Nueva frase… ej: Pago parcial por {n} viajes a Encarnación"></textarea>
-      <button type="button" class="btn-save modal-speeches-agregar" onclick="agregarSpeech()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Agregar frase
-      </button>
-    </div>
-
-    <p class="form-recibo-error" id="modal-speeches-error"></p>
-  </div>
-</div>
-
-<!-- MODAL: COMPLETAR VALORES DE UN SPEECH ANTES DE INSERTARLO -->
-<div id="modal-completar-speech" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalCompletarSpeech(event)">
-  <div class="modal-transferir-card" onclick="event.stopPropagation()">
-    <div class="modal-transferir-header">
-      <div class="modal-transferir-titulo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Completar frase
-      </div>
-      <button class="modal-transferir-close" onclick="cerrarModalCompletarSpeech()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-
-    <p class="modal-transferir-desc">Completá los valores antes de insertar la frase en el Concepto.</p>
-
-    <div id="modal-completar-campos" class="modal-completar-campos"></div>
-
-    <p class="form-recibo-error" id="modal-completar-error"></p>
-
-    <div class="modal-transferir-actions">
-      <button class="btn-cancel" onclick="cerrarModalCompletarSpeech()">Cancelar</button>
-      <button class="btn-save" onclick="confirmarCompletarSpeech()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Insertar en Concepto
-      </button>
-    </div>
-  </div>
-</div>
 
 <!-- VISTA: MOVIMIENTOS BANCARIOS -->
 <div id="view-movimientos" style="display:none">
@@ -2701,6 +2578,138 @@
 </div>
 
   </div><!-- /app-view -->
+
+    <!-- ── MODAL: TRANSFERIR PAGO ─────────────── -->
+    <div id="modal-transferir-pago" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalTransferirPago(event)">
+      <div class="modal-transferir-card">
+        <div class="modal-transferir-header">
+          <div class="modal-transferir-titulo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Transferir pago
+          </div>
+          <button class="modal-transferir-close" onclick="cerrarModalTransferirPago()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <p class="modal-transferir-desc">Este pago será reasignado a otro pasajero del mismo viaje.</p>
+
+        <div class="modal-transferir-monto" id="modal-trans-monto">Gs. —</div>
+
+        <div class="form-field" style="margin-top:1rem">
+          <label class="form-label">Buscar pasajero destino</label>
+          <input
+            type="text"
+            id="modal-trans-buscar"
+            class="form-input"
+            placeholder="Nombre o CI…"
+            oninput="buscarPasajeroParaTransferir()"
+            autocomplete="off"
+          />
+        </div>
+
+        <div id="modal-trans-resultados" class="modal-trans-resultados"></div>
+
+        <div id="modal-trans-seleccionado" class="modal-trans-seleccionado" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="modal-trans-nombre-sel"></span>
+        </div>
+
+        <div class="modal-transferir-actions">
+          <button class="btn-cancel" onclick="cerrarModalTransferirPago()">Cancelar</button>
+          <button class="btn-save" id="btn-confirmar-transferencia" onclick="confirmarTransferirPago()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/><path d="M6 8L2 12L6 16"/></svg>
+            Confirmar transferencia
+          </button>
+        </div>
+      </div>
+    </div>
+
+<!-- MODAL: GESTIONAR SPEECHES DE RECIBO POR VIAJE -->
+<div id="modal-speeches" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalSpeeches(event)">
+  <div class="modal-transferir-card" onclick="event.stopPropagation()">
+    <div class="modal-transferir-header">
+      <div class="modal-transferir-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Frases rápidas — <span id="modal-speeches-viaje-nombre"></span>
+      </div>
+      <button class="modal-transferir-close" onclick="cerrarModalSpeeches()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <p class="modal-transferir-desc">
+      Estas frases aparecen como opciones rápidas al elegir este viaje en un recibo nuevo.
+      Escribí la frase en plural, normal, y marcá dónde va el número con <code>{n}</code>
+      (o el nombre que prefieras, ej. <code>{cantidad}</code>) — al aplicarla se va a
+      preguntar el valor, y si es 1 el sistema ajusta la palabra siguiente al singular
+      automáticamente.<br>
+      Ej: <code>Pago parcial por {n} viajes a Encarnación</code> → con n=1 queda
+      "1 viaje", con n=3 queda "3 viajes".
+    </p>
+
+    <div id="modal-speeches-lista" class="modal-speeches-lista"></div>
+
+    <div class="modal-speeches-nuevo">
+      <textarea id="modal-speeches-input" rows="2" placeholder="Nueva frase… ej: Pago parcial por {n} viajes a Encarnación"></textarea>
+      <button type="button" class="btn-save modal-speeches-agregar" onclick="agregarSpeech()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar frase
+      </button>
+    </div>
+
+    <p class="form-recibo-error" id="modal-speeches-error"></p>
+  </div>
+</div>
+
+<!-- MODAL: COMPLETAR VALORES DE UN SPEECH ANTES DE INSERTARLO -->
+<div id="modal-completar-speech" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalCompletarSpeech(event)">
+  <div class="modal-transferir-card" onclick="event.stopPropagation()">
+    <div class="modal-transferir-header">
+      <div class="modal-transferir-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Completar frase
+      </div>
+      <button class="modal-transferir-close" onclick="cerrarModalCompletarSpeech()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <p class="modal-transferir-desc">Completá los valores antes de insertar la frase en el Concepto.</p>
+
+    <div id="modal-completar-campos" class="modal-completar-campos"></div>
+
+    <p class="form-recibo-error" id="modal-completar-error"></p>
+
+    <div class="modal-transferir-actions">
+      <button class="btn-cancel" onclick="cerrarModalCompletarSpeech()">Cancelar</button>
+      <button class="btn-save" onclick="confirmarCompletarSpeech()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Insertar en Concepto
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- Fuera de #app-view: ese contenedor tiene z-index:10 y crea un contexto de
+       apilamiento, así que un modal dentro nunca pasaría por encima del
+       .bottom-nav (z-index 200) y el navbar tapaba el final del contenido. -->
+  <!-- MODAL: PASAJEROS CON UN SERVICIO EXTRA (resumen del viaje) -->
+<div id="modal-extra-pasajeros" class="modal-transferir-overlay" style="display:none" onclick="cerrarModalExtraPasajeros(event)">
+  <div class="modal-transferir-card" onclick="event.stopPropagation()">
+    <div class="modal-transferir-header">
+      <div class="modal-transferir-titulo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span id="modal-extra-pasajeros-nombre"></span>
+      </div>
+      <button class="modal-transferir-close" onclick="cerrarModalExtraPasajeros()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="modal-extra-pasajeros-lista" class="modal-extra-lista"></div>
+    <div id="modal-extra-pasajeros-total" class="modal-extra-total"></div>
+  </div>
+</div>
 
   <!-- ── BOTTOM NAVBAR (Inicio / Módulos / Más) ───────────────── -->
   <!-- Vive FUERA de #app-view a propósito: #app-view tiene una animación
