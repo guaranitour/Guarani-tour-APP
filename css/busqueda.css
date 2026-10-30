@@ -36,16 +36,6 @@
   font-size: 1rem; /* 16px: evita el zoom de iOS al enfocar */
 }
 
-.busq-atajo {
-  flex: none;
-  font-size: .72rem;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: .1rem .4rem;
-}
-@media (hover: none) { .busq-atajo { display: none; } }
-
 .busq-clear {
   flex: none;
   border: 0;
@@ -72,14 +62,39 @@
 }
 .busq-panel[hidden] { display: none; }
 
+/* Encabezado de sección: barra tintada y fija, para que el título no se
+   pierda entre los resultados al hacer scroll. */
 .busq-grupo-titulo {
+  position: sticky;
+  top: -.35rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: .5rem 0 .25rem;
+  padding: .4rem .7rem;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+}
+.busq-grupo-titulo:first-child { margin-top: .1rem; }
+.busq-grupo-cant {
   font-size: .7rem;
   font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding: .6rem .6rem .25rem;
+  color: var(--accent);
+  opacity: .7;
 }
+
+/* Resultados sangrados bajo su sección y separados entre sí */
+.busq-item { padding-left: 1rem; }
+.busq-item + .busq-item { border-top: 1px solid var(--border); border-radius: 0; }
+.busq-item:hover,
+.busq-item.activo { border-radius: 8px; }
 
 .busq-item,
 .busq-reciente {
@@ -130,11 +145,9 @@
   padding: 0 1px;
 }
 
-.busq-vacio,
-.busq-error {
+.busq-vacio {
   padding: 1rem .8rem;
   font-size: .88rem;
   color: var(--text-muted);
   text-align: center;
 }
-.busq-error { color: var(--danger); padding: .4rem .8rem .6rem; text-align: left; }

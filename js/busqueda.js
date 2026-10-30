@@ -206,12 +206,9 @@ function _bPintarResultados(q, grupos) {
   _busqItems = [];
   let html = "";
   for (const g of grupos) {
-    if (g.error) {
-      html += `<div class="busq-grupo-titulo">${_bEsc(g.titulo)}</div><div class="busq-error">No se pudo buscar en esta sección</div>`;
-      continue;
-    }
-    if (!g.items.length) continue;
-    html += `<div class="busq-grupo-titulo">${_bEsc(g.titulo)}</div>`;
+    // Secciones con error o sin datos no se muestran
+    if (g.error || !g.items.length) continue;
+    html += `<div class="busq-grupo-titulo"><span>${_bEsc(g.titulo)}</span><span class="busq-grupo-cant">${g.items.length}</span></div>`;
     for (const it of g.items) {
       const idx = _busqItems.push(it) - 1;
       html += `<button type="button" class="busq-item" data-i="${idx}">
@@ -289,11 +286,11 @@ function initBusquedaUniversal() {
   document.addEventListener("mousedown", e => {
     if (!e.target.closest("#busq-wrap")) cerrarBusquedaUniversal();
   });
-  // Atajo: "/" o Ctrl+K enfoca la búsqueda estando en el Inicio
+  // Atajo: "/" enfoca la búsqueda estando en el Inicio
   document.addEventListener("keydown", e => {
     if (typeof currentView === "undefined" || currentView !== "dashboard") return;
     const enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
-    if ((e.key === "k" && (e.ctrlKey || e.metaKey)) || (e.key === "/" && !enCampo)) {
+    if (e.key === "/" && !enCampo) {
       e.preventDefault();
       inp.focus();
     }
