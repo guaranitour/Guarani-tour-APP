@@ -1,3 +1,14 @@
+// Nombre de pasajero sin tildes (conserva la ñ) y con espacios colapsados.
+function normalizarNombrePasajero(str) {
+  if (!str) return str;
+  return str
+    .normalize("NFD")
+    .replace(/(?<![nN])[̀-ͯ]|(?<=[nN])[̀-̂̄-ͯ]/g, "")
+    .normalize("NFC")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // ── Estado global ──────────────────────────────────────────
 let allPassengers = [];
 let avatarCache = {};

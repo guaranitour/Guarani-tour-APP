@@ -2141,7 +2141,7 @@ async function confirmarCrearPasajero() {
   const sexoInput     = document.getElementById("pcf-sexo");
   const vendedorInput = document.getElementById("pcf-vendedor");
 
-  const nombre   = capitalizarNombre(nombreInput?.value.trim());
+  const nombre   = capitalizarNombre(normalizarNombrePasajero(nombreInput?.value));
   const sexo     = sexoInput?.value || null;
   const vendedor = vendedorInput?.value || null;
   const cont     = document.getElementById("resultados-pasajero");

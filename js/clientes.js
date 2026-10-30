@@ -343,7 +343,7 @@ async function guardarEdicionDetalle() {
   const p = allPassengers.find(x => x.id === selectedIdx);
   if (!p) return;
 
-  const nombre = document.getElementById("e-nombre").value.trim();
+  const nombre = normalizarNombrePasajero(document.getElementById("e-nombre").value);
   const ci     = document.getElementById("e-ci").value.trim();
   const sexo   = document.getElementById("e-sexo").value;
 
@@ -547,7 +547,7 @@ async function guardarNuevoCliente() {
   const errEl = document.getElementById("form-error");
   if (errEl) errEl.textContent = "";
 
-  const nombre = document.getElementById("f-nombre").value.trim();
+  const nombre = normalizarNombrePasajero(document.getElementById("f-nombre").value);
   const ci     = document.getElementById("f-ci").value.trim();
   const sexo   = document.getElementById("f-sexo").value;
 
