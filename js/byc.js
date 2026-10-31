@@ -15,10 +15,15 @@ let _bycLoadToken     = 0;   // descarta respuestas tardías de Supabase si ya s
 let _bycSearchDebounce = null;
 
 // ── Inicializar vista ─────────────────────────
+// Texto con el que abre la vista la próxima vez (ej. desde la búsqueda
+// universal); se consume en initBycView.
+let _bycBusquedaInicial = '';
+
 function initBycView() {
   const search = document.getElementById('byc-search');
-  if (search) search.value = '';
-  _bycQuery = '';
+  _bycQuery = _bycBusquedaInicial;
+  _bycBusquedaInicial = '';
+  if (search) search.value = _bycQuery;
   _bycOffset = 0;
   bycFiltrados = [];
   cargarByc({ reset: true });

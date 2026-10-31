@@ -58,6 +58,7 @@ const _BUSQ_GRUPOS = [
   { key: "pagos",     titulo: "Pagos",     permiso: "pagos.ver",     buscar: _bBuscarPagos },
   { key: "recibos",   titulo: "Recibos",   permiso: "recibos.ver",   buscar: _bBuscarRecibos },
   { key: "egresos",   titulo: "Egresos",   permiso: "egresos.ver",   buscar: _bBuscarEgresos },
+  { key: "byc",       titulo: "Bases y condiciones", permiso: "byc.ver", buscar: _bBuscarByc },
 ];
 
 /* ── Consultas ──────────────────────────────── */
@@ -175,6 +176,23 @@ async function _bBuscarEgresos(q) {
   })), count);
 }
 
+// Usa el mismo RPC que la vista ByC (misma lógica de coincidencia y total_count)
+async function _bBuscarByc(q) {
+  const { data, error } = await supabaseClient.rpc("byc_buscar", {
+    p_query: q, p_limit: BUSQ_LIMITE, p_offset: 0,
+  });
+  if (error) throw error;
+  const filas = data || [];
+  return _bConTotal(filas.map(r => ({
+    titulo: r.nombre || "Sin nombre",
+    sub: [r.ci && "CI " + r.ci, _bFecha(r.created_at)].filter(Boolean).join(" · "),
+    ir: () => {
+      _bycBusquedaInicial = r.ci || r.nombre || "";
+      navigateTo("byc");
+    },
+  })), filas.length ? Number(filas[0].total_count) : 0);
+}
+
 /* ── Recientes ──────────────────────────────── */
 function _bRecientes() {
   try { return JSON.parse(localStorage.getItem(BUSQ_RECIENTES_KEY)) || []; } catch { return []; }
@@ -199,7 +217,7 @@ function _bPintarRecientes() {
   const p = _bPanel();
   const rec = _bRecientes();
   _busqItems = [];
-  if (!rec.length) { p.innerHTML = `<div class="busq-vacio">Escribí al menos ${BUSQ_MIN_CHARS} letras para buscar clientes, viajes, pagos, recibos o egresos.</div>`; return; }
+  if (!rec.length) { p.innerHTML = `<div class="busq-vacio">Escribí al menos ${BUSQ_MIN_CHARS} letras para buscar clientes, viajes, pagos, recibos, egresos o ByC.</div>`; return; }
   p.innerHTML = `<div class="busq-grupo-titulo">Búsquedas recientes</div>` +
     rec.map(r => `<button type="button" class="busq-reciente" data-q="${_bEsc(r)}">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${_bEsc(r)}</button>`).join("");
