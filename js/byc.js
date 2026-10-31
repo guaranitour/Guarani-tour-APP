@@ -190,13 +190,14 @@ function cerrarPendientesVincular() {
   navigateTo('byc');
 }
 
-function _cerrarModalVincular() {
-  _pendienteSeleccionado = null;
-  _pasajeroSeleccionado = null;
-  _bycTouchBlocked = false;
+// Tras vincular: se queda en "Pendientes de vincular" (paso 1) con la lista
+// actualizada, en vez de salir a la lista general de ByC.
+function _volverAPendientes() {
   const inp = document.getElementById('byc-pendientes-search');
   if (inp) inp.value = '';
-  navigateTo('byc');
+  _pendientesFiltrados = [..._pendientesLista];
+  renderPendientes(_pendientesFiltrados);
+  volverPaso1();
 }
 
 // ── Paso 1: cargar pendientes ─────────────────
@@ -453,7 +454,7 @@ async function confirmarVinculo() {
   // Quitar de la lista de pendientes
   _pendientesLista = _pendientesLista.filter(r => r.id !== _pendienteSeleccionado.id);
 
-  _cerrarModalVincular();
+  _volverAPendientes();
   mostrarToastByc('✅ Pasajero vinculado correctamente');
 }
 
