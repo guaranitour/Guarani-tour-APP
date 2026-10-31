@@ -176,21 +176,24 @@ async function _bBuscarEgresos(q) {
   })), count);
 }
 
-// Usa el mismo RPC que la vista ByC (misma lógica de coincidencia y total_count)
+// Usa el mismo RPC que la vista ByC (misma lógica de coincidencia). Ojo: su
+// total_count es el de TODA la tabla, no el de las coincidencias; por eso se
+// piden hasta BYC_TOPE filas y el total es la cantidad que vuelve.
+const BYC_TOPE = 1000;
 async function _bBuscarByc(q) {
   const { data, error } = await supabaseClient.rpc("byc_buscar", {
-    p_query: q, p_limit: BUSQ_LIMITE, p_offset: 0,
+    p_query: q, p_limit: BYC_TOPE, p_offset: 0,
   });
   if (error) throw error;
   const filas = data || [];
-  return _bConTotal(filas.map(r => ({
+  return _bConTotal(filas.slice(0, BUSQ_LIMITE).map(r => ({
     titulo: r.nombre || "Sin nombre",
     sub: [r.ci && "CI " + r.ci, _bFecha(r.created_at)].filter(Boolean).join(" · "),
     ir: () => {
       _bycBusquedaInicial = r.ci || r.nombre || "";
       navigateTo("byc");
     },
-  })), filas.length ? Number(filas[0].total_count) : 0);
+  })), filas.length);
 }
 
 /* ── Recientes ──────────────────────────────── */
