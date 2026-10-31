@@ -342,6 +342,14 @@ dialog[open]::backdrop { opacity: 1; }
 @keyframes toastIn  { from { opacity: 0; translate: -50% 16px; scale: .96; } }
 @keyframes toastOut { to   { opacity: 0; translate: -50% 10px; scale: .97; } }
 
+/* Salida de modales/sheets gestionados por Sheet (js/sheet.js): el fondo se
+   desvanece y la tarjeta baja. Duración sincronizada con DURACION_SALIDA. */
+.sheet-cerrando { animation: sheetFadeOut .2s ease forwards !important; pointer-events: none; }
+.sheet-cerrando > .modal-transferir-card,
+.sheet-cerrando > .acerca-sheet { animation: sheetSlideDown .22s cubic-bezier(.4,0,.2,1) forwards !important; }
+@keyframes sheetFadeOut   { to { opacity: 0; } }
+@keyframes sheetSlideDown { to { transform: translateY(60px); opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
   .tab-indicator, .ptr { transition: none; }
   .btn-save.btn-cargando::before, .ptr.cargando svg { animation-duration: 1.6s; }

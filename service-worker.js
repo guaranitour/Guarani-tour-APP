@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
   '/css/byc.css',
   '/css/dashboard.css',
   '/css/busqueda.css',
+  '/css/acerca.css',
   '/css/novedades.css',
   '/css/custom-select.css',
   '/css/calendario.css',

@@ -19,8 +19,16 @@ const Sheet = (() => {
 
   const extras = def => (def.opts.extra || []).filter(Boolean);
 
+  // Salida animada de los modales en modo display (los de modo "clase"
+  // animan por transición CSS). Debe coincidir con .sheet-cerrando en native.css.
+  const DURACION_SALIDA = 220;
+  const timersSalida = new WeakMap();
+
   function _mostrar(def) {
     const { el, opts } = def;
+    // Reabierto mientras se estaba cerrando: cancelar la salida pendiente
+    clearTimeout(timersSalida.get(el));
+    el.classList.remove("sheet-cerrando");
     if (opts.modo === "clase") {
       el.classList.add("open");
       extras(def).forEach(e => e.classList.add("open"));
@@ -34,8 +42,14 @@ const Sheet = (() => {
     if (opts.modo === "clase") {
       el.classList.remove("open");
       extras(def).forEach(e => e.classList.remove("open"));
-    } else {
+    } else if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
       el.style.display = "none";
+    } else {
+      el.classList.add("sheet-cerrando");
+      timersSalida.set(el, setTimeout(() => {
+        el.classList.remove("sheet-cerrando");
+        el.style.display = "none";
+      }, DURACION_SALIDA));
     }
   }
 
