@@ -25,7 +25,7 @@ function _abrirModalPasajerosResumen(titulo, pasajeros, resumen) {
     </div>`).join("");
   document.getElementById("modal-extra-pasajeros-total").textContent = resumen;
 
-  modal.style.display = "flex";
+  Sheet.abrir(modal);
 }
 
 function abrirModalExtraPasajeros(servicioId) {
@@ -53,7 +53,7 @@ function abrirModalCostoPasajeros(costo) {
 function cerrarModalExtraPasajeros(event) {
   if (event && event.target.id !== "modal-extra-pasajeros") return;
   const modal = document.getElementById("modal-extra-pasajeros");
-  if (modal) modal.style.display = "none";
+  if (modal) Sheet.cerrar(modal);
 }
 
 // Vista "Detalle" de egresos del resumen: por categoría, presupuestado,

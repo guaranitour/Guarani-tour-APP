@@ -727,15 +727,7 @@ function _parseHash(hash) {
 
 window.addEventListener("popstate", (event) => {
   if (!appReady) return;
-  // Si el sheet de módulos está abierto, "atrás" lo cierra en vez de
-  // navegar en el SPA: consumimos esta entrada del historial (la que
-  // agregamos al abrirlo en toggleModulosSheet) y listo.
-  if (_modulosSheetHistoryEntryOpen) {
-    _modulosSheetHistoryEntryOpen = false;
-    _closeModulosSheetUI();
-    return;
-  }
-  // Mismo caso para el bottom sheet de un custom select (categoría, caja,
+  // Bottom sheet de un custom select (categoría, caja,
   // etc. — ver custom-select.js). Ese componente pushea su propia entrada
   // de historial al abrirse y la consume al cerrarse (clic afuera, X, o
   // atrás), pero su propio listener de popstate se registra recién cuando
@@ -745,6 +737,9 @@ window.addEventListener("popstate", (event) => {
   // se dispara una navegación real del SPA antes de que custom-select.js
   // llegue a frenarla con stopImmediatePropagation().
   if (window._csSheetOpen) return;
+  // Modales y sheets gestionados por sheet.js (módulos, calendario, etc.):
+  // atrás cierra el de arriba en vez de navegar.
+  if (Sheet.popstate()) return;
   // Panel de filtros del registro de actividad: atrás lo cierra (cancela).
   if (typeof _alDrawerHistoryOpen !== "undefined" && _alDrawerHistoryOpen) {
     _alDrawerHistoryOpen = false;

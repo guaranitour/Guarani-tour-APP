@@ -29,6 +29,7 @@ const STATIC_ASSETS = [
   '/js/clientes.js',
   '/js/contacto-emergencia.js',
   '/js/native-ux.js',
+  '/js/sheet.js',
   '/js/archivos-nativo.js',
   '/js/auth.js',
   '/js/supabaseClient.js',

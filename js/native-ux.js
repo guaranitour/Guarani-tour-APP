@@ -246,7 +246,7 @@
     let y0 = 0, dist = 0, tirando = false, activo = false, refrescando = false, avisado = false;
 
     const hayCapaAbierta = () =>
-      !!document.querySelector("dialog[open], .modulos-sheet.open") || window._csSheetOpen;
+      !!document.querySelector("dialog[open], .modulos-sheet.open") || window._csSheetOpen || Sheet.hayAbierto();
 
     function mover(d) {
       ptr.style.translate = "0 " + (d - 44) + "px";

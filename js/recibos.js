@@ -1004,7 +1004,7 @@ function _abrirModalCompletarSpeech(speech, marcadores) {
     </div>
   `).join('');
 
-  modal.style.display = '';
+  Sheet.abrir(modal, { display: '' });
   // Foco en el primer campo para completar rápido
   setTimeout(() => {
     const primero = document.getElementById('modal-completar-campo-0');
@@ -1015,7 +1015,7 @@ function _abrirModalCompletarSpeech(speech, marcadores) {
 function cerrarModalCompletarSpeech(event) {
   if (event && event.target.id !== 'modal-completar-speech') return;
   const modal = document.getElementById('modal-completar-speech');
-  if (modal) modal.style.display = 'none';
+  if (modal) Sheet.cerrar(modal);
   _speechPendienteDeCompletar = null;
 }
 
@@ -1134,13 +1134,13 @@ function abrirModalSpeeches() {
   if (inputEl) inputEl.value = '';
 
   _renderListaSpeechesModal();
-  modal.style.display = '';
+  Sheet.abrir(modal, { display: '' });
 }
 
 function cerrarModalSpeeches(event) {
   if (event && event.target.id !== 'modal-speeches') return;
   const modal = document.getElementById('modal-speeches');
-  if (modal) modal.style.display = 'none';
+  if (modal) Sheet.cerrar(modal);
 }
 
 function _renderListaSpeechesModal() {

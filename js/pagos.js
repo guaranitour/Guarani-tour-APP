@@ -900,19 +900,19 @@ async function abrirModalTransferirPago() {
   if (resEl) resEl.innerHTML = "";
 
   const modal = document.getElementById("modal-transferir-pago");
-  if (modal) modal.style.display = "flex";
+  if (modal) Sheet.abrir(modal);
 }
 
 function cerrarModalTransferirPago(event) {
   // Si se llama con evento (click en backdrop), solo cerrar si el click fue directo al modal
   if (event && event.target !== document.getElementById("modal-transferir-pago")) return;
   const modal = document.getElementById("modal-transferir-pago");
-  if (modal) modal.style.display = "none";
+  if (modal) Sheet.cerrar(modal);
 }
 
 function cerrarModalTransferirPagoDirecto() {
   const modal = document.getElementById("modal-transferir-pago");
-  if (modal) modal.style.display = "none";
+  if (modal) Sheet.cerrar(modal);
 }
 
 function buscarPasajeroParaTransferir() {
@@ -1153,7 +1153,7 @@ async function abrirModalAgregarExtraPasajero() {
   pasoLista.style.display  = "";
   pasoPrecio.style.display = "none";
   listaEl.innerHTML = `<div class="modal-trans-vacio">Cargando servicios disponibles…</div>`;
-  modal.style.display = "flex";
+  Sheet.abrir(modal);
 
   // Servicios del viaje que este pasajero todavía no tiene asignados
   const { data: todos, error } = await supabaseClient
@@ -1209,7 +1209,7 @@ function cerrarModalAgregarExtraPasajero(event) {
   // Si viene de click en el backdrop, solo cerrar si el click fue directo al overlay
   if (event && event.target !== document.getElementById("modal-agregar-extra")) return;
   const modal = document.getElementById("modal-agregar-extra");
-  if (modal) modal.style.display = "none";
+  if (modal) Sheet.cerrar(modal);
   pagosCtx.extraElegido = null;
 }
 

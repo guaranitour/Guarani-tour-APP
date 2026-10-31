@@ -65,54 +65,31 @@ function _renderModulosSheet() {
   `).join("");
 }
 
-// Marca si hay una entrada de historial "de más" agregada al abrir el
-// sheet, específicamente para que el botón/gesto atrás lo cierre en vez
-// de navegar en el SPA. La consume el listener de popstate de arriba.
-let _modulosSheetHistoryEntryOpen = false;
-
-function _closeModulosSheetUI() {
-  const sheet = document.getElementById("modulos-sheet");
-  const overlay = document.getElementById("modulos-overlay");
+// Estado del botón del navbar; se aplica al abrir y al cerrar (por cualquier causa)
+function _marcarBotonModulos(abierto) {
   const btn = document.getElementById("bn-modulos");
-  if (sheet) sheet.classList.remove("open");
-  if (overlay) overlay.classList.remove("open");
-  if (btn) { btn.classList.remove("active"); btn.setAttribute("aria-expanded", "false"); }
-  document.body.style.overflow = "";
+  if (!btn) return;
+  btn.classList.toggle("active", abierto);
+  btn.setAttribute("aria-expanded", String(abierto));
 }
 
 function toggleModulosSheet() {
   const sheet = document.getElementById("modulos-sheet");
   const overlay = document.getElementById("modulos-overlay");
-  const btn = document.getElementById("bn-modulos");
   if (!sheet || !overlay) return;
-  const abrir = !sheet.classList.contains("open");
-  if (abrir) {
-    _renderModulosSheet();
-    // Entrada extra en el historial: así "atrás" cierra el sheet en vez
-    // de navegar a la vista anterior del SPA (ver popstate más arriba).
-    history.pushState({ modulosSheet: true }, "", location.hash);
-    _modulosSheetHistoryEntryOpen = true;
-  }
-  sheet.classList.toggle("open", abrir);
-  overlay.classList.toggle("open", abrir);
-  if (btn) { btn.classList.toggle("active", abrir); btn.setAttribute("aria-expanded", String(abrir)); }
-  document.body.style.overflow = abrir ? "hidden" : "";
+  if (sheet.classList.contains("open")) { closeModulosSheet(); return; }
+  _renderModulosSheet();
+  Sheet.abrir(sheet, {
+    modo: "clase",
+    extra: [overlay],
+    alCerrar: () => _marcarBotonModulos(false),
+  });
+  _marcarBotonModulos(true);
 }
 
 function closeModulosSheet() {
-  // Si el cierre viene de tocar la X, el overlay, o elegir un módulo (no
-  // del botón atrás), todavía queda pendiente la entrada de historial
-  // que agregamos al abrir. La colapsamos con replaceState (en vez de
-  // history.back()) para no competir con una navegación que pueda
-  // haber ocurrido en el mismo gesto (ej. elegir un módulo hace
-  // navigateTo(slug) justo antes de este cierre, lo que ya empujó el
-  // hash del destino): replaceState toma el hash actual tal cual esté
-  // en ese momento y solo descarta la entrada extra, sin retroceder.
-  if (_modulosSheetHistoryEntryOpen) {
-    _modulosSheetHistoryEntryOpen = false;
-    history.replaceState({ scrollY: window.scrollY }, "", location.hash);
-  }
-  _closeModulosSheetUI();
+  const sheet = document.getElementById("modulos-sheet");
+  if (sheet) Sheet.cerrar(sheet);
 }
 
 // Resalta "Inicio" cuando la vista activa es el dashboard (que ahora

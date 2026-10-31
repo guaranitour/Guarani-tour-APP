@@ -537,9 +537,7 @@ async function guardarCalendarioNuevoEvento(ev) {
 }
 
 /* ── Selector rápido de mes/año (bottom sheet) ────────────────
-   No agrega entrada de historial (a diferencia de #modulos-sheet):
-   se cierra por overlay/X, sin interferir con el manejo de popstate
-   global de app.js. */
+   Lo gestiona Sheet (sheet.js): "atrás" y Esc lo cierran. */
 function abrirCalendarioSelectorFecha() {
   if (!_fcInstance) return;
   const actual = _fcInstance.getDate();
@@ -548,17 +546,12 @@ function abrirCalendarioSelectorFecha() {
   const sheet = document.getElementById("calendario-fecha-sheet");
   const overlay = document.getElementById("calendario-fecha-overlay");
   if (!sheet || !overlay) return;
-  sheet.classList.add("open");
-  overlay.classList.add("open");
-  document.body.style.overflow = "hidden";
+  Sheet.abrir(sheet, { modo: "clase", extra: [overlay] });
 }
 
 function cerrarCalendarioSelectorFecha() {
   const sheet = document.getElementById("calendario-fecha-sheet");
-  const overlay = document.getElementById("calendario-fecha-overlay");
-  if (sheet) sheet.classList.remove("open");
-  if (overlay) overlay.classList.remove("open");
-  document.body.style.overflow = "";
+  if (sheet) Sheet.cerrar(sheet);
 }
 
 const _CAL_MESES = [

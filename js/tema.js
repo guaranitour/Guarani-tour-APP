@@ -90,17 +90,14 @@ if (window.matchMedia) {
 function abrirAcercaDe() {
   const modal = document.getElementById("modal-acerca");
   if (!modal) return;
-  modal.style.display = "flex";
-  document.body.style.overflow = "hidden";
+  Sheet.abrir(modal);
 }
 
 function cerrarAcercaDe(e) {
   // Si se pasa un evento, solo cerrar si el click fue en el overlay (no en el sheet)
   if (e && e.target !== document.getElementById("modal-acerca")) return;
   const modal = document.getElementById("modal-acerca");
-  if (!modal) return;
-  modal.style.display = "none";
-  document.body.style.overflow = "";
+  if (modal) Sheet.cerrar(modal);
 }
 
 // Cerrar al hacer click fuera
