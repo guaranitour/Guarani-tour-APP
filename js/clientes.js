@@ -425,9 +425,7 @@ async function eliminarClienteDetalle() {
     return;
   }
 
-  if (p.avatar_path) {
-    supabaseClient.storage.from("avatars").remove([p.avatar_path]).catch(() => {});
-  }
+  borrarAvatarStorage(p.avatar_path);
   const i = allPassengers.findIndex(x => x.id === p.id);
   if (i !== -1) allPassengers.splice(i, 1);
 
@@ -468,7 +466,7 @@ async function handleAvatarUpload(event) {
   // Convertir a WebP (512 px alcanza para el avatar) y subir a Supabase Storage.
   // Nombre único por subida: evita servir un avatar viejo desde caché y no
   // depende de upsert (que exigiría una policy SELECT sobre el bucket).
-  const fileWebp = (await precomprimirImagen(file, { maxW: 512, calidad: 0.85 })) || file;
+  const fileWebp = (await precomprimirImagen(file, { maxW: 512, calidad: 0.85, forzar: true })) || file;
   const ext      = (fileWebp.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
   const filePath = `${p.id}_${Date.now()}.${ext}`;
   const pathAnterior = p.avatar_path || null;
@@ -498,9 +496,17 @@ async function handleAvatarUpload(event) {
   p.avatar_path = filePath;
   mostrarFeedbackDetalle("Foto actualizada correctamente.", true);
 
-  // Limpieza best-effort del avatar anterior (si no hay policy DELETE, se ignora)
-  if (pathAnterior && pathAnterior !== filePath) {
-    supabaseClient.storage.from("avatars").remove([pathAnterior]).catch(() => {});
+  // Limpieza del avatar anterior en Storage
+  if (pathAnterior !== filePath) borrarAvatarStorage(pathAnterior);
+}
+
+// Borra un archivo del bucket avatars. remove() no lanza: devuelve { error },
+// y si una policy bloquea el borrado devuelve data vacío sin error.
+async function borrarAvatarStorage(path) {
+  if (!path) return;
+  const { data, error } = await supabaseClient.storage.from("avatars").remove([path]);
+  if (error || !data || data.length === 0) {
+    console.warn("No se pudo borrar el avatar de Storage:", path, error || "sin permiso/archivo inexistente");
   }
 }
 

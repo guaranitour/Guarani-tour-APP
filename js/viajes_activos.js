@@ -556,7 +556,7 @@ function formatFecha(val) {
 // (precomprimirImagen) y al guardar solo se espera el resultado.
 const _imgOptCache = new WeakMap();
 
-async function _convertirAWebp(file, maxW, calidad) {
+async function _convertirAWebp(file, maxW, calidad, forzar = false) {
   try {
     if (!file.type.startsWith("image/") || ["image/svg+xml", "image/gif", "image/webp"].includes(file.type)) return file;
     const bmp = await createImageBitmap(file);
@@ -569,7 +569,7 @@ async function _convertirAWebp(file, maxW, calidad) {
     bmp.close?.();
     const blob = await new Promise(res => canvas.toBlob(res, "image/webp", calidad));
     // Si el navegador no soporta WebP devuelve PNG: no sirve para ahorrar peso
-    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+    if (!blob || blob.type !== "image/webp" || (!forzar && blob.size >= file.size)) return file;
     return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
   } catch (e) {
     console.warn("No se pudo convertir la imagen, se sube la original:", e);
@@ -578,9 +578,10 @@ async function _convertirAWebp(file, maxW, calidad) {
 }
 
 // Inicia la conversión en segundo plano y devuelve la promesa (cacheada).
-function precomprimirImagen(file, { maxW = 1000, calidad = 0.82 } = {}) {
+// forzar: usa el WebP aunque pese más que el original (ej. avatares).
+function precomprimirImagen(file, { maxW = 1000, calidad = 0.82, forzar = false } = {}) {
   if (!file) return Promise.resolve(null);
-  if (!_imgOptCache.has(file)) _imgOptCache.set(file, _convertirAWebp(file, maxW, calidad));
+  if (!_imgOptCache.has(file)) _imgOptCache.set(file, _convertirAWebp(file, maxW, calidad, forzar));
   return _imgOptCache.get(file);
 }
 
