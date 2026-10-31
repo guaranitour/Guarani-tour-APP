@@ -36,6 +36,12 @@
   font-size: 1rem; /* 16px: evita el zoom de iOS al enfocar */
 }
 
+/* Placeholder más chico que el texto escrito (el input sigue en 16px por iOS) */
+.busq-campo input::placeholder { font-size: .85rem; }
+/* La × propia reemplaza a la nativa de type="search" */
+.busq-campo input::-webkit-search-cancel-button { display: none; }
+
+.busq-clear[hidden] { display: none; }
 .busq-clear {
   flex: none;
   border: 0;
@@ -95,6 +101,24 @@
 .busq-item + .busq-item { border-top: 1px solid var(--border); border-radius: 0; }
 .busq-item:hover,
 .busq-item.activo { border-radius: 8px; }
+
+/* "Ver más (N)" al final de una sección */
+.busq-vermas {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  text-align: center;
+  padding: .5rem .6rem;
+  border-radius: 0 0 8px 8px;
+  cursor: pointer;
+}
+.busq-vermas:hover { background: var(--accent-light); }
 
 .busq-item,
 .busq-reciente {

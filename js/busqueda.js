@@ -1,12 +1,14 @@
 /* ═══════════════════════════════════════════════
    busqueda.js — Búsqueda universal del Inicio (dashboard)
-   Consultas planas en paralelo (limit 5 por entidad), filtradas
+   Consultas planas en paralelo (hasta BUSQ_LIMITE por entidad, con total
+   exacto); se muestran 3 por sección y "Ver más (N)" expande. Filtradas
    por permisos (can). Entidades: clientes, viajes, pasajeros de
    viaje, pagos, recibos y egresos.
 ═══════════════════════════════════════════════ */
 
 const BUSQ_MIN_CHARS = 2;
-const BUSQ_LIMITE    = 5;
+const BUSQ_LIMITE    = 30; // máx. traído por sección (el total real viene aparte)
+const BUSQ_VISIBLES  = 3;  // resultados visibles por sección antes de "Ver más"
 const BUSQ_DEBOUNCE  = 280;
 const BUSQ_RECIENTES_KEY = "gt_busq_recientes";
 
@@ -14,6 +16,14 @@ let _busqTimer = null;
 let _busqToken = 0;       // descarta respuestas viejas
 let _busqItems = [];      // items planos navegables (para teclado)
 let _busqActivo = -1;
+let _busqUltima = null;          // { q, grupos } de la última búsqueda pintada
+let _busqExpandidos = new Set(); // secciones con "Ver más" abierto
+
+// Items con el total exacto de coincidencias (puede superar los traídos)
+function _bConTotal(items, count) {
+  items.total = count ?? items.length;
+  return items;
+}
 
 function _bEsc(s) {
   return String(s ?? "").replace(/[&<>"']/g, c =>
@@ -52,69 +62,69 @@ const _BUSQ_GRUPOS = [
 
 /* ── Consultas ──────────────────────────────── */
 async function _bBuscarClientes(q) {
-  const { data, error } = await supabaseClient
+  const { data, error, count } = await supabaseClient
     .from("pasajeros")
-    .select(`id, Pasajero, "Documento de Identidad", "E-mail"`)
+    .select(`id, Pasajero, "Documento de Identidad", "E-mail"`, { count: "exact" })
     .or(`Pasajero.ilike.%${q}%,"Documento de Identidad".ilike.%${q}%,"E-mail".ilike.%${q}%`)
     .limit(BUSQ_LIMITE);
   if (error) throw error;
-  return (data || []).map(p => ({
+  return _bConTotal((data || []).map(p => ({
     titulo: p.Pasajero || "Sin nombre",
     sub: [p["Documento de Identidad"] && "CI " + p["Documento de Identidad"], p["E-mail"]].filter(Boolean).join(" · "),
     ir: () => navigateTo("detalle", p.id),
-  }));
+  })), count);
 }
 
 async function _bBuscarViajes(q) {
-  const { data, error } = await supabaseClient
+  const { data, error, count } = await supabaseClient
     .from("viajes")
-    .select("id, nombre, fecha_salida, estado")
+    .select("id, nombre, fecha_salida, estado", { count: "exact" })
     .ilike("nombre", `%${q}%`)
     .order("fecha_salida", { ascending: false })
     .limit(BUSQ_LIMITE);
   if (error) throw error;
-  return (data || []).map(v => ({
+  return _bConTotal((data || []).map(v => ({
     titulo: v.nombre || "Viaje",
     sub: _bFecha(v.fecha_salida),
     badge: v.estado || "",
     ir: () => navigateTo("viaje-detalle", v.id),
-  }));
+  })), count);
 }
 
 async function _bBuscarPasajerosViaje(q) {
   // 1) pasajeros que coinciden por nombre; 2) sus inscripciones a viajes
   const { data: ps, error: e1 } = await supabaseClient
-    .from("pasajeros").select("id, Pasajero").ilike("Pasajero", `%${q}%`).limit(10);
+    .from("pasajeros").select("id, Pasajero").ilike("Pasajero", `%${q}%`).limit(BUSQ_LIMITE);
   if (e1) throw e1;
   if (!ps?.length) return [];
   const nombres = new Map(ps.map(p => [p.id, p.Pasajero]));
-  const { data, error } = await supabaseClient
+  const { data, error, count } = await supabaseClient
     .from("viaje_pasajeros")
-    .select("id, viaje_id, pasajero_id, viajes ( nombre, fecha_salida )")
+    .select("id, viaje_id, pasajero_id, viajes ( nombre, fecha_salida )", { count: "exact" })
     .in("pasajero_id", [...nombres.keys()])
     .order("id", { ascending: false })
     .limit(BUSQ_LIMITE);
   if (error) throw error;
-  return (data || []).map(vp => ({
+  return _bConTotal((data || []).map(vp => ({
     titulo: nombres.get(vp.pasajero_id) || "Pasajero",
     sub: vp.viajes?.nombre || "Viaje",
     badge: _bFecha(vp.viajes?.fecha_salida),
     ir: () => abrirPagosPasajero(vp.id, vp.viaje_id, vp.pasajero_id, nombres.get(vp.pasajero_id)),
-  }));
+  })), count);
 }
 
 async function _bBuscarPagos(q) {
   const num = parseInt(q.replace(/[.\s]/g, ""), 10);
   let filtro = `comprobante_nro.ilike.%${q}%,observacion.ilike.%${q}%`;
   if (!isNaN(num) && /^[\d.\s]+$/.test(q)) filtro += `,monto.eq.${num}`;
-  const { data, error } = await supabaseClient
+  const { data, error, count } = await supabaseClient
     .from("pagos")
-    .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, viaje_pasajero_id, viaje_pasajeros ( viaje_id, pasajero_id, pasajeros ( Pasajero ) )")
+    .select("id, monto, tipo, fecha_pago, comprobante_nro, observacion, viaje_pasajero_id, viaje_pasajeros ( viaje_id, pasajero_id, pasajeros ( Pasajero ) )", { count: "exact" })
     .or(filtro)
     .order("fecha_pago", { ascending: false })
     .limit(BUSQ_LIMITE);
   if (error) throw error;
-  return (data || []).map(p => {
+  return _bConTotal((data || []).map(p => {
     const vp = p.viaje_pasajeros;
     const nombre = vp?.pasajeros?.Pasajero || "";
     return {
@@ -125,44 +135,44 @@ async function _bBuscarPagos(q) {
         ? abrirPagosPasajero(p.viaje_pasajero_id, vp.viaje_id, vp.pasajero_id, nombre)
         : showToast("No se pudo ubicar el pasajero de este pago", "warning"),
     };
-  });
+  }), count);
 }
 
 async function _bBuscarRecibos(q) {
   const num = parseInt(q, 10);
   let filtro = `cliente.ilike.%${q}%,ci.ilike.%${q}%,concepto.ilike.%${q}%`;
   if (!isNaN(num) && /^\d+$/.test(q)) filtro += `,recibo_nro.eq.${num}`;
-  const { data, error } = await supabaseClient
+  const { data, error, count } = await supabaseClient
     .from("recibos")
-    .select("id, recibo_nro, cliente, concepto, monto, moneda, fecha")
+    .select("id, recibo_nro, cliente, concepto, monto, moneda, fecha", { count: "exact" })
     .or(filtro)
     .order("fecha", { ascending: false })
     .limit(BUSQ_LIMITE);
   if (error) throw error;
-  return (data || []).map(r => ({
+  return _bConTotal((data || []).map(r => ({
     titulo: `#${r.recibo_nro || r.id} · ${r.cliente || "—"}`,
     sub: [r.concepto, _bFecha(r.fecha)].filter(Boolean).join(" · "),
     badge: r.monto != null && typeof formatMontoRecibo === "function" ? formatMontoRecibo(r.monto, r.moneda) : "",
     ir: () => navigateTo("recibo-detalle", r.id),
-  }));
+  })), count);
 }
 
 async function _bBuscarEgresos(q) {
   const num = parseInt(q.replace(/[.\s]/g, ""), 10);
   let filtro = `descripcion.ilike.%${q}%,ejecutor.ilike.%${q}%`;
   if (!isNaN(num) && /^[\d.\s]+$/.test(q)) filtro += `,monto.eq.${num}`;
-  const { data, error } = await supabaseClient
+  const { data, error, count } = await supabaseClient
     .from("egresos")
-    .select("id, viaje_id, monto, descripcion, fecha, ejecutor, viajes ( nombre )")
+    .select("id, viaje_id, monto, descripcion, fecha, ejecutor, viajes ( nombre )", { count: "exact" })
     .or(filtro)
     .order("fecha", { ascending: false })
     .limit(BUSQ_LIMITE);
   if (error) throw error;
-  return (data || []).map(e => ({
+  return _bConTotal((data || []).map(e => ({
     titulo: `${e.descripcion || "Egreso"} · ${_bGs(e.monto)}`,
     sub: [e.viajes?.nombre, _bFecha(e.fecha), e.ejecutor].filter(Boolean).join(" · "),
     ir: () => navigateTo("egreso-detalle", { egresoId: e.id, viajeId: e.viaje_id }),
-  }));
+  })), count);
 }
 
 /* ── Recientes ──────────────────────────────── */
@@ -196,6 +206,7 @@ function _bPintarRecientes() {
   p.querySelectorAll(".busq-reciente").forEach(b => b.addEventListener("click", () => {
     const inp = document.getElementById("busq-input");
     inp.value = b.dataset.q;
+    document.getElementById("busq-clear").hidden = false;
     inp.focus();
     ejecutarBusquedaUniversal(b.dataset.q);
   }));
@@ -203,13 +214,18 @@ function _bPintarRecientes() {
 
 function _bPintarResultados(q, grupos) {
   const p = _bPanel();
+  const scroll = p.scrollTop; // se conserva al expandir una sección
+  _busqUltima = { q, grupos };
   _busqItems = [];
   let html = "";
   for (const g of grupos) {
     // Secciones con error o sin datos no se muestran
     if (g.error || !g.items.length) continue;
-    html += `<div class="busq-grupo-titulo"><span>${_bEsc(g.titulo)}</span><span class="busq-grupo-cant">${g.items.length}</span></div>`;
-    for (const it of g.items) {
+    const total = g.items.total ?? g.items.length;
+    const expandido = _busqExpandidos.has(g.key);
+    const visibles = expandido ? g.items : g.items.slice(0, BUSQ_VISIBLES);
+    html += `<div class="busq-grupo-titulo"><span>${_bEsc(g.titulo)}</span><span class="busq-grupo-cant">${total}</span></div>`;
+    for (const it of visibles) {
       const idx = _busqItems.push(it) - 1;
       html += `<button type="button" class="busq-item" data-i="${idx}">
         <span class="busq-item-main">
@@ -219,11 +235,20 @@ function _bPintarResultados(q, grupos) {
         ${it.badge ? `<span class="busq-badge">${_bEsc(it.badge)}</span>` : ""}
       </button>`;
     }
+    // 4.º lugar: "Ver más" con la cantidad de resultados que faltan mostrar
+    if (!expandido && total > BUSQ_VISIBLES) {
+      html += `<button type="button" class="busq-vermas" data-g="${_bEsc(g.key)}">Ver más (${total - BUSQ_VISIBLES})</button>`;
+    }
   }
   if (!html) html = `<div class="busq-vacio">Sin resultados para “${_bEsc(q)}”</div>`;
   p.innerHTML = html;
+  p.scrollTop = scroll;
   _busqActivo = -1;
   p.querySelectorAll(".busq-item").forEach(b => b.addEventListener("click", () => _bElegir(+b.dataset.i)));
+  p.querySelectorAll(".busq-vermas").forEach(b => b.addEventListener("click", () => {
+    _busqExpandidos.add(b.dataset.g);
+    _bPintarResultados(_busqUltima.q, _busqUltima.grupos);
+  }));
 }
 
 function _bElegir(i) {
@@ -253,10 +278,11 @@ async function ejecutarBusquedaUniversal(textoCrudo) {
 
   const habilitados = _BUSQ_GRUPOS.filter(g => can(g.permiso));
   const grupos = await Promise.all(habilitados.map(async g => {
-    try { return { titulo: g.titulo, items: await g.buscar(q) }; }
-    catch (e) { console.warn("Búsqueda:", g.key, e); return { titulo: g.titulo, items: [], error: true }; }
+    try { return { key: g.key, titulo: g.titulo, items: await g.buscar(q) }; }
+    catch (e) { console.warn("Búsqueda:", g.key, e); return { key: g.key, titulo: g.titulo, items: [], error: true }; }
   }));
   if (token !== _busqToken) return; // llegó una búsqueda más nueva
+  _busqExpandidos = new Set(); // búsqueda nueva: todas las secciones colapsadas
   _bPintarResultados(q, grupos);
 }
 
@@ -265,7 +291,11 @@ function initBusquedaUniversal() {
   if (!inp || inp.dataset.listo) return;
   inp.dataset.listo = "1";
 
+  const btnClear = document.getElementById("busq-clear");
+  const syncClear = () => { if (btnClear) btnClear.hidden = !inp.value; };
+
   inp.addEventListener("input", () => {
+    syncClear();
     clearTimeout(_busqTimer);
     _busqTimer = setTimeout(() => ejecutarBusquedaUniversal(inp.value), BUSQ_DEBOUNCE);
   });
@@ -280,8 +310,8 @@ function initBusquedaUniversal() {
     }
     else if (e.key === "Escape") { cerrarBusquedaUniversal(); inp.blur(); }
   });
-  document.getElementById("busq-clear")?.addEventListener("click", () => {
-    inp.value = ""; inp.focus(); ejecutarBusquedaUniversal("");
+  btnClear?.addEventListener("click", () => {
+    inp.value = ""; syncClear(); inp.focus(); ejecutarBusquedaUniversal("");
   });
   document.addEventListener("mousedown", e => {
     if (!e.target.closest("#busq-wrap")) cerrarBusquedaUniversal();
