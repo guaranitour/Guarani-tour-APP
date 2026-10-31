@@ -969,9 +969,14 @@ function openViajeDetalle(viajeId) {
 // Tab con el que se abre el próximo viaje (lo setea quien navega: ej. al
 // volver de eliminar un egreso). Se consume en loadViajeDetalle.
 let _tabInicialViaje = null;
+// Si está seteado, _tabInicialViaje solo aplica a ese viaje (ej. "atrás"
+// desde el detalle de egresos del resumen no debe afectar a otro viaje).
+let _tabInicialViajeDe = null;
 
 async function loadViajeDetalle(viajeId) {
   viajeActualId = parseInt(viajeId, 10);
+  if (_tabInicialViajeDe !== null && _tabInicialViajeDe !== viajeActualId) _tabInicialViaje = null;
+  _tabInicialViajeDe = null;
 
   // Siempre entrar por el tab Pasajeros. Sin esto, si el usuario venía
   // parado en Egresos/Presupuesto/Resumen de OTRO viaje, ese panel queda

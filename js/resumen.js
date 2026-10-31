@@ -56,6 +56,76 @@ function cerrarModalExtraPasajeros(event) {
   if (modal) modal.style.display = "none";
 }
 
+// Vista "Detalle" de egresos del resumen: por categoría, presupuestado,
+// ejecutado (egresos cargados) y diferencia (presupuestado − ejecutado).
+async function initResumenEgresosView(viajeId) {
+  const cont = document.getElementById("resumen-egresos-cont");
+  if (!cont) return;
+  viajeId = parseInt(viajeId, 10);
+  // "Atrás" vuelve al tab Resumen del mismo viaje
+  _tabInicialViaje = "resumen";
+  _tabInicialViajeDe = viajeId;
+
+  cont.innerHTML = `<div class="viaje-pasajeros-empty">Cargando…</div>`;
+
+  const [egrRes, presRes, catRes] = await Promise.all([
+    supabaseClient.from("egresos").select("monto, categoria_id").eq("viaje_id", viajeId),
+    supabaseClient.from("presupuesto_viaje").select("categoria_id, monto_presupuestado").eq("viaje_id", viajeId),
+    supabaseClient.from("categorias").select("id, nombre")
+  ]);
+  if (currentView !== "resumen-egresos") return;
+  if (egrRes.error || presRes.error || catRes.error) {
+    cont.innerHTML = `<div class="viaje-pasajeros-empty">Error al cargar los datos.</div>`;
+    return;
+  }
+
+  const catMap = Object.fromEntries((catRes.data || []).map(c => [String(c.id), c.nombre]));
+  const items = {}; // categoria_id → { nombre, presup, ejec }
+  const item = id => (items[id] ??= { nombre: catMap[id] || "Sin categoría", presup: 0, ejec: 0 });
+  (presRes.data || []).forEach(r => { item(String(r.categoria_id)).presup += r.monto_presupuestado || 0; });
+  (egrRes.data  || []).forEach(r => { item(String(r.categoria_id)).ejec   += r.monto || 0; });
+
+  const filas = Object.values(items).sort((a, b) => b.ejec - a.ejec || b.presup - a.presup);
+  const fmt = n => (n || 0).toLocaleString("es-PY");
+  const tot = filas.reduce((t, f) => ({ presup: t.presup + f.presup, ejec: t.ejec + f.ejec }), { presup: 0, ejec: 0 });
+
+  // Diferencia = presupuestado − ejecutado: positivo = queda a favor, negativo = excedido
+  const difHtml = (presup, ejec) => {
+    const d = presup - ejec;
+    return `<span class="resumen-metodo-col-value ${d >= 0 ? "positivo" : "negativo"}">${d >= 0 ? "+" : "−"} Gs. ${fmt(Math.abs(d))}</span>`;
+  };
+  const cols = (presup, ejec) => `
+    <div class="resumen-metodo-cols">
+      <div class="resumen-metodo-col">
+        <span class="resumen-metodo-col-label">Presupuestado</span>
+        <span class="resumen-metodo-col-value">${presup > 0 ? "Gs. " + fmt(presup) : "—"}</span>
+      </div>
+      <div class="resumen-metodo-col">
+        <span class="resumen-metodo-col-label">Ejecutado</span>
+        <span class="resumen-metodo-col-value egreso">${ejec > 0 ? "Gs. " + fmt(ejec) : "—"}</span>
+      </div>
+      <div class="resumen-metodo-col">
+        <span class="resumen-metodo-col-label">Diferencia</span>
+        ${difHtml(presup, ejec)}
+      </div>
+    </div>`;
+
+  cont.innerHTML = filas.length === 0
+    ? `<div class="viaje-pasajeros-empty">Sin presupuesto ni egresos registrados</div>`
+    : `
+      <div class="resumen-metodo-card">
+        <div class="resumen-metodo-nombre">Total</div>
+        ${cols(tot.presup, tot.ejec)}
+      </div>
+      <div class="resumen-card-sub" style="margin:.5rem 0">Diferencia = presupuestado − ejecutado (negativo: excedido)</div>
+      ${filas.map(f => `
+      <div class="resumen-metodo-card">
+        <div class="resumen-metodo-nombre">${_escapeHtml(f.nombre)}</div>
+        ${cols(f.presup, f.ejec)}
+      </div>`).join("")}
+      <div style="height:1.5rem"></div>`;
+}
+
 async function loadResumen(viajeId) {
   const cont = document.getElementById("resumen-cont");
   if (!cont) return;
@@ -657,6 +727,8 @@ async function loadResumen(viajeId) {
             </span>` : ""}
           </div>
         </div>
+        <button type="button" class="resumen-pill asiste resumen-pill-btn" style="margin:.25rem 0 .5rem"
+                onclick="navigateTo('resumen-egresos', viajeActualId)">Detalle</button>
         ${desgloseEntries.length > 0 ? `
         <div class="resumen-section-title" style="margin-top:.5rem">Por categoría</div>
         <div>

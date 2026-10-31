@@ -258,7 +258,8 @@ function _staffCacheClear(email) {
 const RESTORABLE_VIEWS_ARRANQUE = [
   "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
   "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-  "activity-log","legales","informes","encuesta","perfil","notificaciones"
+  "activity-log","legales","informes","encuesta","perfil","notificaciones",
+  "resumen-egresos"
 ];
 
 // Pinta el "shell" de la app (topbar, nav, permisos por rol) de forma
@@ -527,7 +528,7 @@ window.addEventListener("hashchange", () => {
   const restorableViews = [
     "dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo",
     "detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","historico",
-    "byc","byc-vincular","informes"
+    "byc","byc-vincular","informes","resumen-egresos"
   ];
   if (hashView && restorableViews.includes(hashView)) {
     navigateTo(hashView, hashIdx, true);
@@ -682,7 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Vistas simples (sin idx o idx numérico): hash = #vista o #vista/idx
 // Vistas con idx objeto: hash = #vista (el contexto vive en memoria)
 const _hashSimpleViews = ["dashboard","clientes","nuevo","usuarios","viajes","viaje-nuevo","historico","ranking-puntos","club-destino","byc","byc-vincular","perfil"];
-const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar"];
+const _hashNumericViews = ["detalle","historial-viajes","viaje-detalle","viaje-pasajero-nuevo","viaje-editar","resumen-egresos"];
 // Vistas con idx objeto, pero que SÍ necesitan un hash distinto por
 // instancia (si no, dos pantallas distintas comparten el mismo hash
 // plano, _setHash no pushea una entrada nueva, y "atrás" se salta un
@@ -834,7 +835,7 @@ const _vistasConTransicion = new Set([
   "viaje-pasajero-nuevo", "viaje-pasajero-pagos", "viajes",
   "activity-log", "calendario", "facturas", "facturas-internas",
   "facturas-marangatu", "informes", "legales", "encuesta", "perfil",
-  "notificaciones",
+  "notificaciones", "resumen-egresos",
 ]);
 
 // Profundidad de cada vista para elegir la dirección de la transición
@@ -847,7 +848,7 @@ const _NIVEL_VISTA = {
   "recibo-nuevo": 2, "movimiento-nuevo": 2,
   "facturas-internas": 2, "facturas-marangatu": 2,
   "viaje-editar": 3, "viaje-pasajero-nuevo": 3, "viaje-pasajero-pagos": 3,
-  "egreso-detalle": 3, "transferencia-detalle": 3,
+  "egreso-detalle": 3, "transferencia-detalle": 3, "resumen-egresos": 3,
   "egreso-editar": 4,
   "pago-detalle": 4,
 };
@@ -981,6 +982,8 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
   if (_veed) _veed.style.display = "none";
   const _vtd = document.getElementById("view-transferencia-detalle");
   if (_vtd) _vtd.style.display = "none";
+  const _vre = document.getElementById("view-resumen-egresos");
+  if (_vre) _vre.style.display = "none";
   const _vve = document.getElementById("view-viaje-editar");
   if (_vve) _vve.style.display = "none";
   const _vrec = document.getElementById("view-recibos");
@@ -1479,6 +1482,20 @@ function _navigateToImpl(view, idx = null, _fromHash = false) {
       { label: "Editar" }
     ]);
     initEgresoEditarView(idx);
+
+  }
+
+  else if (view === "resumen-egresos") {
+
+    showEl("view-resumen-egresos");
+    const _volverAlResumen = () => { _tabInicialViaje = "resumen"; navigateTo("viaje-detalle", idx); };
+    updateBreadcrumb([
+      { label: "Inicio",  action: () => navigateTo("dashboard") },
+      { label: _origenListaViajes().label, action: () => navigateTo(_origenListaViajes().view) },
+      { label: "Detalle", action: _volverAlResumen },
+      { label: "Egresos" }
+    ]);
+    initResumenEgresosView(idx);
 
   }
 
