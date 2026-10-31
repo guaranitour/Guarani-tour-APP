@@ -18,6 +18,10 @@ let _calDiaSeleccionada = null; // Date del día activo en el panel inline
 
 /* ── Entrada del módulo (llamada desde navigateTo) ───────────── */
 async function initCalendario() {
+  // Crear eventos propios: por tarea (calendario.crear)
+  const fabNuevo = document.querySelector(".calendario-fab");
+  if (fabNuevo) fabNuevo.style.display = can("calendario.crear") ? "" : "none";
+
   await _cargarLibFullCalendarSiHaceFalta();
 
   const el = document.getElementById("calendario-fc");
@@ -489,6 +493,7 @@ function _calAbrirPasajero(pasajeroId) {
 
 /* ── Nuevo evento propio ──────────────────────────────────────── */
 function abrirCalendarioNuevoEvento() {
+  if (!can("calendario.crear")) return;
   const fechaPrellenada = _calDiaSeleccionada ? _isoFecha(_calDiaSeleccionada) : _isoFecha(new Date());
 
   const modal = document.getElementById("calendario-nuevo-modal");
