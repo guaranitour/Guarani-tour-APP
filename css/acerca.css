@@ -1,70 +1,71 @@
 /* ═══════════════════════════════════════════════
    acerca.css — Modal "Acerca de" (bottom sheet)
-   Solo usa variables de tema (style.css): el modo oscuro
+   Única fuente de estilos del modal (ya no hay reglas inline en
+   index.html). Usa variables de tema (style.css), así el modo oscuro
    ([data-theme="dark"]) se hereda sin reglas extra.
 ═══════════════════════════════════════════════ */
 
 .acerca-overlay {
   position: fixed;
   inset: 0;
-  z-index: 500;
+  z-index: 9999;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   background: var(--overlay-bg);
-  animation: fadeInOverlay .18s ease;
+  animation: fadeInOverlay .2s ease;
 }
 
 .acerca-sheet {
   position: relative;
   width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
+  max-width: 540px;
+  max-height: 88vh;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--surface);
   color: var(--text);
   border-radius: 20px 20px 0 0;
-  padding: 1.5rem 1.25rem calc(1.75rem + env(safe-area-inset-bottom, 0px));
+  padding: 28px 24px calc(40px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -8px 32px var(--shadow-card);
-  animation: slideUpModal .22s cubic-bezier(.4,0,.2,1);
+  animation: slideUpModal .25s cubic-bezier(.32, 1, .23, 1);
 }
 
 .acerca-close {
   position: absolute;
-  top: .85rem;
-  right: .85rem;
+  top: 16px;
+  right: 16px;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 50%;
   background: var(--bg2);
   color: var(--text-mid);
   cursor: pointer;
+  transition: background .15s, color .15s;
 }
 .acerca-close:hover { background: var(--accent-light); color: var(--accent); }
 
-.acerca-logo-wrap { display: flex; justify-content: center; margin-bottom: .6rem; }
+.acerca-logo-wrap { text-align: center; margin-bottom: 10px; }
 .acerca-logo {
-  width: 84px;
-  height: 84px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
   object-fit: contain;
-  border-radius: 20px;
-  box-shadow: 0 4px 16px var(--shadow-card);
+  background: #0d2b5e; /* fondo del isotipo; igual en claro y oscuro */
 }
 
 .acerca-titulo {
-  margin: 0;
+  margin: 0 0 4px;
   text-align: center;
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: .08em;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.4rem;
   color: var(--text);
 }
 .acerca-subtitulo {
-  margin: .2rem 0 1.1rem;
+  margin: 0 0 20px;
   text-align: center;
   font-size: .85rem;
   color: var(--text-muted);
@@ -74,28 +75,22 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: .9rem 1rem;
-  margin-bottom: .7rem;
-  font-size: .88rem;
-  line-height: 1.5;
-  color: var(--text-mid);
+  padding: 14px 16px;
+  margin-bottom: 10px;
 }
-.acerca-card h3 {
-  margin: 0 0 .45rem;
-  font-size: .92rem;
-  font-weight: 700;
-  color: var(--text);
-}
-.acerca-card p { margin: 0; }
-.acerca-card ul { margin: 0; padding-left: 1.1rem; }
-.acerca-card li + li { margin-top: .25rem; }
-.acerca-intro { background: var(--accent-light); border-color: transparent; color: var(--text); }
+.acerca-card h3 { margin: 0 0 8px; font-size: .95rem; color: var(--text); }
+.acerca-card p,
+.acerca-card li { margin: 0; font-size: .875rem; line-height: 1.5; color: var(--text-mid); }
+.acerca-card ul { margin: 0; padding-left: 18px; }
+.acerca-card li { margin-top: 5px; }
+.acerca-intro { background: var(--accent-light); border-color: transparent; }
+.acerca-intro p { color: var(--text); }
 
 .acerca-footer {
-  margin-top: 1rem;
+  margin-top: 20px;
   text-align: center;
   font-size: .78rem;
   color: var(--text-muted);
 }
-.acerca-footer p { margin: 0; }
-.acerca-version { margin-top: .15rem !important; font-weight: 600; }
+.acerca-footer p { margin: 2px 0; }
+.acerca-version { opacity: .8; }

@@ -310,9 +310,43 @@
     document.addEventListener("touchcancel", terminar, { passive: true });
   }
 
+  // ── Botón "atrás" de Android (solo app Capacitor) ──────────
+  // @capacitor/app instala un manejador propio del botón: sin un listener en
+  // JS, solo hace goBack() si el WebView puede retroceder y, si no puede, NO
+  // hace nada — por eso la app nunca se cerraba. Acá se decide:
+  //   1) diálogo nativo abierto           → se cierra
+  //   2) buscador universal abierto       → se cierra
+  //   3) sheet/modal/panel con historial  → history.back() (lo cierra Sheet/popstate)
+  //   4) otra vista que no es el Inicio   → un paso atrás (o al Inicio si no hay historial)
+  //   5) en el Inicio sin nada abierto    → se cierra la app
+  function initBotonAtras() {
+    const App = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.App;
+    if (!App?.addListener) return;
+
+    App.addListener("backButton", ({ canGoBack }) => {
+      const dlg = document.querySelector("dialog[open]");
+      if (dlg) { dlg.close(); return; }
+
+      const busq = document.getElementById("busq-panel");
+      if (busq && !busq.hidden) {
+        cerrarBusquedaUniversal();
+        document.getElementById("busq-input")?.blur();
+        return;
+      }
+
+      const hayCapa = (typeof Sheet !== "undefined" && Sheet.hayAbierto()) || window._csSheetOpen;
+      const enInicio = currentView === "dashboard";
+
+      if (canGoBack && (hayCapa || !enInicio)) { history.back(); return; }
+      if (!enInicio && typeof navigateTo === "function") { navigateTo("dashboard"); return; }
+      App.exitApp();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     initTabsDeslizantes();
     initNumerosQueCuentan();
     initPullToRefresh();
+    initBotonAtras();
   });
 })();
