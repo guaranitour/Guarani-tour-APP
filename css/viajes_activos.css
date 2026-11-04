@@ -702,6 +702,18 @@
   flex-direction: column;
   gap: .25rem;
   flex: 1;
+  min-width: 0; /* permite que el contenido largo se recorte en vez de ensanchar la columna */
+}
+
+/* Custom select (sexo, vendedor): nunca más ancho que su columna;
+   el texto largo lo recorta .cs-trigger-text con "…" */
+.pcf-field .cs-trigger {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.pcf-field .cs-trigger-text {
+  min-width: 0;
 }
 
 .pcf-label {
@@ -712,7 +724,7 @@
 
 .pcf-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: .6rem;
 }
 
