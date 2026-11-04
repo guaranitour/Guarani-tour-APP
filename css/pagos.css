@@ -970,7 +970,11 @@
 }
 
 /* El form de pago ahora vive entre los botones y las cards: sin margen superior propio */
-#view-viaje-pasajero-pagos > .main > #form-nuevo-pago { margin-bottom: .9rem; }
+#view-viaje-pasajero-pagos > .main > #form-nuevo-pago {
+  margin-bottom: .9rem;
+  /* El scrollIntoView deja el form justo debajo del topbar sticky (68px + safe area) */
+  scroll-margin-top: calc(68px + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + .75rem);
+}
 #view-viaje-pasajero-pagos > .main > #form-nuevo-pago .pago-form-inner { margin-top: 0; }
 
 /* Reemplazar pasajero: centrado al pie de la card del historial */
