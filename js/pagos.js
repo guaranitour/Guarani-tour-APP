@@ -450,8 +450,11 @@ function _abrirFormPago() {
     refreshCustomSelect("pago-metodo");
   }
   onMetodoChange();
-  document.getElementById("form-nuevo-pago").style.display = "";
+  const form = document.getElementById("form-nuevo-pago");
+  form.style.display = "";
   _syncAccionesPago();
+  // Tras ocultar la fila de botones el layout cambia: se espera al siguiente frame
+  requestAnimationFrame(() => form.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
 function ocultarFormPago() {
