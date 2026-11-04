@@ -451,7 +451,7 @@ function _abrirFormPago() {
   }
   onMetodoChange();
   document.getElementById("form-nuevo-pago").style.display = "";
-  document.getElementById("btn-nuevo-pago").style.display  = "none";
+  _syncAccionesPago();
 }
 
 function ocultarFormPago() {
@@ -462,6 +462,17 @@ function ocultarFormPago() {
   _resetModoEdicionPago();
   // Botón "Registrar pago": por tarea (sql/permisos_pagos.sql)
   if (btn) btn.style.display = can("pagos.registrar") ? "" : "none";
+  _syncAccionesPago();
+}
+
+/* Fila de botones bajo el resumen: se oculta mientras el formulario de pago
+   está abierto o si ningún botón es visible para el rol (evita fila vacía). */
+function _syncAccionesPago() {
+  const fila = document.getElementById("pagos-acciones");
+  if (!fila) return;
+  const formAbierto = document.getElementById("form-nuevo-pago")?.style.display !== "none";
+  const hayBotones  = [...fila.querySelectorAll(".btn-agregar-pasajero")].some(b => b.style.display !== "none");
+  fila.style.display = (!formAbierto && hayBotones) ? "" : "none";
 }
 
 /* ── COMPROBANTES EN R2 (vía Worker) ────────── */
@@ -1083,6 +1094,8 @@ async function loadExtrasPasajero() {
   const habilitado = !!viajeActualData?.extras_habilitados && can("extras.pasajero_ver");
   if (!habilitado) {
     section.style.display = "none";
+    if (btnAdd) btnAdd.style.display = "none";
+    _syncAccionesPago();
     pagosCtx.extrasAsignados = [];
     return;
   }
@@ -1091,6 +1104,7 @@ async function loadExtrasPasajero() {
 
   const puedeQuitar = can("extras.pasajero_quitar");
   if (btnAdd) btnAdd.style.display = can("extras.pasajero_asignar") ? "" : "none";
+  _syncAccionesPago();
 
   const { data, error } = await supabaseClient
     .from("servicio_extra_pasajeros")
