@@ -938,12 +938,12 @@
 
 /* ══ REEMPLAZO DE PASAJERO ═══════════════════════ */
 
-/* Acciones del historial: reemplazar (azul, izquierda) y registrar pago
-   (verde, derecha), lado a lado con el estilo translúcido de .btn-transferir-pago. */
+/* Acciones bajo el resumen: agregar servicio extra y registrar pago, lado a lado
+   con el mismo estilo translúcido verde (como .btn-transferir-pago). */
 .pagos-acciones {
   display: flex;
   gap: .6rem;
-  margin-top: 1rem;
+  margin-bottom: .9rem;
 }
 
 .pagos-acciones .btn-agregar-pasajero {
@@ -963,20 +963,37 @@
   border-color: rgba(45,106,79,.5);
 }
 
-.pagos-acciones .btn-reemplazar-pasajero {
-  border-color: rgba(52,120,246,.25);
-  background: rgba(52,120,246,.07);
-  color: var(--info-text);
-}
-.pagos-acciones .btn-reemplazar-pasajero:hover {
-  background: rgba(52,120,246,.13);
-  border-color: rgba(52,120,246,.45);
-}
-
-[data-theme="dark"] .pagos-acciones .btn-agregar-pasajero:not(.btn-reemplazar-pasajero) {
+[data-theme="dark"] .pagos-acciones .btn-agregar-pasajero {
   border-color: rgba(82,183,136,.35);
   background: rgba(82,183,136,.1);
   color: var(--accent2, #52b788);
+}
+
+/* El form de pago ahora vive entre los botones y las cards: sin margen superior propio */
+#view-viaje-pasajero-pagos > .main > #form-nuevo-pago { margin-bottom: .9rem; }
+#view-viaje-pasajero-pagos > .main > #form-nuevo-pago .pago-form-inner { margin-top: 0; }
+
+/* Reemplazar pasajero: centrado al pie de la card del historial */
+.pagos-reemplazar {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+.pagos-reemplazar .btn-agregar-pasajero {
+  width: auto;
+  min-width: 200px;
+  margin-top: 0;
+  height: 46px;
+  padding: 0 1.4rem;
+  border: 1.5px solid rgba(52,120,246,.25);
+  border-radius: 14px;
+  background: rgba(52,120,246,.07);
+  color: var(--info-text);
+  font-size: .88rem;
+}
+.pagos-reemplazar .btn-agregar-pasajero:hover {
+  background: rgba(52,120,246,.13);
+  border-color: rgba(52,120,246,.45);
 }
 
 @media (max-width: 380px) {
