@@ -150,12 +150,18 @@ document.addEventListener("click", e => {
   }
 });
 
-/* ── MOSTRAR BANCO Y COMPROBANTE SOLO PARA UENO ── */
+/* ── MOSTRAR BANCO Y COMPROBANTE SOLO PARA UENO / MIL VIAJES ── */
+// Métodos que piden banco + comprobante. Para sumar otro, agregarlo acá.
+const METODOS_CON_BANCO = ["UENO", "MIL VIAJES"];
+function metodoPideBanco(texto) {
+  const t = (texto || "").toUpperCase();
+  return METODOS_CON_BANCO.some(m => t.includes(m));
+}
+
 function onMetodoChange() {
   const sel  = document.getElementById("pago-metodo");
   if (!sel) return;
-  const texto = sel.options[sel.selectedIndex]?.text?.toUpperCase() || "";
-  const esUeno = texto.includes("UENO");
+  const esUeno = metodoPideBanco(sel.options[sel.selectedIndex]?.text);
 
   const wrapBanco  = document.getElementById("pago-banco-wrap");
   const wrapComp   = document.getElementById("pago-comprobante-wrap");
@@ -547,10 +553,10 @@ async function guardarPago() {
   const monto    = ligada ? editando.monto : _leerMontoInput("pago-monto");
   const tipo     = ligada ? editando.tipo  : document.getElementById("pago-tipo").value;
   const metodoid = ligada ? (editando.metodo_pago_id ?? null) : (document.getElementById("pago-metodo").value || null);
-  // El banco solo aplica a los métodos UENO (ver onMetodoChange): ahí es
+  // El banco solo aplica a los métodos UENO / MIL VIAJES (ver onMetodoChange): ahí es
   // obligatorio; con cualquier otro método se descarta.
   const selMetodo = document.getElementById("pago-metodo");
-  const esUeno    = (selMetodo?.options[selMetodo.selectedIndex]?.text || "").toUpperCase().includes("UENO");
+  const esUeno    = metodoPideBanco(selMetodo?.options[selMetodo.selectedIndex]?.text);
   let bancoId     = document.getElementById("pago-banco").value || null;
   if (!ligada && !esUeno) bancoId = null;
   const fecha    = document.getElementById("pago-fecha").value;
