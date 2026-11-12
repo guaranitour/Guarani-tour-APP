@@ -29,8 +29,8 @@ let _loadPassengersPromise = null;
 // ── Caches de tablas estáticas ─────────────────────────────
 // Se cargan una sola vez por sesión y se reutilizan en todos los módulos
 let _vendedoresCache  = [];   // [{ Nombre_del_vendedor }]
-let _metodosCache     = [];   // [{ id, metodo_de_pago }]
-let _bancosCache      = [];   // [{ id, banco_id }]
+let _metodosCache     = [];   // [{ id, metodo_de_pago, status }]
+let _bancosCache      = [];   // [{ id, banco_id, status }]
 
 async function getVendedores() {
   if (_vendedoresCache.length === 0) {
@@ -47,7 +47,7 @@ async function getMetodosPago() {
   if (_metodosCache.length === 0) {
     const { data } = await supabaseClient
       .from("metodos_de_pago")
-      .select("id, metodo_de_pago")
+      .select("id, metodo_de_pago, status")
       .order("metodo_de_pago", { ascending: true });
     _metodosCache = data || [];
   }
@@ -58,7 +58,7 @@ async function getBancos() {
   if (_bancosCache.length === 0) {
     const { data } = await supabaseClient
       .from("bancos")
-      .select("id, banco_id")
+      .select("id, banco_id, status")
       .order("banco_id", { ascending: true });
     _bancosCache = data || [];
   }

@@ -65,6 +65,7 @@ async function initPagosView(ctx) {
   const selMetodo = document.getElementById("pago-metodo");
   if (selMetodo) {
     selMetodo.innerHTML = pagosCtx.metodos
+      .filter(m => m.status === "enabled")
       .map(m => `<option value="${m.id}">${m.metodo_de_pago}</option>`)
       .join("");
     selMetodo.removeEventListener("change", onMetodoChange);
@@ -106,7 +107,7 @@ function filtrarBancos() {
   if (!q) { dropdown.innerHTML = ""; dropdown.style.display = "none"; return; }
 
   const matches = pagosCtx.bancos.filter(b =>
-    b.banco_id.toLowerCase().includes(q)
+    b.status === "enabled" && b.banco_id.toLowerCase().includes(q)
   ).slice(0, 8);
 
   if (matches.length === 0) {
@@ -152,7 +153,7 @@ document.addEventListener("click", e => {
 
 /* ── MOSTRAR BANCO Y COMPROBANTE SOLO PARA UENO / MIL VIAJES ── */
 // Métodos que piden banco + comprobante. Para sumar otro, agregarlo acá.
-const METODOS_CON_BANCO = ["UENO", "MIL VIAJES"];
+const METODOS_CON_BANCO = ["UENO", "MIL VIAJES", "CONTI OE"];
 function metodoPideBanco(texto) {
   const t = (texto || "").toUpperCase();
   return METODOS_CON_BANCO.some(m => t.includes(m));
@@ -448,9 +449,9 @@ function _abrirFormPago() {
   if (fechaEl) fechaEl.value = new Date().toISOString().split("T")[0];
   const tipoEl  = document.getElementById("pago-tipo");
   if (tipoEl) { tipoEl.value = "Pago"; refreshCustomSelect("pago-tipo"); }
-  // Método predeterminado: UENO OSCAR (se busca por nombre, no por id)
+  // Método predeterminado: CONTI OE (se busca por nombre, no por id)
   const metodoEl = document.getElementById("pago-metodo");
-  const metodoPorDefecto = (pagosCtx.metodos || []).find(m => (m.metodo_de_pago || "").trim().toUpperCase() === "UENO OSCAR");
+  const metodoPorDefecto = (pagosCtx.metodos || []).find(m => (m.metodo_de_pago || "").trim().toUpperCase() === "CONTI OE");
   if (metodoEl && metodoPorDefecto) {
     metodoEl.value = String(metodoPorDefecto.id);
     refreshCustomSelect("pago-metodo");
@@ -750,7 +751,17 @@ async function _prepararEdicionPago(p) {
   const tipoEl = document.getElementById("pago-tipo");
   if (tipoEl) { tipoEl.value = p.tipo; refreshCustomSelect("pago-tipo"); }
   const metodoEl = document.getElementById("pago-metodo");
-  if (metodoEl) { metodoEl.value = String(p.metodo_pago_id ?? ""); refreshCustomSelect("pago-metodo"); }
+  if (metodoEl) {
+    // Si el pago usa un método ya deshabilitado, no está en las opciones: se agrega
+    // solo para esta edición, así guardar no lo pisa con null.
+    const idMetodo = String(p.metodo_pago_id ?? "");
+    if (idMetodo && ![...metodoEl.options].some(o => o.value === idMetodo)) {
+      const m = (pagosCtx.metodos || []).find(x => String(x.id) === idMetodo);
+      if (m) metodoEl.add(new Option(m.metodo_de_pago, m.id));
+    }
+    metodoEl.value = idMetodo;
+    refreshCustomSelect("pago-metodo");
+  }
   onMetodoChange();
 
   document.getElementById("pago-banco").value = p.banco_id ?? "";
