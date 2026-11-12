@@ -1214,6 +1214,7 @@ async function cargarBancosEnSelect() {
   const { data, error } = await supabaseClient
     .from('bancos')
     .select('banco_id')
+    .eq('status', 'enabled')
     .order('banco_id', { ascending: true });
 
   if (!error && data) {
